@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, WORLDS, trackOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, WORLDS, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
@@ -207,7 +207,7 @@ $("diff-bar").addEventListener("click", e => {
 let raceTab = "races";
 const cupOpen = cup => S.rank >= Math.max(5, cup.rank || 0) && cup.tracks.every(id => unlocked(TRACKS.findIndex(t => t.id === id)));
 function paintCups() {
-  $("cup-list").innerHTML = CUPS.map(c => {
+  $("cup-list").innerHTML = CUPS.filter(c => (c.world || "earth") === S.world).map(c => {
     const open = cupOpen(c), best = S.cups[c.id + ":" + S.diff], car = CARS.find(x => x.id === c.car), need = Math.max(5, c.rank || 0);
     return `<button class="cup-card ${open ? "" : "locked"}" data-cup="${c.id}" style="border-color:${c.color}">
       <div class="cc-cup" style="filter:drop-shadow(0 0 10px ${c.color})">🏆</div><div class="cc-name" style="color:${c.color}">${c.name}</div>
@@ -233,21 +233,30 @@ $("cup-list").addEventListener("click", e => {
   sfx("click"); startCup(cup);
 });
 function paintWorlds() {
-  $("world-bar").innerHTML = WORLDS.map(w => `<button data-world="${w.id}" class="${w.soon ? "soon" : "on"}">${w.icon} ${w.name}${w.soon ? " 🔒" : ""}</button>`).join("");
+  if (!worldOpen(S, S.world)) S.world = "earth";
+  $("world-bar").innerHTML = WORLDS.map(w => { const open = !w.soon && worldOpen(S, w.id);
+    return `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""} ${open ? "" : "soon"}">${w.icon} ${w.name}${open ? "" : " 🔒"}</button>`; }).join("");
 }
-$("world-bar").addEventListener("click", e => { const b = e.target.closest("[data-world]"); if (!b) return; const w = WORLDS.find(x => x.id === b.dataset.world); if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); } else sfx("click"); });
+$("world-bar").addEventListener("click", e => {
+  const b = e.target.closest("[data-world]"); if (!b) return;
+  const w = WORLDS.find(x => x.id === b.dataset.world);
+  if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); return; }
+  if (!worldOpen(S, w.id)) { sfx("nope"); toast(S.rank < w.rank ? `${w.icon} ${w.name} opens at Rank ${w.rank}` : `🔬 Research Moon Tires in the Turbo Lab first!`); return; }
+  sfx("click"); S.world = w.id; save(); openTracks();
+});
 function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   list.innerHTML = TRACKS.map((t, i) => {
+    if ((t.world || "earth") !== S.world) return "";
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>Win 🏆 on ${TRACKS.find(x => x.id === t.after).name} (🚗 or 🔥)</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win 🏆 on ${TRACKS.find(x => x.id === t.after).name} (🚗 or 🔥)` : "Reach this world first"}</small></div>`}</button>`;
   }).join("");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);
@@ -324,7 +333,7 @@ function showResult(r) {
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
   countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";

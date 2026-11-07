@@ -12,6 +12,9 @@ export const CARS = [
   { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
   { id: "champX", name: "Champion X", price: null, cup: "champ", body: "#1c1c24", accent: "#ffd400", type: "galaxy", speed: 0.32, accel: 0.3, grip: 0.3 },
   // earned at the Driver School (Gold license): real-world reading and outdoor time pays for this one
+  // 🌙 Moon Base cars
+  { id: "rover", name: "Lunar Rover", price: 60000, world: "moon", body: "#e9edf3", accent: "#ff8a00", type: "rover", speed: 0.36, accel: 0.32, grip: 0.32 },
+  { id: "comet", name: "Comet", price: null, cup: "moon", body: "#9fe8ff", accent: "#ffffff", type: "rocket", speed: 0.42, accel: 0.36, grip: 0.35 },
   { id: "patrol", name: "Piqua Patrol", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
 ];
 
@@ -29,6 +32,7 @@ export const CUPS = [
   { id: "green", name: "Green Cup", color: "#5be36a", tracks: ["sunny", "desert", "snow"], car: "greenMachine", bonus: 500 },
   { id: "gold", name: "Gold Cup", color: "#ffd400", tracks: ["candy", "lava", "space"], car: "goldRush", bonus: 1500 },
   { id: "champ", name: "Champion Cup", color: "#ff3fe5", tracks: ["desert", "lava", "space"], car: "champX", bonus: 3000, rank: 7 },
+  { id: "moon", name: "Moon Cup", color: "#9fe8ff", tracks: ["crater", "moonbase", "asteroid"], car: "comet", bonus: 6000, rank: 21, world: "moon" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
 
@@ -52,20 +56,27 @@ export const TRACKS = [
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
   { id: "lava",   name: "Lava Mountain",  icon: "🌋", diff: 4,   laps: 2, seed: 59, theme: "lava",   world: "earth", after: "candy" },
   { id: "space",  name: "Space Road",     icon: "🪐", diff: 5,   laps: 2, seed: 67, theme: "space",  world: "earth", after: "lava" },
+  { id: "crater",   name: "Crater Hop",     icon: "🌑", diff: 7.4, laps: 2, seed: 101, theme: "moon", world: "moon" },
+  { id: "moonbase", name: "Moonbase Loop",  icon: "🛰️", diff: 7.7, laps: 2, seed: 113, theme: "moon", world: "moon", after: "crater" },
+  { id: "asteroid", name: "Asteroid Alley", icon: "☄️", diff: 8.0, laps: 2, seed: 127, theme: "moon", world: "moon", after: "moonbase" },
+  { id: "earthrise", name: "Earthrise Run", icon: "🌍", diff: 8.3, laps: 2, seed: 131, theme: "moon", world: "moon", after: "asteroid" },
 ];
 // A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins.
 // A track already raced on stays open, so older saves never lose a track.
-export const trackOpen = (S, t) => !t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || !!S.best[t.id];
+export const trackOpen = (S, t) => (t.world === "earth" || worldOpen(S, t.world)) && (!t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || !!S.best[t.id]);
+/* A world opens at its rank once its World Kit research is done (Earth is always open). */
+export const worldOpen = (S, id) => { const w = WORLDS.find(x => x.id === id); return !!w && (!w.rank || (S.rank >= w.rank && (!w.kit || (S.research?.[w.kit] || 0) >= 1))); };
 
 /* Worlds and their physics. Earth is today's game; other worlds change how cars move. */
 export const WORLDS = [
   { id: "earth", name: "Earth", icon: "🌍" },
-  { id: "moon", name: "Moon Base", icon: "🌙", soon: true },
+  { id: "moon", name: "Moon Base", icon: "🌙", rank: 20, kit: "moonTires" },
   { id: "ocean", name: "Deep Blue", icon: "🌊", soon: true },
 ];
 // gravity: jump arc, top/accel: speed through the medium, grip: how well cars hold curves, air: steering in the air
 export const PHYSICS = {
   earth: { gravity: 1, top: 1, accel: 1, grip: 1, air: 0.6 },
+  moon: { gravity: 0.32, top: 1, accel: 1, grip: 0.85, air: 1.1, gaps: true, rings: true },
 };
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
 export const DIFFS = [
@@ -92,6 +103,7 @@ export const THEMES = {
   lava:   { sky: ["#3a0b0b", "#ff6a2a"], hills: ["#5a1d12", "#3e130c"], grass: ["#4a2a22", "#402219"], rumble: ["#ffd400", "#222222"], road: ["#2c2c30", "#28282c"], lane: "#ffb000", sun: "#ffcf4d", sprites: ["volcanorock", "lavaflame", "volcanorock"], clouds: false },
   beach:  { sky: ["#38b6ff", "#c9f1ff"], hills: ["#2fa8ff", "#1f8ad6"], grass: ["#f7e08a", "#efd57a"], rumble: ["#ffffff", "#2fa8ff"], road: ["#a87a4f", "#9c7046"], lane: "#fff4d6", sun: "#fff7b0", sprites: ["palm", "umbrella", "sandcastle", "surfboard"], clouds: true },
   autumn: { sky: ["#ff9e5e", "#ffe0b8"], hills: ["#c9572b", "#a8431f"], grass: ["#d98c3a", "#cf8233"], rumble: ["#ffffff", "#b3261e"], road: ["#6b5a50", "#655448"], lane: "#ffe9c0", sun: "#fff0c8", sprites: ["autumnTree", "autumnTree", "pumpkin", "hay", "mushroom"], clouds: true },
+  moon:   { sky: ["#02030f", "#1a2550"], hills: ["#6a7080", "#4f5565"], grass: ["#8f95a3", "#868c9a"], rumble: ["#3cf2ff", "#2a2f3a"], road: ["#3d4250", "#3a3f4c"], lane: "#3cf2ff", sun: "#fff8e0", sprites: ["moonrock", "crater", "dish", "moonrock", "dome", "crater"], clouds: false, stars: true, earth: true, detail: 2 },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
@@ -153,6 +165,8 @@ export const GOALS = [
   { id: "auto1", icon: "🧠", name: "Auto Steer level 1", goal: 1, reward: 2000, have: S => S.research.autoSteer || 0 },
   { id: "auto10", icon: "🧠", name: "Auto Steer level 10", goal: 10, reward: 8000, have: S => S.research.autoSteer || 0 },
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
+  { id: "moon1", icon: "🌙", name: "Win a race on the Moon", goal: 1, reward: 5000, have: S => ["crater", "moonbase", "asteroid", "earthrise"].filter(id => S.best[id] === 1).length },
+  { id: "rings25", icon: "⭕", name: "Fly through 25 boost rings", goal: 25, reward: 3000, have: S => S.stats.rings || 0 },
   { id: "school1", icon: "🚦", name: "Take a Driver School lesson", goal: 1, reward: 300, have: S => lessonsOf(S) },
   { id: "license3", icon: "🪪", name: "Earn a Gold license", goal: 3, reward: 2000, have: S => licenseLevel(S) },
   { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
@@ -160,7 +174,7 @@ export const GOALS = [
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
-export const RANK_CAP = 20;   // raised by later releases
+export const RANK_CAP = 25;   // raised by later releases (each new world adds 5)
 /* License gauge (from Rank 10): Bronze for Rank 10→11, then one license level per two ranks, up to Piqua Pro.
    Pass the save so a parent can switch the gauge off in Parent Corner. */
 export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
@@ -183,7 +197,8 @@ export const RANK_UNLOCKS = {
   9: { icon: "🧪", text: "3rd lab bench" },
   10: { icon: "🧠", text: "Auto Steer research" },
   15: { icon: "🧪", text: "4th lab bench" },
-  20: { icon: "🏆", text: "Champion title" },
+  20: { icon: "🌙", text: "Moon Base (research Moon Tires)" },
+  21: { icon: "🏆", text: "Moon Cup" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 /* Track Mastery: keep winning a track on a difficulty to earn up to 5 stars (each one is a trophy point). */
@@ -258,6 +273,10 @@ export const RESEARCH = [
     time: lvl => Math.round(Math.min(24, Math.pow(1.035, lvl)) * 3600),
     chips: lvl => 4 + Math.floor((lvl + 1) / 10),
     rankAt: lvl => 9 + Math.ceil((lvl + 1) / 2) },
+  // tier 4: World Kits and moon tech (Rank 20)
+  { id: "moonTires", tier: 4, rank: 20, max: 1, icon: "🛞", name: "Moon Tires", desc: "Drive on the Moon!", c0: 50000, t0: 21600 },
+  { id: "thrusters", tier: 4, rank: 20, max: 5, icon: "🚀", name: "Thrusters", desc: "Steer better in the air", c0: 30000, t0: 7200, needs: ["moonTires"] },
+  { id: "ringMagnet", tier: 4, rank: 21, max: 5, icon: "⭕", name: "Ring Magnet", desc: "Catch boost rings easier", c0: 32000, t0: 7200, needs: ["moonTires"] },
 ];
 export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;   // lvl = current level (0-based next)
 export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.4, lvl));              // seconds

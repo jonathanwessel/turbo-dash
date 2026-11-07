@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.15.0 — 🌙 Moon Base
+
+- **The first new world: the Moon.** It opens at **Rank 20** after researching **Moon Tires** in the Turbo Lab
+  (new lab tier 4). Pick 🌙 Moon Base in the world bar on the Race Track screen.
+  - **Low gravity:** ramps launch you sky-high and you float down slowly. Steer in the air to grab the tall coin
+    arcs.
+  - **Gaps in the road:** every ramp jumps a gap. Miss it and a friendly **tractor beam** floats you across
+    (slowly, and no crash).
+  - **⭕ Boost rings** float near the top of each jump: fly through them for a speed boost.
+  - **Four moon tracks:** Crater Hop, Moonbase Loop, Asteroid Alley and Earthrise Run, tougher than anything on
+    Earth.
+  - **New cars:** the **Lunar Rover** (60,000 coins, big wheels, an antenna and a dish) and the **Comet**, the
+    prize for winning the new **Moon Cup**.
+  - **New research:** Thrusters (steer better in the air) and Ring Magnet (catch rings more easily).
+- **Ranks go up to 25.** New goals: win on the Moon, fly through 25 boost rings.
+- Moon cars can only be bought once you reach the Moon.
+- Tuned with the career simulator: the Moon arrives around month 5 of regular play, and today's whole game now
+  runs about 7½ months (with ~20 minutes a day of logged real-world time), with no stuck gates.
+
+**Polish (graphics ladder, step 2: the Moon is more detailed than Earth)**
+- Earth glowing in the sky with clouds and a shadow side, a deep twinkling starfield and a soft nebula.
+- Shaded moon rocks, flat craters, turning radar dishes with blinking lights, and glass domes with glowing
+  windows.
+- A dark pit where the road is missing, with glowing edges; a soft light cone for the tractor beam.
+- The world bar shows which worlds are open and what's needed for the locked ones.
+
 ## v0.14.1 — Scan to Share
 
 - **Scan to share!** The title screen has a QR code card: friends point a phone camera at it to open Turbo Dash

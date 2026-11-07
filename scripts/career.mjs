@@ -8,7 +8,7 @@ import { SKILLS, SKILL_MAX, skillCost, licenseLevel } from "../src/data.js";
 const REAL_MIN = +(process.argv[4] || 20);   // minutes of real-world time logged per day (reading/outside)
 import {
   CARS, TRACKS, CUPS, CUP_POINTS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
-  prizeFor, upgradeCost, trackOpen, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
+  prizeFor, upgradeCost, trackOpen, worldOpen, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
 } from "../src/data.js";
 
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
@@ -93,7 +93,7 @@ function collectLab() {
     b.p = null;
   }
 }
-const LAB_ORDER = ["autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
+const LAB_ORDER = ["moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
 function spend() {
   // lab first when it's cheap compared with savings, then the next car, then the cheapest upgrade
   for (const b of benches()) {
@@ -109,10 +109,11 @@ function spend() {
   }
   for (let bought = true; bought;) {
     bought = false;
-    const next = CARS.find(c => c.price != null && !S.owned.includes(c.id));
+    const next = CARS.find(c => c.price != null && (!c.world || worldOpen(S, c.world)) && !S.owned.includes(c.id));
     if (next && S.coins >= next.price) { S.coins -= next.price; S.owned.push(next.id); S.car = next.id; S.ups[next.id] = NO_UPS(); gate("car:" + next.id, `Bought ${next.name}`); bought = true; continue; }
-    const best = [...S.owned].sort((a, b) => CARS.findIndex(c => c.id === b) - CARS.findIndex(c => c.id === a))[0];
-    if (best !== S.car && CARS.findIndex(c => c.id === best) > CARS.findIndex(c => c.id === S.car)) S.car = best;
+    // drive the fastest car owned (its speed plus its engine upgrades)
+    const pace = id => { const c = CARS.find(x => x.id === id); return c.speed + 0.06 * (S.ups[id]?.engine || 0); };
+    S.car = [...S.owned].sort((a, b) => pace(b) - pace(a))[0];
     const opts = [];
     for (const id of S.owned) for (const u of UPGRADES) if (S.ups[id][u.id] < UPGRADE_MAX) opts.push({ id, u: u.id, cost: upgradeCost(id, S.ups[id][u.id], lv("pitCrew")) * (id === S.car ? 1 : 1.6) });
     opts.sort((a, b) => a.cost - b.cost);

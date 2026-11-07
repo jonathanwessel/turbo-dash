@@ -32,7 +32,7 @@ function poly(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); for (let 
 export function drawCar(ctx, x, yb, w, def, o = {}) {
   if (w < 4) { ctx.fillStyle = def.body; ctx.fillRect(x - w / 2, yb - w * 0.5, w, w * 0.5); return; }
   const t = o.t || 0, steer = o.steer || 0, type = def.type;
-  const monster = type === "monster";
+  const monster = type === "monster" || type === "rover";
   ctx.save();
   ctx.translate(x, yb);
   ctx.rotate(steer * 0.035);
@@ -140,6 +140,12 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillStyle = type === "sport" ? "#222" : def.accent;
     rr(ctx, -w * 0.53, top - w * 0.15, w * 1.06, w * 0.065, w * 0.02);
   }
+  if (type === "rover" && w > 20) {
+    ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.3, w, bh * 0.14);
+    ctx.fillStyle = "#59606b"; ctx.fillRect(w * 0.3 + cx, top - ch - w * 0.22, w * 0.025, w * 0.22);
+    ctx.fillStyle = "#e9edf3"; ctx.beginPath(); ctx.ellipse(w * 0.31 + cx, top - ch - w * 0.22, w * 0.08, w * 0.035, -0.4, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = (t * 3 | 0) % 2 ? "#ff3d3d" : "#ffd400"; ell(ctx, w * 0.31 + cx, top - ch - w * 0.25, w * 0.02, w * 0.02);
+  }
   if (type === "patrol" && w > 20) {
     ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.42, w, bh * 0.22);
     const on = Math.sin(t * 12) > 0;
@@ -211,6 +217,7 @@ export const SPRITES = {
   volcanorock: { w: 1100, collide: true }, lavaflame: { w: 700, collide: false },
   planet: { w: 1700, collide: false }, crystal: { w: 950, collide: true }, ufo: { w: 1300, collide: false },
   sign: { w: 2200, collide: true }, lamp: { w: 500, collide: true },
+  moonrock: { w: 1100, collide: true }, crater: { w: 1800, collide: false }, dish: { w: 1300, collide: true }, dome: { w: 1700, collide: true },
   autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
 };
@@ -348,6 +355,37 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = (t * 4 | 0) % 2 ? "#ffd400" : "#ff3fa4"; for (let i = -2; i <= 2; i++) ell(ctx, x + i * w * 0.17, yy + w * 0.02, w * 0.035, w * 0.035);
       break;
     }
+    case "moonrock": {
+      const g = ctx.createRadialGradient(x - w * 0.15, yb - h * 0.45, w * 0.05, x, yb - h * 0.3, w * 0.6);
+      g.addColorStop(0, "#c9ced8"); g.addColorStop(1, "#5d6372");
+      ctx.fillStyle = g; poly(ctx, [x - w * 0.5, yb, x - w * 0.38, yb - h * 0.42, x - w * 0.05, yb - h * 0.62, x + w * 0.35, yb - h * 0.45, x + w * 0.5, yb]);
+      ctx.fillStyle = "rgba(0,0,0,0.18)"; ell(ctx, x + w * 0.12, yb - h * 0.3, w * 0.08, w * 0.05); ell(ctx, x - w * 0.18, yb - h * 0.18, w * 0.06, w * 0.04);
+      break;
+    }
+    case "crater":
+      ctx.fillStyle = "#6f7584"; ell(ctx, x, yb - h * 0.04, w * 0.5, h * 0.12);
+      ctx.fillStyle = "#5a606e"; ell(ctx, x, yb - h * 0.03, w * 0.4, h * 0.08);
+      ctx.fillStyle = "rgba(255,255,255,0.25)"; ell(ctx, x - w * 0.12, yb - h * 0.1, w * 0.25, h * 0.03);
+      break;
+    case "dish": {
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.04, yb - h * 0.75, w * 0.08, h * 0.75);
+      const g = ctx.createLinearGradient(x - w * 0.4, 0, x + w * 0.4, 0); g.addColorStop(0, "#f4f6fa"); g.addColorStop(1, "#9aa4b1");
+      ctx.save(); ctx.translate(x, yb - h * 0.85); ctx.rotate(-0.5 + Math.sin(t * 0.6 + x * 0.01) * 0.15);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.42, w * 0.18, 0, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = "#59606b"; ctx.fillRect(-w * 0.015, -w * 0.25, w * 0.03, w * 0.25);
+      ctx.fillStyle = (t * 2 | 0) % 2 ? "#ff3d3d" : "#ff9d9d"; ell(ctx, 0, -w * 0.27, w * 0.035, w * 0.035);
+      ctx.restore();
+      break;
+    }
+    case "dome": {
+      ctx.fillStyle = "#4a5060"; ctx.fillRect(x - w * 0.5, yb - h * 0.12, w, h * 0.12);
+      const g = ctx.createRadialGradient(x - w * 0.15, yb - h * 0.45, w * 0.05, x, yb - h * 0.2, w * 0.55);
+      g.addColorStop(0, "rgba(220,250,255,0.95)"); g.addColorStop(1, "rgba(80,170,210,0.75)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, yb - h * 0.12, w * 0.46, h * 0.42, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "rgba(255,240,150,0.9)"; for (const k of [-0.25, 0, 0.25]) rr(ctx, x + k * w - w * 0.05, yb - h * 0.3, w * 0.1, h * 0.12, w * 0.02);
+      ctx.fillStyle = "rgba(255,240,150,0.25)"; ell(ctx, x, yb - h * 0.22, w * 0.42, h * 0.16);
+      break;
+    }
     case "lamp":
       ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.12, h * 2.4);
       ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.6, w * 0.1);
@@ -385,6 +423,31 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
       const s = 1 + (i % 3) * (H / 600) * (0.6 + 0.4 * Math.sin(t * 3 + i));
       ctx.fillRect(sx, sy, s, s);
     }
+  }
+  if (th.detail >= 2) {
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 120; i++) {
+      const sx = ((i * 97.3 + skyX * W * 0.12) % W + W) % W, sy = (i * 41.9) % (hz * 0.95);
+      ctx.globalAlpha = 0.25 + 0.25 * Math.sin(t * 2 + i * 1.7); ctx.fillRect(sx, sy, 1.2, 1.2);
+    }
+    ctx.globalAlpha = 1;
+    const neb = ctx.createRadialGradient(W * 0.3, hz * 0.3, 0, W * 0.3, hz * 0.3, H * 0.5);
+    neb.addColorStop(0, "rgba(120,80,220,0.22)"); neb.addColorStop(1, "rgba(120,80,220,0)");
+    ctx.fillStyle = neb; ctx.fillRect(0, 0, W, hz);
+  }
+  if (th.earth) {
+    const ex = W * 0.22 - skyX * W * 0.05, ey = hz * 0.32, er = H * 0.12;
+    const glow = ctx.createRadialGradient(ex, ey, er * 0.9, ex, ey, er * 1.6);
+    glow.addColorStop(0, "rgba(120,190,255,0.45)"); glow.addColorStop(1, "rgba(120,190,255,0)");
+    ctx.fillStyle = glow; ell(ctx, ex, ey, er * 1.6, er * 1.6);
+    const sea = ctx.createRadialGradient(ex - er * 0.35, ey - er * 0.35, er * 0.1, ex, ey, er);
+    sea.addColorStop(0, "#6fc3ff"); sea.addColorStop(1, "#1d4fa8");
+    ctx.fillStyle = sea; ell(ctx, ex, ey, er, er);
+    ctx.save(); ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = "#4cae5a"; ell(ctx, ex - er * 0.3 + Math.sin(t * 0.05) * er * 0.1, ey - er * 0.2, er * 0.35, er * 0.22); ell(ctx, ex + er * 0.35, ey + er * 0.25, er * 0.28, er * 0.32);
+    ctx.fillStyle = "rgba(255,255,255,0.75)"; ell(ctx, ex + er * 0.1, ey - er * 0.55, er * 0.5, er * 0.1); ell(ctx, ex - er * 0.2, ey + er * 0.5, er * 0.45, er * 0.08);
+    ctx.fillStyle = "rgba(0,0,30,0.45)"; ell(ctx, ex + er * 0.55, ey + er * 0.1, er * 0.75, er * 1.1);
+    ctx.restore();
   }
   ctx.fillStyle = th.sun;
   ctx.globalAlpha = 0.35; ell(ctx, W * 0.78, hz * 0.32, H * 0.13, H * 0.13);
@@ -435,4 +498,15 @@ export function drawBox(ctx, x, y, w, t) {
   rr(ctx, x - s * sx, y - s, s * 2 * sx, s * 2, s * 0.35);
   ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, w * 0.06); ctx.stroke();
   if (w > 14) { ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * 0.7)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", x, y + w * 0.04); }
+}
+
+/* A boost ring floating in the sky (low-gravity worlds): fly through it for a speed boost. */
+export function drawRing(ctx, x, y, w, t) {
+  if (w < 3) return;
+  const pulse = 1 + 0.06 * Math.sin(t * 6);
+  ctx.lineWidth = Math.max(2, w * 0.09);
+  ctx.strokeStyle = "rgba(60,242,255,0.35)"; ctx.beginPath(); ctx.ellipse(x, y, w * 0.55 * pulse, w * 0.62 * pulse, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = Math.max(1.5, w * 0.05);
+  ctx.strokeStyle = "#3cf2ff"; ctx.beginPath(); ctx.ellipse(x, y, w * 0.45, w * 0.52, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = "#ffffff"; ctx.beginPath(); ctx.ellipse(x, y, w * 0.45, w * 0.52, 0, -2.4, -1.6); ctx.stroke();
 }

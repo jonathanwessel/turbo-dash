@@ -33,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -83,7 +83,7 @@ Four gauges must all be full to RANK UP (the emptiest one glows with a picture h
   per track and difficulty) + claimed goals.
 - **Garage** = 5 per car owned + every upgrade level on every car. Each new world must add cars (the Garage
   gauge maxes at 225 with today's 9 cars).
-- **Rank cap** is 20 now and rises with each world: 25 (Moon), 30 (Deep Blue), 35, 40 … 60.
+- **Rank cap** is 25 now (Moon) and rises with each world: 30 (Deep Blue), 35, 40 … 60.
 - **🪪 License gauge (new, from Rank 10, parent can switch it off):** see Driver School.
 
 ## Turbo Lab
@@ -159,7 +159,7 @@ supported by the engine) and its own cars, lab kit and boss:
 
 # Release plan
 
-### v0.15.0 🌙 Moon Base
+### v0.15.0 🌙 Moon Base (shipped)
 The first new world: four low-gravity tracks, gaps to jump, boost rings, Thrusters part, Moon Tires research, two
 moon cars, a Moon boss rival. Rank cap 25.
 - **Graphics:** a full moon art set: grey crater roadsides, Earth in the sky, stars, little dust puffs.

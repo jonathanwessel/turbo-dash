@@ -1,6 +1,6 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
-import { drawCar, drawSprite, drawCoin, drawBackground, drawBox, SPRITES } from "./draw.js";
+import { drawCar, drawSprite, drawCoin, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
 export const BASE_MAX = 10000;     // starter car top speed (world units / s)
@@ -75,21 +75,28 @@ export function buildTrack(track) {
     padN = (padN || 0) + 1;
     for (let j = 0; j < 6; j++) { segs[i + j].boost = lane; segs[i + j].padId = padN; }
   }
-  for (let i = START + 130; i < segs.length - 60; i += 200 + Math.floor(r() * 120)) {
+  const ph = PHYSICS[track.world] || PHYSICS.earth, GAP = 14;
+  for (let i = START + 130; i < segs.length - 60; i += (ph.gaps ? 150 : 200) + Math.floor(r() * (ph.gaps ? 90 : 120))) {
     let k = i;
-    const ok = k => Math.abs(segs[k].curve) < 0.6 && segs.slice(k - 2, k + RAMP_LEN + 2).every(q => q.boost === null && !q.coins.length);
+    const span = RAMP_LEN + 2 + (ph.gaps ? GAP + 4 : 0);
+    const ok = k => Math.abs(segs[k].curve) < 0.6 && segs.slice(k - 2, k + span).every(q => q.boost === null && !q.coins.length);
     while (k < segs.length - 60 && !ok(k)) k++;
     if (k >= segs.length - 60) break;
     segs[k].rampStart = true;
     for (let j = 0; j < RAMP_LEN; j++) segs[k + j].ramp = true;
     const lane = [-0.5, 0, 0.5][Math.floor(r() * 3)];
-    for (let j = 0; j < 7; j++) segs[k + RAMP_LEN + 2 + j * 3].coins.push({ offset: lane, taken: false, h: RAMP_H * 0.6 + 380 * Math.sin(Math.PI * (j + 0.5) / 7) });
+    if (ph.gaps) {
+      // low gravity: a gap to jump, a tall arc of coins over it, and two boost rings near the top
+      for (let j = 0; j < GAP; j++) segs[k + RAMP_LEN + 1 + j].gap = true;
+      for (let j = 0; j < 9; j++) segs[k + RAMP_LEN + 2 + j * 5].coins.push({ offset: lane, taken: false, h: RAMP_H + 1100 * Math.sin(Math.PI * (j + 0.5) / 9) });
+      for (const j of [3, 5]) segs[k + RAMP_LEN + 4 + j * 5].coins.push({ offset: -lane || 0.45, taken: false, ring: true, h: RAMP_H + 1000 });
+    } else for (let j = 0; j < 7; j++) segs[k + RAMP_LEN + 2 + j * 3].coins.push({ offset: lane, taken: false, h: RAMP_H * 0.6 + 380 * Math.sin(Math.PI * (j + 0.5) / 7) });
     i = k;
   }
   // power-up boxes: a row of three across the road, a few times per lap
   for (let i = START + 70; i < segs.length - 40; i += 170 + Math.floor(r() * 90)) {
     let k = i;
-    while (k < segs.length - 40 && segs.slice(k - 3, k + 3).some(q => q.ramp || q.boost !== null || q.coins.length)) k++;
+    while (k < segs.length - 40 && segs.slice(k - 3, k + 3).some(q => q.ramp || q.gap || q.boost !== null || q.coins.length)) k++;
     if (k >= segs.length - 40) break;
     segs[k].boxes = [-0.6, 0, 0.6].map(o => ({ offset: o, until: 0 }));
     i = k;
@@ -133,7 +140,7 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
@@ -228,7 +235,7 @@ export class Race {
     const flying = p.air > 0;
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
-    p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air : 1);
+    p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
     const help = this.assist;   // 0 none, 1 a little, 2 lots
     if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
     // gentle pull back toward the road (stronger with steering help)
@@ -239,6 +246,13 @@ export class Race {
       p.vy -= GRAVITY * ph.gravity * dt; p.air += p.vy * dt; p.airT += dt;
       if (p.air <= 0) this.land();
     }
+    // missed the jump over a gap? A friendly tractor beam floats you across (slowly). No crashes.
+    if (p.air <= 0 && this.segAt(p.dist).gap) {
+      p.air = 1; p.vy = JUMP_VY * 0.55; p.airT = -9; p.speed = Math.min(p.speed, BASE_MAX * 0.5);
+      if (this.state === "race" || this.state === "done") { this.popup("TRACTOR BEAM!", "#9fe8ff"); h.sfx("boost"); }
+      this.beamT = 1.6;
+    }
+    this.beamT = (this.beamT || 0) - dt;
     const moved = p.speed * dt / SEG;
     this.skyX = mod(this.skyX + 0.0012 * seg.curve * moved, 1);
     this.hillX = mod(this.hillX + 0.0025 * seg.curve * moved, 1);
@@ -283,6 +297,7 @@ export class Race {
       c.dist += c.speed * dt;
       if (c.air > 0) { c.vy -= GRAVITY * this.phys.gravity * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY; }
+      else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       if (this.state !== "demo" && !c.finished && c.dist >= this.finishDist) { c.finished = true; this.order.push(c); }
 
       // bumping into each other
@@ -318,6 +333,13 @@ export class Race {
       p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1); p.airT = 0; this.hooks.sfx("jump");
     }
     for (const c of s.coins) {
+      if (c.ring) {
+        if (!c.taken && p.air > 300 && Math.abs(c.offset - p.offset) < 0.5 + (S.ringReach || 0)) {
+          c.taken = true; this.boostT = Math.max(this.boostT, 1.4); this.runStats.rings = (this.runStats.rings || 0) + 1;
+          this.popup("RING BOOST!", "#3cf2ff"); this.hooks.sfx("boost");
+        }
+        continue;
+      }
       const reach = c.h ? p.air > 120 : p.air < 200;
       if (!c.taken && reach && Math.abs(c.offset - p.offset) < CAR_W * 0.5 + 0.1 + S.magnet + (this.magnetT > 0 ? 1.4 : 0)) {
         c.taken = true; this.coins++; this.nitro = Math.min(1, this.nitro + 0.012); this.hooks.sfx("coin");
@@ -424,6 +446,7 @@ export class Race {
       for (const c of s.coins) {
         if (c.taken) continue;
         const cw = sc * COIN_W * F, cx = s.p1.screen.x + s.p1.screen.w * c.offset, cy = sy - cw * 0.9 - (c.h ? sc * c.h * F : 0);
+        if (c.ring) { this.clipped(ctx, s, sy, () => drawRing(ctx, cx, cy, cw * 3, t)); continue; }
         this.clipped(ctx, s, sy, () => drawCoin(ctx, cx, cy, cw, t));
       }
       if (s.boxes) for (const b of s.boxes) {
@@ -438,7 +461,7 @@ export class Race {
     ctx.globalAlpha = 1;
     const pw = CAR_W * ROAD_W * F / CAM_H;
     const bounce = Math.abs(p.offset) > 1 && p.speed > 100 ? (Math.random() - 0.5) * H * 0.012 : Math.sin(t * 20) * H * 0.002 * Math.min(1, p.speed / BASE_MAX);
-    const lift = p.air * 0.45 / CAM_H * F;
+    const lift = Math.min(p.air, 900) * 0.45 / CAM_H * F;
     if (p.air > 0) { ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(W / 2, H - H * 0.01, pw * 0.5 * (1 - Math.min(0.5, p.air / 1500)), pw * 0.06, 0, 0, 7); ctx.fill(); }
     const dustCol = th.grass[0];
     for (const q of this.parts) {
@@ -459,6 +482,10 @@ export class Race {
       }
       ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       if (Math.sin(t * 6) > -0.6) ctx.fillText("🤖", W / 2 + pw * 0.42, H - H * 0.02 - lift - pw * 0.55);
+    }
+    if (this.beamT > 0) {
+      ctx.globalAlpha = Math.min(1, this.beamT) * 0.45; ctx.fillStyle = "#9fe8ff";
+      quad(ctx, W / 2 - pw * 0.15, 0, W / 2 + pw * 0.15, 0, W / 2 + pw * 0.75, H, W / 2 - pw * 0.75, H); ctx.globalAlpha = 1;
     }
     if (this.shieldT > 0) {
       const a = this.shieldT < 1.5 ? (Math.sin(t * 30) > 0 ? 0.9 : 0.3) : 0.9;
@@ -567,6 +594,12 @@ export class Race {
     ctx.fillStyle = th.rumble[a];
     quad(ctx, x1 - w1 - r1, yb, x1 - w1 + 1, yb, x2 - w2 + 1, y2, x2 - w2 - r2, y2);
     quad(ctx, x1 + w1 + r1, yb, x1 + w1 - 1, yb, x2 + w2 - 1, y2, x2 + w2 + r2, y2);
+    if (s.gap) {
+      ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 - r1, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 - w2 - r2, y2);
+      ctx.fillStyle = "rgba(60,242,255,0.35)"; quad(ctx, x1 - w1 - r1, yb, x1 - w1 - r1 * 0.5, yb, x2 - w2 - r2 * 0.5, y2, x2 - w2 - r2, y2);
+      quad(ctx, x1 + w1 + r1 * 0.5, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 + w2 + r2 * 0.5, y2);
+      return;
+    }
     ctx.fillStyle = th.road[0];
     quad(ctx, x1 - w1, yb, x1 + w1, yb, x2 + w2, y2, x2 - w2, y2);
     if (s.finish) {

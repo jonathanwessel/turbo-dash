@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, CUPS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost } from "./data.js";
+import { CARS, CUPS, WORLDS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen } from "./data.js";
 import { drawCar } from "./draw.js";
 import { S, save, upsOf } from "./save.js";
 
@@ -32,9 +32,9 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     $("g-name").textContent = car.name;
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${Math.round(8 + 92 * Math.min(1, v))}%"></i></div>`).join("");
     const btn = $("g-action");
-    const cup = car.cup && CUPS.find(c => c.id === car.cup);
-    btn.className = "big-btn " + (driving ? "" : owned ? "go" : !cup && S.coins >= car.price ? "gold" : "");
-    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : cup ? `🏆 Win the ${cup.name}` : `🪙 ${car.price}`;
+    const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
+    btn.className = "big-btn " + (driving ? "" : owned ? "go" : !cup && !far && S.coins >= car.price ? "gold" : "");
+    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : cup ? `🏆 Win the ${cup.name}` : far ? `${w.icon} Reach the ${w.name}` : car.school ? "🚦 Driver School" : `🪙 ${car.price}`;
     document.querySelectorAll("[data-gtab]").forEach(b => b.classList.toggle("on", b.dataset.gtab === tab));
     $("g-ups").hidden = tab !== "up"; $("g-paint").hidden = tab !== "paint";
     if (tab === "up") renderUps(car, owned); else renderPaint(car, owned);
@@ -74,7 +74,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     const car = CARS[idx];
     if (S.car === car.id) { sfx("click"); return; }
     if (S.owned.includes(car.id)) { S.car = car.id; save(); sfx("click"); zoom = 1; render(); return; }
-    if (car.price == null) { sfx("nope"); return; }
+    if (car.price == null || (car.world && !worldOpen(S, car.world))) { sfx("nope"); return; }
     if (!spend(car.price)) return;
     S.owned.push(car.id); S.car = car.id; save();
     sfx("buy"); celebrate(); zoom = 1; render();

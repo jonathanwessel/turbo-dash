@@ -16,5 +16,7 @@ export function statsFor(car, u, lab = {}, skills = {}) {
     startNitro: 0.13 * L("headStart"),
     bumper: 0.04 * L("bumper"),
     jump: 1 + 0.08 * L("bigRamps"),
+    airCtl: 1 + 0.15 * L("thrusters"),
+    ringReach: 0.12 * L("ringMagnet"),
   };
 }

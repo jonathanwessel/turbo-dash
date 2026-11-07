@@ -15,7 +15,7 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0 }, claimed: [],
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0 }, claimed: [], world: "earth",
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
   mastery: {},         // "trackId:difficulty" -> wins there (Track Mastery stars)
@@ -57,6 +57,7 @@ export function port(d) {
   s.chips = Math.round(num(d.chips, 0, 0));
   s.restUntil = num(d.restUntil, 0, 0);
   s.autoOn = d.autoOn === true;
+  s.world = d.world === "moon" ? "moon" : "earth";
 
   // cars: always own Zippy; keep unknown ids (they may belong to a newer version) but never drive one
   s.owned = [...new Set(["zippy", ...arr(d.owned).filter(x => typeof x === "string")])];
