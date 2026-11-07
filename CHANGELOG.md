@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.2.0 — Feel the Speed 🏎️
+
+Racing looks and feels better on every track, plus a garage with every car, world previews and a tricky new bonus course.
+
+**How it feels**
+- **💨 Drafting:** drive right behind another car for a moment and you get a little extra speed ("DRAFT!").
+- **Friendlier bumps:** side by side, the other car gets nudged aside and wobbles; you only lose a little speed if
+  you steer into it. Catching a slower car from behind no longer stops you like a wall.
+- **Guardrails are solid:** on sharp curves the rail holds you on the road with sparks (a small slowdown). If you go
+  wide before the rail starts, it guides you back onto the road.
+- **Landings:** the car squashes down on a big landing and kicks up dust.
+
+**How it looks**
+- Skid marks and tire smoke on hard turns, a Turbo zoom with stronger speed lines, cars that lean into turns.
+- Far-away layers: snowy mountains, desert mesas, a sunset over purple hills (Autumn Forest) and the Piqua skyline.
+- **🚇 Tunnels** on Desert Dash, Snowy Peaks, Lava Mountain and the new night track, with an engine echo.
+- **🌃 Piqua Night Lights:** a new Earth track at night with lit windows, streetlamps and headlights (opens after
+  Candy Land).
+- **🧸 Toy Track World:** shinier plastic, a rim light, soft shadows under the toys, twinkling coins, and toy cars
+  whose bodies bounce on their wheels when they land.
+- **✨ Effects** (Settings): Auto, Full or Simple. Auto switches to Simple by itself if a tablet starts to struggle.
+
+**New things to do**
+- **▦ All cars** in the garage: every car by world, in color once it's yours, dimmed if you can buy it now, and a
+  mystery shape (with how to get it) for the rest. Tap one to see it.
+- **👀 World previews:** the 👀 chip on the race screen (or 👀 Try in the garage) gives one lap of a world that isn't
+  open yet, in that world's own car. No coins or prizes, and nothing is saved; the card says what opens it for real.
+- **🏙️ Downtown:** a bonus course outside the progression, always open. Squared-off city-block corners closed off
+  by dump trucks and ROAD CLOSED barriers. Steer early or BONK! It pays like any race but never changes a goal, cup or
+  rank gauge.
+
+**Tested:** a new physics test (drafting, bumps, rails, landings, skid marks, zoom, tunnels, Downtown, Toy Track World,
+whole bot races) now runs with the save test before every release; every screen checked at 7 sizes.
+
 ## v1.1.0 — Math School 🧮
 
 The Driver School's tickets now come from a math game he plays himself, instead of time a grown-up logs.

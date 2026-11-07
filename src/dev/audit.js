@@ -23,6 +23,7 @@ window.__audit = (rootSel) => {
       if (/(auto|scroll)/.test(s.overflowX + s.overflowY)) {
         scrolled = true; const ar = a.getBoundingClientRect();
         if (r.bottom < ar.top + 2 || r.top > ar.bottom - 2 || r.right < ar.left + 2 || r.left > ar.right - 2) hiddenByScroll = true;   // scrolled out of view
+        else r = { left: Math.max(r.left, ar.left), top: Math.max(r.top, ar.top), right: Math.min(r.right, ar.right), bottom: Math.min(r.bottom, ar.bottom) };   // only the part you can see
         break;
       }
       if (/hidden|clip/.test(s.overflowX + s.overflowY)) { const ar = a.getBoundingClientRect(); if (r.left < ar.left - 2 || r.right > ar.right + 2 || r.top < ar.top - 2 || r.bottom > ar.bottom + 2) clipped = name(a); }
@@ -100,7 +101,8 @@ window.__sweep = async (only) => {
   await go("s-garage:grid-end", async () => { const g = document.getElementById("g-grid"); g.scrollTop = g.scrollHeight; await wait(100); }, "#s-garage");
   document.getElementById("g-gridbtn").click();
   await go("s-tracks", hub("race"));
-  await go("s-tracks:bonus", async () => { const b = document.querySelector("[data-bonus]"); b?.scrollIntoView({ inline: "center" }); await wait(100); }, "#s-tracks");
+  await go("s-tracks:bonus", async () => { const l = document.getElementById("track-list"); l.scrollLeft = l.scrollWidth; l.scrollTop = l.scrollHeight; await wait(150); }, "#s-tracks");
+  document.getElementById("track-list").scrollLeft = document.getElementById("track-list").scrollTop = 0;
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");
   document.querySelector('[data-rtab="races"]').click();
   await go("s-trophies", hub("trophy"));

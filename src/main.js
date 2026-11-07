@@ -409,14 +409,14 @@ $("cup-list").addEventListener("click", e => {
 });
 function paintWorlds() {
   if (!worldOpen(S, S.world)) S.world = "earth";
-  // open worlds, then every world still to come as a 👀 preview chip (the next one shows what opens it)
-  const open = WORLDS.filter(w => !w.soon && worldOpen(S, w.id)), next = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
-  const list = [...open, ...WORLDS.filter(w => !w.soon && !open.includes(w))];
-  $("world-bar").hidden = list.length < 2;
-  $("world-bar").innerHTML = list.map(w => { const ok = open.includes(w);
-    return `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""} ${ok ? "" : "soon peek"}">${w.icon} ${ok || w === next ? w.name : ""}${ok ? "" : w === next ? ` 👀 ${S.rank < w.rank ? "Rank " + w.rank : "🔬"}` : " 👀"}</button>`; }).join("");
+  // the open worlds, then one 👀 chip with every world still to come (it opens a preview card)
+  const open = WORLDS.filter(w => !w.soon && worldOpen(S, w.id)), later = lockedWorlds();
+  $("world-bar").hidden = open.length + (later.length ? 1 : 0) < 2;
+  $("world-bar").innerHTML = open.map(w => `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""}">${w.icon} ${w.name}</button>`).join("")
+    + (later.length ? `<button data-peek class="peek" aria-label="Preview new worlds">👀 ${later.map(w => w.icon).join("")}</button>` : "");
 }
 $("world-bar").addEventListener("click", e => {
+  if (e.target.closest("[data-peek]")) { sfx("click"); openPreview(lockedWorlds()[0].id, "s-tracks"); return; }
   const b = e.target.closest("[data-world]"); if (!b) return;
   const w = WORLDS.find(x => x.id === b.dataset.world);
   if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); return; }
@@ -429,17 +429,21 @@ $("world-bar").addEventListener("click", e => {
 let previewRun = null, previewBack = "s-tracks";
 const UPS3 = { engine: 3, turbo: 3, tires: 3, magnet: 0 };
 const worldCar = w => CARS.find(c => c.world === w.id && c.price != null) || CARS.find(c => c.world === w.id) || CARS[0];
+const lockedWorlds = () => WORLDS.filter(w => !w.soon && !worldOpen(S, w.id));
 const howToOpen = w => [S.rank < w.rank ? `⭐ Rank ${w.rank}` : "", w.kit && !S.research[w.kit] ? `🔬 ${RESEARCH.find(r => r.id === w.kit)?.name || "the World Kit"}` : ""].filter(Boolean).join(" + ");
 function openPreview(worldId, back = "s-tracks") {
   const w = WORLDS.find(x => x.id === worldId); if (!w || w.soon) return;
   if (cupRun && cupRun.i > 0) { sfx("nope"); return; }   // never in the middle of a cup
   previewBack = back;
   const car = worldCar(w), track = TRACKS.find(t => t.world === w.id);
-  $("pv-icon").textContent = w.icon; $("pv-name").textContent = `Take a peek at ${w.name}!`;
-  $("pv-says").textContent = `One lap of ${track.name} in the ${car.name}. No coins or prizes in a preview.`;
+  $("pv-icon").textContent = w.icon; $("pv-name").textContent = `👀 ${w.name}`;
+  $("pv-says").textContent = `Take a peek! One lap of ${track.name} in the ${car.name}. No coins or prizes in a preview.`;
   $("pv-info").textContent = `${w.name} opens for real with ${howToOpen(w)}.`;
   const cv = $("pv-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("pv-go").onclick = () => { sfx("click"); startPreview(w); };
+  // ◀ ▶ flip through every world still to come
+  const L = lockedWorlds(), k = L.indexOf(w), step = d => () => { sfx("click"); openPreview(L[(k + d + L.length) % L.length].id, previewBack); };
+  $("pv-prev").hidden = $("pv-next").hidden = L.length < 2; $("pv-prev").onclick = step(-1); $("pv-next").onclick = step(1);
   show("s-preview");
 }
 function startPreview(w) {
@@ -480,8 +484,8 @@ function openTracks() {
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-ribbon">BONUS</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
-      <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div><div class="tc-hard">🔥 Tricky corners!</div>
+      <div class="tc-ribbon">🔥 BONUS · tricky!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);

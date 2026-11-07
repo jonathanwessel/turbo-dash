@@ -19,6 +19,10 @@ Start on Main Street in Piqua, Ohio, and race through sunny hills, beaches, farm
 peaks, candy land and lava mountains, then blast off to the Moon, dive under the sea, slide across a glacier, and
 finally shrink down into Toy Track World: real 3D plastic tracks with loop-the-loops and booster stations.
 
+🏙️ BONUS: DOWNTOWN
+A tricky city course with squared-off corners, dump trucks and ROAD CLOSED signs. And a 👀 preview lap of every
+world before it opens.
+
 🔬 SOMETHING TO COME BACK FOR
 Research upgrades in the Turbo Lab, open a daily gift, finish daily missions, grow the town as you rank up, wash your
 muddy car at the Car Wash, and fill the Museum with your trophies.

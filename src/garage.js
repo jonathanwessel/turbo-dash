@@ -44,7 +44,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
         html.push(`<button class="gc ${owned ? "mine" : ""} ${S.car === c.id ? "driving" : ""} ${buy && S.coins >= c.price ? "gold" : ""}" data-gi="${i}"><canvas width="160" height="95"></canvas><b>${owned || buy ? c.name + (c.ice ? " ❄️" : "") : "???"}</b><small>${howToGet(c, true)}</small></button>`);
       }
     }
-    $("g-grid").innerHTML = html.join("");
+    $("g-grid").innerHTML = html.join(""); $("g-grid").scrollTop = 0;
     for (const b of $("g-grid").querySelectorAll("[data-gi]")) {
       const c = CARS[+b.dataset.gi], cv = b.querySelector("canvas"), x = cv.getContext("2d"), owned = S.owned.includes(c.id);
       const buy = !owned && c.price != null && !(c.world && !worldOpen(S, c.world));

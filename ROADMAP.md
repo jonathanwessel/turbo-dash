@@ -140,6 +140,7 @@ the shiny, futuristic Toy Track World at the end. Each step keeps everything tha
 | 3 | 🌊 Deep Blue | light rays and caustic ripples, translucent bubbles, color fog in the distance |
 | 4 | ❄️ Glacier Rink | shiny ice reflections under cars, sparkle highlights, falling snow layers |
 | 5 | 🧸 Toy Track World (shipped early, v0.19) | the leap: a new 3D engine, glossy plastic, real lighting and shadows |
+| 5½ | v1.2 Feel the Speed (all tracks) | skid marks and smoke, Turbo zoom, far mountains/mesas/skyline, tunnels, night and headlights, a sunset, car lean and landing squash; glossier toys that bounce |
 | 6+ | later worlds | built in the 3D engine, each a step more detailed |
 
 Earth tracks get touched up along the way too (each release's Polish section), but never lose their simple style.
@@ -223,7 +224,12 @@ Driver School stops depending on a parent's log and earns its tickets from a mat
 - **A harder grown-up check** for Parent Corner (one a 6-year-old can't answer, such as a two-digit multiplication
   or a long press), since the old one was easy for him.
 
-### v1.2 – v1.6 More worlds
+### v1.2.0 🏎️ Feel the Speed (shipped)
+Drafting, friendlier bumps, solid guardrails, landing squash; skid marks, Turbo zoom, mountain/mesa/skyline layers,
+tunnels, a night track with headlights, a sunset; a glossier Toy Track World with bouncy toys; an Effects setting;
+the garage grid; world previews; the 🏙️ Downtown bonus course.
+
+### v1.3 – v1.7 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.
 

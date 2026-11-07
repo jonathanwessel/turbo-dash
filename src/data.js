@@ -91,7 +91,7 @@ export const UPGRADE_MAX = UPGRADE_COST.length;
 /* 🏙️ Bonus courses: always open, pay like any race, but live outside the progression (not in TRACKS, so no
    goal, cup, mission, Time Trial, trophy point or unlock ever depends on them). */
 export const BONUS_TRACKS = [
-  { id: "downtown", name: "Downtown Piqua", icon: "🏙️", diff: 2, laps: 2, seed: 515, theme: "downtown", world: "earth", bonus: true, layout: "blocks" },
+  { id: "downtown", name: "Downtown", icon: "🏙️", diff: 2, laps: 2, seed: 515, theme: "downtown", world: "earth", bonus: true, layout: "blocks" },
 ];
 export const BONUS_IDS = new Set(BONUS_TRACKS.map(t => t.id));
 export const TRACKS = [
