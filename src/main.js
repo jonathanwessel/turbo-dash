@@ -1,8 +1,9 @@
-import { CARS, TRACKS, THEMES, GOALS, PLAYER, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
 import { createLab } from "./lab.js";
+import { drawCar } from "./draw.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
@@ -64,7 +65,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -101,6 +102,12 @@ function refreshCoins(animate = true) {
   };
   coinAnim = requestAnimationFrame(tick);
 }
+function refreshChips() { $("chip-wrap").hidden = !S.chips; $("chip-n").textContent = S.chips; }
+let toastT = 0;
+function toast(text) { const t = $("toast"); t.textContent = text; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+/* One-time Brain Chip rewards (each key pays once). */
+function awardChip(key) { if (S.chipLog[key]) return false; S.chipLog[key] = 1; S.chips++; save(); refreshChips(); setTimeout(() => { toast("+1 🧠 Brain Chip!"); sfx("chest"); }, 900); return true; }
+function countUp(el, to, ms = 800) { const t0 = performance.now(); const step = now => { const p = Math.min(1, (now - t0) / ms); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
 function earn(n, x, y) { S.coins += n; save(); refreshCoins(); if (x != null) coinBurst(x, y); }
 function spend(n) {
   if (S.coins < n) { sfx("nope"); const b = $("coinbar"); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); return false; }
@@ -170,9 +177,37 @@ $("diff-bar").addEventListener("click", e => {
   if (d.rank && S.rank < d.rank) { sfx("nope"); b.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "none" }], { duration: 300 }); return; }
   sfx("click"); S.diff = d.id; save(); openTracks();
 });
+let raceTab = "races";
+const cupOpen = cup => S.rank >= Math.max(5, cup.rank || 0) && cup.tracks.every(id => unlocked(TRACKS.findIndex(t => t.id === id)));
+function paintCups() {
+  $("cup-list").innerHTML = CUPS.map(c => {
+    const open = cupOpen(c), best = S.cups[c.id + ":" + S.diff], car = CARS.find(x => x.id === c.car), need = Math.max(5, c.rank || 0);
+    return `<button class="cup-card ${open ? "" : "locked"}" data-cup="${c.id}" style="border-color:${c.color}">
+      <div class="cc-cup" style="filter:drop-shadow(0 0 10px ${c.color})">🏆</div><div class="cc-name" style="color:${c.color}">${c.name}</div>
+      <div class="cc-tracks">${c.tracks.map(id => TRACKS.find(t => t.id === id).icon).join("")}</div>
+      <div class="cc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
+      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " : "Win: 🚗 "}${car.name}</div>
+      ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < need ? "Rank " + need : "Open all 3 tracks"}</small></div>`}</button>`;
+  }).join("");
+}
+function paintRaceTabs() {
+  document.querySelectorAll("[data-rtab]").forEach(b => { b.classList.toggle("on", b.dataset.rtab === raceTab); if (b.dataset.rtab === "cups") b.classList.toggle("locked", S.rank < 5); });
+  $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups";
+  if (raceTab === "cups") paintCups();
+}
+document.querySelectorAll("[data-rtab]").forEach(b => b.onclick = () => {
+  if (b.dataset.rtab === "cups" && S.rank < 5) { sfx("nope"); toast("🔒 Cups open at Rank 5"); return; }
+  sfx("click"); raceTab = b.dataset.rtab; paintRaceTabs();
+});
+$("cup-list").addEventListener("click", e => {
+  const c = e.target.closest("[data-cup]"); if (!c) return;
+  const cup = CUPS.find(x => x.id === c.dataset.cup);
+  if (!cupOpen(cup)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
+  sfx("click"); startCup(cup);
+});
 function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
-  paintDiffBar();
+  paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   list.innerHTML = TRACKS.map((t, i) => {
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
@@ -190,8 +225,52 @@ $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
   const i = +c.dataset.i;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
-  sfx("click"); startRace(TRACKS[i]);
+  sfx("click"); cupRun = null; startRace(TRACKS[i]);
 });
+
+/* ---------- cups ---------- */
+let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
+function startCup(cup) { cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
+const racerName = k => k === 0 ? PLAYER : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
+const cupOrder = () => [0, 1, 2, 3, 4, 5].sort((a, b) => cupRun.pts[b] - cupRun.pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));
+function paintCupResult() {
+  const c = cupRun, order = cupOrder();
+  $("r-cup").hidden = false;
+  $("r-cup").innerHTML = `<div class="rc-head">🏆 ${c.cup.name} — race ${c.i + 1} of 3</div>
+    <div class="rc-map">${c.cup.tracks.map((id, j) => `<span class="${j < c.i ? "done" : j === c.i ? "done now" : ""}">${TRACKS.find(t => t.id === id).icon}</span>`).join("")}</div>
+    <div class="standings">${order.map((k, n) => `<span class="${k === 0 ? "me" : ""}" style="border-color:${racerColor(k)}">${n + 1}. ${racerName(k)} ${c.pts[k]}</span>`).join("")}</div>`;
+}
+function showCupEnd() {
+  const c = cupRun, order = cupOrder(), place = order.indexOf(0) + 1, key = c.cup.id + ":" + c.diff;
+  const coins = Math.round(c.cup.bonus * diffOf(c.diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] * (1 + 0.05 * (S.research.coinBoost || 0)));
+  S.cups[key] = Math.min(S.cups[key] || 99, place); S.coins += coins;
+  const prizes = [`🪙 ${coins}`];
+  if (place === 1) {
+    const car = CARS.find(x => x.id === c.cup.car);
+    if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); prizes.push(`🚗 ${car.name}!`); }
+    if (awardChip("cup:" + key)) prizes.push("🧠 Brain Chip");
+  }
+  save(); cupRun = null;
+  $("ce-title").textContent = c.cup.name + "!";
+  $("ce-place").textContent = place <= 3 ? `${place}${suffix(place)} place, ${PLAYER}!` : `${place}${suffix(place)} — try again!`;
+  $("ce-prizes").innerHTML = prizes.map(p => `<span>${p}</span>`).join("");
+  drawPodium(order);
+  show("s-cupend"); refreshCoins(); sfx(place <= 3 ? "win" : "lose"); if (place <= 3) confetti(place === 1 ? 220 : 100);
+}
+function drawPodium(order) {
+  const cv = $("podium"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  const steps = [{ k: order[1], x: W * 0.22, h: 70, n: 2, c: "#c0c8d6" }, { k: order[0], x: W * 0.5, h: 105, n: 1, c: "#ffd400" }, { k: order[2], x: W * 0.78, h: 45, n: 3, c: "#e09a52" }];
+  for (const s of steps) {
+    ctx.fillStyle = s.c; ctx.fillRect(s.x - 80, H - s.h, 160, s.h);
+    ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(s.x - 80, H - s.h, 160, 8);
+    ctx.fillStyle = "#4a2600"; ctx.font = "900 38px system-ui"; ctx.textAlign = "center"; ctx.fillText(s.n, s.x, H - s.h / 2 + 14);
+    const def = s.k === 0 ? lookOf(CARS.find(c => c.id === S.car) || CARS[0]) : RIVALS[s.k - 1];
+    drawCar(ctx, s.x, H - s.h - 4, 120, def, { t: 0 });
+    ctx.fillStyle = "#fff"; ctx.font = "900 20px system-ui"; ctx.fillText(racerName(s.k), s.x, H - s.h - 100);
+  }
+}
+$("ce-ok").onclick = () => { sfx("click"); menuDemo(); openTracks(); };
 
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false;
@@ -204,12 +283,14 @@ function showResult(r) {
   S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
   S.coins += prize + r.coins;
   const goalsBefore = claimable().length;
+  if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
+  if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams;
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
   $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} PLACE!` : `${r.place}${suffix(r.place)} — Good try!`;
-  $("r-prize").textContent = prize; $("r-road").textContent = r.coins;
+  countUp($("r-prize"), prize); countUp($("r-road"), r.coins);
   const cheers = r.place === 1 ? ["Way to go, " + PLAYER + "!", "You're the champ, " + PLAYER + "!", "Super fast, " + PLAYER + "!"]
     : r.place <= 3 ? ["Great driving, " + PLAYER + "!", "So close, " + PLAYER + "!"] : ["Upgrade your car and try again, " + PLAYER + "!", "Keep going, " + PLAYER + "!"];
   $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
@@ -222,7 +303,9 @@ function showResult(r) {
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
   $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a treasure chest!";
-  $("btn-next").hidden = !nowOpen;
+  $("r-cup").hidden = true;
+  if (cupRun) { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = cupRun.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
+  else { $("btn-next").hidden = !nowOpen; $("btn-again").hidden = false; $("btn-next").textContent = "Next ▶"; }
   show("s-result"); refreshCoins();
   sfx(r.place <= 3 ? "win" : "lose");
   if (r.place <= 3) confetti(r.place === 1 ? 160 : 80);
@@ -238,8 +321,12 @@ document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () 
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
 $("btn-again").onclick = () => { sfx("click"); startRace(currentTrack); };
-$("btn-next").onclick = () => { sfx("click"); startRace(TRACKS[TRACKS.indexOf(currentTrack) + 1]); };
-$("btn-home").onclick = () => { sfx("click"); menuDemo(); show("s-hub"); };
+$("btn-next").onclick = () => {
+  sfx("click");
+  if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
+  startRace(TRACKS[TRACKS.indexOf(currentTrack) + 1]);
+};
+$("btn-home").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -260,6 +347,7 @@ $("gift-take").onclick = () => {
   if (!giftReady()) { show("s-hub"); return; }
   const g = giftInfo();
   S.lastGift = dayKey(new Date()); S.giftStreak = g.streak;
+  if (g.streak % 7 === 0) awardChip("gift7:" + S.lastGift);
   const r = $("gift-take").getBoundingClientRect();
   earn(g.amount, r.left + r.width / 2, r.top);
   sfx("buy"); confetti(90);
@@ -314,6 +402,7 @@ $("rk-up").onclick = () => {
   if (!rankReady()) return;
   S.rank++;
   const reward = 200 * S.rank; S.coins += reward; save();
+  if (S.rank >= 5) awardChip("rank:" + S.rank);
   $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank} · ${rankTitle(S.rank)}`;
   const un = RANK_UNLOCKS[S.rank];
   $("ru-unlock").textContent = un ? `${un.icon} ${un.text} unlocked!` : "";
@@ -366,7 +455,7 @@ function pause() { if (mode !== "race") return; paused = true; engineOff(); show
 $("btn-play").onclick = () => { initAudio(); goFullscreen(); sfx("click"); goHub(); };
 $("btn-pause").onclick = () => { sfx("click"); pause(); };
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
-$("btn-quit").onclick = () => { sfx("click"); menuDemo(); show("s-hub"); };
+$("btn-quit").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
 
 /* ---------- parent corner: tap the version label 5 times ---------- */
@@ -428,9 +517,9 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
-if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
-refreshCoins(false);
+refreshCoins(false); refreshChips();
 menuDemo();
 show("s-title");
 requestAnimationFrame(frame);

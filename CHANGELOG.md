@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.7.0 — Cups & Brain Chips
+
+- **Cups open at Rank 5** (Race Track → 🏆 Cups). Three races in a row with points for every place
+  (10, 8, 6, 4, 2, 1). Most points wins the cup.
+  - **Green Cup** (Sunny Hills, Desert Dash, Snowy Peaks) → wins the **Green Machine**.
+  - **Gold Cup** (Candy Land, Lava Mountain, Space Road) → wins **Gold Rush**.
+  - **Champion Cup** (Desert Dash, Lava Mountain, Space Road, Rank 7) → wins **Champion X**, the fastest car yet.
+  - Cup cars can't be bought, only won. Cup trophies are worth extra trophy points for ranking up.
+- **🧠 Brain Chips**: rare chips for big moments. You get one for winning a cup (once per difficulty), your first
+  🔥 Hard win on each track, every rank-up from Rank 5, and every 7-day gift streak. They'll power Auto Steer
+  research later. The chip count shows next to your coins.
+- The rivals have names now: Rosie, Splash, Sunny, Rocky and Snowball.
+- New goals: win a cup, win all three cups, collect 3 Brain Chips.
+
+**Polish**
+- A start/finish arch with a checkered banner over the road.
+- A podium with the top three cars at the end of every cup, and a cup progress map between races.
+- Prize and road-coin numbers count up on the results screen.
+
 ## v0.6.0 — Turbo Lab
 
 - **The Turbo Lab opens at Rank 2.** Professor Bolt researches boosts that help **every** car. Research costs

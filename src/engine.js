@@ -237,7 +237,10 @@ export class Race {
 
     if (racing && p.dist >= this.finishDist) {
       p.finished = true; this.state = "done"; this.order.push(p);
-      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats });
+      // everyone's place: finishers in order, then the rest by how far they got. 0 = player, 1-5 = rivals
+      const rest = this.rivals.filter(c => !c.finished).sort((a, b) => b.dist - a.dist);
+      const standings = [...this.order, ...rest].map(r => r === p ? 0 : this.rivals.indexOf(r) + 1);
+      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats, standings });
     }
     h.engine(p.speed / BASE_MAX, fast);
   }
@@ -334,6 +337,7 @@ export class Race {
       const sc = s.p1.screen.scale, sy = s.p1.screen.y;
       ctx.globalAlpha = n > DRAW_DIST * 0.65 ? Math.max(0, (DRAW_DIST - n) / (DRAW_DIST * 0.35)) : 1;
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
+      if (s.index === START) this.drawArch(ctx, s, F);
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
@@ -397,6 +401,19 @@ export class Race {
   }
 
   // The ramp is a striped slope from the road surface up to RAMP_H at its far end.
+  // Start/finish arch: two poles and a checkered banner over the road.
+  drawArch(ctx, s, F) {
+    const sc = s.p1.screen.scale, x = s.p1.screen.x, w = s.p1.screen.w, y = s.p1.screen.y;
+    const pw = Math.max(2, sc * 110 * F), ph = sc * 1500 * F, bh = sc * 320 * F, L = x - w * 1.12, R = x + w * 1.12;
+    if (R < 0 || L > this.canvas.width || pw < 1) return;
+    this.clipped(ctx, s, y, () => {
+      ctx.fillStyle = "#e8262b"; ctx.fillRect(L - pw / 2, y - ph, pw, ph); ctx.fillRect(R - pw / 2, y - ph, pw, ph);
+      ctx.fillStyle = "#ffd400"; ctx.fillRect(L - pw / 2, y - ph - bh * 0.1, R - L + pw, bh * 1.2);
+      const cols = 16, cw = (R - L) / cols;
+      for (let i = 0; i < cols; i++) for (let j = 0; j < 2; j++) { ctx.fillStyle = (i + j) % 2 ? "#111" : "#fff"; ctx.fillRect(L + i * cw, y - ph + j * bh / 2, cw + 0.5, bh / 2 + 0.5); }
+    });
+  }
+
   drawRamp(ctx, s, e, F) {
     if (s.p1.camera.z <= CAM_DEPTH || e.p2.camera.z <= CAM_DEPTH) return;
     const x1 = s.p1.screen.x, y1 = s.p1.screen.y, w1 = s.p1.screen.w;

@@ -55,7 +55,7 @@ function journey(diff = "normal", maxRaces = 500) {
     // spend: next car first, otherwise the cheapest upgrade on the current car
     for (let bought = true; bought;) {
       bought = false;
-      const next = CARS.find(c => !st.owned.includes(c.id));
+      const next = CARS.find(c => c.price != null && !st.owned.includes(c.id));
       if (next && st.coins >= next.price) {
         st.coins -= next.price; st.owned.push(next.id); st.car = next.id; st.ups[next.id] = lvl(0); bought = true;
         note(n, `bought ${next.name}`);

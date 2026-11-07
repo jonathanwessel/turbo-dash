@@ -7,16 +7,28 @@ export const CARS = [
   { id: "shark",   name: "Shark Fin",    price: 3500, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
   { id: "rocket",  name: "Rocket Rex",   price: 6000, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
   { id: "galaxy",  name: "Galaxy GT",    price: 10000, body: "#7a2cff", accent: "#3cf2ff", type: "galaxy",  speed: 0.27, accel: 0.25, grip: 0.25 },
+  // cup prize cars: can't be bought, only won
+  { id: "greenMachine", name: "Green Machine", price: null, cup: "green", body: "#39d353", accent: "#ffffff", type: "sport", speed: 0.12, accel: 0.15, grip: 0.15 },
+  { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
+  { id: "champX", name: "Champion X", price: null, cup: "champ", body: "#1c1c24", accent: "#ffd400", type: "galaxy", speed: 0.32, accel: 0.3, grip: 0.3 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
 export const RIVALS = [
-  { body: "#ff3fa4", accent: "#ffffff", type: "sport" },
-  { body: "#14c8c8", accent: "#003b5c", type: "racer" },
-  { body: "#ffcc00", accent: "#222222", type: "racer" },
-  { body: "#8a5a2b", accent: "#ffd27f", type: "monster" },
-  { body: "#ffffff", accent: "#e8262b", type: "sport" },
+  { name: "Rosie", body: "#ff3fa4", accent: "#ffffff", type: "sport" },
+  { name: "Splash", body: "#14c8c8", accent: "#003b5c", type: "racer" },
+  { name: "Sunny", body: "#ffcc00", accent: "#222222", type: "racer" },
+  { name: "Rocky", body: "#8a5a2b", accent: "#ffd27f", type: "monster" },
+  { name: "Snowball", body: "#ffffff", accent: "#e8262b", type: "sport" },
 ];
+
+/* ---------- Cups: three races, points for every place, a prize car for the winner ---------- */
+export const CUPS = [
+  { id: "green", name: "Green Cup", color: "#5be36a", tracks: ["sunny", "desert", "snow"], car: "greenMachine", bonus: 500 },
+  { id: "gold", name: "Gold Cup", color: "#ffd400", tracks: ["candy", "lava", "space"], car: "goldRush", bonus: 1500 },
+  { id: "champ", name: "Champion Cup", color: "#ff3fe5", tracks: ["desert", "lava", "space"], car: "champX", bonus: 3000, rank: 7 },
+];
+export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
 
 export const UPGRADES = [
   { id: "engine", name: "Engine", icon: "🔥", desc: "Go faster" },
@@ -114,6 +126,9 @@ export const GOALS = [
   { id: "lab10", icon: "🔬", name: "Finish 10 research levels", goal: 10, reward: 500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
   { id: "lab30", icon: "🔬", name: "Finish 30 research levels", goal: 30, reward: 1500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
   { id: "rank5", icon: "⭐", name: "Reach Rank 5", goal: 5, reward: 600, have: S => S.rank },
+  { id: "cup1", icon: "🏆", name: "Win a cup", goal: 1, reward: 500, have: S => Object.values(S.cups).filter(p => p === 1).length },
+  { id: "cupall", icon: "🏆", name: "Win all three cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
+  { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => S.chips },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
@@ -136,11 +151,11 @@ export const RANK_UNLOCKS = {
   9: { icon: "🧪", text: "3rd lab bench" },
   10: { icon: "🧠", text: "Auto Steer research" },
 };
-const MEDAL_PTS = [0, 3, 2, 1];
+const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 export const FRONTS = [
   { id: "wins", icon: "🏁", name: "Wins", hint: "Win races!", have: S => S.wins },
   { id: "trophies", icon: "🏆", name: "Trophies", hint: "Get medals on every track and claim goals!",
-    have: S => Object.values(S.bestD).reduce((a, p) => a + (MEDAL_PTS[p] || 0), 0) + S.claimed.length },
+    have: S => Object.values(S.bestD).reduce((a, p) => a + (MEDAL_PTS[p] || 0), 0) + Object.values(S.cups).reduce((a, p) => a + (CUP_PTS[p] || 0), 0) + S.claimed.length },
   { id: "garage", icon: "🔧", name: "Garage", hint: "Buy cars and upgrades!",
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",

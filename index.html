@@ -51,6 +51,7 @@
         <div>Road coins <b>🪙 <span id="r-road">0</span></b></div>
       </div>
       <div id="r-unlock" class="r-unlock" hidden></div>
+      <div id="r-cup" class="r-cup" hidden></div>
       <div id="r-goal" class="r-goal" hidden>⭐ Goal done! Get your prize in Trophies!</div>
       <div id="r-chests" class="r-chests">
         <div class="r-pick" id="r-pick">Pick a treasure chest!</div>
@@ -89,6 +90,16 @@
     </div>
   </section>
 
+  <section id="s-cupend" class="screen dim" hidden>
+    <div class="card cupend">
+      <h1 id="ce-title">Green Cup!</h1>
+      <canvas id="podium" width="520" height="250"></canvas>
+      <div class="ce-place" id="ce-place"></div>
+      <div class="ce-prizes" id="ce-prizes"></div>
+      <div class="row"><button id="ce-ok" class="big-btn gold">Yay!</button></div>
+    </div>
+  </section>
+
   <section id="s-rankup" class="screen dim" hidden>
     <div class="card gift">
       <div class="rank-star big"><span id="ru-num">2</span></div>
@@ -103,7 +114,9 @@
   <section id="s-tracks" class="screen panel" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Pick a track</h2></div>
     <div class="diff-bar" id="diff-bar"></div>
+    <div class="race-tabs"><button data-rtab="races" class="on">🏁 Races</button><button data-rtab="cups">🏆 Cups</button></div>
     <div class="track-list" id="track-list"></div>
+    <div class="track-list cup-list" id="cup-list" hidden></div>
   </section>
 
   <section id="s-garage" class="screen panel" hidden>
@@ -176,7 +189,8 @@
     </div>
   </section>
 
-  <div id="coinbar" class="coinbar" hidden>🪙 <span id="coin-n">0</span></div>
+  <div id="coinbar" class="coinbar" hidden>🪙 <span id="coin-n">0</span><span id="chip-wrap" hidden> · 🧠 <span id="chip-n">0</span></span></div>
+  <div id="toast" class="toast" hidden></div>
   <div id="topright" class="topright" hidden><button id="btn-music" class="icon-btn" aria-label="Music">🎵</button><button id="btn-sfx" class="icon-btn" aria-label="Sound">🔊</button><button id="btn-full" class="icon-btn" aria-label="Full screen">⛶</button></div>
   <canvas id="fx"></canvas>
   <button id="update" class="update" hidden>✨ New version! Tap to update <small id="upd-v"></small></button>

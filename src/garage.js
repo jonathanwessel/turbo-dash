@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost } from "./data.js";
+import { CARS, CUPS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost } from "./data.js";
 import { drawCar } from "./draw.js";
 import { S, save, upsOf } from "./save.js";
 
@@ -32,8 +32,9 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     $("g-name").textContent = car.name;
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${Math.round(8 + 92 * Math.min(1, v))}%"></i></div>`).join("");
     const btn = $("g-action");
-    btn.className = "big-btn " + (driving ? "" : owned ? "go" : S.coins >= car.price ? "gold" : "");
-    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : `🪙 ${car.price}`;
+    const cup = car.cup && CUPS.find(c => c.id === car.cup);
+    btn.className = "big-btn " + (driving ? "" : owned ? "go" : !cup && S.coins >= car.price ? "gold" : "");
+    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : cup ? `🏆 Win the ${cup.name}` : `🪙 ${car.price}`;
     document.querySelectorAll("[data-gtab]").forEach(b => b.classList.toggle("on", b.dataset.gtab === tab));
     $("g-ups").hidden = tab !== "up"; $("g-paint").hidden = tab !== "paint";
     if (tab === "up") renderUps(car, owned); else renderPaint(car, owned);
@@ -73,6 +74,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     const car = CARS[idx];
     if (S.car === car.id) { sfx("click"); return; }
     if (S.owned.includes(car.id)) { S.car = car.id; save(); sfx("click"); zoom = 1; render(); return; }
+    if (car.price == null) { sfx("nope"); return; }
     if (!spend(car.price)) return;
     S.owned.push(car.id); S.car = car.id; save();
     sfx("buy"); celebrate(); zoom = 1; render();
@@ -115,6 +117,6 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.fillText("🔒", W - 8, H * 0.2); }
   }
 
-  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
+  const affordable = () => CARS.some(c => c.price != null && !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
   return { open, render, draw, affordable };
 }
