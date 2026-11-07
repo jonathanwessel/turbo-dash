@@ -1,10 +1,10 @@
 # Publishes the game to GitHub Pages (https://jonathanwessel.github.io/turbo-dash/)
-# on every push to master, or manually from the Actions tab.
+# on every push to main, or manually from the Actions tab.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
