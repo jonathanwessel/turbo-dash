@@ -575,3 +575,90 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .diff-bar button small { font-size: .8em; letter-spacing: -2px; }
 .track-card .tc-name { -webkit-text-stroke: 1.5px rgba(0,0,0,.55); paint-order: stroke fill; }
 .track-card .tc-lock small { font-size: clamp(18px, 4.4vmin, 24px); font-weight: 900; }
+
+/* 🎁 treasure chests keep one size; an opened chest shows its coin and number stacked inside (no spilling) */
+.r-chests { --cs: clamp(64px, 17vmin, 118px); }
+.chest { width: var(--cs); height: var(--cs); font-size: calc(var(--cs) * 0.62); line-height: 1; padding: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.chest.open, .chest.other { font-size: calc(var(--cs) * 0.26); }
+.chest i { font-style: normal; font-size: 1.25em; }
+.chest b { font-weight: 900; }
+.chest.other { transform: scale(.82); }
+/* short landscape screens (phones, wide tablets): a more compact result card */
+@media (max-height: 560px) and (orientation: landscape) {
+  .result .trophy { font-size: clamp(44px, 13vmin, 80px); }
+  .card.result h1 { font-size: clamp(26px, 8vmin, 48px); margin: 0 0 2px; }
+  .result .r-sub { margin: 0 0 2px; }
+  .result .r-lines { margin-bottom: 2px; }
+  .result .r-pick { margin-bottom: 2px; }
+  .r-chests { --cs: clamp(56px, 15vmin, 96px); }
+  #r-btns { margin-top: 6px; }
+  #r-btns .big-btn { font-size: clamp(20px, 5.4vmin, 32px); padding: .35em 1em; }
+}
+#s-gift.later .r-coins { opacity: .55; }
+
+/* 📐 v0.20.1 layout pass: nothing may overlap or fall off the screen, even on short, wide tablets */
+.screen.panel { overflow-y: auto; overscroll-behavior: contain; }
+.shelf { align-content: start; overflow-y: auto; touch-action: pan-y; }
+.track-card > *, .cup-card > * { flex-shrink: 1; min-height: 0; }
+.track-card .tc-best:empty { display: none; }
+@media (max-height: 560px) and (orientation: landscape) {
+  .screen.panel { gap: 4px; }
+  .screen-head { min-height: 44px; }
+  .screen-head h2 { font-size: clamp(22px, 6.5vmin, 34px); }
+  /* title: a smaller logo so it never runs into "Made for Carter" */
+  #s-title .logo { font-size: min(12vw, 17vh); }
+  #s-title .credits .made { font-size: min(5.5vw, 7vh); }
+  #s-title .credits .by { font-size: min(3.4vw, 4.2vh); }
+  #s-title .play-btn { font-size: min(8vw, 10.5vh); }
+  /* race screen: one tight band of buttons, so the track cards have room */
+  .track-top { gap: 4px 10px; }
+  .track-top .world-bar { flex-basis: auto; }
+  .world-bar button, .race-tabs button, .diff-bar button { font-size: clamp(13px, 3.8vmin, 18px); padding: 3px 12px; border-width: 2px; }
+  .diff-bar button small { display: inline; margin-left: 5px; }
+  .track-list { padding: 4px 10px 12px; gap: 12px; }
+  .track-card, .cup-card { padding: 8px 8px; border-radius: 20px; }
+  .track-card .tc-icon, .cup-card .cc-cup { font-size: clamp(36px, 11vmin, 64px); }
+  .track-card .tc-name, .cup-card .cc-name { font-size: clamp(15px, 4.4vmin, 22px); }
+  .track-card .tc-best { font-size: clamp(20px, 6vmin, 30px); }
+  .track-card .tc-prize { font-size: clamp(14px, 3.8vmin, 18px); }
+  .track-card .tc-lock { font-size: clamp(34px, 10vmin, 54px); }
+  /* rank: five smaller gauges in one row */
+  .rank-top { gap: 10px; }
+  .rank-star { width: 64px; height: 64px; font-size: 26px; }
+  .rk-title { font-size: clamp(22px, 6vmin, 32px); }
+  .fronts { gap: 8px; }
+  .front { width: clamp(104px, 17.5vw, 180px); padding: 5px 6px; border-width: 3px; border-radius: 16px; }
+  .front .fi { font-size: clamp(24px, 6.5vmin, 38px); }
+  .front b { font-size: clamp(14px, 3.8vmin, 18px); }
+  .front .gauge { height: 16px; margin: 4px 0 2px; }
+  .front small { font-size: 13px; }
+  /* garage: a smaller car picture so the buttons fit under it */
+  #g-car { width: min(100%, 40vmin, 420px); }
+  .g-left { gap: 3px; }
+  /* trophies: smaller shelf tiles */
+  .shelf div b { font-size: clamp(22px, 6vmin, 34px); }
+  .goal { padding: 4px 8px; }
+  .goal .gi { font-size: 24px; }
+}
+.proj .pi { margin-bottom: 4px; }
+.proj.big .pi, .proj.teaser.big .pi { margin-bottom: 8px; }
+.result .trophy { margin-bottom: 6px; }
+#s-garage .garage { margin-top: 4px; }
+@media (max-height: 560px) and (orientation: landscape) {
+  #s-title { padding-top: max(5vh, env(safe-area-inset-top)); }
+  #s-title .title-hero { margin-top: 3vh; }
+  .result .trophy { margin-bottom: 4px; animation: none; }
+}
+/* emoji are taller than their line box: give big icons room so they never touch the label under them */
+.front .fi, .skill .si, .proj .pi, .trophy, .lu-zap { line-height: 1.25; }
+.trophy { margin-bottom: 4px; }
+#s-title .logo { font-size: min(14vw, 20vh); }
+#s-title .title-hero { padding-top: 2vh; }
+/* centered content that's taller than the screen must not slide up under the header */
+.set-grid { align-content: safe center; }
+.screen { justify-content: safe center; }
+.screen.panel { justify-content: flex-start; }
+@media (max-height: 420px) and (orientation: landscape) {
+  .set-grid { margin-top: 10px; gap: 8px; }
+  .screen-head .back { transform: scale(.85); transform-origin: top right; }
+}

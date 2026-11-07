@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.20.1 — Every Screen Fits
+
+Fixes for things Carter's dad spotted on the tablet, and a check of every screen at 8 screen sizes.
+- **Result screen:** the treasure chests no longer spill their numbers into the buttons. Opened chests show the
+  coin and number neatly inside, and the line reads "🎁 Treasure: 🪙164!" so it's clear what it is. On short,
+  wide screens the card is more compact.
+- **Racer Rank:** the hint no longer says "Finish research" when Research is already full (a 0 / 0 gauge counted
+  as empty). It now points at the gauge that really needs filling, like "🏁 Win races!".
+- **Gifts building:** it always opens now. After today's gift is collected it says "Come back tomorrow!" and shows
+  tomorrow's gift, instead of quietly doing nothing.
+- **Short, wide screens** (phones and wide tablets in landscape):
+  - The race screen's buttons fit in a tighter band, so the track cards (and their prizes) fit.
+  - The Trophy Room's top shelf rows could be pushed above the screen where they couldn't be reached; the shelf
+    now starts at the top and scrolls.
+  - The Racer Rank gauges, the License gauge and the hint fit on the screen.
+  - The garage car picture is smaller, so the Drive button fits.
+  - The title logo no longer runs into "Made for Carter".
+- Big emoji icons get room so they never touch the words under them (rank gauges, school skills, lab, gifts).
+- Any screen taller than the display can now scroll, so nothing is ever out of reach.
+- **New quality check:** a layout checker (dev builds only) that finds overlapping, spilling and off-screen text
+  and buttons on every screen. Checked at 740×360, 915×412, 1000×448, 1024×600, 1280×800, 1920×1080 and
+  800×1280 (portrait).
+
 ## v0.20.0 — Smoother Racing & a Simpler Race Screen
 
 A tune-up of the classic engine (Earth, Moon, Deep Blue, Glacier Rink) after a full review of its physics and

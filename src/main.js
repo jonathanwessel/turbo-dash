@@ -504,11 +504,11 @@ function showResult(r) {
 document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () => {
   if (chestDone) return; chestDone = true;
   const i = +c.dataset.i;
-  document.querySelectorAll(".chest").forEach((o, j) => { o.className = "chest " + (j === i ? "open" : "other"); o.textContent = "🪙" + chestValues[j]; });
+  document.querySelectorAll(".chest").forEach((o, j) => { o.className = "chest " + (j === i ? "open" : "other"); o.innerHTML = `<i>🪙</i><b>${chestValues[j]}</b>`; });
   sfx("chest");
   const rect = c.getBoundingClientRect();
   earn(chestValues[i], rect.left + rect.width / 2, rect.top + rect.height / 2);
-  $("r-pick").textContent = `You got 🪙${chestValues[i]}!`;
+  $("r-pick").textContent = `🎁 Treasure: 🪙${chestValues[i]}!`;
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
 $("btn-again").onclick = () => { sfx("click"); if (lastBoss) bossRun = lastBoss; trialRun = lastTrial; startRace(currentTrack); };
@@ -528,11 +528,21 @@ function giftInfo() {
   return { streak, amount: 100 + 50 * Math.min(streak, 7) };
 }
 function openGift() {
-  if (!giftReady()) { sfx("nope"); return; }
-  const g = giftInfo();
-  $("gift-day").textContent = `Day ${g.streak}` + (g.streak > 1 ? " in a row! 🔥" : "");
-  $("gift-amt").textContent = g.amount;
-  show("s-gift"); sfx("chest");
+  const ready = giftReady();
+  $("s-gift").classList.toggle("later", !ready);
+  if (ready) {
+    const g = giftInfo();
+    $("gift-icon").textContent = "🎁"; $("gift-head").textContent = "Free Gift!";
+    $("gift-day").textContent = `Day ${g.streak}` + (g.streak > 1 ? " in a row! 🔥" : "");
+    $("gift-amt").textContent = g.amount; $("gift-take").textContent = "Collect!";
+    show("s-gift"); sfx("chest"); return;
+  }
+  // today's gift is already opened: show tomorrow's so he knows to come back
+  const next = 100 + 50 * Math.min((S.giftStreak || 0) + 1, 7);
+  $("gift-icon").textContent = "💤"; $("gift-head").textContent = "Come back tomorrow!";
+  $("gift-day").textContent = `Tomorrow: Day ${(S.giftStreak || 0) + 1} 🔥`;
+  $("gift-amt").textContent = next; $("gift-take").textContent = "OK!";
+  show("s-gift"); sfx("click");
 }
 $("gift-take").onclick = () => {
   if (!giftReady()) { show("s-hub"); return; }
@@ -579,14 +589,15 @@ function openRank() {
   $("rk-num").textContent = S.rank; $("rk-title").textContent = rankTitle(S.rank);
   const un = RANK_UNLOCKS[S.rank + 1];
   $("rk-next").textContent = maxed ? "Top rank for now! More ranks are coming in new versions." : un ? `Next rank opens: ${un.icon} ${un.text}` : `Next: Rank ${S.rank + 1}`;
-  const lowest = fr.reduce((a, f) => (f.have / Math.max(1, f.need) < a.have / Math.max(1, a.need) ? f : a), fr[0]);
+  const todo = fr.filter(f => f.need > 0 && f.have < f.need);   // gauges still to fill (a 0 / 0 gauge is already full)
+  const lowest = todo.length ? todo.reduce((a, f) => (f.have / f.need < a.have / a.need ? f : a)) : null;
   $("fronts").innerHTML = fr.map(f => {
     const full = f.have >= f.need, pct = f.need ? Math.min(100, Math.round(100 * f.have / f.need)) : 100;
     return `<div class="front ${full ? "full" : f === lowest && !maxed ? "behind" : ""}"><div class="fi">${f.icon}</div><b>${f.name}</b>
       <div class="gauge"><i style="width:${pct}%"></i></div><small>${full ? "✔ " : ""}${Math.min(f.have, f.need)} / ${f.need}</small></div>`;
   }).join("");
   $("rk-up").hidden = !ready;
-  $("rk-hint").textContent = ready || maxed ? "" : `${lowest.icon} ${lowest.hint}`;
+  $("rk-hint").textContent = ready || maxed || !lowest ? "" : `${lowest.icon} ${lowest.hint}`;
   show("s-rank");
 }
 $("rk-up").onclick = () => {
@@ -908,6 +919,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
+if (import.meta.env.DEV) import("./dev/audit.js");
 if (import.meta.env.DEV) window.__td = { get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
