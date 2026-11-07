@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1 — Update Before You Race
+
+- If a new version is waiting when Carter starts a race (from the track list, Again or Next), the game
+  stops and shows a big **✨ New version!** screen, then updates by itself after a 4-second countdown
+  (or right away with **Update now!**). Progress is kept. Races never start on an old version.
+
 ## v0.4.0 — Paint Shop & Trophy Room
 
 - **Made for Carter**: the title screen now says "Made for Carter, by Carter's Dad", and the results screen

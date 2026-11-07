@@ -60,7 +60,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -129,6 +129,7 @@ function menuDemo() {
 
 let currentTrack = TRACKS[0];
 function startRace(track) {
+  if (updateReady) { updateGate(); return; }   // never start a race on an old version
   currentTrack = track; S.lastTrack = track.id; save();
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
@@ -332,7 +333,18 @@ $("p-close").onclick = () => show("s-title");
 
 /* ---------- versions & offline ---------- */
 let updateReady = false;
-function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent"); }
+function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent" && screen !== "s-update"); }
+function doUpdate() { save(); location.reload(); }
+// A new version is waiting and Carter tried to race: stop, show a big notice, and update by itself in a few seconds.
+let gateTimer = 0;
+function updateGate() {
+  clearInterval(gateTimer);
+  menuDemo(); show("s-update"); sfx("chest");
+  let left = 4;
+  const tick = () => { $("upd-count").textContent = left; if (left-- <= 0) { clearInterval(gateTimer); doUpdate(); } };
+  tick(); gateTimer = setInterval(tick, 1000);
+}
+$("upd-now").onclick = () => { clearInterval(gateTimer); doUpdate(); };
 $("ver").textContent = VERSION === "dev" ? "dev build" : "v" + VERSION;
 if (VERSION !== "dev") {
   const check = async () => {
@@ -343,13 +355,13 @@ if (VERSION !== "dev") {
     } catch (e) { /* offline */ }
   };
   setInterval(check, 60000); setTimeout(check, 5000);
-  $("update").onclick = () => { save(); location.reload(); };
+  $("update").onclick = doUpdate;
 }
 if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureContext) {
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
-if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, garage, goHub, importSave, exportSave };
+if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, garage, goHub, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false);
 menuDemo();
