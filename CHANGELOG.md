@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.20.0 — Smoother Racing & a Simpler Race Screen
+
+A tune-up of the classic engine (Earth, Moon, Deep Blue, Glacier Rink) after a full review of its physics and
+collisions, plus a race screen made simpler for a 6-year-old.
+
+**Physics and collisions**
+- **Rivals no longer drive through each other.** Before, two rivals overlapped about 4% of every race; now
+  they ease apart sideways (overlap is down by about 97%).
+- **Side bumps feel right.** Touching a rival side by side now bumps you both apart sideways. Before, it snapped
+  you behind them like an invisible wall. Rear-ending a rival still slows you down.
+- **Boost pads only work when you drive over them**, not when you fly over them.
+- **Hills matter a little:** rolling downhill speeds you up, climbing slows you down (rivals too).
+- **Jumps depend on speed:** hit a ramp faster to fly higher and farther.
+- Checked: hands-off driving still finishes last, the starter car still has to be upgraded to win, and the
+  career simulator has no stuck gates.
+
+**A simpler race screen**
+- The world buttons only show the worlds you can race in, plus the next one as a goal. No more rows of locked
+  worlds or "coming soon" buttons.
+- The Cups, Boss and Trials tabs appear only once they open (Trials at Rank 4, Cups at Rank 5, Boss at
+  Rank 9). Early on the screen is just Easy / Normal / Hard and the big track cards.
+- Difficulty shows coins as pictures (🪙 / 🪙🪙 / 🪙🪙🪙) instead of numbers.
+- Locked tracks say "Win 🍭 first!" with the picture of the track to win, instead of a sentence.
+- Bigger buttons and easier-to-read track names.
+
+**Polish (graphics)**
+- Distance haze: the far road and fields fade softly toward the sky, so the world looks deeper.
+- Soft shadows under trees, rocks and other roadside things.
+- A jumping rival's shadow stays on the ground under it.
+
 ## v0.19.0 — 🧸 Toy Track World (Next Gen)
 
 - **The game levels up!** Toy Track World is a whole new kind of racing with a **brand-new 3D engine**. It opens

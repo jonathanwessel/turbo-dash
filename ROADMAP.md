@@ -33,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink · **v0.19.0** Toy Track World (Next Gen 3D engine)
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink · **v0.19.0** Toy Track World (Next Gen 3D engine) · **v0.20.0** Smoother Racing & a Simpler Race Screen
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -48,6 +48,8 @@ Carter plays on an Android tablet, in landscape, full screen.
   track opens only after a Normal/Hard win, and `npm run sim -- start` checks that hands-off finishes last.
 - **Grown-up controls must be kid-proof.** Reset and Parent Corner sit behind a sum, a 3-second hold and a last
   "are you sure"; a 6-year-old taps everything.
+- **Show a 6-year-old only what he can use.** Menus show open things plus one next goal; locked modes and
+  far-future worlds stay hidden until they're close.
 - **Keep the art simple and recognizable.** The Piqua sign works best as plain, clear lettering.
 - **The pay-to-win feel, without the pay.** Race → coins → shiny thing → faster, with something new to unlock every
   release and a reason to come back tomorrow.

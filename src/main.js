@@ -224,7 +224,7 @@ const allowedDiffs = () => { const L = DIFFS.filter(d => S.parent.diffs.includes
 function paintDiffBar() {
   $("diff-bar").innerHTML = DIFFS.filter(d => S.parent.diffs.includes(d.id)).map(d => {
     const locked = d.rank && S.rank < d.rank;
-    return `<button data-diff="${d.id}" class="${S.diff === d.id ? "on" : ""} ${locked ? "locked" : ""}">${locked ? "🔒" : d.icon} ${d.name}<small>${locked ? "Rank " + d.rank : "🪙 ×" + d.pay}</small></button>`;
+    return `<button data-diff="${d.id}" class="${S.diff === d.id ? "on" : ""} ${locked ? "locked" : ""}">${locked ? "🔒" : d.icon} ${d.name}<small>${locked ? "Rank " + d.rank : "🪙".repeat(d.id === "easy" ? 1 : d.id === "normal" ? 2 : 3)}</small></button>`;
   }).join("");
 }
 $("diff-bar").addEventListener("click", e => {
@@ -246,8 +246,13 @@ function paintCups() {
       ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < need ? "Rank " + need : "Open all 3 tracks"}</small></div>`}</button>`;
   }).join("");
 }
+/* Keep the race screen simple for a 6-year-old: a mode tab only shows once it's open. */
+const TAB_RANK = { races: 0, trial: 4, cups: 5, boss: 9 };
 function paintRaceTabs() {
-  document.querySelectorAll("[data-rtab]").forEach(b => { b.classList.toggle("on", b.dataset.rtab === raceTab); if (b.dataset.rtab === "cups") b.classList.toggle("locked", S.rank < 5); });
+  if (S.rank < (TAB_RANK[raceTab] || 0)) raceTab = "races";
+  let shown = 0;
+  document.querySelectorAll("[data-rtab]").forEach(b => { const ok = S.rank >= (TAB_RANK[b.dataset.rtab] || 0); b.hidden = !ok; shown += ok; b.classList.toggle("on", b.dataset.rtab === raceTab); });
+  document.querySelector(".race-tabs").hidden = shown < 2;
   $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss"; $("trial-list").hidden = raceTab !== "trial";
   $("diff-bar").style.visibility = raceTab === "trial" || raceTab === "boss" ? "hidden" : "";
   if (raceTab === "trial") paintTrials();
@@ -345,8 +350,11 @@ $("cup-list").addEventListener("click", e => {
 });
 function paintWorlds() {
   if (!worldOpen(S, S.world)) S.world = "earth";
-  $("world-bar").innerHTML = WORLDS.map(w => { const open = !w.soon && worldOpen(S, w.id);
-    return `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""} ${open ? "" : "soon"}">${w.icon} ${w.name}${open ? "" : " 🔒"}</button>`; }).join("");
+  const open = WORLDS.filter(w => !w.soon && worldOpen(S, w.id)), next = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
+  const list = [...open, ...(next && S.rank >= (next.rank || 0) - 5 ? [next] : [])];
+  $("world-bar").hidden = list.length < 2;
+  $("world-bar").innerHTML = list.map(w => { const ok = open.includes(w);
+    return `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""} ${ok ? "" : "soon"}">${w.icon} ${w.name}${ok ? "" : ` 🔒 ${S.rank < w.rank ? "Rank " + w.rank : "🔬"}`}</button>`; }).join("");
 }
 $("world-bar").addEventListener("click", e => {
   const b = e.target.closest("[data-world]"); if (!b) return;
@@ -374,7 +382,7 @@ function openTracks() {
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win 🏆 on ${TRACKS.find(x => x.id === t.after).name} (🚗 or 🔥)` : "Reach this world first"}</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);

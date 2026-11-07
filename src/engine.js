@@ -14,6 +14,9 @@ const START = 15;                  // segment of the start/finish line
 const GRAVITY = 9000, JUMP_VY = 2700, RAMP_H = 380, RAMP_LEN = 4;
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const HILL = BASE_MAX * 0.12;                                       // how much hills speed you up / slow you down
+const slopeOf = s => (s.p2.world.y - s.p1.world.y) / SEG;            // rise per distance along the road
+const jumpFor = speed => 0.8 + 0.2 * Math.min(1.5, speed / BASE_MAX);   // jump strength: 1.0 at a starter's top speed
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeIn = (a, b, p) => a + (b - a) * p * p;
 const easeInOut = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
@@ -276,6 +279,8 @@ export class Race {
     if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
+    // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
+    if (!flying && !auto) p.speed = Math.max(BASE_MAX * 0.2, p.speed - slopeOf(seg) * HILL * dt);
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
     const lat = steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
@@ -357,6 +362,7 @@ export class Race {
       c.knockT -= dt;
       if (c.knockT > 0) target *= 0.75;
       c.speed += clamp(target - c.speed, -BASE_MAX * dt / 2, BASE_MAX * dt / 4);
+      if (c.air <= 0 && this.state !== "demo") c.speed = Math.max(BASE_MAX * 0.2, c.speed - slopeOf(this.segAt(c.dist)) * HILL * dt);
       c.laneT -= dt;
       if (c.laneT <= 0) { c.lane = [-0.6, 0, 0.6][Math.floor(Math.random() * 3)]; c.laneT = 2 + Math.random() * 4; }
       for (const o of [p, ...this.rivals]) {
@@ -365,9 +371,18 @@ export class Race {
         if (g > 0 && g < 8 * SEG && c.speed > o.speed && Math.abs(o.offset - c.lane) < CAR_W * 1.2) c.lane = clamp(o.offset > 0 ? o.offset - 0.62 : o.offset + 0.62, -0.8, 0.8);
       }
       c.offset += clamp(c.lane - c.offset, -1, 1) * dt * 1.6;
+      for (const o of this.rivals) {
+        if (o === c || Math.abs(o.dist - c.dist) > SEG * 0.9 || Math.abs((o.air || 0) - (c.air || 0)) > 250) continue;
+        const dx = c.offset - o.offset, need = CAR_W * 0.95 - Math.abs(dx);
+        if (need > 0) {
+          const dir = dx > 0 || (dx === 0 && c.dist > o.dist) ? 1 : -1, k = Math.min(need, dt * 2.5) / 2;
+          c.offset = clamp(c.offset + dir * k, -0.9, 0.9); o.offset = clamp(o.offset - dir * k, -0.9, 0.9);
+          if (Math.abs(c.lane - o.lane) < CAR_W) c.lane = clamp(c.lane + dir * 0.6, -0.8, 0.8);
+        }
+      }
       c.dist += c.speed * dt;
       if (c.air > 0) { c.vy -= GRAVITY * this.phys.gravity * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
-      else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY; }
+      else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY * jumpFor(c.speed); }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
       else { const rs = this.segAt(c.dist); if (rs.snow != null && c.snowAt !== rs.index && Math.abs(c.offset - rs.snow) < 0.4) { c.snowAt = rs.index; c.speed *= 0.88; } }
@@ -382,6 +397,11 @@ export class Race {
             c.offset += (c.offset >= p.offset ? 1 : -1) * 0.7; c.lane = clamp(c.offset, -0.8, 0.8); c.knockT = 1;
             this.popup("BAM!", "#ff6b3d"); h.sfx("bam"); this.shake = 0.2; this.runStats.bams++;
           }
+        } else if (Math.abs(g) < SEG * 0.45) {
+          // side by side: bump apart sideways (both lose a little speed)
+          const dir = p.offset >= c.offset ? 1 : -1;
+          p.offset += dir * 0.1; c.offset -= dir * 0.14; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8);
+          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
         } else if (g > 0 && p.speed > c.speed) {
           p.speed = c.speed * 0.9; p.dist = c.dist - SEG * 0.9;
           if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; this.sparks(0.5, 0.78, 8, "#fff6a8"); }
@@ -403,7 +423,7 @@ export class Race {
     const p = this.player, S = this.stats;
     if (this.state === "demo" || p.finished) return;
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
-      p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1); p.airT = 0; this.hooks.sfx("jump");
+      p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1) * jumpFor(p.speed); p.airT = 0; this.hooks.sfx("jump");
     }
     if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
       p.air = 1; p.vy = JUMP_VY * 0.85; p.airT = 0; this.hooks.sfx("jump"); this.popup("BUBBLES!", "#bff6ff");
@@ -442,7 +462,7 @@ export class Race {
         this.hooks.onPower?.(this.power); this.hooks.sfx("chest"); this.popup("?!", "#ffffff");
       }
     }
-    if (s.boost !== null && Math.abs(p.offset - s.boost) < 0.36) {
+    if (s.boost !== null && p.air < 150 && Math.abs(p.offset - s.boost) < 0.36) {
       if (this.boostT <= 0.3) { this.hooks.sfx("boost"); this.popup("BOOST!", "#3cf2ff"); }
       const key = s.padId + ":" + Math.floor(p.dist / this.T.length);
       if (key !== this.lastPad) { this.lastPad = key; this.runStats.pads++; }
@@ -505,6 +525,7 @@ export class Race {
       x += dx; dx += s.curve;
       if (s.p1.camera.z <= CAM_DEPTH || s.p2.screen.y >= s.p1.screen.y || s.p2.screen.y >= maxy) continue;
       this.drawSegment(ctx, s, th, W);
+      if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || th.sky[1]; ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
       maxy = s.p1.screen.y;
     }
 
@@ -537,7 +558,10 @@ export class Race {
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
-        this.clipped(ctx, s, sy, () => drawSprite(ctx, spr.type, sx, sy, sw, t));
+        this.clipped(ctx, s, sy, () => {
+          if (SPRITES[spr.type].collide && sw > 6) { ctx.fillStyle = "rgba(0,0,0,0.16)"; ctx.beginPath(); ctx.ellipse(sx, sy, sw * 0.42, sw * 0.07, 0, 0, 7); ctx.fill(); }
+          drawSprite(ctx, spr.type, sx, sy, sw, t);
+        });
       }
       for (const c of s.coins) {
         if (c.taken) continue;
@@ -657,7 +681,8 @@ export class Race {
         ctx.save(); const a = ctx.globalAlpha; ctx.globalAlpha = a * 0.22; ctx.translate(x, lerp(s.p1.screen.y, s.p2.screen.y, pct)); ctx.scale(1, -0.45);
         drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900 }); ctx.restore();
       }
-      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900 });
+      if (c.air > 30) { const gy = lerp(s.p1.screen.y, s.p2.screen.y, pct), k = Math.max(0.4, 1 - c.air / 2000); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(x, gy, w * 0.55 * k, w * 0.07 * k, 0, 0, 7); ctx.fill(); }
+      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30 });
     });
   }
 

@@ -37,8 +37,10 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   ctx.translate(x, yb);
   ctx.rotate(steer * 0.035);
 
-  ctx.fillStyle = "rgba(0,0,0,0.18)"; ell(ctx, 0, -w * 0.005, w * 0.68, w * 0.09);
-  ctx.fillStyle = "rgba(0,0,0,0.3)"; ell(ctx, 0, -w * 0.01, w * 0.56, w * 0.06);
+  if (!o.noShadow) {
+    ctx.fillStyle = "rgba(0,0,0,0.18)"; ell(ctx, 0, -w * 0.005, w * 0.68, w * 0.09);
+    ctx.fillStyle = "rgba(0,0,0,0.3)"; ell(ctx, 0, -w * 0.01, w * 0.56, w * 0.06);
+  }
 
   const wh = monster ? w * 0.42 : w * 0.21, ww = monster ? w * 0.27 : w * 0.18;
   ctx.fillStyle = "#151515";

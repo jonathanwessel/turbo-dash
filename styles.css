@@ -567,3 +567,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #levelup .big-btn { margin-top: 2.5vmin; font-size: clamp(22px, 6vmin, 40px); }
 @keyframes lu-pop { from { transform: scale(.2) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes lu-spin { 0%, 100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.15) rotate(6deg); } }
+
+/* 🧒 a simpler, bigger race screen */
+.world-bar[hidden], .race-tabs[hidden], .race-tabs button[hidden] { display: none; }
+.world-bar button { font-size: clamp(16px, 4.2vmin, 22px); padding: 5px 16px; border-width: 3px; }
+.race-tabs button { padding: 7px 22px; }
+.diff-bar button small { font-size: .8em; letter-spacing: -2px; }
+.track-card .tc-name { -webkit-text-stroke: 1.5px rgba(0,0,0,.55); paint-order: stroke fill; }
+.track-card .tc-lock small { font-size: clamp(18px, 4.4vmin, 24px); font-weight: 900; }
