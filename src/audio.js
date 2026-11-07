@@ -1,4 +1,7 @@
 // Synthesized sound: effects, an engine hum and a little looping tune. Starts on the first tap (browsers require it).
+let muffle = null, water = false;
+/* Underwater races sound muffled (a soft low-pass on everything). */
+export function setWater(on) { water = !!on; if (muffle) muffle.frequency.setTargetAtTime(water ? 900 : 20000, ac.currentTime, 0.15); }
 let ac = null, master, sfxBus, musicBus, engOsc, engOsc2, engGain, engFilter, noiseBuf;
 const opts = { sfx: true, music: true, volume: 0.8 };
 let musicTimer = null, step = 0, nextT = 0, song = "menu";
@@ -8,7 +11,9 @@ export function initAudio() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   ac = new AC();
-  master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+  master = ac.createGain(); master.gain.value = 0.8;
+  muffle = ac.createBiquadFilter(); muffle.type = "lowpass"; muffle.frequency.value = water ? 900 : 20000;
+  master.connect(muffle); muffle.connect(ac.destination);
   sfxBus = ac.createGain(); sfxBus.connect(master);
   musicBus = ac.createGain(); musicBus.gain.value = 0.22; musicBus.connect(master);
   noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);

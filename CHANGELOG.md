@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.17.0 — 🌊 Deep Blue & Time Trials
+
+- **The second new world: Deep Blue, under the sea.** It opens at **Rank 25** after researching **🤿 Snorkel
+  Seals** (new lab tier 5). Pick 🌊 Deep Blue in the world bar.
+  - **Heavy water:** everything is slower and speeding up is hard, so bumps and bonks cost more.
+  - **Currents** push your car sideways on long stretches (a blue sheen with sliding arrows shows which way):
+    steer against them!
+  - **Bubble vents** on the road float you up high. Hit one to fly through a row of **🦪 pearls** (5 coins
+    each).
+  - **Four sea tracks:** Kelp Forest, Coral Reef, Shipwreck Bay and Deep Trench.
+  - **New cars:** the **Turbo Sub** (120,000 coins: periscope, side fins and a spinning propeller), the
+    **Manta Ray** (win the new **Ocean Cup**) and the **Kraken Cruiser** (beat the new boss **🐙 Captain
+    Kraken**).
+  - **New research:** Propellers (speed up faster underwater), Fins (currents push less), Pearl Diver (grab
+    pearls from farther away).
+  - Underwater races sound muffled, like being under water.
+- **⏱️ Time Trials!** A new Trials tab on the Race Track screen. Race alone against the clock on any open track.
+  Your best run comes back as a **see-through ghost car** to beat next time. Bronze, silver and gold medal times
+  for every track, each medal pays coins once.
+- **Ranks go up to 30.** New goals: win under the sea, collect 50 pearls, earn Time Trial medals.
+- **Fix:** the Turbo Lab only showed research tiers 1 to 3, so Moon Tires couldn't be started. Every tier shows
+  now, and the 4th lab bench shows when it unlocks (Rank 15).
+- Saves from every earlier version carry over (15 save checks).
+- Tuned with the career simulator: Deep Blue arrives around month 7, Captain Kraken falls around month 9, and
+  the whole game now runs about 10 months to Rank 30, with no stuck gates.
+
+**Polish (graphics ladder, step 3: under the sea is the most detailed world yet)**
+- The sea surface shimmering far above, light rays swaying down through the water, schools of fish, and
+  bubbles rising everywhere.
+- Swaying kelp, branching coral, shell rocks with starfish, glowing jellyfish, sea anemones and sparkly
+  treasure chests along the road.
+- Light ripples dancing on the road, a bubble trail behind your car, glowing pearls, and bubble vents with
+  bubbles streaming up.
+- A new Glacier Rink sign in the world bar for what's coming next.
+
 ## v0.16.0 — 👑 Main Street Grows & Bosses
 
 - **Bosses!** A new **👑 Boss** tab on the Race Track screen. A boss race is one-on-one against a named rival who

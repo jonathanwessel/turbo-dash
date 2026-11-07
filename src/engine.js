@@ -1,6 +1,6 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
-import { drawCar, drawSprite, drawCoin, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
+import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
 export const BASE_MAX = 10000;     // starter car top speed (world units / s)
@@ -101,6 +101,21 @@ export function buildTrack(track) {
     segs[k].boxes = [-0.6, 0, 0.6].map(o => ({ offset: o, until: 0 }));
     i = k;
   }
+  // 🌊 underwater: long stretches where a current pushes you sideways, and bubble vents that float you up past pearls
+  if (ph.currents) for (let i = START + 60; i < segs.length - 80; i += 110 + Math.floor(r() * 90)) {
+    const dir = r() < 0.5 ? -1 : 1, len = 40 + Math.floor(r() * 20);
+    for (let j = 0; j < len; j++) if (!segs[i + j].ramp && !segs[i + j].gap) segs[i + j].current = dir;
+    i += len;
+  }
+  if (ph.vents) for (let i = START + 110; i < segs.length - 80; i += 140 + Math.floor(r() * 80)) {
+    let k = i;
+    while (k < segs.length - 80 && segs.slice(k - 3, k + 62).some(q => q.ramp || q.boxes || q.boost !== null || q.coins.length || q.vent != null)) k++;
+    if (k >= segs.length - 80) break;
+    const lane = [-0.55, 0, 0.55][Math.floor(r() * 3)];
+    segs[k].vent = segs[k + 1].vent = lane; segs[k].ventTop = true;
+    for (let j = 0; j < 5; j++) { const f = (j + 0.5) / 5; segs[k + 6 + j * 12].coins.push({ offset: lane, taken: false, pearl: true, h: 2340 * f * (1 - f) }); }
+    i = k + 62;
+  }
   const T = { segs, length: segs.length * SEG, theme: th, track };
   trackCache.set(track.id, T);
   return T;
@@ -140,7 +155,7 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
@@ -151,10 +166,21 @@ export class Race {
     // 👑 boss race: just you and the boss (who fires Turbo every few seconds)
     if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, finished: false, air: 0, vy: 0,
       base: BASE_MAX * opts.boss.speed * this.diff.rival * this.phys.top, boss: true, btT: 5, bt: 0 }];
+    // ⏱️ Time Trial: alone on the road (plus your best run as a see-through ghost); the run is recorded for the next ghost
+    this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
+    this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none" };
+    if (this.trial) this.rivals = [];
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
   }
 
+  /* where the ghost was at this moment of its run (samples every 0.1 s), or null once it has finished */
+  ghostAt(time) {
+    const g = this.ghost; if (!g || !g.d?.length) return null;
+    const f = Math.max(0, time / 0.1 - 1), i = Math.floor(f), k = f - i;
+    if (i >= g.d.length - 1) return null;
+    return { dist: lerp(g.d[i], g.d[i + 1], k), offset: lerp(g.o[i], g.o[i + 1], k), air: lerp(g.a?.[i] || 0, g.a?.[i + 1] || 0, k) };
+  }
   segAt(dist) { const s = this.T.segs; return s[Math.floor(mod(this.startZ + dist, this.T.length) / SEG) % s.length]; }
   popup(text, color = "#fff") { this.popups.push({ text, color, age: 0, x: (Math.random() - 0.5) * 0.2 }); }
   /* The Auto Steer brain. Each level band adds a skill (see ROADMAP.md); returns a steer value -1..1. */
@@ -233,7 +259,7 @@ export class Race {
     const fast = this.nitroT > 0 || this.boostT > 0;
     const ph = this.phys;
     const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1)) * ph.top;
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (fast ? 3 : 1) * dt);
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (fast ? 3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
@@ -243,8 +269,13 @@ export class Race {
     if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
+    if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
     p.offset = clamp(p.offset, -2.6, 2.6);
     p.dist += p.speed * dt;
+    if (this.trial && racing && !p.finished) {
+      this.recT += dt;
+      while (this.recT >= 0.1) { this.recT -= 0.1; this.rec.d.push(Math.round(p.dist)); this.rec.o.push(Math.round(p.offset * 100) / 100); this.rec.a.push(Math.round(p.air)); }
+    }
     if (flying) {
       p.vy -= GRAVITY * ph.gravity * dt; p.air += p.vy * dt; p.airT += dt;
       if (p.air <= 0) this.land();
@@ -272,7 +303,8 @@ export class Race {
     // little effects in screen units (0..1): dust off the road
     if (Math.abs(p.offset) > 1 && p.air <= 0 && p.speed > BASE_MAX * 0.2 && Math.random() < 0.8) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.22, y: 0.97, vx: (Math.random() - 0.5) * 0.3, vy: -0.25 - Math.random() * 0.2, life: 0.6, c: "dust", r: 0.02 + Math.random() * 0.02 });
     if (this.autoTarget !== null && this.autoLvl >= 100) for (let i = 0; i < 2; i++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.12, y: 0.95, vx: (Math.random() - 0.5) * 0.2, vy: 0.1 + Math.random() * 0.2, life: 0.5, c: Math.random() < 0.5 ? "#ffd400" : "#fff6a8", r: 0.006 + Math.random() * 0.006 });
-    for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 0.8 * dt; }
+    if (ph.water && p.speed > BASE_MAX * 0.2 && Math.random() < 0.45) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.14, y: 0.93, vx: (Math.random() - 0.5) * 0.08, vy: -0.15 - Math.random() * 0.2, life: 0.9, c: "bubble", r: 0.005 + Math.random() * 0.009 });
+    for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.c === "bubble" ? -0.4 : 0.8) * dt; }
     this.parts = this.parts.filter(q => q.life > 0);
 
     // rivals
@@ -302,6 +334,7 @@ export class Race {
       if (c.air > 0) { c.vy -= GRAVITY * this.phys.gravity * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY; }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
+      else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
       if (this.state !== "demo" && !c.finished && c.dist >= this.finishDist) { c.finished = true; this.order.push(c); }
 
       // bumping into each other
@@ -325,7 +358,7 @@ export class Race {
       // everyone's place: finishers in order, then the rest by how far they got. 0 = player, 1-5 = rivals
       const rest = this.rivals.filter(c => !c.finished).sort((a, b) => b.dist - a.dist);
       const standings = [...this.order, ...rest].map(r => r === p ? 0 : this.rivals.indexOf(r) + 1);
-      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats, standings });
+      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats, standings, rec: this.trial ? this.rec : null });
     }
     h.engine(p.speed / BASE_MAX, fast);
   }
@@ -336,7 +369,16 @@ export class Race {
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
       p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1); p.airT = 0; this.hooks.sfx("jump");
     }
+    if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
+      p.air = 1; p.vy = JUMP_VY * 0.85; p.airT = 0; this.hooks.sfx("jump"); this.popup("BUBBLES!", "#bff6ff");
+    }
     for (const c of s.coins) {
+      if (c.pearl) {
+        if (!c.taken && p.air > 120 && Math.abs(c.offset - p.offset) < CAR_W * 0.5 + 0.15 + S.magnet + (S.pearlReach || 0) + (this.magnetT > 0 ? 1.4 : 0)) {
+          c.taken = true; this.coins += 5; this.runStats.pearls = (this.runStats.pearls || 0) + 1; this.hooks.sfx("coin"); this.popup("PEARL! +5", "#ffc8f0");
+        }
+        continue;
+      }
       if (c.ring) {
         if (!c.taken && p.air > 300 && Math.abs(c.offset - p.offset) < 0.5 + (S.ringReach || 0)) {
           c.taken = true; this.boostT = Math.max(this.boostT, 1.4); this.runStats.rings = (this.runStats.rings || 0) + 1;
@@ -393,7 +435,7 @@ export class Race {
     const p = this.player, all = [p, ...this.rivals];
     const pos = p.finished ? this.order.indexOf(p) + 1 : 1 + this.rivals.filter(c => c.dist > p.dist).length;
     return {
-      state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length,
+      state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.length) + 1, 1, this.track.laps), laps: this.track.laps,
       coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed / 50),
       progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
@@ -434,6 +476,13 @@ export class Race {
       else { if (!bySeg.has(idx)) bySeg.set(idx, []); bySeg.get(idx).push(item); }
     }
 
+    const gp = this.trial && this.state !== "countdown" ? this.ghostAt(this.raceTime) : null;
+    if (gp) {
+      const z = mod(this.startZ + gp.dist, L), idx = Math.floor(z / SEG) % N;
+      const item = { c: { def: this.ghostDef, offset: gp.offset, lane: gp.offset, air: gp.air, dist: gp.dist, knockT: 0 }, pct: (z % SEG) / SEG, s: segs[idx], ghost: true };
+      if (gp.dist < p.dist && gp.dist > p.dist - PLAYER_Z * 0.95) behind.push(item);
+      else if (gp.dist >= p.dist) { if (!bySeg.has(idx)) bySeg.set(idx, []); bySeg.get(idx).push(item); }
+    }
     for (let n = DRAW_DIST - 1; n > 0; n--) {
       const s = segs[(base.index + n) % N];
       if (s.p1.camera.z <= CAM_DEPTH) continue;
@@ -442,6 +491,7 @@ export class Race {
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
       if (s.index === START) this.drawArch(ctx, s, F);
       if (s.rail) this.drawRails(ctx, s, F);
+      if (s.ventTop) this.drawVent(ctx, s, F);
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
@@ -451,6 +501,7 @@ export class Race {
         if (c.taken) continue;
         const cw = sc * COIN_W * F, cx = s.p1.screen.x + s.p1.screen.w * c.offset, cy = sy - cw * 0.9 - (c.h ? sc * c.h * F : 0);
         if (c.ring) { this.clipped(ctx, s, sy, () => drawRing(ctx, cx, cy, cw * 3, t)); continue; }
+        if (c.pearl) { this.clipped(ctx, s, sy, () => drawPearl(ctx, cx, cy, cw * 1.1, t)); continue; }
         this.clipped(ctx, s, sy, () => drawCoin(ctx, cx, cy, cw, t));
       }
       if (s.boxes) for (const b of s.boxes) {
@@ -470,6 +521,12 @@ export class Race {
     const dustCol = th.grass[0];
     for (const q of this.parts) {
       ctx.globalAlpha = Math.min(1, q.life * 2);
+      if (q.c === "bubble") {
+        ctx.strokeStyle = "rgba(230,255,255,0.8)"; ctx.lineWidth = Math.max(1, H * 0.0025);
+        ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H, 0, 7); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.beginPath(); ctx.arc(q.x * W - q.r * H * 0.35, q.y * H - q.r * H * 0.35, q.r * H * 0.25, 0, 7); ctx.fill();
+        continue;
+      }
       ctx.fillStyle = q.c === "dust" ? dustCol : q.c;
       ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H * (q.c === "dust" ? 1.5 - q.life : 1), 0, 7); ctx.fill();
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
@@ -509,6 +566,11 @@ export class Race {
       ctx.stroke();
     }
 
+    if (th.water) {
+      const tint = ctx.createLinearGradient(0, 0, 0, H);
+      tint.addColorStop(0, "rgba(20,120,170,0.04)"); tint.addColorStop(1, "rgba(10,70,120,0.16)");
+      ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H);
+    }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     for (const q of this.popups) {
       const s = 1 + Math.min(0.3, q.age * 2);
@@ -527,8 +589,9 @@ export class Race {
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, this.canvas.width, s.clip); ctx.clip(); fn(); ctx.restore();
   }
 
-  drawRival(ctx, { c, pct, s }, F) {
+  drawRival(ctx, { c, pct, s, ghost }, F) {
     if (s.p1.camera.z <= CAM_DEPTH) return;
+    if (ghost) { const a = ctx.globalAlpha; ctx.globalAlpha = a * 0.45; this.drawRival(ctx, { c, pct, s }, F); ctx.globalAlpha = a; return; }
     const sc = lerp(s.p1.screen.scale, s.p2.screen.scale, pct);
     const x = lerp(s.p1.screen.x, s.p2.screen.x, pct) + sc * c.offset * ROAD_W * F;
     const y = lerp(s.p1.screen.y, s.p2.screen.y, pct) - sc * c.air * F;
@@ -536,6 +599,23 @@ export class Race {
     if (x + w < 0 || x - w > this.canvas.width) return;
     const steer = c.knockT > 0 ? Math.sin(this.t * 30) * 4 : clamp((c.lane - c.offset) * 3, -1, 1);
     this.clipped(ctx, s, y, () => drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900 }));
+  }
+
+  // A bubble vent: a round grate on the road with bubbles streaming up out of it.
+  drawVent(ctx, s, F) {
+    if (s.p1.camera.z <= CAM_DEPTH) return;
+    const sc = s.p1.screen.scale, x = s.p1.screen.x + s.p1.screen.w * s.vent, y = s.p1.screen.y, rw = s.p1.screen.w * 0.3, t = this.t;
+    if (rw < 1.5) return;
+    this.clipped(ctx, s, y, () => {
+      ctx.fillStyle = "#1c2a33"; ctx.beginPath(); ctx.ellipse(x, y, rw, rw * 0.22, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#7fd8ff"; ctx.lineWidth = Math.max(1, rw * 0.06); ctx.stroke();
+      ctx.fillStyle = "rgba(191,246,255,0.25)"; ctx.beginPath(); ctx.ellipse(x, y - rw * 0.5, rw * 0.8, rw * 0.9, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(240,255,255,0.85)";
+      for (let k = 0; k < 9; k++) {
+        const ph = (t * 0.9 + k / 9) % 1, by = y - ph * sc * 1600 * F, bx = x + Math.sin(t * 3 + k * 2.1) * rw * 0.35, br = Math.max(1, sc * (40 + (k % 3) * 25) * F);
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
+      }
+    });
   }
 
   // The ramp is a striped slope from the road surface up to RAMP_H at its far end.
@@ -626,6 +706,25 @@ export class Race {
       for (let lane = 1; lane < LANES; lane++) {
         const lx1 = x1 - w1 + (2 * w1 * lane) / LANES, lx2 = x2 - w2 + (2 * w2 * lane) / LANES;
         quad(ctx, lx1 - l1 / 2, y1, lx1 + l1 / 2, y1, lx2 + l2 / 2, y2, lx2 - l2 / 2, y2);
+      }
+    }
+    if (th.water && s.index % 2 === 0 && w1 > 6) {
+      // light ripples from the surface dancing on the road
+      const k = 0.5 + 0.5 * Math.sin(this.t * 2.2 + s.index * 0.9), ym = (y1 + y2) / 2, hh = Math.max(1, (y1 - y2) * 0.6);
+      ctx.fillStyle = `rgba(210,250,255,${0.05 + 0.08 * k})`;
+      for (const j of [0, 1]) { const u = Math.sin(this.t * 0.7 + s.index * 1.7 + j * 2.5) * 0.7; ctx.beginPath(); ctx.ellipse(x1 + w1 * u, ym, w1 * (0.12 + 0.06 * k), hh, 0, 0, 7); ctx.fill(); }
+    }
+    if (s.current) {
+      // a current: a blue sheen with arrows sliding the way it pushes
+      ctx.fillStyle = "rgba(60,242,255,0.12)"; quad(ctx, x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2);
+      if (s.index % 4 === 0) {
+        const d = s.current, ph = (this.t * 0.9) % 0.5;
+        ctx.fillStyle = "rgba(220,255,255,0.75)";
+        for (const base of [-0.75, -0.25, 0.25]) {
+          const u = base + d * ph, ax = x1 + w1 * u, bx = x2 + w2 * u, cw = w1 * 0.09, ym = (y1 + y2) / 2;
+          if (Math.abs(u) > 0.9) continue;
+          ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
+        }
       }
     }
     if (s.boost !== null) {

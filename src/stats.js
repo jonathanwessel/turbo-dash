@@ -18,5 +18,8 @@ export function statsFor(car, u, lab = {}, skills = {}) {
     jump: 1 + 0.08 * L("bigRamps"),
     airCtl: 1 + 0.15 * L("thrusters"),
     ringReach: 0.12 * L("ringMagnet"),
+    propel: 1 + 0.08 * L("propellers"),   // underwater: speed up faster
+    fins: 0.12 * L("fins"),
+    pearlReach: 0.1 * L("pearlDiver"),   // underwater: grab pearls from farther away               // underwater: currents push less
   };
 }

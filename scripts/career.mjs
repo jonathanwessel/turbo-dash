@@ -4,11 +4,12 @@
 // It uses the game's own rules from src/data.js (prizes, ranks, research, goals) and races with the real engine.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
+import { buildTrack } from "../src/engine.js";
 import { SKILLS, SKILL_MAX, skillCost, licenseLevel } from "../src/data.js";
 const REAL_MIN = +(process.argv[4] || 20);   // minutes of real-world time logged per day (reading/outside)
 import {
   CARS, TRACKS, CUPS, CUP_POINTS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
-  prizeFor, upgradeCost, trackOpen, worldOpen, BOSSES, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
+  prizeFor, upgradeCost, trackOpen, worldOpen, BOSSES, trialMedal, trialPay, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
 } from "../src/data.js";
 
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
@@ -17,7 +18,7 @@ const NO_UPS = () => ({ engine: 0, turbo: 0, tires: 0, magnet: 0 });
 // a save-shaped state, so the game's own FRONTS/GOALS functions work on it
 const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
-  cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0 },
+  cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0 }, trials: {}, trialMedals: {},
   bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
   school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 } }, parent: { license: true },
 };
@@ -45,7 +46,7 @@ function reward(track, r, diff) {
   if (diff === "hard" && r.place === 1) chip("hard:" + track.id);
   const chestBase = (30 + 25 * track.diff) * diffOf(diff).pay * (1 + 0.15 * lv("luckyChests"));
   S.coins += Math.round(prizeFor(track, r.place, diff) * (1 + 0.05 * lv("coinBoost"))) + r.coins + Math.round(chestBase * 7 / 3);
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers += r.stats.powers || 0;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers += r.stats.powers || 0; S.stats.rings += r.stats.rings || 0; S.stats.pearls += r.stats.pearls || 0;
   for (const t of TRACKS) if (trackOpen(S, t)) gate("open:" + t.id, `Opened ${t.name}`);
 }
 
@@ -59,6 +60,16 @@ function playBoss(b) {
   if (r.place === 1 && !S.bosses[b.id]) { S.bosses[b.id] = true; S.coins += 5000; chip("boss:" + b.id); if (!S.owned.includes(b.car)) { S.owned.push(b.car); S.ups[b.car] = NO_UPS(); } gate("boss:" + b.id, `Beat ${b.name}`); }
 }
 
+/* one Time Trial a day: the newest open track still missing gold */
+function playTrial() {
+  const t = [...TRACKS].reverse().find(x => trackOpen(S, x) && (S.trialMedals[x.id] || 0) < 3); if (!t) return false;
+  const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, null, true);
+  const m = trialMedal(t, buildTrack(t).length, r.time), old = S.trialMedals[t.id] || 0;
+  raceNo++; clock += 75; S.coins += r.coins; S.stats.roadCoins += r.coins; S.stats.pearls += r.stats.pearls || 0;
+  for (let k = old + 1; k <= m; k++) { S.coins += trialPay(t, k); if (k === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`); }
+  if (m > old) S.trialMedals[t.id] = m;
+  return true;
+}
 function playCup(cup, diff) {
   const pts = [0, 0, 0, 0, 0, 0];
   for (const id of cup.tracks) {
@@ -100,7 +111,7 @@ function collectLab() {
     b.p = null;
   }
 }
-const LAB_ORDER = ["moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
+const LAB_ORDER = ["snorkel", "propellers", "fins", "pearlDiver", "moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
 function spend() {
   // lab first when it's cheap compared with savings, then the next car, then the cheapest upgrade
   for (const b of benches()) {
@@ -148,7 +159,9 @@ for (day = 1; day <= MAX_DAYS; day++) {
     const after = licenseLevel(S); if (after > before) gate("lic" + after, `License level ${after}`);
     if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); S.ups.patrol = NO_UPS(); gate("car:patrol", "Earned the Piqua Patrol"); }
   }
+  let trialToday = false;
   for (let n = 0; n < RACES_PER_DAY; n++) {
+    if (!trialToday && n === 3) { trialToday = true; if (playTrial()) { collectLab(); claimGoals(); rankUps(); spend(); continue; } }
     const boss = BOSSES.find(b => !S.bosses[b.id] && S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track)));
     if (boss && Math.random() < 0.15) { playBoss(boss); collectLab(); claimGoals(); rankUps(); spend(); continue; }
     const pick = pickRace();

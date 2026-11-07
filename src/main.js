@@ -1,12 +1,12 @@
-import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
-import { Race } from "./engine.js";
+import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { Race, buildTrack } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
-import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
-import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore } from "./save.js";
+import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater } from "./audio.js";
+import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
 import { createGarage, lookOf } from "./garage.js";
@@ -85,7 +85,7 @@ function show(id) {
   if (id === "s-hub") refreshHub();
   paintUpdate();
 }
-function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; } }
+function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
 
 function goFullscreen() {
   if (matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || document.fullscreenElement) return;
@@ -161,9 +161,11 @@ function startRace(track) {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
   const boss = bossRun && { ...bossRun, def: CARS.find(c => c.id === bossRun.car) };
-  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss ? autoLv : 0, boss });
+  const trial = trialRun && !boss;
+  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  show(null); setRaceUi(true); setSong("race");
+  show(null); setRaceUi(true); setSong("race"); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
+  if (trial) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
 
@@ -177,7 +179,7 @@ function buildProgress(n = 6) {
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
 function updateHud(dt) {
   const h = race.hud();
-  setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
+  if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
   h.progress.forEach((p, i) => { const d = dots[i]; d.style.left = (p.f * 100).toFixed(1) + "%"; d.style.background = p.color; d.classList.toggle("me", p.me); });
   $("nitro-fill").style.height = (h.nitroOn ? 100 : h.nitro * 100).toFixed(0) + "%";
   $("btn-nitro").classList.toggle("ready", h.nitro >= 1 && h.state === "race");
@@ -220,10 +222,62 @@ function paintCups() {
 }
 function paintRaceTabs() {
   document.querySelectorAll("[data-rtab]").forEach(b => { b.classList.toggle("on", b.dataset.rtab === raceTab); if (b.dataset.rtab === "cups") b.classList.toggle("locked", S.rank < 5); });
-  $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss";
+  $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss"; $("trial-list").hidden = raceTab !== "trial";
+  $("diff-bar").style.visibility = raceTab === "trial" || raceTab === "boss" ? "hidden" : "";
+  if (raceTab === "trial") paintTrials();
   if (raceTab === "cups") paintCups();
   if (raceTab === "boss") paintBosses();
 }
+/* ---------- ⏱️ Time Trials: alone against the clock and your own ghost ---------- */
+let trialRun = false, lastTrial = false;
+const trialLen = t => buildTrack(t).length;
+function paintTrials() {
+  $("trial-list").innerHTML = TRACKS.map((t, i) => {
+    if ((t.world || "earth") !== S.world) return "";
+    const th = THEMES[t.theme], open = unlocked(i), best = S.trials[t.id], medal = S.trialMedals[t.id] || 0, times = trialTimes(t, trialLen(t));
+    return `<button class="track-card trial-card ${open ? "" : "locked"}" data-trial="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
+      <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-best">${TRIAL_MEDALS[medal]}</div>
+      <div class="tc-time">${best ? "⏱ " + best.toFixed(1) + "s" : "⏱ no time yet"}</div>
+      <div class="tc-prize">${medal < 3 ? `${TRIAL_MEDALS[medal + 1]} ${times[medal].toFixed(1)}s · 🪙${trialPay(t, medal + 1)}` : "🥇 All medals!"}</div>
+      ${open ? "" : `<div class="tc-lock">🔒<small>Open this track first</small></div>`}</button>`;
+  }).join("");
+}
+$("trial-list").addEventListener("click", e => {
+  const c = e.target.closest("[data-trial]"); if (!c) return;
+  const i = +c.dataset.trial;
+  if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
+  sfx("click"); cupRun = null; bossRun = null; trialRun = true; startRace(TRACKS[i]);
+});
+function showTrialResult(r) {
+  const t = currentTrack, len = trialLen(t), time = Math.round(r.time * 100) / 100, before = S.trials[t.id], oldMedal = S.trialMedals[t.id] || 0;
+  const medal = trialMedal(t, len, time), record = !before || time < before, goalsBefore = claimable().length;
+  let pay = 0; for (let m = oldMedal + 1; m <= medal; m++) pay += trialPay(t, m);
+  if (record) { S.trials[t.id] = time; if (r.rec) saveGhost(t.id, { t: time, ...r.rec }); }
+  if (medal > oldMedal) S.trialMedals[t.id] = medal;
+  S.coins += pay + r.coins;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
+  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0);
+  save();
+  mode = "result"; setRaceUi(false); engineOff();
+  const [b, s, g] = trialTimes(t, len);
+  $("r-trophy").textContent = TRIAL_MEDALS[medal] || "⏱️";
+  $("r-title").textContent = record ? `NEW RECORD! ${time.toFixed(1)}s` : `${time.toFixed(1)} seconds`;
+  $("r-sub").textContent = !before ? `Your first time on ${t.name}! Next time, race your ghost.` : record ? `You beat your ghost by ${(before - time).toFixed(1)}s, ${PLAYER}!` : `Your record is ${before.toFixed(1)}s. Catch your ghost!`;
+  countUp($("r-prize"), pay); countUp($("r-road"), r.coins);
+  $("r-goal").hidden = claimable().length <= goalsBefore;
+  $("r-unlock").hidden = medal <= oldMedal;
+  if (medal > oldMedal) $("r-unlock").textContent = `${TRIAL_MEDALS[medal]} New medal on ${t.name}!`;
+  $("r-cup").hidden = false;
+  $("r-cup").innerHTML = `<div class="rc-head">⏱️ Time Trial — ${t.icon} ${t.name}</div>
+    <div class="standings">${[[b, 1], [s, 2], [g, 3]].map(([x, m]) => `<span class="${medal >= m ? "me" : ""}">${TRIAL_MEDALS[m]} ${x.toFixed(1)}s</span>`).join("")}</div>`;
+  $("r-chests").hidden = true; $("r-btns").hidden = false; $("btn-next").hidden = true; $("btn-again").hidden = false;
+  lastTrial = true; lastBoss = null; trialRun = false;
+  show("s-result"); refreshCoins();
+  sfx(medal > oldMedal || record ? "win" : "lose");
+  if (medal > oldMedal) confetti(140); else if (record) confetti(60);
+}
+
 /* ---------- 👑 bosses ---------- */
 let bossRun = null, lastBoss = null;
 const bossOpen = b => S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track));
@@ -248,7 +302,7 @@ function openBossIntro(b) {
   $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
   $("bi-info").textContent = `${t.icon} ${t.name} · one on one · win the ${car.name}!`;
   const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
-  $("bi-go").onclick = () => { sfx("click"); cupRun = null; bossRun = b; startRace(t); };
+  $("bi-go").onclick = () => { sfx("click"); cupRun = null; trialRun = false; bossRun = b; startRace(t); };
   $("bi-back").onclick = () => { sfx("click"); openTracks(); };
   sfx("chest"); show("s-boss");
 }
@@ -272,7 +326,7 @@ $("world-bar").addEventListener("click", e => {
   const b = e.target.closest("[data-world]"); if (!b) return;
   const w = WORLDS.find(x => x.id === b.dataset.world);
   if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); return; }
-  if (!worldOpen(S, w.id)) { sfx("nope"); toast(S.rank < w.rank ? `${w.icon} ${w.name} opens at Rank ${w.rank}` : `🔬 Research Moon Tires in the Turbo Lab first!`); return; }
+  if (!worldOpen(S, w.id)) { sfx("nope"); toast(S.rank < w.rank ? `${w.icon} ${w.name} opens at Rank ${w.rank}` : `🔬 Research ${RESEARCH.find(r => r.id === w.kit)?.name || "the World Kit"} in the Turbo Lab first!`); return; }
   sfx("click"); S.world = w.id; save(); openTracks();
 });
 function openTracks() {
@@ -297,12 +351,12 @@ $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
   const i = +c.dataset.i;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
-  sfx("click"); cupRun = null; bossRun = null; startRace(TRACKS[i]);
+  sfx("click"); cupRun = null; bossRun = null; trialRun = false; startRace(TRACKS[i]);
 });
 
 /* ---------- cups ---------- */
 let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
-function startCup(cup) { bossRun = null; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
+function startCup(cup) { bossRun = null; trialRun = false; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
 const racerName = k => k === 0 ? PLAYER : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
 const cupOrder = () => [0, 1, 2, 3, 4, 5].sort((a, b) => cupRun.pts[b] - cupRun.pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));
 function paintCupResult() {
@@ -347,6 +401,8 @@ $("ce-ok").onclick = () => { sfx("click"); menuDemo(); openTracks(); };
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false, nextTrack = null;
 function showResult(r) {
+  if (trialRun) { showTrialResult(r); return; }
+  lastTrial = false;
   const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
@@ -365,6 +421,7 @@ function showResult(r) {
   countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
+  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -413,13 +470,13 @@ document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () 
   $("r-pick").textContent = `You got 🪙${chestValues[i]}!`;
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
-$("btn-again").onclick = () => { sfx("click"); if (lastBoss) bossRun = lastBoss; startRace(currentTrack); };
+$("btn-again").onclick = () => { sfx("click"); if (lastBoss) bossRun = lastBoss; trialRun = lastTrial; startRace(currentTrack); };
 $("btn-next").onclick = () => {
   sfx("click");
   if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
   if (nextTrack) startRace(nextTrack);
 };
-$("btn-home").onclick = () => { sfx("click"); cupRun = null; bossRun = null; menuDemo(); show("s-hub"); };
+$("btn-home").onclick = () => { sfx("click"); cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -697,7 +754,7 @@ $("btn-auto").onclick = () => {
   $("btn-auto").classList.toggle("on", S.autoOn);
 };
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
-$("btn-quit").onclick = () => { sfx("click"); cupRun = null; bossRun = null; menuDemo(); show("s-hub"); };
+$("btn-quit").onclick = () => { sfx("click"); cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
 
 /* ---------- parent corner: tap the version label 5 times ---------- */

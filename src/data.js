@@ -20,6 +20,10 @@ export const CARS = [
   { id: "starfire", name: "Starfire", price: null, boss: "luna", world: "moon", body: "#ff3fe5", accent: "#3cf2ff", type: "galaxy", speed: 0.48, accel: 0.4, grip: 0.4 },
   { id: "firetruck", name: "Fire Dash", price: null, building: "fire", body: "#e8262b", accent: "#ffd400", type: "fire", speed: 0.24, accel: 0.24, grip: 0.24 },
   { id: "patrol", name: "Piqua Patrol", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
+  // 🌊 Deep Blue cars (added at the end so older cars keep their upgrade prices)
+  { id: "sub", name: "Turbo Sub", price: 120000, world: "ocean", body: "#ffd400", accent: "#1f6fff", type: "sub", speed: 0.54, accel: 0.46, grip: 0.45 },
+  { id: "manta", name: "Manta Ray", price: null, cup: "ocean", body: "#1a3a7a", accent: "#3cf2ff", type: "shark", speed: 0.6, accel: 0.5, grip: 0.5 },
+  { id: "kraken", name: "Kraken Cruiser", price: null, boss: "kraken", world: "ocean", body: "#7a2cff", accent: "#ff3fa4", type: "sub", speed: 0.66, accel: 0.55, grip: 0.55 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
@@ -37,12 +41,14 @@ export const CUPS = [
   { id: "gold", name: "Gold Cup", color: "#ffd400", tracks: ["candy", "lava", "space"], car: "goldRush", bonus: 1500 },
   { id: "champ", name: "Champion Cup", color: "#ff3fe5", tracks: ["desert", "lava", "space"], car: "champX", bonus: 3000, rank: 7 },
   { id: "moon", name: "Moon Cup", color: "#9fe8ff", tracks: ["crater", "moonbase", "asteroid"], car: "comet", bonus: 6000, rank: 21, world: "moon" },
+  { id: "ocean", name: "Ocean Cup", color: "#14c8c8", tracks: ["kelp", "reef", "wreck"], car: "manta", bonus: 10000, rank: 26, world: "ocean" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
 
 /* 👑 Bosses: a one-on-one race against a named rival on that world's hardest track. Beat them to win their car. */
 export const BOSSES = [
   { id: "bruno", world: "earth", name: "Big Bruno", icon: "🦏", track: "space", rank: 9, car: "thunder", speed: 1.8, says: "Nobody beats Big Bruno on Space Road!" },
+  { id: "kraken", world: "ocean", name: "Captain Kraken", icon: "🐙", track: "trench", rank: 28, car: "kraken", speed: 2.4, says: "Eight arms on the wheel. You can't win!" },
   { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!" },
 ];
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
@@ -78,6 +84,10 @@ export const TRACKS = [
   { id: "moonbase", name: "Moonbase Loop",  icon: "🛰️", diff: 7.7, laps: 2, seed: 113, theme: "moon", world: "moon", after: "crater" },
   { id: "asteroid", name: "Asteroid Alley", icon: "☄️", diff: 8.0, laps: 2, seed: 127, theme: "moon", world: "moon", after: "moonbase" },
   { id: "earthrise", name: "Earthrise Run", icon: "🌍", diff: 8.3, laps: 2, seed: 131, theme: "moon", world: "moon", after: "asteroid" },
+  { id: "kelp",   name: "Kelp Forest",    icon: "🌿", diff: 8.6, laps: 2, seed: 149, theme: "ocean", world: "ocean" },
+  { id: "reef",   name: "Coral Reef",     icon: "🐠", diff: 8.9, laps: 2, seed: 157, theme: "ocean", world: "ocean", after: "kelp" },
+  { id: "wreck",  name: "Shipwreck Bay",  icon: "⚓", diff: 9.2, laps: 2, seed: 163, theme: "ocean", world: "ocean", after: "reef" },
+  { id: "trench", name: "Deep Trench",    icon: "🐋", diff: 9.5, laps: 2, seed: 173, theme: "ocean", world: "ocean", after: "wreck" },
 ];
 // A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins.
 // A track already raced on stays open, so older saves never lose a track.
@@ -89,12 +99,15 @@ export const worldOpen = (S, id) => { const w = WORLDS.find(x => x.id === id); r
 export const WORLDS = [
   { id: "earth", name: "Earth", icon: "🌍" },
   { id: "moon", name: "Moon Base", icon: "🌙", rank: 20, kit: "moonTires" },
-  { id: "ocean", name: "Deep Blue", icon: "🌊", soon: true },
+  { id: "ocean", name: "Deep Blue", icon: "🌊", rank: 25, kit: "snorkel" },
+  { id: "glacier", name: "Glacier Rink", icon: "🧊", soon: true },
 ];
 // gravity: jump arc, top/accel: speed through the medium, grip: how well cars hold curves, air: steering in the air
 export const PHYSICS = {
   earth: { gravity: 1, top: 1, accel: 1, grip: 1, air: 0.6 },
   moon: { gravity: 0.32, top: 1, accel: 1, grip: 0.85, air: 1.1, gaps: true, rings: true },
+  // underwater: heavy water slows everything and makes speeding up hard; currents push you sideways; bubble vents float you up
+  ocean: { gravity: 0.5, top: 0.9, accel: 0.5, grip: 0.95, air: 0.9, water: true, currents: true, vents: true },
 };
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
 export const DIFFS = [
@@ -122,6 +135,7 @@ export const THEMES = {
   beach:  { sky: ["#38b6ff", "#c9f1ff"], hills: ["#2fa8ff", "#1f8ad6"], grass: ["#f7e08a", "#efd57a"], rumble: ["#ffffff", "#2fa8ff"], road: ["#a87a4f", "#9c7046"], lane: "#fff4d6", sun: "#fff7b0", sprites: ["palm", "umbrella", "sandcastle", "surfboard"], clouds: true },
   autumn: { sky: ["#ff9e5e", "#ffe0b8"], hills: ["#c9572b", "#a8431f"], grass: ["#d98c3a", "#cf8233"], rumble: ["#ffffff", "#b3261e"], road: ["#6b5a50", "#655448"], lane: "#ffe9c0", sun: "#fff0c8", sprites: ["autumnTree", "autumnTree", "pumpkin", "hay", "mushroom"], clouds: true },
   moon:   { sky: ["#02030f", "#1a2550"], hills: ["#6a7080", "#4f5565"], grass: ["#8f95a3", "#868c9a"], rumble: ["#3cf2ff", "#2a2f3a"], road: ["#3d4250", "#3a3f4c"], lane: "#3cf2ff", sun: "#fff8e0", sprites: ["moonrock", "crater", "dish", "moonrock", "dome", "crater"], clouds: false, stars: true, earth: true, detail: 2 },
+  ocean:  { sky: ["#062a4f", "#1b8fb8"], hills: ["#0f5d6e", "#0b4656"], grass: ["#d8c08a", "#cdb47c"], rumble: ["#ffffff", "#ff7a59"], road: ["#3a5566", "#36505f"], lane: "#bff6ff", sun: "#d9fbff", sprites: ["kelp", "coral", "kelp", "shellrock", "coral", "jelly", "treasure", "anemone"], clouds: false, water: true, detail: 3 },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
@@ -185,6 +199,10 @@ export const GOALS = [
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
   { id: "moon1", icon: "🌙", name: "Win a race on the Moon", goal: 1, reward: 5000, have: S => ["crater", "moonbase", "asteroid", "earthrise"].filter(id => S.best[id] === 1).length },
   { id: "rings25", icon: "⭕", name: "Fly through 25 boost rings", goal: 25, reward: 3000, have: S => S.stats.rings || 0 },
+  { id: "ocean1", icon: "🌊", name: "Win a race under the sea", goal: 1, reward: 8000, have: S => ["kelp", "reef", "wreck", "trench"].filter(id => S.best[id] === 1).length },
+  { id: "pearls50", icon: "🦪", name: "Collect 50 pearls", goal: 50, reward: 5000, have: S => S.stats.pearls || 0 },
+  { id: "trial1", icon: "⏱️", name: "Earn a Time Trial medal", goal: 1, reward: 300, have: S => Object.values(S.trialMedals || {}).filter(m => m > 0).length },
+  { id: "trialGold5", icon: "⏱️", name: "Gold Time Trial medal on 5 tracks", goal: 5, reward: 2500, have: S => Object.values(S.trialMedals || {}).filter(m => m >= 3).length },
   { id: "boss1", icon: "👑", name: "Beat a boss", goal: 1, reward: 4000, have: S => Object.keys(S.bosses || {}).length },
   { id: "school1", icon: "🚦", name: "Take a Driver School lesson", goal: 1, reward: 300, have: S => lessonsOf(S) },
   { id: "license3", icon: "🪪", name: "Earn a Gold license", goal: 3, reward: 2000, have: S => licenseLevel(S) },
@@ -193,7 +211,7 @@ export const GOALS = [
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
-export const RANK_CAP = 25;   // raised by later releases (each new world adds 5)
+export const RANK_CAP = 30;   // raised by later releases (each new world adds 5)
 /* License gauge (from Rank 10): Bronze for Rank 10→11, then one license level per two ranks, up to Piqua Pro.
    Pass the save so a parent can switch the gauge off in Parent Corner. */
 export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
@@ -219,6 +237,10 @@ export const RANK_UNLOCKS = {
   15: { icon: "🚒", text: "Fire Station (and a fire truck!)" },
   20: { icon: "🌙", text: "Moon Base (research Moon Tires) + Park" },
   21: { icon: "🏆", text: "Moon Cup" },
+  23: { icon: "👩‍🚀", text: "Boss: Captain Luna" },
+  25: { icon: "🌊", text: "Deep Blue (research Snorkel Seals)" },
+  26: { icon: "🏆", text: "Ocean Cup" },
+  28: { icon: "🐙", text: "Boss: Captain Kraken" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 /* Track Mastery: keep winning a track on a difficulty to earn up to 5 stars (each one is a trophy point). */
@@ -297,9 +319,25 @@ export const RESEARCH = [
   { id: "moonTires", tier: 4, rank: 20, max: 1, icon: "🛞", name: "Moon Tires", desc: "Drive on the Moon!", c0: 50000, t0: 21600 },
   { id: "thrusters", tier: 4, rank: 20, max: 5, icon: "🚀", name: "Thrusters", desc: "Steer better in the air", c0: 30000, t0: 7200, needs: ["moonTires"] },
   { id: "ringMagnet", tier: 4, rank: 21, max: 5, icon: "⭕", name: "Ring Magnet", desc: "Catch boost rings easier", c0: 32000, t0: 7200, needs: ["moonTires"] },
+  // tier 5: the Deep Blue kit and underwater tech (Rank 25)
+  { id: "snorkel", tier: 5, rank: 25, max: 1, icon: "🤿", name: "Snorkel Seals", desc: "Drive under the sea!", c0: 90000, t0: 28800 },
+  { id: "propellers", tier: 5, rank: 25, max: 5, icon: "🌀", name: "Propellers", desc: "Speed up faster underwater", c0: 50000, t0: 10800, needs: ["snorkel"] },
+  { id: "fins", tier: 5, rank: 26, max: 5, icon: "🐟", name: "Fins", desc: "Currents push you less", c0: 52000, t0: 10800, needs: ["snorkel"] },
+  { id: "pearlDiver", tier: 5, rank: 27, max: 5, icon: "🦪", name: "Pearl Diver", desc: "Grab pearls from farther away", c0: 54000, t0: 10800, needs: ["snorkel"] },
 ];
 export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;   // lvl = current level (0-based next)
 export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.4, lvl));              // seconds
 export const researchChips = (r, lvl) => r.chips ? r.chips(lvl) : 0;
 export const researchRank = (r, lvl) => r.rankAt ? r.rankAt(lvl) : r.rank;
 export const benchesFor = rank => rank >= 15 ? 4 : rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;
+
+/* ⏱️ Time Trials: race alone against the clock (and your own ghost). Medal times come from the track's length:
+   gold needs a fast, well-upgraded car driven well; bronze is reachable mid-game. Each medal pays once. */
+export const TRIAL_MEDALS = ["", "🥉", "🥈", "🥇"];
+export const trialTimes = (track, length) => {
+  const ph = PHYSICS[track.world] || PHYSICS.earth, k = 10000 * ph.top * (1.6 + 0.045 * track.diff);
+  const gold = length * track.laps / k;
+  return [gold * 1.32, gold * 1.15, gold].map(x => Math.round(x * 10) / 10);   // [bronze, silver, gold] seconds
+};
+export const trialMedal = (track, length, time) => { const [b, s, g] = trialTimes(track, length); return time <= g ? 3 : time <= s ? 2 : time <= b ? 1 : 0; };
+export const trialPay = (track, medal) => Math.round([0, 200, 400, 800][medal] * (1 + 0.3 * track.diff) / 10) * 10;

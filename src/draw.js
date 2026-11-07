@@ -148,6 +148,20 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillStyle = on ? "#ffd400" : "#ff3d3d"; ell(ctx, w * 0.42, top + bh * 0.1, w * 0.05, w * 0.04);
     ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.62, w, bh * 0.1);
   }
+  if (type === "sub" && w > 20) {
+    // a racing submarine: a stripe, portholes, side fins, a periscope and a spinning propeller at the back
+    ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.66, w, bh * 0.1);
+    ctx.fillStyle = shade(def.body, -0.25);
+    poly(ctx, [-w * 0.5, top + bh * 0.3, -w * 0.66, top + bh * 0.55, -w * 0.5, top + bh * 0.7]);
+    poly(ctx, [w * 0.5, top + bh * 0.3, w * 0.66, top + bh * 0.55, w * 0.5, top + bh * 0.7]);
+    ctx.fillStyle = "#59606b"; ctx.fillRect(-w * 0.22 + cx, top - ch - w * 0.2, w * 0.035, w * 0.21); ctx.fillRect(-w * 0.22 + cx, top - ch - w * 0.2, w * 0.11, w * 0.04);
+    ctx.fillStyle = "#bff6ff"; ell(ctx, -w * 0.115 + cx, top - ch - w * 0.18, w * 0.018, w * 0.016);
+    ctx.save(); ctx.translate(0, top + bh * 0.42); ctx.rotate(t * 14);
+    ctx.fillStyle = "#e3e8ef";
+    for (let k = 0; k < 3; k++) { ctx.rotate(Math.PI * 2 / 3); ctx.beginPath(); ctx.ellipse(0, -w * 0.055, w * 0.028, w * 0.055, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle = "#59606b"; ell(ctx, 0, top + bh * 0.42, w * 0.024, w * 0.024);
+  }
   if (type === "rover" && w > 20) {
     ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.3, w, bh * 0.14);
     ctx.fillStyle = "#59606b"; ctx.fillRect(w * 0.3 + cx, top - ch - w * 0.22, w * 0.025, w * 0.22);
@@ -228,6 +242,8 @@ export const SPRITES = {
   moonrock: { w: 1100, collide: true }, crater: { w: 1800, collide: false }, dish: { w: 1300, collide: true }, dome: { w: 1700, collide: true },
   autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
+  kelp: { w: 800, collide: true }, coral: { w: 1100, collide: true }, shellrock: { w: 1000, collide: true }, jelly: { w: 700, collide: false },
+  treasure: { w: 900, collide: true }, anemone: { w: 800, collide: false },
 };
 
 export function drawSprite(ctx, type, x, yb, w, t) {
@@ -394,6 +410,70 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "rgba(255,240,150,0.25)"; ell(ctx, x, yb - h * 0.22, w * 0.42, h * 0.16);
       break;
     }
+    case "kelp": {
+      // three tall strands that sway in the water, each with little leaves
+      for (let k = -1; k <= 1; k++) {
+        const bx = x + k * w * 0.18, tall = h * (1.5 + 0.3 * ((k + 2) % 2));
+        ctx.strokeStyle = k ? "#2f9a5a" : "#3fb86a"; ctx.lineWidth = Math.max(1, w * 0.07); ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(bx, yb);
+        for (let j = 1; j <= 6; j++) ctx.lineTo(bx + Math.sin(t * 1.3 + j * 0.8 + k + x * 0.01) * w * 0.07 * j / 3, yb - tall * j / 6);
+        ctx.stroke();
+        ctx.fillStyle = "#4fd07a";
+        for (let j = 1; j < 6; j += 2) { const lx = bx + Math.sin(t * 1.3 + j * 0.8 + k + x * 0.01) * w * 0.07 * j / 3, ly = yb - tall * j / 6; ctx.beginPath(); ctx.ellipse(lx + w * 0.06 * (j % 4 ? 1 : -1), ly, w * 0.07, w * 0.03, (j % 4 ? -0.5 : 0.5), 0, 7); ctx.fill(); }
+      }
+      ctx.lineCap = "butt";
+      break;
+    }
+    case "coral": {
+      // branching coral: a fan of rounded arms
+      const col = ["#ff7a59", "#ff5fa2", "#ffb347"][Math.abs(Math.round(x)) % 3];
+      ctx.strokeStyle = col; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1, w * 0.09);
+      const arm = (ax, ay, a, len, d) => {
+        const ex = ax + Math.sin(a) * len, ey = ay - Math.cos(a) * len;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke();
+        if (d > 0) { arm(ex, ey, a - 0.45, len * 0.72, d - 1); arm(ex, ey, a + 0.45, len * 0.72, d - 1); }
+        else { ctx.fillStyle = shade(col, 0.3); ell(ctx, ex, ey, w * 0.05, w * 0.05); }
+      };
+      arm(x, yb, 0, h * 0.35, 2);
+      ctx.lineCap = "butt";
+      break;
+    }
+    case "shellrock": {
+      const g = ctx.createRadialGradient(x - w * 0.15, yb - h * 0.4, w * 0.05, x, yb - h * 0.25, w * 0.6);
+      g.addColorStop(0, "#9fb4bf"); g.addColorStop(1, "#4b6270");
+      ctx.fillStyle = g; poly(ctx, [x - w * 0.5, yb, x - w * 0.36, yb - h * 0.38, x - w * 0.02, yb - h * 0.5, x + w * 0.38, yb - h * 0.36, x + w * 0.5, yb]);
+      ctx.fillStyle = "#ffd6c4"; ctx.beginPath(); ctx.moveTo(x + w * 0.1, yb - h * 0.3); ctx.arc(x + w * 0.1, yb - h * 0.3, w * 0.12, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = "#e8a58a"; ctx.lineWidth = Math.max(1, w * 0.012);
+      for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(x + w * 0.1, yb - h * 0.3); ctx.lineTo(x + w * 0.1 + Math.sin(k * 0.55) * w * 0.12, yb - h * 0.3 - Math.cos(k * 0.55) * w * 0.12); ctx.stroke(); }
+      ctx.fillStyle = "#ffb347"; star(ctx, x - w * 0.2, yb - h * 0.12, w * 0.09);
+      break;
+    }
+    case "jelly": {
+      // a jellyfish bobbing above the sand, glowing a little
+      const by = yb - h * (1.3 + 0.15 * Math.sin(t * 1.5 + x * 0.02));
+      ctx.fillStyle = "rgba(255,150,230,0.25)"; ell(ctx, x, by, w * 0.42, w * 0.32);
+      ctx.fillStyle = "rgba(255,170,235,0.85)"; ctx.beginPath(); ctx.ellipse(x, by, w * 0.3, w * 0.22, 0, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = "rgba(255,190,240,0.8)"; ctx.lineWidth = Math.max(1, w * 0.03);
+      for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(x + k * w * 0.11, by); for (let j = 1; j <= 4; j++) ctx.lineTo(x + k * w * 0.11 + Math.sin(t * 3 + j + k) * w * 0.04, by + j * w * 0.1); ctx.stroke(); }
+      ctx.fillStyle = "#fff"; ell(ctx, x - w * 0.1, by - w * 0.1, w * 0.05, w * 0.03);
+      break;
+    }
+    case "treasure": {
+      ctx.fillStyle = "rgba(255,212,0,0.25)"; ell(ctx, x, yb - h * 0.3, w * 0.6, h * 0.35);
+      ctx.fillStyle = "#8a5a2b"; rr(ctx, x - w * 0.4, yb - h * 0.42, w * 0.8, h * 0.42, w * 0.04);
+      ctx.fillStyle = "#a8743c"; ctx.beginPath(); ctx.ellipse(x, yb - h * 0.42, w * 0.4, h * 0.2, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#ffd400"; ctx.fillRect(x - w * 0.4, yb - h * 0.45, w * 0.8, h * 0.06); ctx.fillRect(x - w * 0.06, yb - h * 0.5, w * 0.12, h * 0.2);
+      for (let k = -1; k <= 1; k++) ell(ctx, x + k * w * 0.18, yb - h * 0.6 - Math.abs(k) * h * 0.04, w * 0.08, w * 0.08);
+      if (Math.sin(t * 4 + x * 0.01) > 0.7) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.2, yb - h * 0.7, w * 0.07); }
+      break;
+    }
+    case "anemone": {
+      ctx.fillStyle = "#9b4dff"; ell(ctx, x, yb - h * 0.08, w * 0.3, h * 0.1);
+      ctx.strokeStyle = "#ff8ad8"; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1, w * 0.05);
+      for (let k = -4; k <= 4; k++) { const a = k * 0.28 + Math.sin(t * 2 + k) * 0.12; ctx.beginPath(); ctx.moveTo(x + k * w * 0.05, yb - h * 0.12); ctx.lineTo(x + k * w * 0.05 + Math.sin(a) * h * 0.4, yb - h * 0.12 - Math.cos(a) * h * 0.4); ctx.stroke(); }
+      ctx.lineCap = "butt";
+      break;
+    }
     case "lamp":
       ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.12, h * 2.4);
       ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.6, w * 0.1);
@@ -417,6 +497,16 @@ export function drawCoin(ctx, x, y, w, t) {
   if (w > 10 && sx > 0.4) { ctx.fillStyle = "#fff3a0"; ell(ctx, x - w * 0.1 * sx, y - w * 0.12, w * 0.1 * sx, w * 0.12); }
 }
 
+/* A pearl floating above a bubble vent: worth 5 coins. */
+export function drawPearl(ctx, x, y, w, t) {
+  if (w < 1.5) return;
+  ctx.fillStyle = "rgba(255,200,240,0.35)"; ell(ctx, x, y, w * 0.75, w * 0.75);
+  const g = ctx.createRadialGradient(x - w * 0.15, y - w * 0.18, w * 0.05, x, y, w * 0.5);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(0.6, "#f4e9ff"); g.addColorStop(1, "#d9a8e8");
+  ctx.fillStyle = g; ell(ctx, x, y, w * 0.5, w * 0.5);
+  if (w > 8 && Math.sin(t * 5 + x * 0.01) > 0.5) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.22, y - w * 0.26, w * 0.12); }
+}
+
 /* Sky, sun, clouds/stars and two layers of hills. skyX/hillX scroll with the road's curves. */
 export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
   const hz = H * 0.5 + lift;
@@ -432,7 +522,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
       ctx.fillRect(sx, sy, s, s);
     }
   }
-  if (th.detail >= 2) {
+  if (th.detail >= 2 && th.stars) {
     ctx.fillStyle = "#ffffff";
     for (let i = 0; i < 120; i++) {
       const sx = ((i * 97.3 + skyX * W * 0.12) % W + W) % W, sy = (i * 41.9) % (hz * 0.95);
@@ -457,11 +547,14 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
     ctx.fillStyle = "rgba(0,0,30,0.45)"; ell(ctx, ex + er * 0.55, ey + er * 0.1, er * 0.75, er * 1.1);
     ctx.restore();
   }
-  ctx.fillStyle = th.sun;
-  ctx.globalAlpha = 0.35; ell(ctx, W * 0.78, hz * 0.32, H * 0.13, H * 0.13);
-  ctx.globalAlpha = 0.18; ell(ctx, W * 0.78, hz * 0.32, H * 0.2, H * 0.2);
-  ctx.globalAlpha = 1; ell(ctx, W * 0.78, hz * 0.32, H * 0.08, H * 0.08);
-  if (!th.stars) {
+  if (th.water) underwater(ctx, W, H, hz, skyX, t);
+  else {
+    ctx.fillStyle = th.sun;
+    ctx.globalAlpha = 0.35; ell(ctx, W * 0.78, hz * 0.32, H * 0.13, H * 0.13);
+    ctx.globalAlpha = 0.18; ell(ctx, W * 0.78, hz * 0.32, H * 0.2, H * 0.2);
+    ctx.globalAlpha = 1; ell(ctx, W * 0.78, hz * 0.32, H * 0.08, H * 0.08);
+  }
+  if (!th.stars && !th.water) {
     ctx.strokeStyle = "rgba(40,50,80,0.7)"; ctx.lineWidth = Math.max(1.5, H * 0.004); ctx.lineCap = "round";
     for (let i = 0; i < 4; i++) {
       const bx = (((t * 0.025 * (1 + i * 0.3) + i * 0.27 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.2 + 0.09 * i) + Math.sin(t * 1.3 + i) * H * 0.01;
@@ -483,6 +576,37 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
   ctx.globalAlpha = 0.55; hills(ctx, W, H, hz, th.hills[1], hillX * 0.3, H * 0.23, 0.45, 11); ctx.globalAlpha = 1;
   hills(ctx, W, H, hz, th.hills[1], hillX * 0.6, H * 0.16, 0.7, 3);
   hills(ctx, W, H, hz, th.hills[0], hillX, H * 0.09, 1.3, 7);
+}
+
+/* Under the sea (graphics ladder step 3): the bright surface far above, light rays, schools of fish, rising bubbles. */
+function underwater(ctx, W, H, hz, skyX, t) {
+  const sg = ctx.createLinearGradient(0, 0, 0, hz * 0.3);
+  sg.addColorStop(0, "rgba(210,255,255,0.6)"); sg.addColorStop(1, "rgba(210,255,255,0)");
+  ctx.fillStyle = sg; ctx.fillRect(0, 0, W, hz * 0.3);
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  for (let i = 0; i < 10; i++) { const wx = (((i / 10 + skyX * 0.3 + t * 0.01) % 1) + 1) % 1 * W; ell(ctx, wx, hz * 0.035 + Math.sin(t * 1.5 + i) * H * 0.006, W * 0.045, H * 0.006); }
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 6; i++) {
+    const rx = ((((i * 0.19 + skyX * 0.2) % 1.2) + 1.2) % 1.2 - 0.1) * W, sway = Math.sin(t * 0.5 + i * 1.3) * W * 0.03, a = 0.05 + 0.035 * Math.sin(t * 0.9 + i * 2);
+    ctx.fillStyle = `rgba(200,250,255,${a.toFixed(3)})`;
+    poly(ctx, [rx - W * 0.02, 0, rx + W * 0.03, 0, rx + sway + W * 0.13, H, rx + sway - W * 0.01, H]);
+  }
+  ctx.restore();
+  for (let s = 0; s < 3; s++) {
+    const fy = hz * (0.38 + s * 0.16), dir = s % 2 ? -1 : 1, u = (((t * 0.03 * (1 + s * 0.4) + s * 0.31 + skyX * 0.5) % 1.3) + 1.3) % 1.3 - 0.15;
+    const fx0 = (dir > 0 ? u : 1 - u) * W, fs = H * 0.012;
+    ctx.fillStyle = ["#ffb347", "#ff6b9d", "#ffe14d"][s];
+    for (let k = 0; k < 6; k++) {
+      const fx = fx0 - dir * k * H * 0.032, fyk = fy + Math.sin(t * 2 + k) * H * 0.008 + (k % 3 - 1) * H * 0.014;
+      ell(ctx, fx, fyk, fs * 1.4, fs * 0.8);
+      poly(ctx, [fx - dir * fs * 1.1, fyk, fx - dir * fs * 2.1, fyk - fs * 0.8, fx - dir * fs * 2.1, fyk + fs * 0.8]);
+    }
+  }
+  ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = Math.max(1, H * 0.002);
+  for (let i = 0; i < 24; i++) {
+    const bx = (((i * 0.137 + skyX * 0.4) % 1) + 1) % 1 * W + Math.sin(t * 2 + i) * H * 0.01, by = hz - ((t * 0.05 * (1 + i % 3) + i * 0.071) % 1) * hz, br = H * (0.004 + (i % 4) * 0.002);
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
+  }
 }
 
 function hills(ctx, W, H, hz, col, off, amp, freq, seed) {

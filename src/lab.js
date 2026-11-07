@@ -52,9 +52,9 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
       return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name} ${levelOf(r.id) + 1}</b>
         <div class="bar"><i style="width:${Math.round(100 * (1 - t / total))}%"></i></div><span class="timer" data-timer="${i}">⏱ ${fmt(t)}</span>
         <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
-    }).join("") + (bs.length < 3 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${bs.length === 1 ? 4 : 9}</small></div>` : "");
+    }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${[2, 4, 9, 15][bs.length]}</small></div>` : "");
 
-    const tiers = [1, 2, 3];
+    const tiers = [...new Set(RESEARCH.map(r => r.tier))].sort((a, b) => a - b);   // every tier, so new worlds' kits always show
     $("lab-list").innerHTML = tiers.map(tier => {
       const items = RESEARCH.filter(r => r.tier === tier), needRank = items[0].rank, open = S.rank >= needRank;
       return `<div class="tier-head">${open ? "⚗️" : "🔒"} Lab tier ${tier}${open ? "" : ` — Rank ${needRank}`}</div>` + items.map(r => {

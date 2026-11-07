@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH } from "./data.js";
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -15,7 +15,9 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  trials: {},          // trackId -> best Time Trial time (seconds)
+  trialMedals: {},     // trackId -> best medal (1 bronze, 2 silver, 3 gold)
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
   mastery: {},         // "trackId:difficulty" -> wins there (Track Mastery stars)
@@ -57,7 +59,9 @@ export function port(d) {
   s.chips = Math.round(num(d.chips, 0, 0));
   s.restUntil = num(d.restUntil, 0, 0);
   s.autoOn = d.autoOn === true;
-  s.world = d.world === "moon" ? "moon" : "earth";
+  s.world = ["moon", "ocean"].includes(d.world) ? d.world : "earth";
+  s.trials = Object.fromEntries(Object.entries(obj(d.trials)).filter(([, v]) => typeof v === "number" && v > 0 && v < 3600).map(([k, v]) => [k, Math.round(v * 100) / 100]));
+  s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));
   s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));
   s.daily = Object.fromEntries(Object.entries(obj(d.daily)).filter(([, v]) => typeof v === "string"));
 
@@ -151,7 +155,14 @@ export function replaceSave(data) {
   keepBefore();
   S = s; save();
 }
-export function resetSave() { keepBefore(); S = DEFAULTS(); save(); }
+export function resetSave() { keepBefore(); S = DEFAULTS(); try { localStorage.removeItem(GHOSTS); } catch (e) { /* storage blocked */ } save(); }
+
+/* Time Trial ghosts live in their own key (they are big, and only replays): trackId -> { t, d: [dist], o: [offset], a: [air] } */
+const GHOSTS = "turbodash.ghosts";
+export function loadGhost(id) { try { return JSON.parse(localStorage.getItem(GHOSTS) || "{}")[id] || null; } catch (e) { return null; } }
+export function saveGhost(id, g) {
+  try { const all = JSON.parse(localStorage.getItem(GHOSTS) || "{}"); all[id] = g; localStorage.setItem(GHOSTS, JSON.stringify(all)); } catch (e) { /* full or blocked: ghosts are optional */ }
+}
 /* The save from just before the last reset/import/cloud load, for "Undo" in Parent Corner. */
 function keepBefore() { try { localStorage.setItem(BEFORE, JSON.stringify(S)); } catch (e) { /* ignore */ } }
 export const hasBefore = () => { try { return !!localStorage.getItem(BEFORE); } catch (e) { return false; } };

@@ -27,6 +27,7 @@ const FIXTURES = {
   "v0.14 (Driver School)": { v: 12, coins: 900, owned: ["zippy", "patrol"], car: "patrol", ups: {}, school: { tickets: 7, earned: 31, skills: { focus: 3, reflex: 2, courage: 1, smarts: 0 }, log: [{ d: "2026-11-08", a: "read", m: 20, t: 4 }], readingDouble: false, capMin: 60 }, parent: { diffs: ["normal"], license: false } },
   "v0.15 (moon, rings)": { v: 12, coins: 80000, owned: ["zippy", "galaxy", "rover"], car: "rover", ups: { rover: { engine: 2, turbo: 1, tires: 1, magnet: 0 } }, rank: 21, world: "moon", research: { moonTires: 1, thrusters: 2 }, best: { crater: 1 }, bestD: { "crater:normal": 1 }, stats: { roadCoins: 9000, stunts: 400, turbos: 300, bams: 50, powers: 80, rings: 12 } },
   "v0.16 (bosses, daily treats)": { v: 12, coins: 5000, owned: ["zippy", "thunder", "firetruck"], car: "thunder", ups: {}, rank: 16, bosses: { bruno: true }, daily: { icecream: "2026-11-07" } },
+  "v0.17 (deep blue, time trials)": { v: 13, coins: 150000, owned: ["zippy", "rover", "sub"], car: "sub", ups: { sub: { engine: 1, turbo: 0, tires: 0, magnet: 0 } }, rank: 26, world: "ocean", research: { moonTires: 1, snorkel: 1, propellers: 2 }, best: { kelp: 1 }, bestD: { "kelp:normal": 1 }, stats: { roadCoins: 20000, stunts: 900, turbos: 500, bams: 90, powers: 120, rings: 40, pearls: 77 }, trials: { sunny: 61.42, kelp: 80.1 }, trialMedals: { sunny: 3, kelp: 1 } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -64,6 +65,9 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
   if (raw.daily) check(name, Object.entries(raw.daily).every(([k, v]) => S.daily[k] === v), "daily treats lost");
   if (raw.world) check(name, S.world === raw.world, "world choice lost");
+  if (raw.trials) check(name, Object.entries(raw.trials).every(([k, v]) => S.trials[k] === v), "trial times lost");
+  if (raw.trialMedals) check(name, Object.entries(raw.trialMedals).every(([k, v]) => S.trialMedals[k] === v), "trial medals lost");
+  if (raw.stats?.pearls) check(name, S.stats.pearls === raw.stats.pearls, "pearl count lost");
   if (raw.stats?.rings) check(name, S.stats.rings === raw.stats.rings, "ring count lost");
   check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object", "school data broken");
   check(name, Array.isArray(S.lab.benches) && S.lab.benches.every(b => b.p === null || typeof b.p === "string"), "bad lab benches");
