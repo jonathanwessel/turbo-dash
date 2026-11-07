@@ -31,6 +31,10 @@ window.__audit = (rootSel) => {
     if (!hiddenByScroll) items.push({ e, r, scrolled, clipped });
   }
   const issues = [];
+  const BAD = /\b(null|undefined|NaN|Infinity)\b|\[object/;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n; (n = walker.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
+  for (const el of root.querySelectorAll("[title],[aria-label]")) for (const a of ["title", "aria-label"]) if (BAD.test(el.getAttribute(a) || "")) issues.push("BAD TEXT in " + a + " of " + name(el));
   for (const it of items) {
     if (!it.scrolled && (it.r.left < -2 || it.r.top < -2 || it.r.right > W + 2 || it.r.bottom > H + 2)) issues.push("OFF-SCREEN " + name(it.e) + ` [${Math.round(it.r.left)},${Math.round(it.r.top)},${Math.round(it.r.right)},${Math.round(it.r.bottom)}]`);
     if (it.clipped) issues.push("CUT OFF " + name(it.e) + " by " + it.clipped);
@@ -48,6 +52,16 @@ window.__audit = (rootSel) => {
   }
   return [...new Set(issues)];
 };
+/* __sweepAll(): the sweep with a brand-new save, a mid-game save and the real current one (restored afterwards) */
+window.__sweepAll = async () => {
+  const S = window.__td.S, keep = JSON.stringify(S), out = {};
+  const as = async (label, patch) => { Object.assign(S, JSON.parse(keep), patch); const r = await window.__sweep(); for (const [k, v] of Object.entries(r)) out[label + " " + k] = v; };
+  await as("new", { rank: 1, wins: 0, owned: ["zippy"], car: "zippy", world: "earth", best: {}, bestD: {}, research: {}, cups: {}, bosses: {} });
+  await as("mid", { rank: 16, world: "earth" });
+  await as("now", {});
+  Object.assign(S, JSON.parse(keep)); window.__td.goHub();
+  return out;
+};
 window.__sweep = async (only) => {
   const td = window.__td, wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
   const go = async (k, fn, sel) => {
@@ -59,6 +73,14 @@ window.__sweep = async (only) => {
   await go("s-hub", () => td.goHub());
   await go("s-garage", hub("garage"));
   await go("s-garage:paint", () => document.querySelector('[data-gtab="paint"]').click(), "#s-garage");
+  document.querySelector('[data-gtab="up"]').click();
+  for (let k = 0; k < 40; k++) {   // step through every car (stops when it's back at the first one)
+    const before = document.getElementById("g-name").textContent;
+    await go("s-garage:" + before, async () => {}, "#s-garage");
+    document.getElementById("g-next").click(); await wait(30);
+    if (k > 0 && document.getElementById("g-name").textContent === window.__firstCar) break;
+    if (k === 0) window.__firstCar = before;
+  }
   await go("s-tracks", hub("race"));
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");
   document.querySelector('[data-rtab="races"]').click();

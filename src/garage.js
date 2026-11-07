@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, CUPS, WORLDS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen } from "./data.js";
+import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen } from "./data.js";
 import { drawCar } from "./draw.js";
 import { S, save, upsOf } from "./save.js";
 
@@ -40,8 +40,12 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${Math.round(8 + 92 * Math.min(1, v))}%"></i></div>`).join("");
     const btn = $("g-action");
     const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
-    btn.className = "big-btn " + (driving ? "" : owned ? "go" : !cup && !far && S.coins >= car.price ? "gold" : "");
-    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : cup ? `🏆 Win the ${cup.name}` : far ? `${w.icon} Reach the ${w.name}` : car.school ? "🚦 Driver School" : `🪙 ${car.price}`;
+    // cars that can't be bought say how to earn them (a cup, a boss, a building, the Driver School, a new world)
+    const boss = car.boss && BOSSES.find(b => b.id === car.boss), bld = car.building && BUILDINGS.find(b => b.id === car.building);
+    const buyable = car.price != null && !far;
+    btn.className = "big-btn " + (driving ? "" : owned ? "go" : buyable && S.coins >= car.price ? "gold" : "");
+    btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : far ? `${w.icon} Reach the ${w.name}` : cup ? `🏆 Win the ${cup.name}`
+      : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name} · Rank ${bld.rank}` : car.school ? "🚦 Driver School" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
     document.querySelectorAll("[data-gtab]").forEach(b => b.classList.toggle("on", b.dataset.gtab === tab));
     $("g-ups").hidden = tab !== "up"; $("g-paint").hidden = tab !== "paint";
     if (tab === "up") renderUps(car, owned); else renderPaint(car, owned);
