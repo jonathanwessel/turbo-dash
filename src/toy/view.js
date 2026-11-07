@@ -19,6 +19,16 @@ const plastic = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, rough
 
 let blobT = null;
 const blobTex = () => blobT ||= canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, w, w); });
+/* the graphics chip's name (to spot PowerVR, and to show in Settings), from a tiny throwaway context */
+function gpuName() {
+  try {
+    const c = document.createElement("canvas"), gl = c.getContext("webgl2") || c.getContext("webgl");
+    if (!gl) return "";
+    const ext = gl.getExtension("WEBGL_debug_renderer_info"), name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return name;
+  } catch (e) { return ""; }
+}
 /* ---------- a toy car, front facing -z ---------- */
 function carMesh(def) {
   const g = new THREE.Group(), body = new THREE.Group(), type = def.type, monster = type === "monster" || type === "rover";
@@ -219,10 +229,17 @@ function trackMeshes(T, pal) {
 export class ToyView {
   /* opts.light: the tablet look. No edge smoothing, simple shadows, plain (not clear-coated) plastic, no reflection
      map and 75% resolution: far less work and memory for a tablet's graphics chip, so its 3D doesn't give up. */
+  /* opts.tier: "full" (shiny), "light" (tablets: no edge smoothing, simple shadows, plain plastic, no reflections,
+     75% resolution) or "min" (no shadows at all, flat-lit plastic, 65% resolution). PowerVR graphics chips (Pixel 10)
+     always get "min": their drivers give up on big shadow and plastic shaders. */
   constructor(glCanvas, overlay, opts = {}) {
-    this.gl = glCanvas; this.ov = overlay; this.ctx = overlay.getContext("2d"); this.light = !!opts.light;
-    const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !this.light, powerPreference: "high-performance" });
-    R.shadowMap.enabled = true; R.shadowMap.type = this.light ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; R.toneMapping = THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
+    this.gl = glCanvas; this.ov = overlay; this.ctx = overlay.getContext("2d");
+    this.gpu = gpuName();
+    let tier = opts.tier || (opts.light ? "light" : "full");
+    if (/PowerVR|Imagination/i.test(this.gpu)) tier = "min";
+    this.tier = tier; this.light = tier !== "full"; this.min = tier === "min";
+    const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !this.light, powerPreference: this.min ? "default" : "high-performance" });
+    R.shadowMap.enabled = !this.min; R.shadowMap.type = this.light ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; R.toneMapping = this.min ? THREE.NoToneMapping : THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#cfeaff", 260, 900);
     // Shiny reflections need a room "environment map", which needs half-float render targets. Many tablets can't
     // render to those, and a broken map blows the whole picture out to white. No support: no map (safe look).
@@ -238,7 +255,7 @@ export class ToyView {
     this.camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2000);
     this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", this.light ? 1.6 : 1.1));   // brighter without reflections
     const sun = this.sun = new THREE.DirectionalLight("#fff1d0", 2.4);
-    sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 400 }); sun.shadow.bias = -0.0005;
+    sun.castShadow = !this.min; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 400 }); sun.shadow.bias = -0.0005;
     this.scene.add(sun, sun.target);
     const rim = new THREE.DirectionalLight("#d6ecff", 0.9); rim.position.set(80, 60, 140); this.scene.add(rim);   // a cool rim light from behind
     this.coinGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.18, 20); this.coinMat = std("#ffc21a", { metalness: 0.85, roughness: 0.25, emissive: "#7a5200", emissiveIntensity: 0.35 });
@@ -295,6 +312,10 @@ export class ToyView {
     this.safe = true;
     this.scene.environment = null;
     const swap = m => {
+      if (this.min && m && (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial)) {
+        const l = new THREE.MeshLambertMaterial({ color: m.color, map: m.map, vertexColors: m.vertexColors, emissive: m.emissive, emissiveIntensity: m.emissiveIntensity, transparent: m.transparent, opacity: m.opacity, side: m.side });
+        m.dispose(); return l;
+      }
       if (!m || !m.isMeshPhysicalMaterial) return m;
       const s = new THREE.MeshStandardMaterial({ color: m.color, map: m.map, vertexColors: m.vertexColors, roughness: Math.max(0.5, m.roughness), metalness: Math.min(0.2, m.metalness), emissive: m.emissive, emissiveIntensity: m.emissiveIntensity, transparent: m.transparent, opacity: m.opacity, side: m.side });
       m.dispose(); return s;
@@ -308,6 +329,7 @@ export class ToyView {
     lite = lite || this.light;
     if (this.lite === lite) return;
     this.lite = lite;
+    if (this.min) return;   // no shadows to resize
     const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
   }
 
@@ -347,7 +369,7 @@ export class ToyView {
     const T = race.T, R = this.renderer, W = this.ov.width, H = this.ov.height;
     if (!this.world || this.trackId !== T.track.id) this.reset(race);
     const key = W + "x" + H;
-    if (this.cam !== key) { const k = this.light ? 0.75 : 1; R.setPixelRatio(1); R.setSize(Math.round(W * k), Math.round(H * k), false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = key; }
+    if (this.cam !== key) { const k = this.min ? 0.65 : this.light ? 0.75 : 1; R.setPixelRatio(1); R.setSize(Math.round(W * k), Math.round(H * k), false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = key; }
     const t = race.t, dt = Math.min(0.05, Math.max(0, t - this.lastT)); this.lastT = t;
     const p = race.player, fast = race.nitroT > 0 || race.boostT > 0;
     // cars

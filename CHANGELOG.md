@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.4 — Toy Track World on the Pixel 10, mystery cars stay mystery
+
+- **Toy Track World on phones and tablets:** the 3D now has three levels: full (computers), light (tablets) and
+  minimal (no shadows, simple plastic, lower resolution). Phones with a PowerVR graphics chip, like the Pixel 10,
+  start at minimal, because their drivers give up on big shadow shaders. If the 3D stops anyway, the game steps
+  down one level and remembers it on that device. Settings shows the 3D level and the graphics chip under the version.
+- **Mystery cars stay a mystery everywhere:** a car you can't buy yet (cup and boss prizes, the fire truck, the
+  Driver School car, cars from worlds that aren't open) shows as "???" and a purple shape in the garage (both views),
+  on cup and boss cards ("Win: 🎁 a mystery car"), in the boss intro and on preview cards.
+- **The preview card** is tidied up: the car sits in the middle, the "opens at" line fits on one line and both
+  buttons are the same size.
+
 ## v1.2.3 — Gold coins on every tablet 🟡
 
 - **Fixed: coins looked silver on some tablets.** The coin picture came from each device's own emoji font (gold on

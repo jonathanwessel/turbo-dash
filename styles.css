@@ -806,7 +806,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .cup-card .cc-best:empty { display: none; }
 @media (max-height: 400px) and (orientation: landscape) { .cup-card .cc-cup { font-size: clamp(30px, 9vmin, 50px); } .cup-card .cc-car { line-height: 1.1; } }
 .world-bar button.peek { border-style: dashed; background: rgba(255,255,255,.18); }
-.pv-row { display: flex; align-items: center; gap: 10px; }
+.pv-row { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vmin, 24px); width: 100%; margin: 2px 0 4px; }
+.preview-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.preview-card .gift-day { font-weight: 900; margin: 2px 0 8px; }
+.preview-card .row { align-items: stretch; flex-wrap: nowrap; }
+.preview-card .row .big-btn.small { font-size: clamp(18px, 4.6vmin, 24px); display: flex; align-items: center; justify-content: center; padding-left: 22px; padding-right: 22px; }
 .pv-row .arrow[hidden] { visibility: hidden; display: block; }
 
 /* 🪙 the game's own gold coin (the same on every device; see src/coins.js) */

@@ -11,7 +11,7 @@ import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, set
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
-import { createGarage, lookOf } from "./garage.js";
+import { carKnown, carName, drawCarOrMystery, createGarage, lookOf } from "./garage.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
@@ -36,14 +36,23 @@ const hooks = {
    3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
 const classic = new Race(canvas, hooks);
 let race = classic, toyRace = null, ToyView = null, toyLoading = null, toyFailed = false, toyWaiting = false;
-let glCanvas = $("gl"), toyCrashed = false, toyCrashes = 0, lostT = 0;
+let glCanvas = $("gl"), lostT = 0;
+/* 🧸 The 3D ladder: full → light → minimal. A crash steps down one level, and this device remembers the level that
+   works (its "floor"), so the next time starts there. Changing ✨ Effects clears it and tries again. */
+const TIERS = ["full", "light", "min"];
+let toyDiag = (() => { try { return JSON.parse(localStorage.getItem("turbodash.3d")) || {}; } catch (e) { return {}; } })();
+const saveDiag = () => { try { localStorage.setItem("turbodash.3d", JSON.stringify(toyDiag)); } catch (e) { /* private mode */ } };
 /* Tablets get the light 3D look (Effects: Auto or Simple); Full forces the shiny one. After a 3D crash, always light. */
-const toyLight = () => toyCrashed || S.opts.fx === "simple" || (S.opts.fx !== "full" && matchMedia("(pointer: coarse)").matches);
+const toyTier = () => { const base = S.opts.fx === "full" ? 0 : S.opts.fx === "simple" || matchMedia("(pointer: coarse)").matches ? 1 : 0; return TIERS[Math.min(2, Math.max(base, toyDiag.floor || 0))]; };
 function loadToy() {
   return toyLoading ||= import("./toy/view.js").then(m => { ToyView = m.ToyView; }).catch(e => { toyFailed = true; console.warn("Turbo Dash: Toy Track World couldn't load", e); });
 }
 function recoverToy() {
-  lostT = 0; toyCrashed = true; if (++toyCrashes >= 2) toyFailed = true;   // twice: this tablet just can't do 3D yet
+  lostT = 0;
+  const was = TIERS.indexOf(toyRace.view?.tier || "full");
+  toyDiag.crashes = (toyDiag.crashes || 0) + 1; toyDiag.lastCrash = was; toyDiag.floor = Math.max(toyDiag.floor || 0, was + 1);
+  if (toyDiag.floor > 2) { toyDiag.floor = 2; toyFailed = true; }   // even the minimal 3D stopped: this device can't do it yet
+  saveDiag();
   const fresh = glCanvas.cloneNode(false); glCanvas.replaceWith(fresh); glCanvas = fresh;   // a lost canvas can't draw again
   try { toyRace.view.renderer.dispose(); } catch (e) { /* already gone */ }
   toyRace.view = null; cupRun = null; bossRun = null; trialRun = false; previewRun = null;
@@ -56,7 +65,7 @@ function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
-    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { light: toyLight() }); toyRace.view.setLite(classic.lite); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { tier: toyTier() }); toyRace.view.setLite(classic.lite); toyDiag.gpu = toyRace.view.gpu; toyDiag.tier = toyRace.view.tier; saveDiag(); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
   glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);
@@ -315,7 +324,7 @@ function paintCups() {
       <div class="cc-cup" style="filter:drop-shadow(0 0 10px ${c.color})">🏆</div><div class="cc-name" style="color:${c.color}">${c.name}</div>
       <div class="cc-tracks">${c.tracks.map(id => TRACKS.find(t => t.id === id).icon).join("")}</div>
       <div class="cc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
-      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " : "Win: 🚗 "}${car.name}</div>
+      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " + car.name : "Win: 🎁 a mystery car"}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < need ? "Rank " + need : "Open all 3 tracks"}</small></div>`}</button>`;
   }).join("");
 }
@@ -391,7 +400,7 @@ function paintBosses() {
     return `<button class="cup-card boss ${open ? "" : "locked"}" data-boss="${b.id}" style="border-color:#ffd400">
       <div class="cc-cup">${b.icon}</div><div class="cc-name" style="color:#ffd400">${b.name}</div>
       <div class="cc-tracks">${t.icon}</div><div class="cc-best">${beat ? "👑" : ""}</div>
-      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " : "Win: 🚗 "}${car.name}</div>
+      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " + car.name : "Win: 🎁 a mystery car"}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < b.rank ? "Rank " + b.rank : "Open " + t.name}</small></div>`}</button>`;
   }).join("") || `<div class="boss-says">No boss here yet!</div>`;
 }
@@ -404,8 +413,8 @@ $("boss-list").addEventListener("click", e => {
 function openBossIntro(b) {
   const car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
   $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
-  $("bi-info").textContent = `${t.icon} ${t.name} · one on one · win the ${car.name}!`;
-  const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
+  $("bi-info").textContent = `${t.icon} ${t.name} · one on one · win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`;
+  const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("bi-go").onclick = () => { sfx("click"); cupRun = null; trialRun = false; bossRun = b; startRace(t); };
   $("bi-back").onclick = () => { sfx("click"); openTracks(); };
   sfx("chest"); show("s-boss");
@@ -451,9 +460,9 @@ function openPreview(worldId, back = "s-tracks") {
   previewBack = back;
   const car = worldCar(w), track = TRACKS.find(t => t.world === w.id);
   $("pv-icon").textContent = w.icon; $("pv-name").textContent = `👀 ${w.name}`;
-  $("pv-says").textContent = `Take a peek! One lap of ${track.name} in the ${car.name}. No coins or prizes in a preview.`;
-  $("pv-info").textContent = `${w.name} opens for real with ${howToOpen(w)}.`;
-  const cv = $("pv-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
+  $("pv-says").textContent = `Take a peek! One lap of ${track.name} in ${carKnown(car) ? "the " + car.name : "a mystery car"}. No coins or prizes in a preview.`;
+  $("pv-info").textContent = `Opens for real at ${howToOpen(w)}`;
+  const cv = $("pv-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("pv-go").onclick = () => { sfx("click"); startPreview(w); };
   // ◀ ▶ flip through every world still to come
   const L = lockedWorlds(), k = L.indexOf(w), step = d => () => { sfx("click"); openPreview(L[(k + d + L.length) % L.length].id, previewBack); };
@@ -471,7 +480,7 @@ function showPreviewResult(r) {
   $("pe-icon").textContent = r.place === 1 ? "🏆" : w.icon;
   $("pe-title").textContent = r.place === 1 ? "You won the preview!" : "Preview done!";
   $("pe-place").textContent = `You came ${r.place}${suffix(r.place)} in ${w.name}, ${who()}!`;
-  $("pe-info").textContent = `${w.name} opens for real with ${howToOpen(w)}.`;
+  $("pe-info").textContent = `${w.name} opens for real at ${howToOpen(w)}`;
   show("s-pvend"); sfx(r.place <= 3 ? "win" : "lose"); if (r.place === 1) confetti(80);
 }
 $("pv-back").onclick = () => { sfx("click"); show(previewBack); };
@@ -1012,7 +1021,7 @@ function goHub() {
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
 const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
-$("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); paintToggles(); sfx("click"); };
+$("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); toyDiag.floor = 0; saveDiag(); paintToggles(); sfx("click"); };
 function paintToggles() {
   $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? (autoLite ? " · simple now" : " · full now") : "");
   $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
@@ -1164,7 +1173,13 @@ function openProgress() {
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
 $("p-endrest").onclick = () => { S.restUntil = 0; playMs = 0; save(); paintParent(); };
 /* ---------- settings ---------- */
-$("btn-settings").onclick = () => { sfx("click"); $("set-ver").textContent = VERSION === "dev" ? "dev build" : "v" + VERSION; paintToggles(); show("s-settings"); };
+const NAMES3D = { full: "full", light: "light", min: "minimal" };
+$("btn-settings").onclick = () => {
+  sfx("click");
+  const chip = (toyDiag.gpu || "").replace(/^ANGLE \(|\)$/g, "").replace(/, (OpenGL|Vulkan)[^,]*$/i, "").slice(0, 40);
+  $("set-ver").textContent = (VERSION === "dev" ? "dev build" : "v" + VERSION) + (toyDiag.tier ? ` · 3D ${NAMES3D[toyDiag.tier]}${toyDiag.crashes ? ` (stopped ${toyDiag.crashes}×)` : ""}${chip ? " · " + chip : ""}` : "");
+  paintToggles(); show("s-settings");
+};
 /* Grown-up check: a two-digit multiplication typed on a number pad (no answers to pick from), and a
    30-second wait after two wrong answers, so guessing doesn't get a child in. */
 let guPass = null, guBack = "s-settings", guAns = 0, guTyped = "", guMiss = 0, guLockUntil = 0, guTimer = 0;
@@ -1246,7 +1261,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyCrashed() { return toyCrashed; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

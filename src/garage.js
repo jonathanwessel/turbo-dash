@@ -11,6 +11,24 @@ export function lookOf(car) {
   return out;
 }
 
+/* ❓ A car you can't buy yet (a cup or boss prize, a building, the Driver School, or a world that isn't open) stays a
+   mystery everywhere: "???" and a dark shape, until it's yours or in the shop. */
+export const carKnown = car => S.owned.includes(car.id) || (car.price != null && !(car.world && !worldOpen(S, car.world)));
+export const carName = car => carKnown(car) ? car.name + (car.ice ? " ❄️" : "") : "???";
+let off = null;
+const MYSTERY = "rgb(104,88,170)";   // the mystery-car shape: a soft purple that shows on light and dark cards
+/* draw a car; a mystery car is drawn as a dark silhouette with a ❓ (on its own layer, so nothing behind it darkens) */
+export function drawCarOrMystery(ctx, x, yb, w, car, o = {}) {
+  if (carKnown(car)) { drawCar(ctx, x, yb, w, lookOf(car), o); return; }
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  off ||= document.createElement("canvas"); if (off.width !== W || off.height !== H) { off.width = W; off.height = H; }
+  const c = off.getContext("2d"); c.clearRect(0, 0, W, H);
+  drawCar(c, x, yb, w, { ...car, sticker: "none", dirt: 0 }, { ...o, noShadow: true, nitro: false });
+  c.globalCompositeOperation = "source-atop"; c.fillStyle = MYSTERY; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "source-over";
+  ctx.drawImage(off, 0, 0);
+  ctx.font = `${Math.round(w * 0.32)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("❓", x + w * 0.42, yb - w * 0.62);
+}
+
 // which world a car belongs to: its own world, or the world of the cup that gives it (Earth otherwise)
 export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
 /* What the car's button says: driving it, drive it, or how to get it (buy, a cup, a boss, a building, a new world). */
@@ -50,7 +68,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
       const buy = !owned && c.price != null && !(c.world && !worldOpen(S, c.world));
       drawCar(x, 80, 88, 96, lookOf(c), { t: 0, noShadow: !owned });
       if (!owned) {
-        x.globalCompositeOperation = "source-atop"; x.fillStyle = buy ? "rgba(20,10,50,0.45)" : "rgba(20,10,50,0.92)"; x.fillRect(0, 0, 160, 95); x.globalCompositeOperation = "source-over";
+        x.globalCompositeOperation = "source-atop"; x.fillStyle = buy ? "rgba(20,10,50,0.45)" : MYSTERY; x.fillRect(0, 0, 160, 95); x.globalCompositeOperation = "source-over";
         x.font = "26px system-ui"; x.textAlign = "right"; x.textBaseline = "top"; x.fillText(buy ? "🔒" : "❓", 156, 2);
       }
     }
@@ -73,7 +91,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
 
   function render() {
     const car = CARS[idx], owned = S.owned.includes(car.id), driving = S.car === car.id;
-    $("g-name").textContent = car.name + (car.ice ? " ❄️" : "");
+    $("g-name").textContent = carName(car);
     const here = worldOf(car);
     // like the race screen: the worlds he can race in (or owns a car from), plus just the next one as a goal
     const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
@@ -83,7 +101,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
       const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
       return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.icon}</span><small>${mine}/${list.length}</small></button>`;
     }).join("");
-    $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${Math.round(8 + 92 * Math.min(1, v))}%"></i></div>`).join("");
+    $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${carKnown(car) ? Math.round(8 + 92 * Math.min(1, v)) : 0}%"></i></div>`).join("");
     const btn = $("g-action");
     // cars that can't be bought say how to earn them (a cup, a boss, a building, the Driver School, a new world)
     const far = car.world && !worldOpen(S, car.world) && !owned, buyable = car.price != null && !far;
@@ -96,7 +114,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
 
   function renderUps(car, owned) {
     const ups = upsOf(car.id);
-    $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : "Buy " + car.name + " to upgrade it!"}</div>` + UPGRADES.map(u => {
+    $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : carKnown(car) ? "Buy " + car.name + " to upgrade it!" : "This car is still a mystery!"}</div>` + UPGRADES.map(u => {
       const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = max ? 0 : upgradeCost(car.id, lvl, S.research.pitCrew || 0);
       return `<div class="up-card" data-up="${u.id}"><div class="up-icon">${u.icon}</div><b>${u.name}</b><small>${u.desc}</small>
         <div class="pips">${Array.from({ length: UPGRADE_MAX }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>
@@ -108,7 +126,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const look = S.look[car.id] || {}, cur = look.paint || "stock", curS = look.sticker || "none";
     const swatch = p => p.rainbow ? "conic-gradient(#ff3d3d,#ff9d00,#ffe600,#3ddc5a,#2fa8ff,#8a3cff,#ff3d3d)" : (p.color || car.body);
     const label = (has, price) => has ? "" : `<small class="${S.coins >= price ? "" : "poor"}">🪙${price}</small>`;
-    $("g-paint").innerHTML = (owned ? "" : `<div class="g-note">Buy ${car.name} first to paint it!</div>`) +
+    $("g-paint").innerHTML = (owned ? "" : `<div class="g-note">${carKnown(car) ? "Buy " + car.name + " first to paint it!" : "This car is still a mystery!"}</div>`) +
       `<div class="sw-title">🎨 Paint</div><div class="swatches">` +
       PAINTS.map(p => { const has = S.paints.includes(p.id), lab = p.lab && !S.research[p.lab]; return `<button class="sw ${cur === p.id ? "on" : ""} ${has ? "" : "locked"} ${lab ? "lablock" : ""}" data-paint="${p.id}" title="${p.name}"><i style="background:${swatch(p)}">${lab ? "🔬" : ""}</i>${lab ? "<small>Lab</small>" : label(has, p.price)}</button>`; }).join("") +
       `</div><div class="sw-title">✨ Stickers</div><div class="swatches">` +
@@ -173,8 +191,8 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     g.addColorStop(0, "rgba(255,212,0,0.55)"); g.addColorStop(1, "rgba(255,212,0,0)");
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.88, W * 0.48, H * 0.14, 0, 0, 7); ctx.fill();
     const w = W * 0.62 * (1 + zoom * 0.08);
-    drawCar(ctx, W / 2, H * 0.9 + Math.sin(t * 3) * 3, w, lookOf(car), { t, steer: Math.sin(t * 1.3) * 0.5, nitro: Math.sin(t * 0.8) > 0.6 });
-    if (!S.owned.includes(car.id)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.fillText("🔒", W - 8, H * 0.2); }
+    drawCarOrMystery(ctx, W / 2, H * 0.9 + Math.sin(t * 3) * 3, w, car, { t, steer: Math.sin(t * 1.3) * 0.5, nitro: Math.sin(t * 0.8) > 0.6 });
+    if (!S.owned.includes(car.id) && carKnown(car)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.fillText("🔒", W - 8, H * 0.2); }
   }
 
   const affordable = () => CARS.some(c => c.price != null && !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
