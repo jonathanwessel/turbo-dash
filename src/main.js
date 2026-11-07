@@ -27,7 +27,7 @@ const buzz = ms => { if (S.parent.buzz && navigator.userActivation?.hasBeenActiv
 const hooks = {
   sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
   // engine hum only during a real race (menus have the demo drive behind them, but only music)
-  engine: (r, b) => { if (mode === "race") engine(r, b); },
+  engine: (r, b, tun) => { if (mode === "race") engine(r, b, tun); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
   onFinish: r => { clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
 };

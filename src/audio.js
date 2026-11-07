@@ -2,7 +2,7 @@
 let muffle = null, water = false;
 /* Underwater races sound muffled (a soft low-pass on everything). */
 export function setWater(on) { water = !!on; if (muffle) muffle.frequency.setTargetAtTime(water ? 900 : 20000, ac.currentTime, 0.15); }
-let ac = null, master, sfxBus, musicBus, engOsc, engOsc2, engGain, engFilter, noiseBuf;
+let ac = null, master, sfxBus, musicBus, engOsc, engOsc2, engGain, engFilter, noiseBuf, echoSend;
 const opts = { sfx: true, music: true, volume: 0.8 };
 let musicTimer = null, step = 0, nextT = 0, song = "menu";
 
@@ -25,6 +25,10 @@ export function initAudio() {
   engOsc2 = ac.createOscillator(); engOsc2.type = "square"; engOsc2.frequency.value = 25;
   const g2 = ac.createGain(); g2.gain.value = 0.5;
   engOsc.connect(engFilter); engOsc2.connect(g2); g2.connect(engFilter); engFilter.connect(engGain); engGain.connect(sfxBus);
+  // 🚇 tunnel echo: a short delay with feedback, only fed while inside a tunnel
+  echoSend = ac.createGain(); echoSend.gain.value = 0;
+  const dl = ac.createDelay(0.5), fb = ac.createGain(); dl.delayTime.value = 0.11; fb.gain.value = 0.38;
+  engGain.connect(echoSend); echoSend.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(sfxBus);
   engOsc.start(); engOsc2.start();
   applyOpts();
   startMusic();
@@ -104,9 +108,10 @@ export function setEngineVoice(type) {
   voice = VOICES[type] || VOICES.racer;
   if (ac) { engOsc.type = voice.a; engOsc2.type = voice.b; }
 }
-export function engine(ratio, boosting) {
+export function engine(ratio, boosting, tunnel = false) {
   if (!ac) return;
   const t = ac.currentTime, V = voice;
+  echoSend?.gain.setTargetAtTime(tunnel ? 0.9 : 0, t, 0.15);
   if (engOsc.type !== V.a) { engOsc.type = V.a; engOsc2.type = V.b; }
   engOsc.frequency.setTargetAtTime(V.base + ratio * V.span + (boosting ? 30 : 0), t, 0.08);
   engOsc2.frequency.setTargetAtTime(V.base / 2 + ratio * V.span / 2, t, 0.08);

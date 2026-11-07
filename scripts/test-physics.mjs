@@ -4,7 +4,7 @@
 let seed = 12345;
 Math.random = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
-const { Race, buildTrack, SEG, BASE_MAX, CAR_W, RAIL_IN, RAIL_OUT } = await import("../src/engine.js");
+const { Race, buildTrack, SEG, BASE_MAX, CAR_W, RAIL_IN } = await import("../src/engine.js");
 const { statsFor } = await import("../src/stats.js");
 const { CARS, TRACKS } = await import("../src/data.js");
 const { runRace, race: botRace } = await import("./racebot.mjs");
@@ -94,6 +94,11 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("rail holds", out <= RAIL_IN + 1e-9, `got to ${out.toFixed(3)} (rail at ${RAIL_IN})`);
   check("rail sparks", r.parts.length > before && r.sounds.includes("scrape"), "no sparks or scrape sound");
   check("rail scrape costs at most 4%", worst >= 0.959, `one frame lost ${((1 - worst) * 100).toFixed(1)}%`);
+  // went wide on the grass before the rail started: the rail guides the car back onto the road (never stuck outside)
+  const w = scene("autumn", { from: (i + 1) * SEG - (15 * SEG + SEG * 0.5) }), wp = w.player;
+  wp.offset = Math.sign(T.segs[i].curve) * 2; w.prevIdx = w.segAt(wp.dist).index;
+  run(w, 0.5);
+  check("rail guides a wide car back", Math.abs(wp.offset) <= RAIL_IN + 1e-9, `still at ${wp.offset.toFixed(2)} after 0.5 s`);
 }
 
 /* ---------- 🛬 landing ---------- */
@@ -104,12 +109,54 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("landing", landed && p.landV > 0, `landT never set (landV ${p.landV})`);
 }
 
+/* ---------- 🛞 skid marks ---------- */
+{
+  const T = buildTrack(track("autumn")), i = T.segs.findIndex((s, k) => k > 40 && Math.abs(s.curve) > 1.5 && Math.abs(T.segs[k + 25]?.curve) > 1.5);
+  const r = scene("autumn", { from: (i + 1) * SEG - (15 * SEG + SEG * 0.5) }), p = r.player;
+  r.prevIdx = r.segAt(p.dist).index; r.input[T.segs[i].curve > 0 ? "right" : "left"] = true;   // turning hard into the curve
+  run(r, 0.5);
+  check("skid marks on a hard turn", r.skids.size > 0, "no skid marks");
+  check("skid marks are capped", r.skids.size <= 400, `${r.skids.size} marks`);
+  check("smoke on a hard turn", r.parts.some(q => q.c === "smoke"), "no tire smoke");
+  r.setup(track("autumn"), "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+  check("skid marks cleared for a new race", r.skids.size === 0, "old marks kept");
+  const big = scene("autumn"); for (let k = 0; k < 900; k++) { big.skids.set(k, { x: 0, t: 0 }); if (big.skids.size > 400) big.skids.delete(big.skids.keys().next().value); }
+  check("skid ring buffer", big.skids.size === 400, `${big.skids.size}`);
+}
+
+/* ---------- 🚀 Turbo zoom (view only) ---------- */
+{
+  const r = scene("sunny", { from: quietStretch("sunny") }), base = r.camDepth;
+  r.nitroT = 3; run(r, 1);
+  const zoomed = r.camDepth;
+  run(r, 2, q => { q.nitroT = 0; q.boostT = 0; });   // (no boost pads either)
+  check("turbo zoom", Math.abs(zoomed / base - 0.88) < 0.03 && Math.abs(r.camDepth / base - 1) < 0.02 && Number.isFinite(r.camDepth), `zoom ${(zoomed / base).toFixed(3)}, after ${(r.camDepth / base).toFixed(3)}`);
+}
+
+/* ---------- 🚇 tunnels, 🌃 the night track, and tracks built the same every time ---------- */
+{
+  const { THEMES } = await import("../src/data.js");
+  const { clearTrackCache } = await import("../src/engine.js");
+  const classic = TRACKS.filter(t => t.world !== "toy");
+  for (const t of classic) {
+    const segs = buildTrack(t).segs, tun = segs.filter(s => s.tunnel);
+    if (THEMES[t.theme].tunnels) check("tunnels on " + t.id, tun.length > 0, "a tunnel theme with no tunnel");
+    else check("no tunnels on " + t.id, tun.length === 0, `${tun.length} tunnel pieces`);
+    check("tunnels clear on " + t.id, tun.every(s => !s.ramp && !s.gap && !s.finish && s.boost === null && !s.rail && !s.sprites.length), "a tunnel over a ramp, gap, pad, rail, finish or sprite");
+  }
+  const night = TRACKS.find(t => t.id === "night");
+  check("night track", night && TRACKS.some(t => t.id === night.after) && THEMES.night?.night, "Piqua Night Lights missing or not branching off a real track");
+  const sum = t => buildTrack(t).segs.map(s => [s.curve.toFixed(4), s.p2.world.y.toFixed(2), s.sprites.map(x => x.type + x.offset.toFixed(3)).join(), s.tunnel ? 1 : 0, s.ramp ? 1 : 0, s.boost, s.rail ? 1 : 0].join("|")).join("\n");
+  const before = classic.map(sum); clearTrackCache(); const after = classic.map(sum);
+  check("tracks are built the same every time", before.every((b, k) => b === after[k]), "a track changed when built again");
+}
+
 /* ---------- whole races: rails always hold, cars rarely overlap, sims sane ---------- */
 {
   let frames = 0, overlaps = 0, railBad = 0, finished = 0, races = 0;
   const earth = TRACKS.filter(t => t.world === "earth" && !t.bonus);
   for (const t of earth) for (const bot of ["kid", "good"]) {
-    const r = botRace; let res = null, wasRail = false;
+    const r = botRace; let res = null, wasRail = false, lastA = 0;
     r.hooks = { sfx() {}, engine() {}, onFinish: x => { res = x; } };
     r.setup(t, "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
     for (let k = 0; !res && k < 400 * 60; k++) {
@@ -121,14 +168,14 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
       frames++;
       if (r.rivals.some(c => Math.abs(c.dist - p.dist) < SEG * 0.45 && Math.abs(c.air - p.air) < 250 && Math.abs(c.offset - p.offset) < CAR_W * 0.6)) overlaps++;
       const onRail = r.segAt(p.dist).rail && p.air <= 0, a = Math.abs(p.offset);
-      if (onRail && wasRail && a > RAIL_IN + 1e-9 && a < RAIL_OUT - 1e-9) railBad++;
-      wasRail = onRail;
+      if (onRail && wasRail && a > RAIL_IN + 1e-9 && a >= lastA) railBad++;   // past the rail: only ever moving back in
+      wasRail = onRail; lastA = a;
     }
     races++; if (res) finished++;
   }
   check("bot races finish", finished === races, `${races - finished} of ${races} races timed out`);
   check("cars rarely overlap", overlaps / frames < 0.01, `${(100 * overlaps / frames).toFixed(2)}% of frames overlapping`);
-  check("rails hold in whole races", railBad === 0, `${railBad} frames between the rails' inside and outside`);
+  check("rails hold in whole races", railBad === 0, `${railBad} frames past a rail and not coming back in`);
   console.log(`  (overlap ${(100 * overlaps / frames).toFixed(2)}% of ${frames} race frames)`);
   // hands-off still finishes last; the starter car (no upgrades) doesn't win with a kid driving
   const handsOff = [0, 1, 2].map(() => runRace(track("sunny"), zippy, NO_UPS, "normal", "none").place);

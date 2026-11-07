@@ -36,6 +36,9 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   ctx.save();
   ctx.translate(x, yb);
   ctx.rotate(steer * 0.035);
+  // the body leans into turns and squashes on a hard landing (pivoting on the ground under the car)
+  if (o.lean) ctx.transform(1, 0, -o.lean * 0.14, 1, 0, 0);
+  if (o.squash) ctx.scale(1 + o.squash * 0.1, 1 - o.squash * 0.16);
 
   if (!o.noShadow) {
     ctx.fillStyle = "rgba(0,0,0,0.18)"; ell(ctx, 0, -w * 0.005, w * 0.68, w * 0.09);
@@ -257,6 +260,8 @@ export const SPRITES = {
   volcanorock: { w: 1100, collide: true }, lavaflame: { w: 700, collide: false },
   planet: { w: 1700, collide: false }, crystal: { w: 950, collide: true }, ufo: { w: 1300, collide: false },
   sign: { w: 2200, collide: true }, lamp: { w: 500, collide: true },
+  shop: { w: 1700, collide: true }, house: { w: 1500, collide: true }, building: { w: 2000, collide: true },
+  dumptruck: { w: 1500, collide: true }, roadclosed: { w: 1100, collide: true }, cone: { w: 420, collide: true }, trafficlight: { w: 500, collide: true },
   moonrock: { w: 1100, collide: true }, crater: { w: 1800, collide: false }, dish: { w: 1300, collide: true }, dome: { w: 1700, collide: true },
   autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
@@ -654,6 +659,50 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "#fff59a"; ell(ctx, x + w * 0.5, yb - h * 2.28, w * 0.16, w * 0.12);
       ctx.fillStyle = "rgba(255,245,154,0.25)"; ell(ctx, x + w * 0.5, yb - h * 2.28, w * 0.34, w * 0.28);
       break;
+    case "shop": case "house": case "building": {
+      // Piqua storefronts and houses; the windows glow at night (the sprite draws the same, the theme is dark)
+      const tall = type === "building" ? 1.5 : type === "shop" ? 0.85 : 0.75, col = ["#c0563f", "#5b7fa6", "#d9a441", "#7a5aa6", "#4f9a6a"][Math.abs(Math.round(x * 0.37)) % 5];
+      ctx.fillStyle = type === "house" ? "#e8dcc4" : col; ctx.fillRect(x - w * 0.45, yb - h * tall, w * 0.9, h * tall);
+      if (type === "house") { ctx.fillStyle = "#8a3a2a"; poly(ctx, [x - w * 0.52, yb - h * tall, x, yb - h * (tall + 0.35), x + w * 0.52, yb - h * tall]); }
+      if (type === "shop") { ctx.fillStyle = "#ffe08a"; ctx.fillRect(x - w * 0.38, yb - h * 0.42, w * 0.76, h * 0.3); ctx.fillStyle = ["#e8262b", "#2f7fff", "#2fbf4a"][Math.abs(Math.round(x * 0.11)) % 3]; ctx.fillRect(x - w * 0.45, yb - h * 0.62, w * 0.9, h * 0.12); }
+      ctx.fillStyle = "#ffe9a8";
+      const rows = type === "building" ? 5 : 1;
+      for (let r = 0; r < rows; r++) for (const c of [-0.25, 0.05, 0.25]) { if (type !== "building" && c === 0.05) continue; ctx.fillRect(x + w * c - w * 0.06, yb - h * tall + h * (0.12 + r * 0.26), w * 0.12, h * 0.12); }
+      if (type === "house") { ctx.fillStyle = "#6b3a1e"; ctx.fillRect(x - w * 0.07, yb - h * 0.32, w * 0.14, h * 0.32); }
+      break;
+    }
+    case "dumptruck": {
+      // a big yellow dump truck parked across the old road
+      ctx.fillStyle = "#222"; for (const k of [-0.32, 0.05, 0.32]) ell(ctx, x + w * k, yb - h * 0.1, w * 0.1, h * 0.1);
+      ctx.fillStyle = "#ffb000"; poly(ctx, [x - w * 0.5, yb - h * 0.2, x - w * 0.45, yb - h * 0.62, x + w * 0.15, yb - h * 0.62, x + w * 0.2, yb - h * 0.2]);
+      ctx.fillStyle = "#e09200"; ctx.fillRect(x - w * 0.46, yb - h * 0.5, w * 0.6, h * 0.05);
+      ctx.fillStyle = "#ffb000"; rr(ctx, x + w * 0.2, yb - h * 0.5, w * 0.3, h * 0.3, w * 0.03);
+      ctx.fillStyle = "#9fd8ff"; ctx.fillRect(x + w * 0.26, yb - h * 0.46, w * 0.18, h * 0.12);
+      ctx.fillStyle = "#333"; ctx.fillRect(x - w * 0.5, yb - h * 0.22, w, h * 0.04);
+      ctx.fillStyle = "#ff5a00"; ctx.fillRect(x + w * 0.3, yb - h * 0.53, w * 0.06, h * 0.03);
+      break;
+    }
+    case "roadclosed": {
+      // ROAD CLOSED: a striped barrier on two legs with a sign
+      ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.42, yb - h * 0.45, w * 0.05, h * 0.45); ctx.fillRect(x + w * 0.37, yb - h * 0.45, w * 0.05, h * 0.45);
+      for (let k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? "#ffffff" : "#ff5a00"; poly(ctx, [x - w * 0.5 + k * w / 6, yb - h * 0.45, x - w * 0.5 + (k + 1) * w / 6, yb - h * 0.45, x - w * 0.5 + (k + 0.6) * w / 6, yb - h * 0.3, x - w * 0.5 + (k - 0.4) * w / 6, yb - h * 0.3]); }
+      ctx.fillStyle = "#ffffff"; rr(ctx, x - w * 0.42, yb - h * 0.78, w * 0.84, h * 0.28, w * 0.03);
+      ctx.fillStyle = "#e8262b"; rr(ctx, x - w * 0.39, yb - h * 0.75, w * 0.78, h * 0.22, w * 0.02);
+      if (w > 30) { ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * 0.11)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("ROAD CLOSED", x, yb - h * 0.64); }
+      break;
+    }
+    case "cone":
+      ctx.fillStyle = "#ff6a00"; poly(ctx, [x - w * 0.3, yb, x - w * 0.08, yb - h * 0.8, x + w * 0.08, yb - h * 0.8, x + w * 0.3, yb]);
+      ctx.fillStyle = "#ffffff"; poly(ctx, [x - w * 0.2, yb - h * 0.3, x - w * 0.14, yb - h * 0.5, x + w * 0.14, yb - h * 0.5, x + w * 0.2, yb - h * 0.3]);
+      ctx.fillStyle = "#cc4f00"; ctx.fillRect(x - w * 0.36, yb - h * 0.06, w * 0.72, h * 0.06);
+      break;
+    case "trafficlight": {
+      ctx.fillStyle = "#3a3f48"; ctx.fillRect(x - w * 0.06, yb - h * 2.2, w * 0.12, h * 2.2);
+      ctx.fillStyle = "#222"; rr(ctx, x - w * 0.22, yb - h * 3, w * 0.44, h * 0.85, w * 0.08);
+      const on = Math.floor(t / 2 + x * 0.001) % 3;
+      ["#ff3b3b", "#ffd400", "#2fdc5a"].forEach((c, k) => { ctx.fillStyle = k === on ? c : "#4a4a4a"; ell(ctx, x, yb - h * (2.82 - k * 0.26), w * 0.12, w * 0.12); });
+      break;
+    }
     case "sign":
       ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.4, yb - h * 0.45, w * 0.05, h * 0.45); ctx.fillRect(x + w * 0.35, yb - h * 0.45, w * 0.05, h * 0.45);
       ctx.fillStyle = "#ffd400"; rr(ctx, x - w * 0.5, yb - h * 0.75, w, h * 0.32, w * 0.04);
@@ -682,7 +731,7 @@ export function drawPearl(ctx, x, y, w, t) {
 }
 
 /* Sky, sun, clouds/stars and two layers of hills. skyX/hillX scroll with the road's curves. */
-export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
+export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false) {
   const hz = H * 0.5 + lift;
   const g = ctx.createLinearGradient(0, 0, 0, hz);
   g.addColorStop(0, th.sky[0]); g.addColorStop(1, th.sky[1]);
@@ -724,12 +773,14 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
   if (th.aurora) aurora(ctx, W, H, hz, skyX, t);
   if (th.water) underwater(ctx, W, H, hz, skyX, t);
   else {
+    const sx = W * (0.78 - Math.sin(skyX * Math.PI * 2) * 0.04), sy = hz * (th.sunY || 0.32);
     ctx.fillStyle = th.sun;
-    ctx.globalAlpha = 0.35; ell(ctx, W * 0.78, hz * 0.32, H * 0.13, H * 0.13);
-    ctx.globalAlpha = 0.18; ell(ctx, W * 0.78, hz * 0.32, H * 0.2, H * 0.2);
-    ctx.globalAlpha = 1; ell(ctx, W * 0.78, hz * 0.32, H * 0.08, H * 0.08);
+    ctx.globalAlpha = 0.35; ell(ctx, sx, sy, H * 0.13, H * 0.13);
+    ctx.globalAlpha = 0.18; ell(ctx, sx, sy, H * 0.2, H * 0.2);
+    ctx.globalAlpha = 1; ell(ctx, sx, sy, H * 0.08, H * 0.08);
+    if (th.night) { ctx.fillStyle = th.sky[0]; ell(ctx, sx + H * 0.03, sy - H * 0.015, H * 0.07, H * 0.07); }   // a crescent moon
   }
-  if (!th.stars && !th.water && !th.aurora) {
+  if (!th.stars && !th.water && !th.aurora && !th.night) {
     ctx.strokeStyle = "rgba(40,50,80,0.7)"; ctx.lineWidth = Math.max(1.5, H * 0.004); ctx.lineCap = "round";
     for (let i = 0; i < 4; i++) {
       const bx = (((t * 0.025 * (1 + i * 0.3) + i * 0.27 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.2 + 0.09 * i) + Math.sin(t * 1.3 + i) * H * 0.01;
@@ -739,6 +790,19 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
     ctx.lineCap = "butt";
   }
 
+  if (th.clouds && !lite) {
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    for (let i = 0; i < 4; i++) {
+      const cw = H * 0.1;
+      const cx = (((i * 0.31 + 0.13 + skyX * 0.22 + t * 0.002) % 1.2 + 1.2) % 1.2) * W - cw, cy = hz * (0.08 + (i % 2) * 0.1);
+      ell(ctx, cx, cy, cw * 0.5, cw * 0.13); ell(ctx, cx + cw * 0.2, cy - cw * 0.05, cw * 0.25, cw * 0.12);
+    }
+  }
+  if (!lite) {
+    if (th.mountains) peaks(ctx, W, H, hz, th.mountains, hillX * 0.15, H * 0.3, th.tunnels === "ice");
+    if (th.mesas) mesas(ctx, W, H, hz, th.mesas, hillX * 0.2);
+    if (th.city) city(ctx, W, H, hz, th.city, hillX * 0.35, th.night, t);
+  }
   if (th.clouds) {
     ctx.fillStyle = "rgba(255,255,255,0.9)";
     for (let i = 0; i < 5; i++) {
@@ -811,6 +875,47 @@ function underwater(ctx, W, H, hz, skyX, t) {
   }
 }
 
+/* Far mountains: jagged peaks (with snow caps on snowy themes) that barely move. */
+function peaks(ctx, W, H, hz, col, off, amp, caps) {
+  const n = 6, sh = (((off * n) % 1) + 1) % 1, base = Math.floor(off * n), pts = [];
+  for (let k = -1; k <= n + 1; k++) {
+    const id = k + base, x = (k - sh) / n * W, h = amp * (0.55 + 0.45 * Math.abs(Math.sin(id * 2.17)));
+    pts.push([x, hz - h], [x + W / n / 2, hz - h * (0.3 + 0.2 * Math.abs(Math.sin(id * 1.3)))]);
+  }
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(pts[0][0], hz);
+  for (const [x, y] of pts) ctx.lineTo(x, y);
+  ctx.lineTo(pts[pts.length - 1][0], hz); ctx.closePath(); ctx.fill();
+  if (caps) {
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    for (let i = 0; i < pts.length; i += 2) { const [x, y] = pts[i], s = (hz - y) * 0.25; poly(ctx, [x, y, x + s * 0.6, y + s, x - s * 0.6, y + s]); }
+  }
+}
+/* Desert mesas: flat-topped rocks in the distance. */
+function mesas(ctx, W, H, hz, col, off) {
+  ctx.fillStyle = col;
+  for (let k = -1; k <= 4; k++) {
+    const x = (k / 3 - ((off * 3) % 1 + 1) % 1 / 3) * W, n = k + Math.floor(off * 3), w = W * (0.12 + 0.06 * Math.abs(Math.sin(n * 1.9))), h = H * (0.08 + 0.06 * Math.abs(Math.sin(n * 2.7)));
+    poly(ctx, [x, hz, x + w * 0.15, hz - h, x + w * 0.85, hz - h, x + w, hz]);
+    ctx.fillStyle = "rgba(0,0,0,0.12)"; poly(ctx, [x + w * 0.6, hz - h, x + w * 0.85, hz - h, x + w, hz, x + w * 0.7, hz]); ctx.fillStyle = col;
+  }
+}
+/* A city skyline (Piqua in the distance); at night the windows are lit. */
+function city(ctx, W, H, hz, col, off, night, t) {
+  const bw = W / 14, sh = (((off * 14) % 1) + 1) % 1;
+  for (let k = -1; k <= 15; k++) {
+    const n = k + Math.floor(off * 14), h = H * (0.05 + 0.09 * Math.abs(Math.sin(n * 1.37)) + (n % 5 === 0 ? 0.05 : 0)), x = (k - sh) * bw, w = bw * (0.7 + 0.25 * Math.abs(Math.sin(n * 3.1)));
+    ctx.fillStyle = col; ctx.fillRect(x, hz - h, w, h);
+    if (night && w > 6) {
+      for (let r = 0; r < Math.floor(h / (H * 0.018)); r++) for (let c = 0; c < 3; c++) {
+        const lit = Math.sin(n * 7.3 + r * 3.7 + c * 1.9) > 0.1;
+        if (!lit) continue;
+        ctx.fillStyle = Math.sin(n + r + c) > 0.6 ? "#ffe9a8" : "#ffd36b";
+        ctx.fillRect(x + w * (0.15 + c * 0.27), hz - h + H * 0.006 + r * H * 0.018, w * 0.14, H * 0.008);
+      }
+    }
+  }
+  void t;
+}
 function hills(ctx, W, H, hz, col, off, amp, freq, seed) {
   ctx.fillStyle = col;
   ctx.beginPath(); ctx.moveTo(0, H);

@@ -6,7 +6,7 @@ import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, draw
 export const SEG = 200;            // segment length (world units)
 export const BASE_MAX = 10000;     // starter car top speed (world units / s)
 const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, DRAW_DIST = 170, LANES = 3;
-export const RAIL_IN = 1.04, RAIL_OUT = 1.4;   // a car on a railed curve stays inside 1.04 (or outside 1.4, if it was already out there)
+export const RAIL_IN = 1.04;   // on a railed curve the car stays inside this (a car that went wide before the rail is guided back in)
 const CAM_DEPTH = 1 / Math.tan((100 / 2) * Math.PI / 180);
 const PLAYER_Z = CAM_H * CAM_DEPTH;
 export const CAR_W = 0.36;         // car width in road half-widths
@@ -28,6 +28,7 @@ function rng(seed) {
 }
 
 const trackCache = new Map();
+export const clearTrackCache = () => trackCache.clear();   // tests: build a track again from scratch
 export function buildTrack(track) {
   if (trackCache.has(track.id)) return trackCache.get(track.id);
   const r = rng(track.seed * 7919), th = THEMES[track.theme], segs = [];
@@ -129,6 +130,16 @@ export function buildTrack(track) {
     segs[k].snow = [-0.55, 0, 0.55][Math.floor(r() * 3)];
     i = k;
   }
+  if (th.tunnels) for (let i = START + 120; i < segs.length - 80; i += 260 + Math.floor(r() * 160)) {
+    const len = 20 + Math.floor(r() * 21);
+    let k = i;
+    const ok = k => segs.slice(k - 6, k + len + 6).every(q => Math.abs(q.curve) < 0.9 && !q.ramp && !q.gap && q.boost === null && !q.finish && !q.rail);
+    while (k < segs.length - 80 && !ok(k)) k++;
+    if (k >= segs.length - 80) break;
+    for (let j = 0; j < len; j++) { const q = segs[k + j]; q.tunnel = true; q.sprites = []; }
+    segs[k].tunnelStart = true; segs[k + len - 1].tunnelEnd = true;
+    i = k + len;
+  }
   const T = { segs, length: segs.length * SEG, theme: th, track };
   trackCache.set(track.id, T);
   return T;
@@ -137,9 +148,9 @@ export function buildTrack(track) {
 /* a lap's length in its own engine's units (Time Trial medal times use it) */
 export const trackLen = t => t.world === "toy" ? buildToyTrack(t).L : buildTrack(t).length;
 
-function project(pt, camX, camY, camZ, W, H, F) {
+function project(pt, camX, camY, camZ, W, H, F, depth = CAM_DEPTH) {
   pt.camera.x = -camX; pt.camera.y = pt.world.y - camY; pt.camera.z = pt.world.z - camZ;
-  const sc = pt.screen.scale = CAM_DEPTH / pt.camera.z;
+  const sc = pt.screen.scale = depth / pt.camera.z;
   pt.screen.x = Math.round(W / 2 + sc * pt.camera.x * F);
   pt.screen.y = Math.round(H / 2 - sc * pt.camera.y * F);
   pt.screen.w = Math.round(sc * ROAD_W * F);
@@ -174,7 +185,8 @@ export class Race {
     this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
-    this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.railOut = false;
+    this.drafting = false; this.draftShown = false; this.scrapeCD = 0;
+    this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false;
     this.driftT = 0;
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
@@ -331,6 +343,15 @@ export class Race {
       }
     }
     if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);
+    // skid marks and tire smoke: turning hard into a sharp curve at speed, sliding on ice, or drifting
+    const skid = !flying && !auto && racing && p.speed > BASE_MAX * 0.5 && ((Math.abs(steer) > 0.6 && Math.abs(seg.curve) > 1.2 && Math.sign(steer) === Math.sign(seg.curve)) || Math.abs(p.slideV) > 1.7 || this.driftT > 0.2);
+    if (skid) {
+      if (!this.skids.has(seg.index)) { this.skids.set(seg.index, { x: p.offset, t: this.t }); if (this.skids.size > 400) this.skids.delete(this.skids.keys().next().value); }
+      if (!this.lite && Math.random() < 0.5) for (const side of [-1, 1]) this.parts.push({ x: 0.5 + side * 0.09, y: 0.97, vx: side * 0.05 + (Math.random() - 0.5) * 0.1, vy: -0.12 - Math.random() * 0.1, life: 0.7, c: "smoke", r: 0.012 + Math.random() * 0.01 });
+    }
+    // 🚀 Turbo zoom: the camera pulls in and widens a little while boosting (view only)
+    this.fastT = fast ? this.fastT + dt : 0;
+    this.camDepth += ((fast ? CAM_DEPTH * 0.88 : CAM_DEPTH) - this.camDepth) * Math.min(1, dt * 3);
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
@@ -338,11 +359,9 @@ export class Race {
     this.scrapeCD -= dt; p.landT -= dt;
     if (seg.rail && !flying) {
       const a = Math.abs(p.offset), side = Math.sign(p.offset) || 1;
-      if (!this.wasRail) this.railOut = a > (RAIL_IN + RAIL_OUT) / 2;
-      if (!this.railOut && a > RAIL_IN) this.scrape(side, RAIL_IN - 0.02, steer, !auto);
-      else if (this.railOut && a < RAIL_OUT) this.scrape(side, RAIL_OUT + 0.02, steer, !auto);
+      // right at the rail: held there. Wide out on the grass when the rail starts: slid back onto the road quickly.
+      if (a > RAIL_IN) this.scrape(side, a - RAIL_IN < 0.08 ? RAIL_IN - 0.02 : Math.max(RAIL_IN - 0.02, a - dt * 4), steer, !auto);
     }
-    this.wasRail = !!seg.rail && !flying;
     p.dist += p.speed * dt;
     if (this.trial && racing && !p.finished) {
       this.recT += dt;
@@ -378,7 +397,7 @@ export class Race {
     if (Math.abs(p.offset) > 1 && p.air <= 0 && p.speed > BASE_MAX * 0.2 && Math.random() < 0.8) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.22, y: 0.97, vx: (Math.random() - 0.5) * 0.3, vy: -0.25 - Math.random() * 0.2, life: 0.6, c: "dust", r: 0.02 + Math.random() * 0.02 });
     if (this.autoTarget !== null && this.autoLvl >= 100) for (let i = 0; i < 2; i++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.12, y: 0.95, vx: (Math.random() - 0.5) * 0.2, vy: 0.1 + Math.random() * 0.2, life: 0.5, c: Math.random() < 0.5 ? "#ffd400" : "#fff6a8", r: 0.006 + Math.random() * 0.006 });
     if (ph.water && p.speed > BASE_MAX * 0.2 && Math.random() < 0.45) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.14, y: 0.93, vx: (Math.random() - 0.5) * 0.08, vy: -0.15 - Math.random() * 0.2, life: 0.9, c: "bubble", r: 0.005 + Math.random() * 0.009 });
-    for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.c === "bubble" ? -0.4 : 0.8) * dt; }
+    for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.c === "bubble" || q.c === "smoke" ? (q.c === "smoke" ? -0.1 : -0.4) : 0.8) * dt; }
     this.parts = this.parts.filter(q => q.life > 0);
 
     // rivals
@@ -462,7 +481,8 @@ export class Race {
       const standings = [...this.order, ...rest].map(r => r === p ? 0 : this.rivals.indexOf(r) + 1);
       h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats, standings, rec: this.trial ? this.rec : null });
     }
-    h.engine(p.speed / BASE_MAX, fast);
+    this.inTunnel = !!this.segAt(p.dist).tunnel;
+    h.engine(p.speed / BASE_MAX, fast, this.inTunnel);
   }
 
   touch(s) {
@@ -562,24 +582,25 @@ export class Race {
   render() {
     const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height, F = H / 2;
     const { segs, length: L, theme: th } = this.T, N = segs.length, p = this.player, t = this.t;
-    const carZ = mod(this.startZ + p.dist, L), camZ = mod(carZ - PLAYER_Z, L);
+    const depth = this.camDepth || CAM_DEPTH, playerZ = CAM_H * depth;
+    const carZ = mod(this.startZ + p.dist, L), camZ = mod(carZ - playerZ, L);
     const base = segs[Math.floor(camZ / SEG) % N], basePct = (camZ % SEG) / SEG;
     const pseg = segs[Math.floor(carZ / SEG) % N], ppct = (carZ % SEG) / SEG;
     const playerY = lerp(pseg.p1.world.y, pseg.p2.world.y, ppct);
 
     ctx.save();
     if (this.shake > 0) ctx.translate((Math.random() - 0.5) * H * 0.03 * this.shake * 3, (Math.random() - 0.5) * H * 0.03 * this.shake * 3);
-    drawBackground(ctx, W, H, th, this.skyX, this.hillX, 0, t);
+    drawBackground(ctx, W, H, th, this.skyX, this.hillX, 0, t, this.lite);
 
     let maxy = H, x = 0, dx = -(base.curve * basePct);
     const camX = p.offset * ROAD_W, camY = playerY + CAM_H + p.air * 0.55;
     for (let n = 0; n < DRAW_DIST; n++) {
       const s = segs[(base.index + n) % N], cz = camZ - (s.index < base.index ? L : 0);
       s.clip = maxy;
-      project(s.p1, camX - x, camY, cz, W, H, F);
-      project(s.p2, camX - x - dx, camY, cz, W, H, F);
+      project(s.p1, camX - x, camY, cz, W, H, F, depth);
+      project(s.p2, camX - x - dx, camY, cz, W, H, F, depth);
       x += dx; dx += s.curve;
-      if (s.p1.camera.z <= CAM_DEPTH || s.p2.screen.y >= s.p1.screen.y || s.p2.screen.y >= maxy) continue;
+      if (s.p1.camera.z <= depth || s.p2.screen.y >= s.p1.screen.y || s.p2.screen.y >= maxy) continue;
       this.drawSegment(ctx, s, th, W);
       if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || th.sky[1]; ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
       maxy = s.p1.screen.y;
@@ -590,7 +611,7 @@ export class Race {
     for (const c of this.rivals) {
       const z = mod(this.startZ + c.dist, L), idx = Math.floor(z / SEG) % N;
       const item = { c, pct: (z % SEG) / SEG, s: segs[idx] };
-      if (c.dist < p.dist && c.dist > p.dist - PLAYER_Z * 0.95) behind.push(item);
+      if (c.dist < p.dist && c.dist > p.dist - playerZ * 0.95) behind.push(item);
       else { if (!bySeg.has(idx)) bySeg.set(idx, []); bySeg.get(idx).push(item); }
     }
 
@@ -598,17 +619,18 @@ export class Race {
     if (gp) {
       const z = mod(this.startZ + gp.dist, L), idx = Math.floor(z / SEG) % N;
       const item = { c: { def: this.ghostDef, offset: gp.offset, lane: gp.offset, air: gp.air, dist: gp.dist, knockT: 0 }, pct: (z % SEG) / SEG, s: segs[idx], ghost: true };
-      if (gp.dist < p.dist && gp.dist > p.dist - PLAYER_Z * 0.95) behind.push(item);
+      if (gp.dist < p.dist && gp.dist > p.dist - playerZ * 0.95) behind.push(item);
       else if (gp.dist >= p.dist) { if (!bySeg.has(idx)) bySeg.set(idx, []); bySeg.get(idx).push(item); }
     }
     for (let n = DRAW_DIST - 1; n > 0; n--) {
       const s = segs[(base.index + n) % N];
-      if (s.p1.camera.z <= CAM_DEPTH) continue;
+      if (s.p1.camera.z <= this.camDepth) continue;
       const sc = s.p1.screen.scale, sy = s.p1.screen.y;
       ctx.globalAlpha = n > DRAW_DIST * 0.65 ? Math.max(0, (DRAW_DIST - n) / (DRAW_DIST * 0.35)) : 1;
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
       if (s.index === START) this.drawArch(ctx, s, F);
       if (s.rail) this.drawRails(ctx, s, F);
+      if (s.tunnel) this.drawTunnel(ctx, s, F, th);
       if (s.ventTop) this.drawVent(ctx, s, F);
       if (s.snow != null) this.drawSnowbank(ctx, s, F);
       for (const spr of s.sprites) {
@@ -649,17 +671,22 @@ export class Race {
         ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.beginPath(); ctx.arc(q.x * W - q.r * H * 0.35, q.y * H - q.r * H * 0.35, q.r * H * 0.25, 0, 7); ctx.fill();
         continue;
       }
+      if (q.c === "smoke") { ctx.globalAlpha = Math.min(0.55, q.life); ctx.fillStyle = th.snow || th.ice ? "#ffffff" : "#d8d8d8"; ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H * (2.2 - q.life * 1.5), 0, 7); ctx.fill(); continue; }
       ctx.fillStyle = q.c === "dust" ? dustCol : q.c;
       ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H * (q.c === "dust" ? 1.5 - q.life : 1), 0, 7); ctx.fill();
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
     }
     ctx.globalAlpha = 1;
-    drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900 });
+    const dark = th.night || this.inTunnel;
+    if (dark) this.drawHeadlights(ctx, W / 2, H - H * 0.02 - lift - pw * 0.25, pw, H);
+    const lean = this.steerVis * Math.min(1, p.speed / BASE_MAX) * (p.air > 0 ? 0.3 : 1);
+    const squash = p.landT > 0 ? Math.sin((p.landT / 0.35) * Math.PI) * Math.min(1, p.landV / JUMP_VY) : 0;
+    drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900, lean, squash });
     if (this.autoTarget !== null) {
       const segs2 = this.T.segs, pidx = pseg.index;
       ctx.fillStyle = "rgba(255,255,255,0.8)";
       for (const k of [4, 8, 12]) {
-        const s2 = segs2[(pidx + k) % N]; if (!(s2.p1.camera.z > CAM_DEPTH)) continue;
+        const s2 = segs2[(pidx + k) % N]; if (!(s2.p1.camera.z > this.camDepth)) continue;
         const ax = s2.p1.screen.x + s2.p1.screen.w * this.autoTarget, ay = s2.p1.screen.y, aw = s2.p1.screen.w * 0.08;
         quad(ctx, ax - aw, ay, ax, ay - aw * 0.8, ax + aw, ay, ax, ay - aw * 0.35);
       }
@@ -679,15 +706,22 @@ export class Race {
     for (const it of behind) this.drawRival(ctx, it, F);
 
     if (this.nitroT > 0 || this.boostT > 0) {
-      ctx.strokeStyle = "rgba(255,255,255,0.55)"; ctx.lineWidth = Math.max(1, H * 0.004);
+      const k0 = Math.min(1, this.fastT / 1.5);
+      ctx.strokeStyle = `rgba(255,255,255,${(0.35 + 0.35 * k0).toFixed(2)})`; ctx.lineWidth = Math.max(1, H * (0.003 + 0.003 * k0));
       ctx.beginPath();
-      for (let k = 0; k < 22; k++) {
+      for (let k = 0; k < (this.lite ? 14 : 22 + Math.round(18 * k0)); k++) {
         const a = Math.random() * Math.PI * 2, r0 = H * (0.35 + Math.random() * 0.2), r1 = r0 + H * (0.15 + Math.random() * 0.2);
         ctx.moveTo(W / 2 + Math.cos(a) * r0 * 1.6, H * 0.45 + Math.sin(a) * r0); ctx.lineTo(W / 2 + Math.cos(a) * r1 * 1.6, H * 0.45 + Math.sin(a) * r1);
       }
       ctx.stroke();
     }
 
+    if (this.inTunnel) { ctx.fillStyle = "rgba(10,8,20,0.28)"; ctx.fillRect(0, 0, W, H); }
+    if (this.drafting) {
+      ctx.strokeStyle = "rgba(220,245,255,0.5)"; ctx.lineWidth = Math.max(1, H * 0.003); ctx.beginPath();
+      for (let k = 0; k < 8; k++) { const sx = W / 2 + (k % 2 ? 1 : -1) * pw * (0.45 + (k >> 1) * 0.1), sy = ((t * 2.5 + k * 0.23) % 1) * H * 0.45 + H * 0.45; ctx.moveTo(sx, sy); ctx.lineTo(sx, sy + H * 0.06); }
+      ctx.stroke();
+    }
     if (this.weather === "rain") {
       // rain: a grey tint and streaks falling at a slant that follows the curves
       ctx.fillStyle = "rgba(40,60,90,0.18)"; ctx.fillRect(0, 0, W, H);
@@ -734,7 +768,7 @@ export class Race {
   }
 
   drawRival(ctx, { c, pct, s, ghost }, F) {
-    if (s.p1.camera.z <= CAM_DEPTH) return;
+    if (s.p1.camera.z <= this.camDepth) return;
     if (ghost) { const a = ctx.globalAlpha; ctx.globalAlpha = a * 0.45; this.drawRival(ctx, { c, pct, s }, F); ctx.globalAlpha = a; return; }
     const sc = lerp(s.p1.screen.scale, s.p2.screen.scale, pct);
     const x = lerp(s.p1.screen.x, s.p2.screen.x, pct) + sc * c.offset * ROAD_W * F;
@@ -749,13 +783,52 @@ export class Race {
         drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900 }); ctx.restore();
       }
       if (c.air > 30) { const gy = lerp(s.p1.screen.y, s.p2.screen.y, pct), k = Math.max(0.4, 1 - c.air / 2000); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(x, gy, w * 0.55 * k, w * 0.07 * k, 0, 0, 7); ctx.fill(); }
-      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30 });
+      if ((this.T.theme.night || s.tunnel) && w > 4) {
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,240,180,0.22)";
+        ctx.beginPath(); ctx.ellipse(x, y - w * 0.05 - w * 0.6, w * 0.7, w * 0.25, 0, 0, 7); ctx.fill(); ctx.restore();
+      }
+      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30, lean: clamp(steer, -1, 1) * 0.5 });
+    });
+  }
+
+  /* headlights: a soft cone of light on the road ahead of the car (night and tunnels) */
+  drawHeadlights(ctx, x, y, pw, H) {
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    const g = ctx.createLinearGradient(0, y, 0, H * 0.5);
+    g.addColorStop(0, "rgba(255,244,200,0.35)"); g.addColorStop(1, "rgba(255,244,200,0)");
+    ctx.fillStyle = g;
+    quad(ctx, x - pw * 0.45, y, x + pw * 0.45, y, x + pw * 1.6, H * 0.5, x - pw * 1.6, H * 0.5);
+    ctx.fillStyle = "rgba(255,250,220,0.5)"; ctx.beginPath(); ctx.ellipse(x - pw * 0.3, y, pw * 0.1, pw * 0.05, 0, 0, 7); ctx.ellipse(x + pw * 0.3, y, pw * 0.1, pw * 0.05, 0, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* 🚇 a tunnel piece: two walls and a ceiling over the road (the entrance gets a big portal face) */
+  drawTunnel(ctx, s, F, th) {
+    if (s.p1.camera.z <= this.camDepth || s.p2.camera.z <= this.camDepth) return;
+    const a = s.p1.screen, b = s.p2.screen, ha = a.scale * 2600 * F, hb = b.scale * 2600 * F;
+    if (a.w < 1) return;
+    const col = { rock: ["#8a5232", "#6e3f25"], ice: ["#cfe6f7", "#a9cbe6"], cave: ["#2a1410", "#1d0d0a"], brick: ["#6a3a32", "#4f2a24"] }[th.tunnels] || ["#555", "#444"];
+    this.clipped(ctx, s, a.y, () => {
+      ctx.fillStyle = col[s.alt];
+      quad(ctx, a.x - a.w * 1.3, a.y, b.x - b.w * 1.3, b.y, b.x - b.w * 1.3, b.y - hb, a.x - a.w * 1.3, a.y - ha);
+      quad(ctx, a.x + a.w * 1.3, a.y, b.x + b.w * 1.3, b.y, b.x + b.w * 1.3, b.y - hb, a.x + a.w * 1.3, a.y - ha);
+      ctx.fillStyle = col[1];
+      quad(ctx, a.x - a.w * 1.3, a.y - ha, a.x + a.w * 1.3, a.y - ha, b.x + b.w * 1.3, b.y - hb, b.x - b.w * 1.3, b.y - hb);
+      if (s.index % 4 === 0) { ctx.fillStyle = "#ffb347"; ctx.beginPath(); ctx.ellipse(a.x, a.y - ha * 0.97, a.w * 0.12, Math.max(1, ha * 0.02), 0, 0, 7); ctx.fill(); }
+      if (s.tunnelStart) {
+        // the portal: a big face around the opening
+        ctx.fillStyle = col[0];
+        ctx.beginPath(); ctx.rect(a.x - a.w * 4, a.y - ha * 1.7, a.w * 8, ha * 1.7);
+        ctx.moveTo(a.x - a.w * 1.3, a.y); ctx.lineTo(a.x - a.w * 1.3, a.y - ha); ctx.lineTo(a.x + a.w * 1.3, a.y - ha); ctx.lineTo(a.x + a.w * 1.3, a.y); ctx.closePath();
+        ctx.fill("evenodd");
+        ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(a.x - a.w * 1.45, a.y - ha * 1.12, a.w * 2.9, ha * 0.12);
+      }
     });
   }
 
   // A soft snowbank across one lane: a lumpy white mound with a blue shadow and a few sparkles.
   drawSnowbank(ctx, s, F) {
-    if (s.p1.camera.z <= CAM_DEPTH) return;
+    if (s.p1.camera.z <= this.camDepth) return;
     const x = s.p1.screen.x + s.p1.screen.w * s.snow, y = s.p1.screen.y, rw = s.p1.screen.w * 0.3, t = this.t;
     if (rw < 1.5) return;
     this.clipped(ctx, s, y, () => {
@@ -773,7 +846,7 @@ export class Race {
 
   // A bubble vent: a round grate on the road with bubbles streaming up out of it.
   drawVent(ctx, s, F) {
-    if (s.p1.camera.z <= CAM_DEPTH) return;
+    if (s.p1.camera.z <= this.camDepth) return;
     const sc = s.p1.screen.scale, x = s.p1.screen.x + s.p1.screen.w * s.vent, y = s.p1.screen.y, rw = s.p1.screen.w * 0.3, t = this.t;
     if (rw < 1.5) return;
     this.clipped(ctx, s, y, () => {
@@ -791,7 +864,7 @@ export class Race {
   // The ramp is a striped slope from the road surface up to RAMP_H at its far end.
   // Guardrails on curvy stretches: a silver band on short posts just outside both rumble strips.
   drawRails(ctx, s, F) {
-    if (s.p1.camera.z <= CAM_DEPTH || s.p2.camera.z <= CAM_DEPTH) return;
+    if (s.p1.camera.z <= this.camDepth || s.p2.camera.z <= this.camDepth) return;
     const a = s.p1.screen, b = s.p2.screen, ha = a.scale * 260 * F, hb = b.scale * 260 * F;
     if (ha < 0.6) return;
     this.clipped(ctx, s, a.y, () => {
@@ -818,7 +891,7 @@ export class Race {
   }
 
   drawRamp(ctx, s, e, F) {
-    if (s.p1.camera.z <= CAM_DEPTH || e.p2.camera.z <= CAM_DEPTH) return;
+    if (s.p1.camera.z <= this.camDepth || e.p2.camera.z <= this.camDepth) return;
     const x1 = s.p1.screen.x, y1 = s.p1.screen.y, w1 = s.p1.screen.w;
     const x2 = e.p2.screen.x, w2 = e.p2.screen.w, y2 = e.p2.screen.y - e.p2.screen.scale * RAMP_H * F;
     this.clipped(ctx, s, y1, () => {
@@ -907,6 +980,11 @@ export class Race {
           ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
         }
       }
+    }
+    const sk = this.skids?.get(s.index);
+    if (sk && w1 > 3) {
+      const age = this.t - sk.t; ctx.fillStyle = `rgba(20,20,24,${Math.max(0, 0.45 - age * 0.02).toFixed(3)})`;
+      for (const side of [-1, 1]) { const u = sk.x + side * CAR_W * 0.38, m1 = w1 * 0.035, m2 = w2 * 0.035; quad(ctx, x1 + w1 * u - m1, y1, x1 + w1 * u + m1, y1, x2 + w2 * u + m2, y2, x2 + w2 * u - m2, y2); }
     }
     const pud = this.puddles?.get(s.index);
     if (pud !== undefined && w1 > 4) {
