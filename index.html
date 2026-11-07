@@ -165,10 +165,15 @@
           <div class="p-set"><b>Buzz on taps</b><span id="p-buzz"></span></div>
         </div>
         <div class="p-box"><h3>📜 Recent races</h3><div class="p-hist" id="p-hist"></div></div>
+        <div class="p-box"><h3>☁️ Google Save</h3>
+          <p>Keep Carter's progress in your Google Drive (a hidden folder only this game can see), and load it on any device.</p>
+          <div class="row"><button id="g-in" class="big-btn small go">Sign in with Google</button><button id="g-now" class="big-btn small" hidden>☁️ Save now</button><button id="g-out" class="big-btn small" hidden>Sign out</button></div>
+          <div class="p-msg" id="g-msg"></div>
+        </div>
         <div class="p-box"><h3>💾 Save</h3>
           <p>Progress saves on this tablet by itself. Copy the code to keep a backup, or paste one to bring progress back.</p>
           <textarea id="p-code" rows="3" spellcheck="false"></textarea>
-          <div class="row"><button id="p-copy" class="big-btn small">📋 Copy</button><button id="p-load" class="big-btn small">📥 Load pasted</button><button id="p-reset" class="big-btn small danger">🗑 Reset all</button></div>
+          <div class="row"><button id="p-copy" class="big-btn small">📋 Copy</button><button id="p-load" class="big-btn small">📥 Load pasted</button><button id="p-reset" class="big-btn small danger">🗑 Reset all</button><button id="p-undo" class="big-btn small" hidden>↩ Undo last reset/load</button></div>
           <div class="p-msg" id="p-msg"></div>
         </div>
       </div>

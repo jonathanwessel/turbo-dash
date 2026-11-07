@@ -8,6 +8,7 @@ Releases go to the play server (`npm run play`, port 5183, on the LAN at http://
 Carter plays on an Android tablet, in landscape, full screen.
 
 ## Release rules
+0. **Fewer, bigger releases.** Each release bundles a real chunk of new game, not single tweaks (hotfixes excepted).
 1. **Every release looks and feels a little better.** Besides its main feature, each release ships a
    **Polish** pass: at least one graphics improvement (art, animation, effects) and at least one interface
    improvement (clearer buttons, smoother screens, easier navigation). Each release below lists its polish
@@ -15,7 +16,8 @@ Carter plays on an Android tablet, in landscape, full screen.
 2. Old saves always load, with nothing lost. Anything that changes the save gets a migration and a test with
    a save from the previous version.
 3. The update path (version check → update button → update gate) never breaks.
-4. Every release is tested at tablet size before it ships. The race simulator (`npm run sim`, from v0.5.0)
+4. Every release is tested at tablet size before it ships. `npm test` (every old save loads) runs automatically
+   before every release, and `npm run career` (the whole game, day by day) must show no stuck stage gate. The race simulator (`npm run sim`, from v0.5.0)
    is re-run whenever anything touches speed, physics, prizes or prices.
 5. Nothing is ever for sale for real money, and no timer can be skipped with anything but in-game coins.
 6. **Keep the look.** Carter likes how the game looks, so it stays the same style: the retro pseudo-3D road,
@@ -43,6 +45,8 @@ Carter plays on an Android tablet, in landscape, full screen.
   (the v1.1.0 item, shipped early while v1.0 waits for the hosting decision).
 - **v0.11.0** Auto Steer: Robot Brain chain, Auto Steer 1–100 with level bands, race switch, rank cap 20
   (the v1.2.0 item, shipped early).
+- **v0.12.0** The Long Game: career simulator with stage gates, pacing for months of play, Track Mastery,
+  Google Save, save tests for every version, 12 bug fixes.
 
 ## What we learned from Carter playing
 - **He doesn't stop to read.** He saw the update notice and started a race anyway. Anything important

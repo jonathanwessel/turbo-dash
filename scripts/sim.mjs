@@ -1,29 +1,8 @@
 // Race simulator: runs whole races headless with a bot driver, so balance changes can be checked before a release.
 //   npm run sim             -> finishing places per car tier, track and difficulty
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
-import { Race } from "../src/engine.js";
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
-import { statsFor } from "../src/stats.js";
-
-const canvas = { getContext: () => null, width: 1, height: 1 };
-const race = new Race(canvas, { sfx() {}, engine() {}, onFinish() {} });
-
-/* One race. bot: "kid" steers late and fires Turbo whenever; "good" holds the middle and saves nothing. */
-export function runRace(track, car, ups, diff = "normal", bot = "kid", lab = {}, autoSteer = 0) {
-  let res = null, boosts = 0;
-  race.hooks = { sfx(n) { if (n === "boost") boosts++; }, engine() {}, onFinish: r => { res = r; } };
-  race.setup(track, "race", car, statsFor(car, ups, lab), { diff, autoSteer });
-  for (let t = 0; !res && t < 400; t += 1 / 60) {
-    const p = race.player, edge = bot === "good" ? 0.25 : 0.7;
-    if (bot !== "none") { race.input.left = p.offset > edge; race.input.right = p.offset < -edge; }
-    if (bot === "good" || Math.random() < 0.01) race.useNitro();
-    if (race.power && Math.random() < 0.02) race.usePower();
-    race.update(1 / 60);
-  }
-  race.input.left = race.input.right = false;
-  if (res) res.boosts = boosts;
-  return res || { place: 6, coins: 0, time: 400, boosts, stats: { stunts: 0, turbos: 0, bams: 0 } };
-}
+import { race, runRace } from "./racebot.mjs";
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });
 

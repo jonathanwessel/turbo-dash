@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, WORLDS, trackOpen, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, WORLDS, trackOpen, MASTERY, starsFor, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
@@ -6,7 +6,8 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
-import { S, load, save, exportSave, importSave, upsOf, resetSave } from "./save.js";
+import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore } from "./save.js";
+import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
 import { createGarage, lookOf } from "./garage.js";
 
@@ -14,18 +15,19 @@ const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const $ = id => document.getElementById(id);
 const canvas = $("game");
 const STEP = 1 / 60;
+let resultT = 0;
 
 load();
 setAudioOpts({ music: S.music, sfx: S.sfx, volume: S.parent.volume });
 
 const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "🚀" };
-const buzz = ms => { if (S.parent.buzz) navigator.vibrate?.(ms); };
+const buzz = ms => { if (S.parent.buzz && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate?.(ms); } catch (e) { /* not allowed yet */ } };
 const race = new Race(canvas, {
   sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
   // engine hum only during a real race (menus have the demo drive behind them, but only music)
   engine: (r, b) => { if (mode === "race") engine(r, b); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
-  onFinish: r => setTimeout(() => showResult(r), 1300),
+  onFinish: r => { clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
 });
 
 /* ---------- sizing: full screen in landscape, a wide band at the top in portrait ---------- */
@@ -150,8 +152,9 @@ function paintRest() {
   if (left <= 0) { S.restUntil = 0; save(); show("s-title"); }
 }
 function startRace(track) {
-  if (updateReady) { updateGate(); return; }   // never start a race on an old version
-  if (restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
+  const midCup = cupRun && cupRun.i > 0;   // never break a cup in the middle
+  if (updateReady && !midCup) { updateGate(); return; }   // never start a race on an old version
+  if (!midCup && restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
   currentTrack = track; S.lastTrack = track.id; save();
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
@@ -188,7 +191,7 @@ function updateHud(dt) {
 /* ---------- tracks ---------- */
 const unlocked = i => !!TRACKS[i] && trackOpen(S, TRACKS[i]);
 const MEDAL = ["", "🏆", "🥈", "🥉"];
-const allowedDiffs = () => DIFFS.filter(d => S.parent.diffs.includes(d.id) && (!d.rank || S.rank >= d.rank)).map(d => d.id).concat(S.parent.diffs.length ? [] : ["normal"]);
+const allowedDiffs = () => { const L = DIFFS.filter(d => S.parent.diffs.includes(d.id) && (!d.rank || S.rank >= d.rank)).map(d => d.id); return L.length ? L : ["normal"]; };
 function paintDiffBar() {
   $("diff-bar").innerHTML = DIFFS.filter(d => S.parent.diffs.includes(d.id)).map(d => {
     const locked = d.rank && S.rank < d.rank;
@@ -242,6 +245,7 @@ function openTracks() {
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
+      <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>Get 🥉 on ${TRACKS.find(x => x.id === t.after).name}</small></div>`}</button>`;
   }).join("");
@@ -303,17 +307,22 @@ $("ce-ok").onclick = () => { sfx("click"); menuDemo(); openTracks(); };
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false, nextTrack = null;
 function showResult(r) {
+  const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
   S.races++; if (r.place === 1) S.wins++;
   S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
   const dk = currentTrack.id + ":" + S.diff;
   S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
+  if (r.place === 1) {
+    const before = starsFor(S.mastery[dk] || 0);
+    S.mastery[dk] = (S.mastery[dk] || 0) + 1;
+    if (starsFor(S.mastery[dk]) > before) setTimeout(() => toast(`⭐ Mastery star ${starsFor(S.mastery[dk])} on ${currentTrack.name}!`), 1800);
+  }
   S.coins += prize + r.coins;
-  const goalsBefore = claimable().length;
   if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
-  countRace(r, currentTrack.id);
+  countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
   save();
@@ -502,7 +511,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
 });
-const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { if (screen === "s-hub") refreshHub(); } });
+const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { refreshChips(); if (screen === "s-hub") refreshHub(); } });
 const PROF = ["Hi " + PLAYER + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + PLAYER + "!"];
 function openLab() { $("prof-say").textContent = PROF[Math.floor(Math.random() * PROF.length)]; lab.open(); show("s-lab"); }
 function goHub() {
@@ -517,7 +526,21 @@ $("btn-sfx").onclick = () => { S.sfx = !S.sfx; save(); setAudioOpts({ sfx: S.sfx
 paintToggles();
 
 function pause() { if (mode !== "race") return; paused = true; engineOff(); show("s-pause"); }
-$("btn-play").onclick = () => { initAudio(); goFullscreen(); sfx("click"); goHub(); };
+$("btn-play").onclick = () => {
+  initAudio(); goFullscreen(); sfx("click"); goHub();
+  cloudWake().then(r => { if (r === "loaded") location.reload(); });   // quietly reconnect Google Save (needs this tap)
+};
+whenSaved(cloudSaved);
+function paintCloud() {
+  const ok = cloudReady(), linked = cloudLinked();
+  $("g-in").hidden = linked || !ok; $("g-now").hidden = !linked || !ok; $("g-out").hidden = !linked;
+  $("g-msg").textContent = !ok ? cloudWhy() : cloudStatus() || (linked ? "Signed in. Progress is saved to Google after races." : "");
+}
+onCloudStatus(() => { if (screen === "s-parent") paintCloud(); });
+$("g-in").onclick = async () => { await cloudSignIn(); paintCloud(); if (cloudStatus().startsWith("Loaded")) setTimeout(() => location.reload(), 1200); };
+$("g-now").onclick = async () => { const r = await syncNow(true); paintCloud(); if (r === "loaded") setTimeout(() => location.reload(), 1200); };
+$("g-out").onclick = () => { if (confirm("Stop saving to Google? Progress stays on this tablet.")) { cloudSignOut(); paintCloud(); } };
+$("p-undo").onclick = () => { if (confirm("Go back to the save from before the last reset or load?")) { restoreBefore(); location.reload(); } };
 $("btn-pause").onclick = () => { sfx("click"); pause(); };
 $("btn-auto").onclick = () => {
   S.autoOn = !S.autoOn; save(); sfx("click");
@@ -535,6 +558,7 @@ $("ver").onclick = () => {
   if (verTaps.length >= 5) { verTaps = []; $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }
 };
 function paintParent() {
+  paintCloud(); $("p-undo").hidden = !hasBefore();
   $("p-break").innerHTML = [0, 20, 30, 45, 60].map(m => `<button data-pb="${m}" class="${S.parent.breakMin === m ? "on" : ""}">${m ? m + " min" : "Off"}</button>`).join("");
   $("p-auto").innerHTML = [true, false].map(v => `<button data-pa="${v}" class="${S.parent.autoSteer === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
   $("p-buzz").innerHTML = [true, false].map(v => `<button data-pz="${v}" class="${S.parent.buzz === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");

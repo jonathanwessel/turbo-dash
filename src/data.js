@@ -3,10 +3,10 @@
 export const CARS = [
   { id: "zippy",   name: "Zippy",        price: 0,    body: "#e8262b", accent: "#ffd400", type: "racer",   speed: 0.00, accel: 0.00, grip: 0.00 },
   { id: "bolt",    name: "Blue Bolt",    price: 700,  body: "#1f6fff", accent: "#ffffff", type: "sport",   speed: 0.05, accel: 0.05, grip: 0.05 },
-  { id: "monster", name: "Mega Monster", price: 1800, body: "#2fbf3a", accent: "#ffe600", type: "monster", speed: 0.09, accel: 0.15, grip: 0.10 },
-  { id: "shark",   name: "Shark Fin",    price: 3500, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
-  { id: "rocket",  name: "Rocket Rex",   price: 6000, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
-  { id: "galaxy",  name: "Galaxy GT",    price: 10000, body: "#7a2cff", accent: "#3cf2ff", type: "galaxy",  speed: 0.27, accel: 0.25, grip: 0.25 },
+  { id: "monster", name: "Mega Monster", price: 3000, body: "#2fbf3a", accent: "#ffe600", type: "monster", speed: 0.09, accel: 0.15, grip: 0.10 },
+  { id: "shark",   name: "Shark Fin",    price: 9000, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
+  { id: "rocket",  name: "Rocket Rex",   price: 20000, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
+  { id: "galaxy",  name: "Galaxy GT",    price: 40000, body: "#7a2cff", accent: "#3cf2ff", type: "galaxy",  speed: 0.27, accel: 0.25, grip: 0.25 },
   // cup prize cars: can't be bought, only won
   { id: "greenMachine", name: "Green Machine", price: null, cup: "green", body: "#39d353", accent: "#ffffff", type: "sport", speed: 0.12, accel: 0.15, grip: 0.15 },
   { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
@@ -77,7 +77,7 @@ export const prizeFor = (track, place, diff = "normal") => {
 // Upgrades on fancier cars cost a little more.
 export const upgradeCost = (carId, lvl, pitCrew = 0) => {
   const i = Math.max(0, CARS.findIndex(c => c.id === carId));
-  return Math.round(UPGRADE_COST[lvl] * (1 + 0.2 * i) * (1 - 0.03 * pitCrew) / 10) * 10;
+  return Math.round(UPGRADE_COST[lvl] * (1 + 0.4 * i) * (1 - 0.03 * pitCrew) / 10) * 10;
 };
 
 export const THEMES = {
@@ -145,7 +145,7 @@ export const GOALS = [
   { id: "rank5", icon: "⭐", name: "Reach Rank 5", goal: 5, reward: 600, have: S => S.rank },
   { id: "cup1", icon: "🏆", name: "Win a cup", goal: 1, reward: 500, have: S => Object.values(S.cups).filter(p => p === 1).length },
   { id: "cupall", icon: "🏆", name: "Win all three cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
-  { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => S.chips },
+  { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => Object.keys(S.chipLog || {}).length },
   { id: "auto1", icon: "🧠", name: "Auto Steer level 1", goal: 1, reward: 2000, have: S => S.research.autoSteer || 0 },
   { id: "auto10", icon: "🧠", name: "Auto Steer level 10", goal: 10, reward: 8000, have: S => S.research.autoSteer || 0 },
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
@@ -156,10 +156,10 @@ export const GOALS = [
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
 export const RANK_CAP = 20;   // raised by later releases
 export const rankNeeds = r => ({
-  wins: Math.round(3 * Math.pow(r, 1.35)),
-  trophies: Math.round(4 * Math.pow(r, 1.3)),
+  wins: Math.round(12 * Math.pow(r, 1.6)),
+  trophies: Math.round(4.5 * Math.pow(r, 1.35)),
   garage: Math.round(6 * Math.pow(r, 1.2)),
-  research: r < 2 ? 0 : Math.round(1.5 * Math.pow(r - 1, 1.25)),
+  research: r < 2 ? 0 : Math.round(2 * Math.pow(r - 1, 1.25)),
 });
 export const rankTitle = r => r >= 60 ? "Turbo God" : r >= 50 ? "Mega Legend" : r >= 40 ? "Legend" : r >= 30 ? "Superstar" : r >= 20 ? "Champion" : r >= 10 ? "Pro" : r >= 5 ? "Racer" : "Rookie";
 export const RANK_UNLOCKS = {
@@ -176,10 +176,19 @@ export const RANK_UNLOCKS = {
   20: { icon: "🏆", text: "Champion title" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
+/* Track Mastery: keep winning a track on a difficulty to earn up to 5 stars (each one is a trophy point). */
+export const MASTERY = [3, 10, 25, 50, 100];
+export const starsFor = wins => MASTERY.filter(n => wins >= n).length;
 export const FRONTS = [
   { id: "wins", icon: "🏁", name: "Wins", hint: "Win races!", have: S => S.wins },
   { id: "trophies", icon: "🏆", name: "Trophies", hint: "Get medals on every track and claim goals!",
-    have: S => Object.values(S.bestD).reduce((a, p) => a + (MEDAL_PTS[p] || 0), 0) + Object.values(S.cups).reduce((a, p) => a + (CUP_PTS[p] || 0), 0) + S.claimed.length },
+    have: S => {
+      // only difficulties the parent allows count, scaled so a 1- or 2-difficulty game can still fill the gauge
+      const allowed = S.parent?.diffs?.length ? S.parent.diffs : ["easy", "normal", "hard"], ok = k => allowed.includes(k.split(":")[1]);
+      const sum = (m, f) => Object.entries(m || {}).filter(([k]) => ok(k)).reduce((a, [, v]) => a + f(v), 0);
+      const per = sum(S.bestD, p => MEDAL_PTS[p] || 0) + sum(S.cups, p => CUP_PTS[p] || 0) + sum(S.mastery, starsFor);
+      return Math.round(per * 3 / allowed.length) + S.claimed.length;
+    } },
   { id: "garage", icon: "🔧", name: "Garage", hint: "Buy cars and upgrades!",
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
@@ -189,30 +198,30 @@ export const FRONTS = [
 /* ---------- Turbo Lab research. Real-time timers; levels count toward the Research rank gauge. ---------- */
 // tier: lab tier (needs that rank). cost/time grow 45% / 35% per level. Effects are read through S.research[id].
 export const RESEARCH = [
-  { id: "coinBoost", tier: 1, rank: 2, max: 10, icon: "🪙", name: "Coin Boost", desc: "+5% race prizes", c0: 200, t0: 120 },
-  { id: "luckyChests", tier: 1, rank: 2, max: 5, icon: "🎁", name: "Lucky Chests", desc: "Bigger treasure chests", c0: 250, t0: 150 },
-  { id: "headStart", tier: 1, rank: 2, max: 5, icon: "🚦", name: "Head Start", desc: "Start races with Turbo", c0: 300, t0: 180 },
-  { id: "pitCrew", tier: 1, rank: 2, max: 10, icon: "🔧", name: "Pit Crew", desc: "Upgrades 3% cheaper", c0: 250, t0: 150 },
-  { id: "turboTanks", tier: 2, rank: 6, max: 10, icon: "🚀", name: "Turbo Tanks", desc: "Turbo lasts longer", c0: 600, t0: 300 },
-  { id: "bigRamps", tier: 2, rank: 6, max: 5, icon: "🦘", name: "Bigger Ramps", desc: "Jump higher", c0: 700, t0: 300 },
-  { id: "bumper", tier: 2, rank: 6, max: 5, icon: "🛡️", name: "Bumper Shield", desc: "Bonks slow you less", c0: 600, t0: 300 },
-  { id: "magnetField", tier: 2, rank: 6, max: 10, icon: "🧲", name: "Magnet Field", desc: "Every car grabs more", c0: 650, t0: 300 },
-  { id: "superPaint", tier: 2, rank: 6, max: 1, icon: "✨", name: "Super Paint", desc: "Neon paints", c0: 1500, t0: 600 },
+  { id: "coinBoost", tier: 1, rank: 2, max: 10, icon: "🪙", name: "Coin Boost", desc: "+5% race prizes", c0: 600, t0: 300 },
+  { id: "luckyChests", tier: 1, rank: 2, max: 5, icon: "🎁", name: "Lucky Chests", desc: "Bigger treasure chests", c0: 750, t0: 400 },
+  { id: "headStart", tier: 1, rank: 2, max: 5, icon: "🚦", name: "Head Start", desc: "Start races with Turbo", c0: 900, t0: 450 },
+  { id: "pitCrew", tier: 1, rank: 2, max: 10, icon: "🔧", name: "Pit Crew", desc: "Upgrades 3% cheaper", c0: 750, t0: 400 },
+  { id: "turboTanks", tier: 2, rank: 6, max: 10, icon: "🚀", name: "Turbo Tanks", desc: "Turbo lasts longer", c0: 2000, t0: 1200 },
+  { id: "bigRamps", tier: 2, rank: 6, max: 5, icon: "🦘", name: "Bigger Ramps", desc: "Jump higher", c0: 2200, t0: 1200 },
+  { id: "bumper", tier: 2, rank: 6, max: 5, icon: "🛡️", name: "Bumper Shield", desc: "Bonks slow you less", c0: 2000, t0: 1200 },
+  { id: "magnetField", tier: 2, rank: 6, max: 10, icon: "🧲", name: "Magnet Field", desc: "Every car grabs more", c0: 2100, t0: 1200 },
+  { id: "superPaint", tier: 2, rank: 6, max: 1, icon: "✨", name: "Super Paint", desc: "Neon paints", c0: 5000, t0: 3600 },
   // tier 3: the Robot Brain chain (one level each, in order), then Auto Steer
-  { id: "rbEyes", tier: 3, rank: 8, max: 1, icon: "👀", name: "Robot Eyes", desc: "See the road ahead", c0: 1500, t0: 600 },
-  { id: "rbEars", tier: 3, rank: 8, max: 1, icon: "👂", name: "Robot Ears", desc: "Hear the rivals", c0: 2500, t0: 900, needs: ["rbEyes"] },
-  { id: "rbMap", tier: 3, rank: 8, max: 1, icon: "🗺️", name: "Map Memory", desc: "Remember every curve", c0: 4000, t0: 1200, needs: ["rbEars"] },
-  { id: "rbReflex", tier: 3, rank: 9, max: 1, icon: "⚡", name: "Reflexes", desc: "Super-quick steering", c0: 6000, t0: 1800, needs: ["rbMap"] },
-  { id: "rbSocket", tier: 3, rank: 9, max: 1, icon: "🔌", name: "Brain Chip Socket", desc: "Ready for Auto Steer", c0: 9000, t0: 2700, needs: ["rbReflex"], chips: () => 1 },
+  { id: "rbEyes", tier: 3, rank: 8, max: 1, icon: "👀", name: "Robot Eyes", desc: "See the road ahead", c0: 8000, t0: 7200 },
+  { id: "rbEars", tier: 3, rank: 8, max: 1, icon: "👂", name: "Robot Ears", desc: "Hear the rivals", c0: 12000, t0: 10800, needs: ["rbEyes"] },
+  { id: "rbMap", tier: 3, rank: 8, max: 1, icon: "🗺️", name: "Map Memory", desc: "Remember every curve", c0: 18000, t0: 14400, needs: ["rbEars"] },
+  { id: "rbReflex", tier: 3, rank: 9, max: 1, icon: "⚡", name: "Reflexes", desc: "Super-quick steering", c0: 25000, t0: 21600, needs: ["rbMap"] },
+  { id: "rbSocket", tier: 3, rank: 9, max: 1, icon: "🔌", name: "Brain Chip Socket", desc: "Ready for Auto Steer", c0: 35000, t0: 28800, needs: ["rbReflex"], chips: () => 1 },
   // THE big one: 100 levels. Costs coins, Brain Chips and hours; each level needs a higher rank.
   { id: "autoSteer", tier: 3, rank: 10, max: 100, icon: "🧠", name: "AUTO STEER", desc: "The car drives itself", big: true, needs: ["rbSocket"],
-    cost: lvl => Math.round(25000 * Math.pow(1.025, lvl) / 1000) * 1000,
+    cost: lvl => Math.round(60000 * Math.pow(1.035, lvl) / 1000) * 1000,
     time: lvl => Math.round(Math.min(24, Math.pow(1.035, lvl)) * 3600),
-    chips: lvl => 2 + Math.floor((lvl + 1) / 10),
+    chips: lvl => 4 + Math.floor((lvl + 1) / 10),
     rankAt: lvl => 9 + Math.ceil((lvl + 1) / 2) },
 ];
 export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;   // lvl = current level (0-based next)
-export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.35, lvl));              // seconds
+export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.4, lvl));              // seconds
 export const researchChips = (r, lvl) => r.chips ? r.chips(lvl) : 0;
 export const researchRank = (r, lvl) => r.rankAt ? r.rankAt(lvl) : r.rank;
 export const benchesFor = rank => rank >= 15 ? 4 : rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;

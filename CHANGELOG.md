@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.12.0 — The Long Game
+
+- **A much longer game.** A new career simulator (`npm run career`) plays the whole game day by day like a kid
+  would and reports when every stage gate falls. Tuned with it, today's content takes about **4 months** at
+  ~15 minutes a day: Rank 2 (lab) on day 2, Rank 5 (cups) ~day 12, Rank 10 (Auto Steer) ~day 37, Rank 20 ~day
+  114. Ranks keep getting steeper as new worlds raise the cap toward 60 (years of play).
+  - Ranks need more wins and trophies; cars cost more (Mega Monster 3,000 → Galaxy GT 40,000); upgrades on fancy
+    cars cost more; research takes longer; Auto Steer costs 60,000+ coins and 4+ Brain Chips per level.
+  - Cars and upgrades already bought are kept.
+- **⭐ Track Mastery**: win a track again and again to earn up to 5 stars per track and difficulty (at 3, 10, 25,
+  50 and 100 wins). Stars show on the track cards and count as trophy points.
+- **☁️ Google Save** (Parent Corner): sign in with your Google account to keep a copy of the save in your Google
+  Drive and load it on any device. Needs a one-time sign-in key; see README → "Google Save". Works on the
+  website, not the LAN address.
+- **Saves from every version load into this one.** Every field is checked and converted, and `npm test` loads a
+  save from each past release (plus a deliberately broken one) before every release is allowed to ship.
+- **Undo** in Parent Corner brings back the save from before the last reset or load.
+
+**Fixed** (found by a full code review)
+- The Trophies gauge could never fill if Parent Corner allowed only one or two difficulties.
+- The results screen could pop up over the town (and lose a cup) after pausing right at the finish line.
+- After crossing the finish line the car kept collecting coins, jumping and buzzing behind the results screen.
+- The backup kept by Reset or Load was overwritten on the next reload.
+- Allowing only Hard below Rank 3 left no difficulty to race on.
+- The Brain Chip counter didn't update after spending chips in the lab.
+- "Goal done!" didn't show for goals finished by a win.
+- Head Start at its top level didn't quite fill the Turbo meter.
+- An update or break screen could end a cup halfway through.
+- A save from a newer version could break the lab; "Collect 3 Brain Chips" went backwards when chips were spent;
+  races after midnight counted toward yesterday's missions.
+
+**Polish**
+- Gold ★ mastery stars on every track card, with a "Mastery star!" message when you earn one.
+- Parent Corner: a Google Save panel and an Undo button; vibration only starts after the first tap.
+
 ## v0.11.1 — Quiet Town (hotfix)
 
 - Fixed: the engine hum kept playing on the town screen and other menus. Menus now have only music; the engine

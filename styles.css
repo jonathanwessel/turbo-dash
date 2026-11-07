@@ -413,3 +413,5 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .hud-btn.auto small { font-size: 14px; font-weight: 900; }
 .hud-btn.auto.on { background: #ff3fe5; border-color: #fff; box-shadow: 0 0 16px rgba(255,63,229,.8); }
 .proj.teaser.big:not(.locked) { opacity: 1; }
+
+.track-card .tc-stars { font-size: clamp(14px, 3.6vmin, 20px); color: #ffd400; letter-spacing: 1px; text-shadow: 0 2px 0 rgba(0,0,0,.45); }

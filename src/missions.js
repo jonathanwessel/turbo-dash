@@ -34,8 +34,9 @@ export function todaysMissions(today, openTracks) {
 export const missionText = m => { const k = KINDS.find(x => x.id === m.kind); return { icon: k.icon, text: k.text(m.goal, TRACKS.find(t => t.id === m.track)) }; };
 
 /* Count a finished race toward today's missions. */
-export function countRace(r, trackId) {
-  const M = S.missions; if (!M) return;
+export function countRace(r, trackId, today, openTracks) {
+  if (S.rank < MISSIONS_RANK) return;
+  const M = todaysMissions(today, openTracks);
   for (const m of M.list) {
     const add = { races: 1, wins: r.place === 1 ? 1 : 0, podium: r.place <= 3 ? 1 : 0, coins: r.coins, jumps: r.stats.stunts, powers: r.stats.powers, bams: r.stats.bams,
       track: r.place === 1 && trackId === m.track ? 1 : 0 }[m.kind] || 0;

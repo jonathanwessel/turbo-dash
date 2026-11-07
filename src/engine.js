@@ -310,7 +310,7 @@ export class Race {
 
   touch(s) {
     const p = this.player, S = this.stats;
-    if (this.state === "demo") return;
+    if (this.state === "demo" || p.finished) return;
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
       p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1); p.airT = 0; this.hooks.sfx("jump");
     }
@@ -352,7 +352,7 @@ export class Race {
   land() {
     const p = this.player;
     p.air = 0; p.vy = 0;
-    if (this.state === "demo") return;
+    if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
       this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);

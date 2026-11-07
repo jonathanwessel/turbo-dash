@@ -12,7 +12,7 @@ export function statsFor(car, u, lab = {}) {
     nitroFill: 0.05 + 0.01 * u.turbo,
     nitroTime: 2 + 0.3 * u.turbo + 0.15 * L("turboTanks"),
     magnet: 0.12 * u.magnet + 0.03 * L("magnetField"),
-    startNitro: 0.12 * L("headStart"),
+    startNitro: 0.13 * L("headStart"),
     bumper: 0.04 * L("bumper"),
     jump: 1 + 0.08 * L("bigRamps"),
   };

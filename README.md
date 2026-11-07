@@ -40,6 +40,24 @@ Play (5183), dev (5184) and stage (5185) are different origins, so each keeps it
 - When a new release is published, the game shows a big **New version! Tap to update** button on the menus
   (never during races). Tapping it reloads into the new version; progress is kept.
 
+## Google Save
+
+Google Save keeps a copy of Carter's progress in your Google Drive (a hidden app folder only this game can
+read) and loads it on any device you sign in on. Sign in from Parent Corner. It works on the website
+(https://jonathanwessel.github.io/turbo-dash/) and on localhost, not on the LAN address (Google requires https).
+
+It needs a free sign-in key from Google, made once:
+
+1. Go to https://console.cloud.google.com/ and create a project (for example "Turbo Dash").
+2. **APIs & Services → Library**: enable **Google Drive API**.
+3. **APIs & Services → OAuth consent screen**: choose **External**, app name "Turbo Dash", your email as support
+   and developer contact. Add the scope `.../auth/drive.appdata`. Under **Test users**, add your own Google
+   account (leave the app in Testing; that's fine for family use).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Web application**.
+   Under **Authorized JavaScript origins** add `https://jonathanwessel.github.io` and `http://localhost:5184`.
+5. Copy the **Client ID** (it ends in `.apps.googleusercontent.com`) into `src/cloud-config.js` and release.
+   The client ID is not a secret; Google only accepts it from the origins you listed.
+
 ## Releasing
 
 1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry.
