@@ -116,6 +116,14 @@ export function buildTrack(track) {
     for (let j = 0; j < 5; j++) { const f = (j + 0.5) / 5; segs[k + 6 + j * 12].coins.push({ offset: lane, taken: false, pearl: true, h: 2340 * f * (1 - f) }); }
     i = k + 62;
   }
+  // ❄️ ice: soft snowbanks in one lane. Steer around them, or POOF through them (slowly).
+  if (ph.snowbanks) for (let i = START + 80; i < segs.length - 60; i += 70 + Math.floor(r() * 60)) {
+    let k = i;
+    while (k < segs.length - 60 && segs.slice(k - 4, k + 6).some(q => q.ramp || q.gap || q.boxes || q.boost !== null || q.coins.length || q.snow != null)) k++;
+    if (k >= segs.length - 60) break;
+    segs[k].snow = [-0.55, 0, 0.55][Math.floor(r() * 3)];
+    i = k;
+  }
   const T = { segs, length: segs.length * SEG, theme: th, track };
   trackCache.set(track.id, T);
   return T;
@@ -155,9 +163,10 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
-    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
+    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, ...slot(5) };
+    this.driftT = 0;
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
@@ -258,14 +267,36 @@ export class Race {
     this.steerVis += (steer - this.steerVis) * Math.min(1, dt * 10);
     const fast = this.nitroT > 0 || this.boostT > 0;
     const ph = this.phys;
-    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1)) * ph.top;
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (fast ? 3 : 1) * dt);
+    // ❄️ cars that aren't made for ice (no ❄️ in the garage) spin their wheels a little on the Glacier Rink
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1)) * ph.top;
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
-    p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
+    const lat = steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
     const help = this.assist;   // 0 none, 1 a little, 2 lots
+    if (ph.ice && !auto && !flying && dt > 0) {
+      // ❄️ on ice the car keeps sliding: steering changes where you're GOING, not where you are.
+      // Snow Chains (and the steering helper) make the tires bite sooner.
+      const bite = Math.min(1, dt * (3 + 9 * Math.min(1, (S.studs || 0) + 0.15 * help)));
+      p.slideV += (lat / dt - p.slideV) * bite; p.offset += p.slideV * dt;
+    } else { p.offset += lat; p.slideV = dt > 0 ? lat / dt : 0; }
+    // ❄️ drift: steer INTO an ice curve for a moment, then let go (or reach the end of the curve) for a DRIFT BOOST
+    if (ph.drift && !auto && racing) {
+      const into = !flying && Math.abs(seg.curve) > 1 && steer !== 0 && Math.sign(steer) === Math.sign(seg.curve);
+      if (into) {
+        this.driftT += dt;
+        const ready = this.driftT >= 0.8;
+        if (Math.random() < 0.8) this.parts.push({ x: 0.5 - Math.sign(steer) * (0.06 + Math.random() * 0.08), y: 0.96, vx: -Math.sign(steer) * (0.1 + Math.random() * 0.25), vy: -0.2 - Math.random() * 0.25, life: 0.55, c: ready ? (Math.random() < 0.5 ? "#3cf2ff" : "#ff8ad8") : "#ffffff", r: 0.005 + Math.random() * 0.007 });
+      } else if (this.driftT > 0) {
+        if (this.driftT >= 0.8) {
+          this.boostT = Math.max(this.boostT, (0.45 + 0.45 * Math.min(1, (this.driftT - 0.8) / 1.5)) * (S.driftPow || 1));
+          this.popup("DRIFT BOOST!", "#9fe8ff"); h.sfx("boost"); this.runStats.drifts++;
+        }
+        this.driftT = 0;
+      }
+    }
     if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
@@ -335,6 +366,7 @@ export class Race {
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY; }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
+      else { const rs = this.segAt(c.dist); if (rs.snow != null && c.snowAt !== rs.index && Math.abs(c.offset - rs.snow) < 0.4) { c.snowAt = rs.index; c.speed *= 0.88; } }
       if (this.state !== "demo" && !c.finished && c.dist >= this.finishDist) { c.finished = true; this.order.push(c); }
 
       // bumping into each other
@@ -371,6 +403,11 @@ export class Race {
     }
     if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
       p.air = 1; p.vy = JUMP_VY * 0.85; p.airT = 0; this.hooks.sfx("jump"); this.popup("BUBBLES!", "#bff6ff");
+    }
+    if (s.snow != null && p.air < 150 && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
+      if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= Math.min(0.9, 0.62 + (S.plow || 0));
+      for (let k = 0; k < 18; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.9, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.4, life: 0.7, c: "#ffffff", r: 0.008 + Math.random() * 0.012 });
+      this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup("POOF!", "#ffffff");
     }
     for (const c of s.coins) {
       if (c.pearl) {
@@ -492,6 +529,7 @@ export class Race {
       if (s.index === START) this.drawArch(ctx, s, F);
       if (s.rail) this.drawRails(ctx, s, F);
       if (s.ventTop) this.drawVent(ctx, s, F);
+      if (s.snow != null) this.drawSnowbank(ctx, s, F);
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
@@ -566,6 +604,17 @@ export class Race {
       ctx.stroke();
     }
 
+    if (th.snow) {
+      // falling snow in two layers: near flakes are bigger and faster, and everything drifts with the curves
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 80; i++) {
+        const near = i % 3 === 0, sp = near ? 0.22 : 0.08, sz = H * (near ? 0.006 : 0.003);
+        const fx = (((i * 0.6180339 + this.skyX * (near ? 3 : 1.4) + Math.sin(t * 0.9 + i) * 0.012) % 1) + 1) % 1 * W;
+        const fy = (((i * 0.37 + t * sp * (1 + (i % 5) * 0.12)) % 1) + 1) % 1 * H;
+        ctx.globalAlpha = near ? 0.9 : 0.55; ctx.beginPath(); ctx.arc(fx, fy, sz, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
     if (th.water) {
       const tint = ctx.createLinearGradient(0, 0, 0, H);
       tint.addColorStop(0, "rgba(20,120,170,0.04)"); tint.addColorStop(1, "rgba(10,70,120,0.16)");
@@ -598,7 +647,32 @@ export class Race {
     const w = sc * CAR_W * ROAD_W * F;
     if (x + w < 0 || x - w > this.canvas.width) return;
     const steer = c.knockT > 0 ? Math.sin(this.t * 30) * 4 : clamp((c.lane - c.offset) * 3, -1, 1);
-    this.clipped(ctx, s, y, () => drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900 }));
+    this.clipped(ctx, s, y, () => {
+      if (this.T.theme.ice && c.air < 60 && w > 6) {
+        // shiny ice: a faint upside-down reflection under the car
+        ctx.save(); const a = ctx.globalAlpha; ctx.globalAlpha = a * 0.22; ctx.translate(x, lerp(s.p1.screen.y, s.p2.screen.y, pct)); ctx.scale(1, -0.45);
+        drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900 }); ctx.restore();
+      }
+      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900 });
+    });
+  }
+
+  // A soft snowbank across one lane: a lumpy white mound with a blue shadow and a few sparkles.
+  drawSnowbank(ctx, s, F) {
+    if (s.p1.camera.z <= CAM_DEPTH) return;
+    const x = s.p1.screen.x + s.p1.screen.w * s.snow, y = s.p1.screen.y, rw = s.p1.screen.w * 0.3, t = this.t;
+    if (rw < 1.5) return;
+    this.clipped(ctx, s, y, () => {
+      ctx.fillStyle = "rgba(40,90,150,0.25)"; ctx.beginPath(); ctx.ellipse(x, y, rw * 1.15, rw * 0.16, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#cfe6f7"; ctx.beginPath(); ctx.ellipse(x, y, rw * 1.05, rw * 0.52, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(x - rw * 0.3, y - rw * 0.08, rw * 0.6, rw * 0.46, 0, Math.PI, 0); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + rw * 0.38, y - rw * 0.04, rw * 0.5, rw * 0.36, 0, Math.PI, 0); ctx.fill();
+      if (rw > 8) {
+        ctx.fillStyle = "#bfefff";
+        for (let k = 0; k < 4; k++) if (Math.sin(t * 4 + k * 1.9 + s.index) > 0.3) { const sx = x + rw * (k * 0.45 - 0.7), sy = y - rw * (0.3 + (k % 2) * 0.15), g = rw * 0.06; ctx.beginPath(); ctx.moveTo(sx, sy - g * 2); ctx.lineTo(sx + g, sy); ctx.lineTo(sx, sy + g * 2); ctx.lineTo(sx - g, sy); ctx.fill(); }
+      }
+    });
   }
 
   // A bubble vent: a round grate on the road with bubbles streaming up out of it.
@@ -713,6 +787,17 @@ export class Race {
       const k = 0.5 + 0.5 * Math.sin(this.t * 2.2 + s.index * 0.9), ym = (y1 + y2) / 2, hh = Math.max(1, (y1 - y2) * 0.6);
       ctx.fillStyle = `rgba(210,250,255,${0.05 + 0.08 * k})`;
       for (const j of [0, 1]) { const u = Math.sin(this.t * 0.7 + s.index * 1.7 + j * 2.5) * 0.7; ctx.beginPath(); ctx.ellipse(x1 + w1 * u, ym, w1 * (0.12 + 0.06 * k), hh, 0, 0, 7); ctx.fill(); }
+    }
+    if (th.ice && !s.finish) {
+      // glossy ice: long soft shines down the road (the same on every segment, so no stripes) and twinkling glints
+      ctx.fillStyle = "rgba(255,255,255,0.24)";
+      quad(ctx, x1 - w1 * 0.6, yb, x1 - w1 * 0.36, yb, x2 - w2 * 0.36, y2, x2 - w2 * 0.6, y2);
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      quad(ctx, x1 + w1 * 0.22, yb, x1 + w1 * 0.34, yb, x2 + w2 * 0.34, y2, x2 + w2 * 0.22, y2);
+      if (s.index % 3 === 0 && w1 > 14) {
+        const g = Math.sin(this.t * 3 + s.index * 2.3);
+        if (g > 0.55) { const gx = x1 + w1 * (((s.index * 0.618) % 1.6) - 0.8), gy = (y1 + y2) / 2, gs = Math.min(10, w1 * 0.02) * (g - 0.4) * 2; ctx.fillStyle = "#ffffff"; quad(ctx, gx - gs, gy, gx, gy - gs * 2.4, gx + gs, gy, gx, gy + gs * 2.4); }
+      }
     }
     if (s.current) {
       // a current: a blue sheen with arrows sliding the way it pushes

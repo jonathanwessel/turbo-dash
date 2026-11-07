@@ -544,3 +544,10 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 /* ⏱️ Time Trials */
 #hud.trial .hud-pos { font-size: clamp(30px, 8vmin, 60px); font-variant-numeric: tabular-nums; min-width: 3.6em; }
 .track-card .tc-time { font-weight: 900; font-size: clamp(15px, 4vmin, 21px); color: #bff6ff; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+
+/* 🚗 Garage world chips: jump straight to a world's cars (and see how many you own) */
+.g-worlds { display: flex; gap: 8px; justify-content: center; margin: 2px 0 4px; }
+.g-worlds button { display: flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 999px; border: 3px solid rgba(255,255,255,.35); background: rgba(0,0,0,.25); color: #fff; font-weight: 900; font-size: clamp(14px, 3.4vmin, 20px); }
+.g-worlds button span { font-size: 1.25em; }
+.g-worlds button small { font-size: .8em; opacity: .85; }
+.g-worlds button.on { background: #ffd400; color: #4a2600; border-color: #fff; transform: scale(1.08); }

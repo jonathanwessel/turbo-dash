@@ -20,6 +20,10 @@ export function statsFor(car, u, lab = {}, skills = {}) {
     ringReach: 0.12 * L("ringMagnet"),
     propel: 1 + 0.08 * L("propellers"),   // underwater: speed up faster
     fins: 0.12 * L("fins"),
-    pearlReach: 0.1 * L("pearlDiver"),   // underwater: grab pearls from farther away               // underwater: currents push less
+    pearlReach: 0.1 * L("pearlDiver"),
+    studs: 0.1 * L("snowChains"),          // ice: slide less
+    driftPow: 1 + 0.12 * L("driftMaster"), // ice: bigger drift boosts
+    plow: 0.06 * L("snowplow"),            // ice: snowbanks slow you less
+    warm: 1 + 0.08 * L("warmEngine"),      // ice: speed up faster   // underwater: grab pearls from farther away               // underwater: currents push less
   };
 }

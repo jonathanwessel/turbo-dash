@@ -33,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -83,7 +83,7 @@ Four gauges must all be full to RANK UP (the emptiest one glows with a picture h
   per track and difficulty) + claimed goals.
 - **Garage** = 5 per car owned + every upgrade level on every car. Each new world must add cars (the Garage
   gauge maxes at 225 with today's 9 cars).
-- **Rank cap** is 30 now (Deep Blue) and rises with each world: 35, 40 … 60.
+- **Rank cap** is 35 now (Glacier Rink) and rises with each world: 40, 45 … 60.
 - **🪪 License gauge (new, from Rank 10, parent can switch it off):** see Driver School.
 
 ## Turbo Lab
@@ -177,9 +177,15 @@ The underwater world: drag, currents, bubble vents, pearls, propellers and fins,
 Rank cap 30. Plus **Time Trials** with a see-through ghost of your best lap.
 - **Graphics:** blue-green palette, bubbles, fish, wavy seaweed, light ripples on the road; muffled sound.
 
-### v0.18.0 Two Players
-Split-screen races on one tablet: Carter vs. Dad.
-- **Graphics:** a split view with name plates over each car. **Interface:** a "who's racing?" picker.
+### v0.18.0 🧊 Glacier Rink (shipped)
+Ice: cars slide, drift into curves for a DRIFT BOOST, snowbanks, Ice Studs research, three ice cars, the Glacier
+Cup and the boss Fang the Ice Wolf. Rank cap 35. (Split-screen Two Players was dropped.)
+- **Graphics:** northern lights, falling snow, glossy ice with glints and reflections, penguins, igloos.
+- **Interface:** world buttons in the garage.
+
+### v0.19.0 🚀 Toy Track World: first look
+The first piece of the Next Gen leap (see below): one test track in the new 3D engine with plastic track pieces,
+a loop-the-loop and booster stations, playable as a "sneak peek" from the Race Track before it opens for real.
 
 ### v1.0.0 Carter's 1.0
 A milestone release:
@@ -190,8 +196,8 @@ A milestone release:
 - **A parent's guide page.**
 - **A review of every screen:** a full code review, the career sim, and a save test from every version.
 
-### v1.1 – v1.6 More worlds
-Glacier Rink, Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
+### v1.1 – v1.5 More worlds
+Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.
 
 ## 🚀 Next Gen: Toy Track World (the big leap)

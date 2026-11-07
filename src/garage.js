@@ -27,9 +27,16 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     ];
   }
 
+  // which world a car belongs to: its own world, or the world of the cup that gives it (Earth otherwise)
+  const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
   function render() {
     const car = CARS[idx], owned = S.owned.includes(car.id), driving = S.car === car.id;
-    $("g-name").textContent = car.name;
+    $("g-name").textContent = car.name + (car.ice ? " ❄️" : "");
+    const here = worldOf(car);
+    $("g-worlds").innerHTML = WORLDS.filter(w => CARS.some(c => worldOf(c) === w.id)).map(w => {
+      const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
+      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.icon}</span><small>${mine}/${list.length}</small></button>`;
+    }).join("");
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${Math.round(8 + 92 * Math.min(1, v))}%"></i></div>`).join("");
     const btn = $("g-action");
     const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
@@ -67,6 +74,11 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     S.look[car.id] = { ...(S.look[car.id] || {}), [key]: id }; save();
   }
 
+  $("g-worlds").addEventListener("click", e => {
+    const b = e.target.closest("[data-gworld]"); if (!b) return;
+    const i = CARS.findIndex(c => worldOf(c) === b.dataset.gworld); if (i < 0) return;
+    sfx("click"); idx = i; zoom = 1; render();
+  });
   $("g-prev").onclick = () => { sfx("click"); idx = (idx + CARS.length - 1) % CARS.length; zoom = 1; render(); };
   $("g-next").onclick = () => { sfx("click"); idx = (idx + 1) % CARS.length; zoom = 1; render(); };
   document.querySelectorAll("[data-gtab]").forEach(b => b.onclick = () => { sfx("click"); tab = b.dataset.gtab; render(); });

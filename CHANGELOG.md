@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.18.0 — 🧊 Glacier Rink
+
+- **The third new world: Glacier Rink, on the ice.** It opens at **Rank 30** after researching **🧊 Ice
+  Studs** (new lab tier 6). Pick 🧊 Glacier Rink in the world bar.
+  - **Slippery ice:** your car keeps sliding, so steering changes where you're *going*, not where you are.
+    Steer early and gently! Curves push harder too.
+  - **❄️ Drift boosts:** steer *into* an icy curve and hold it until the snow spray turns blue and pink, then
+    let go for a **DRIFT BOOST**.
+  - **Snowbanks** sit in one lane: steer around them, or go **POOF** through them (slowly).
+  - **Ice cars:** cars made for ice have a ❄️ by their name in the garage. Other cars spin their wheels a
+    little on the ice.
+  - **Four ice tracks:** Ice Cave, Frozen Lake, Aurora Pass and Glacier Summit.
+  - **New cars:** the **Frost Runner** (220,000 coins: studded tires and two skis on the roof), the **Polar
+    Bear** (win the new **Glacier Cup**) and the **Blizzard Wolf** (beat the new boss **🐺 Fang the Ice Wolf**).
+  - **New research:** Snow Chains (slide less), Drift Master (bigger drift boosts), Snowplow (snowbanks slow you
+    less), Warm Engine (speed up faster on ice).
+- **Ranks go up to 35.** New goals: win on the ice, do 50 drift boosts.
+- Saves from every earlier version carry over (16 save checks).
+- Tuned with the career simulator: Glacier Rink arrives around month 11, Fang falls around month 13, and the
+  whole game now runs about 15 months to Rank 35, with no stuck gates. The Kraken Cruiser (the best sea car)
+  finishes mid-pack on the ice, so the new ice cars are worth earning.
+- Split-screen Two Players is off the plan.
+
+**Polish (graphics ladder, step 4: shiny ice)**
+- The northern lights waving across a starry evening sky, and snow falling in two layers.
+- Glossy ice roads with long shines and twinkling glints, and cars reflected in the ice.
+- Frosty pines with icicles, see-through ice crystals, igloos, snow forts with flags, and waddling penguins.
+- Snow spray and blue and pink sparkles off your tires while you drift.
+- **Garage:** a row of world buttons (🌍 🌙 🌊 🧊) jumps straight to that world's cars and shows how many you
+  own.
+
 ## v0.17.0 — 🌊 Deep Blue & Time Trials
 
 - **The second new world: Deep Blue, under the sea.** It opens at **Rank 25** after researching **🤿 Snorkel

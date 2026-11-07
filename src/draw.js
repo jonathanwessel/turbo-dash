@@ -175,6 +175,16 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillStyle = on ? "#ff3d3d" : "#7a1515"; rr(ctx, -w * 0.19 + cx, top - ch - w * 0.065, w * 0.18, w * 0.06, w * 0.02);
     ctx.fillStyle = on ? "#1a3a7a" : "#3cb6ff"; rr(ctx, w * 0.01 + cx, top - ch - w * 0.065, w * 0.18, w * 0.06, w * 0.02);
   }
+  if (type === "skis" && w > 20) {
+    ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.55, w, bh * 0.12);
+    ctx.fillStyle = "#444"; ctx.fillRect(-w * 0.3 + cx, top - ch - w * 0.03, w * 0.6, w * 0.03);
+    for (const [sx, col] of [[-0.2, def.accent], [0.12, "#ff3fa4"]]) {
+      ctx.fillStyle = col; rr(ctx, sx * w + cx, top - ch - w * 0.32, w * 0.07, w * 0.32, w * 0.03);
+      ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(sx * w + cx + w * 0.015, top - ch - w * 0.28, w * 0.015, w * 0.22);
+    }
+    ctx.fillStyle = "#e6f2ff";
+    for (const wx of [-w * 0.52 + ww * 0.5, w * 0.52 - ww * 0.5]) for (let k = 0; k < 3; k++) ell(ctx, wx + (k - 1) * ww * 0.28, -wh * 0.5, w * 0.012, w * 0.012);
+  }
   if (type === "shark") {
     ctx.fillStyle = shade(def.body, -0.2);
     poly(ctx, [cx - w * 0.06, top - ch, cx + w * 0.02, top - ch - w * 0.25, cx + w * 0.07, top - ch]);
@@ -244,6 +254,7 @@ export const SPRITES = {
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
   kelp: { w: 800, collide: true }, coral: { w: 1100, collide: true }, shellrock: { w: 1000, collide: true }, jelly: { w: 700, collide: false },
   treasure: { w: 900, collide: true }, anemone: { w: 800, collide: false },
+  icepine: { w: 1300, collide: true }, icecrystal: { w: 1000, collide: true }, igloo: { w: 1600, collide: true }, penguin: { w: 600, collide: true }, snowfort: { w: 1500, collide: true },
 };
 
 export function drawSprite(ctx, type, x, yb, w, t) {
@@ -474,6 +485,63 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.lineCap = "butt";
       break;
     }
+    case "icepine": {
+      // a frosty pine: blue-green layers heavy with snow, and icicles hanging off each layer
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(x - w * 0.07, yb - h * 0.3, w * 0.14, h * 0.3);
+      for (let i = 0; i < 3; i++) {
+        const yy = yb - h * 0.25 - i * h * 0.35, ww = w * (0.52 - i * 0.12);
+        ctx.fillStyle = "#2d6f7a"; poly(ctx, [x - ww, yy, x, yy - h * 0.5, x + ww, yy]);
+        ctx.fillStyle = "#ffffff"; poly(ctx, [x - ww * 0.55, yy - h * 0.22, x, yy - h * 0.5, x + ww * 0.55, yy - h * 0.22]);
+        ctx.fillStyle = "#f4faff"; ctx.fillRect(x - ww, yy - h * 0.03, ww * 2, h * 0.035);
+        ctx.fillStyle = "#bfefff"; for (let k = 0; k < 4; k++) { const ix = x - ww * 0.8 + k * ww * 0.53; poly(ctx, [ix - w * 0.02, yy, ix + w * 0.02, yy, ix, yy + h * 0.07]); }
+      }
+      break;
+    }
+    case "icecrystal": {
+      // a cluster of see-through ice crystals that twinkle
+      const sp = [[-0.25, 0.75, -0.18], [0.22, 0.6, 0.2], [0, 1.05, 0]];
+      for (const [dx, hh, lean] of sp) {
+        const bx = x + dx * w, bw = w * 0.14, top = yb - h * hh;
+        ctx.fillStyle = "rgba(150,220,255,0.75)"; poly(ctx, [bx - bw, yb, bx - bw * 0.8 + lean * w * 0.3, top + h * 0.12, bx + lean * w * 0.3, top, bx + bw * 0.8 + lean * w * 0.3, top + h * 0.12, bx + bw, yb]);
+        ctx.fillStyle = "rgba(255,255,255,0.65)"; poly(ctx, [bx - bw * 0.5, yb, bx - bw * 0.4 + lean * w * 0.3, top + h * 0.14, bx + lean * w * 0.3, top + h * 0.02, bx - bw * 0.1, yb]);
+      }
+      if (w > 10 && Math.sin(t * 3 + x * 0.02) > 0.4) { ctx.fillStyle = "#ffffff"; star(ctx, x + w * 0.05, yb - h * 0.95, w * 0.09); }
+      break;
+    }
+    case "igloo": {
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.ellipse(x, yb, w * 0.5, h * 0.5, 0, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = "#bcd7ea"; ctx.lineWidth = Math.max(1, w * 0.012);
+      for (let r = 1; r < 4; r++) { const yy = yb - h * 0.13 * r, half = w * 0.5 * Math.sqrt(1 - Math.pow(0.26 * r, 2)); ctx.beginPath(); ctx.moveTo(x - half, yy); ctx.lineTo(x + half, yy); ctx.stroke(); }
+      for (let r = 0; r < 4; r++) for (let k = -2; k <= 2; k++) { const yy = yb - h * 0.13 * r, bx = x + (k + (r % 2) * 0.5) * w * 0.18; if (Math.abs(bx - x) < w * 0.45 * Math.sqrt(1 - Math.pow(0.26 * r, 2))) { ctx.beginPath(); ctx.moveTo(bx, yy); ctx.lineTo(bx, yy - h * 0.13); ctx.stroke(); } }
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.ellipse(x + w * 0.18, yb, w * 0.17, h * 0.2, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#2a3550"; ctx.beginPath(); ctx.ellipse(x + w * 0.18, yb, w * 0.1, h * 0.14, 0, Math.PI, 0); ctx.fill();
+      break;
+    }
+    case "penguin": {
+      // a waddling penguin
+      const wob = Math.sin(t * 6 + x * 0.05) * 0.12;
+      ctx.save(); ctx.translate(x, yb); ctx.rotate(wob);
+      ctx.fillStyle = "#ff9d00"; ell(ctx, -w * 0.14, -h * 0.02, w * 0.12, h * 0.04); ell(ctx, w * 0.14, -h * 0.02, w * 0.12, h * 0.04);
+      ctx.fillStyle = "#1c2233"; ell(ctx, 0, -h * 0.45, w * 0.32, h * 0.44);
+      ctx.fillStyle = "#ffffff"; ell(ctx, 0, -h * 0.38, w * 0.22, h * 0.33);
+      ctx.fillStyle = "#1c2233"; ell(ctx, -w * 0.3, -h * 0.45, w * 0.08, h * 0.22); ell(ctx, w * 0.3, -h * 0.45, w * 0.08, h * 0.22);
+      ctx.fillStyle = "#ffffff"; ell(ctx, -w * 0.1, -h * 0.75, w * 0.06, h * 0.06); ell(ctx, w * 0.1, -h * 0.75, w * 0.06, h * 0.06);
+      ctx.fillStyle = "#111"; ell(ctx, -w * 0.09, -h * 0.75, w * 0.03, h * 0.035); ell(ctx, w * 0.09, -h * 0.75, w * 0.03, h * 0.035);
+      ctx.fillStyle = "#ff9d00"; poly(ctx, [-w * 0.07, -h * 0.66, w * 0.07, -h * 0.66, 0, -h * 0.56]);
+      ctx.restore();
+      break;
+    }
+    case "snowfort": {
+      // a snow fort wall with blocky tops and a little flag
+      ctx.fillStyle = "#e6f2fc"; ctx.fillRect(x - w * 0.5, yb - h * 0.4, w, h * 0.4);
+      for (let k = 0; k < 5; k++) ctx.fillRect(x - w * 0.5 + k * w * 0.22, yb - h * 0.52, w * 0.12, h * 0.13);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x - w * 0.5, yb - h * 0.4, w, h * 0.05);
+      ctx.fillStyle = "#bcd7ea"; for (let k = 0; k < 3; k++) ctx.fillRect(x - w * 0.42 + k * w * 0.33, yb - h * 0.25, w * 0.18, h * 0.015);
+      ctx.fillStyle = "#555"; ctx.fillRect(x + w * 0.3, yb - h * 0.95, w * 0.02, h * 0.45);
+      ctx.fillStyle = "#e8262b"; poly(ctx, [x + w * 0.32, yb - h * 0.95, x + w * 0.32 + w * 0.16 * (1 + 0.1 * Math.sin(t * 5)), yb - h * 0.88, x + w * 0.32, yb - h * 0.81]);
+      ctx.fillStyle = "#ffffff"; ell(ctx, x - w * 0.15, yb - h * 0.05, w * 0.12, h * 0.1); ell(ctx, x - w * 0.02, yb - h * 0.04, w * 0.09, h * 0.08);
+      break;
+    }
     case "lamp":
       ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.12, h * 2.4);
       ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.6, w * 0.1);
@@ -547,6 +615,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
     ctx.fillStyle = "rgba(0,0,30,0.45)"; ell(ctx, ex + er * 0.55, ey + er * 0.1, er * 0.75, er * 1.1);
     ctx.restore();
   }
+  if (th.aurora) aurora(ctx, W, H, hz, skyX, t);
   if (th.water) underwater(ctx, W, H, hz, skyX, t);
   else {
     ctx.fillStyle = th.sun;
@@ -554,7 +623,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
     ctx.globalAlpha = 0.18; ell(ctx, W * 0.78, hz * 0.32, H * 0.2, H * 0.2);
     ctx.globalAlpha = 1; ell(ctx, W * 0.78, hz * 0.32, H * 0.08, H * 0.08);
   }
-  if (!th.stars && !th.water) {
+  if (!th.stars && !th.water && !th.aurora) {
     ctx.strokeStyle = "rgba(40,50,80,0.7)"; ctx.lineWidth = Math.max(1.5, H * 0.004); ctx.lineCap = "round";
     for (let i = 0; i < 4; i++) {
       const bx = (((t * 0.025 * (1 + i * 0.3) + i * 0.27 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.2 + 0.09 * i) + Math.sin(t * 1.3 + i) * H * 0.01;
@@ -576,6 +645,28 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
   ctx.globalAlpha = 0.55; hills(ctx, W, H, hz, th.hills[1], hillX * 0.3, H * 0.23, 0.45, 11); ctx.globalAlpha = 1;
   hills(ctx, W, H, hz, th.hills[1], hillX * 0.6, H * 0.16, 0.7, 3);
   hills(ctx, W, H, hz, th.hills[0], hillX, H * 0.09, 1.3, 7);
+}
+
+/* Glacier Rink (graphics ladder step 4): a starry evening sky with the northern lights waving across it. */
+function aurora(ctx, W, H, hz, skyX, t) {
+  ctx.fillStyle = "#ffffff";
+  for (let i = 0; i < 60; i++) {
+    const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (hz * 0.6);
+    ctx.globalAlpha = 0.35 + 0.35 * Math.sin(t * 2 + i); ctx.fillRect(sx, sy, 1.6, 1.6);
+  }
+  ctx.globalAlpha = 1;
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const step = W / 30;
+  for (const [col, yy, ph] of [["80,255,170", 0.1, 0], ["120,200,255", 0.2, 1.7], ["255,120,220", 0.05, 3.1]]) {
+    for (let x = -step; x <= W + step; x += step) {
+      const u = x / W + skyX * 0.25, wave = Math.sin(u * 7 + ph + t * 0.3) * hz * 0.06 + Math.sin(u * 13 + t * 0.5 + ph) * hz * 0.025;
+      const top = hz * yy + wave, len = hz * (0.22 + 0.1 * Math.sin(u * 5 + t * 0.7 + ph)), a = 0.14 + 0.1 * Math.sin(u * 9 + t * 0.9 + ph);
+      const g = ctx.createLinearGradient(0, top, 0, top + len);
+      g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(0.3, `rgba(${col},${a.toFixed(3)})`); g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g; ctx.fillRect(x, top, step + 1, len);
+    }
+  }
+  ctx.restore();
 }
 
 /* Under the sea (graphics ladder step 3): the bright surface far above, light rays, schools of fish, rising bubbles. */

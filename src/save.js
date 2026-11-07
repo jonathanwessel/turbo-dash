@@ -3,9 +3,9 @@
 // from every past release (it runs before every `npm run release`).
 // A second copy (the last save that loaded fine) protects against a bad write; a save code lets a parent copy
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
-import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH } from "./data.js";
+import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS } from "./data.js";
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -15,7 +15,7 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
   trials: {},          // trackId -> best Time Trial time (seconds)
   trialMedals: {},     // trackId -> best medal (1 bronze, 2 silver, 3 gold)
   rank: 1, diff: "normal",
@@ -59,7 +59,7 @@ export function port(d) {
   s.chips = Math.round(num(d.chips, 0, 0));
   s.restUntil = num(d.restUntil, 0, 0);
   s.autoOn = d.autoOn === true;
-  s.world = ["moon", "ocean"].includes(d.world) ? d.world : "earth";
+  s.world = WORLDS.some(w => w.id === d.world && !w.soon) ? d.world : "earth";
   s.trials = Object.fromEntries(Object.entries(obj(d.trials)).filter(([, v]) => typeof v === "number" && v > 0 && v < 3600).map(([k, v]) => [k, Math.round(v * 100) / 100]));
   s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));
   s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));

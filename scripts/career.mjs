@@ -18,7 +18,7 @@ const NO_UPS = () => ({ engine: 0, turbo: 0, tires: 0, magnet: 0 });
 // a save-shaped state, so the game's own FRONTS/GOALS functions work on it
 const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
-  cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0 }, trials: {}, trialMedals: {},
+  cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0 }, trials: {}, trialMedals: {},
   bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
   school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 } }, parent: { license: true },
 };
@@ -46,7 +46,7 @@ function reward(track, r, diff) {
   if (diff === "hard" && r.place === 1) chip("hard:" + track.id);
   const chestBase = (30 + 25 * track.diff) * diffOf(diff).pay * (1 + 0.15 * lv("luckyChests"));
   S.coins += Math.round(prizeFor(track, r.place, diff) * (1 + 0.05 * lv("coinBoost"))) + r.coins + Math.round(chestBase * 7 / 3);
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers += r.stats.powers || 0; S.stats.rings += r.stats.rings || 0; S.stats.pearls += r.stats.pearls || 0;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers += r.stats.powers || 0; S.stats.rings += r.stats.rings || 0; S.stats.pearls += r.stats.pearls || 0; S.stats.drifts += r.stats.drifts || 0;
   for (const t of TRACKS) if (trackOpen(S, t)) gate("open:" + t.id, `Opened ${t.name}`);
 }
 
@@ -65,7 +65,7 @@ function playTrial() {
   const t = [...TRACKS].reverse().find(x => trackOpen(S, x) && (S.trialMedals[x.id] || 0) < 3); if (!t) return false;
   const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, null, true);
   const m = trialMedal(t, buildTrack(t).length, r.time), old = S.trialMedals[t.id] || 0;
-  raceNo++; clock += 75; S.coins += r.coins; S.stats.roadCoins += r.coins; S.stats.pearls += r.stats.pearls || 0;
+  raceNo++; clock += 75; S.coins += r.coins; S.stats.roadCoins += r.coins; S.stats.pearls += r.stats.pearls || 0; S.stats.drifts += r.stats.drifts || 0;
   for (let k = old + 1; k <= m; k++) { S.coins += trialPay(t, k); if (k === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`); }
   if (m > old) S.trialMedals[t.id] = m;
   return true;
@@ -111,7 +111,7 @@ function collectLab() {
     b.p = null;
   }
 }
-const LAB_ORDER = ["snorkel", "propellers", "fins", "pearlDiver", "moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
+const LAB_ORDER = ["iceStuds", "snowChains", "driftMaster", "snowplow", "warmEngine", "snorkel", "propellers", "fins", "pearlDiver", "moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
 function spend() {
   // lab first when it's cheap compared with savings, then the next car, then the cheapest upgrade
   for (const b of benches()) {

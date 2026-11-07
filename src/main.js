@@ -257,7 +257,7 @@ function showTrialResult(r) {
   if (medal > oldMedal) S.trialMedals[t.id] = medal;
   S.coins += pay + r.coins;
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
-  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0);
+  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   const [b, s, g] = trialTimes(t, len);
@@ -421,7 +421,7 @@ function showResult(r) {
   countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
-  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0);
+  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";

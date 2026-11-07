@@ -24,6 +24,10 @@ export const CARS = [
   { id: "sub", name: "Turbo Sub", price: 120000, world: "ocean", body: "#ffd400", accent: "#1f6fff", type: "sub", speed: 0.54, accel: 0.46, grip: 0.45 },
   { id: "manta", name: "Manta Ray", price: null, cup: "ocean", body: "#1a3a7a", accent: "#3cf2ff", type: "shark", speed: 0.6, accel: 0.5, grip: 0.5 },
   { id: "kraken", name: "Kraken Cruiser", price: null, boss: "kraken", world: "ocean", body: "#7a2cff", accent: "#ff3fa4", type: "sub", speed: 0.66, accel: 0.55, grip: 0.55 },
+  // ❄️ Glacier Rink cars
+  { id: "frost", name: "Frost Runner", price: 220000, world: "glacier", body: "#bfefff", accent: "#1f6fff", ice: true, type: "skis", speed: 0.72, accel: 0.6, grip: 0.6 },
+  { id: "polar", name: "Polar Bear", price: null, cup: "glacier", ice: true, body: "#ffffff", accent: "#3cb6ff", type: "monster", speed: 0.78, accel: 0.66, grip: 0.64 },
+  { id: "blizzard", name: "Blizzard Wolf", price: null, boss: "fang", world: "glacier", ice: true, body: "#5a6b8a", accent: "#bff6ff", type: "skis", speed: 0.84, accel: 0.72, grip: 0.7 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
@@ -42,6 +46,7 @@ export const CUPS = [
   { id: "champ", name: "Champion Cup", color: "#ff3fe5", tracks: ["desert", "lava", "space"], car: "champX", bonus: 3000, rank: 7 },
   { id: "moon", name: "Moon Cup", color: "#9fe8ff", tracks: ["crater", "moonbase", "asteroid"], car: "comet", bonus: 6000, rank: 21, world: "moon" },
   { id: "ocean", name: "Ocean Cup", color: "#14c8c8", tracks: ["kelp", "reef", "wreck"], car: "manta", bonus: 10000, rank: 26, world: "ocean" },
+  { id: "glacier", name: "Glacier Cup", color: "#bfefff", tracks: ["icecave", "frozenlake", "aurora"], car: "polar", bonus: 16000, rank: 31, world: "glacier" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
 
@@ -49,6 +54,7 @@ export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
 export const BOSSES = [
   { id: "bruno", world: "earth", name: "Big Bruno", icon: "🦏", track: "space", rank: 9, car: "thunder", speed: 1.8, says: "Nobody beats Big Bruno on Space Road!" },
   { id: "kraken", world: "ocean", name: "Captain Kraken", icon: "🐙", track: "trench", rank: 28, car: "kraken", speed: 2.4, says: "Eight arms on the wheel. You can't win!" },
+  { id: "fang", world: "glacier", name: "Fang the Ice Wolf", icon: "🐺", track: "summit", rank: 33, car: "blizzard", speed: 2.9, says: "Ice is slippery... for YOU! Awooo!" },
   { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!" },
 ];
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
@@ -88,6 +94,10 @@ export const TRACKS = [
   { id: "reef",   name: "Coral Reef",     icon: "🐠", diff: 8.9, laps: 2, seed: 157, theme: "ocean", world: "ocean", after: "kelp" },
   { id: "wreck",  name: "Shipwreck Bay",  icon: "⚓", diff: 9.2, laps: 2, seed: 163, theme: "ocean", world: "ocean", after: "reef" },
   { id: "trench", name: "Deep Trench",    icon: "🐋", diff: 9.5, laps: 2, seed: 173, theme: "ocean", world: "ocean", after: "wreck" },
+  { id: "icecave",    name: "Ice Cave",       icon: "🧊", diff: 10.9, laps: 2, seed: 181, theme: "glacier", world: "glacier" },
+  { id: "frozenlake", name: "Frozen Lake",    icon: "⛸️", diff: 11.2, laps: 2, seed: 191, theme: "glacier", world: "glacier", after: "icecave" },
+  { id: "aurora",     name: "Aurora Pass",    icon: "🌌", diff: 11.5, laps: 2, seed: 193, theme: "glacier", world: "glacier", after: "frozenlake" },
+  { id: "summit",     name: "Glacier Summit", icon: "🏔️", diff: 11.8, laps: 2, seed: 197, theme: "glacier", world: "glacier", after: "aurora" },
 ];
 // A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins.
 // A track already raced on stays open, so older saves never lose a track.
@@ -100,7 +110,8 @@ export const WORLDS = [
   { id: "earth", name: "Earth", icon: "🌍" },
   { id: "moon", name: "Moon Base", icon: "🌙", rank: 20, kit: "moonTires" },
   { id: "ocean", name: "Deep Blue", icon: "🌊", rank: 25, kit: "snorkel" },
-  { id: "glacier", name: "Glacier Rink", icon: "🧊", soon: true },
+  { id: "glacier", name: "Glacier Rink", icon: "🧊", rank: 30, kit: "iceStuds" },
+  { id: "cloud", name: "Cloud Kingdom", icon: "☁️", soon: true },
 ];
 // gravity: jump arc, top/accel: speed through the medium, grip: how well cars hold curves, air: steering in the air
 export const PHYSICS = {
@@ -108,6 +119,9 @@ export const PHYSICS = {
   moon: { gravity: 0.32, top: 1, accel: 1, grip: 0.85, air: 1.1, gaps: true, rings: true },
   // underwater: heavy water slows everything and makes speeding up hard; currents push you sideways; bubble vents float you up
   ocean: { gravity: 0.5, top: 0.9, accel: 0.5, grip: 0.95, air: 0.9, water: true, currents: true, vents: true },
+  // on ice: cars slide (steering changes where you're going, not where you are), curves push harder,
+  // drift into a curve for a DRIFT BOOST, and soft snowbanks sit in one lane
+  glacier: { gravity: 0.9, top: 1, accel: 0.8, grip: 0.7, air: 0.7, ice: true, drift: true, snowbanks: true },
 };
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
 export const DIFFS = [
@@ -136,6 +150,7 @@ export const THEMES = {
   autumn: { sky: ["#ff9e5e", "#ffe0b8"], hills: ["#c9572b", "#a8431f"], grass: ["#d98c3a", "#cf8233"], rumble: ["#ffffff", "#b3261e"], road: ["#6b5a50", "#655448"], lane: "#ffe9c0", sun: "#fff0c8", sprites: ["autumnTree", "autumnTree", "pumpkin", "hay", "mushroom"], clouds: true },
   moon:   { sky: ["#02030f", "#1a2550"], hills: ["#6a7080", "#4f5565"], grass: ["#8f95a3", "#868c9a"], rumble: ["#3cf2ff", "#2a2f3a"], road: ["#3d4250", "#3a3f4c"], lane: "#3cf2ff", sun: "#fff8e0", sprites: ["moonrock", "crater", "dish", "moonrock", "dome", "crater"], clouds: false, stars: true, earth: true, detail: 2 },
   ocean:  { sky: ["#062a4f", "#1b8fb8"], hills: ["#0f5d6e", "#0b4656"], grass: ["#d8c08a", "#cdb47c"], rumble: ["#ffffff", "#ff7a59"], road: ["#3a5566", "#36505f"], lane: "#bff6ff", sun: "#d9fbff", sprites: ["kelp", "coral", "kelp", "shellrock", "coral", "jelly", "treasure", "anemone"], clouds: false, water: true, detail: 3 },
+  glacier: { sky: ["#0a1a4a", "#6aa8e8"], hills: ["#eef8ff", "#a9cdec"], grass: ["#f4faff", "#eaf4fc"], rumble: ["#2fa8ff", "#ffffff"], road: ["#a6d8f2", "#a0d2ec"], lane: "#3b7fc4", sun: "#e8fbff", sprites: ["icepine", "icecrystal", "igloo", "icepine", "penguin", "snowfort", "icecrystal", "icepine"], clouds: false, aurora: true, ice: true, snow: true, detail: 4 },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
@@ -200,6 +215,8 @@ export const GOALS = [
   { id: "moon1", icon: "🌙", name: "Win a race on the Moon", goal: 1, reward: 5000, have: S => ["crater", "moonbase", "asteroid", "earthrise"].filter(id => S.best[id] === 1).length },
   { id: "rings25", icon: "⭕", name: "Fly through 25 boost rings", goal: 25, reward: 3000, have: S => S.stats.rings || 0 },
   { id: "ocean1", icon: "🌊", name: "Win a race under the sea", goal: 1, reward: 8000, have: S => ["kelp", "reef", "wreck", "trench"].filter(id => S.best[id] === 1).length },
+  { id: "glacier1", icon: "🧊", name: "Win a race on the ice", goal: 1, reward: 12000, have: S => ["icecave", "frozenlake", "aurora", "summit"].filter(id => S.best[id] === 1).length },
+  { id: "drift50", icon: "❄️", name: "Do 50 drift boosts", goal: 50, reward: 6000, have: S => S.stats.drifts || 0 },
   { id: "pearls50", icon: "🦪", name: "Collect 50 pearls", goal: 50, reward: 5000, have: S => S.stats.pearls || 0 },
   { id: "trial1", icon: "⏱️", name: "Earn a Time Trial medal", goal: 1, reward: 300, have: S => Object.values(S.trialMedals || {}).filter(m => m > 0).length },
   { id: "trialGold5", icon: "⏱️", name: "Gold Time Trial medal on 5 tracks", goal: 5, reward: 2500, have: S => Object.values(S.trialMedals || {}).filter(m => m >= 3).length },
@@ -211,7 +228,7 @@ export const GOALS = [
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
-export const RANK_CAP = 30;   // raised by later releases (each new world adds 5)
+export const RANK_CAP = 35;   // raised by later releases (each new world adds 5)
 /* License gauge (from Rank 10): Bronze for Rank 10→11, then one license level per two ranks, up to Piqua Pro.
    Pass the save so a parent can switch the gauge off in Parent Corner. */
 export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
@@ -241,6 +258,9 @@ export const RANK_UNLOCKS = {
   25: { icon: "🌊", text: "Deep Blue (research Snorkel Seals)" },
   26: { icon: "🏆", text: "Ocean Cup" },
   28: { icon: "🐙", text: "Boss: Captain Kraken" },
+  30: { icon: "🧊", text: "Glacier Rink (research Ice Studs)" },
+  31: { icon: "🏆", text: "Glacier Cup" },
+  33: { icon: "🐺", text: "Boss: Fang the Ice Wolf" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 /* Track Mastery: keep winning a track on a difficulty to earn up to 5 stars (each one is a trophy point). */
@@ -324,6 +344,12 @@ export const RESEARCH = [
   { id: "propellers", tier: 5, rank: 25, max: 5, icon: "🌀", name: "Propellers", desc: "Speed up faster underwater", c0: 50000, t0: 10800, needs: ["snorkel"] },
   { id: "fins", tier: 5, rank: 26, max: 5, icon: "🐟", name: "Fins", desc: "Currents push you less", c0: 52000, t0: 10800, needs: ["snorkel"] },
   { id: "pearlDiver", tier: 5, rank: 27, max: 5, icon: "🦪", name: "Pearl Diver", desc: "Grab pearls from farther away", c0: 54000, t0: 10800, needs: ["snorkel"] },
+  // tier 6: the Glacier Rink kit and ice tech (Rank 30)
+  { id: "iceStuds", tier: 6, rank: 30, max: 1, icon: "🧊", name: "Ice Studs", desc: "Drive on the ice!", c0: 150000, t0: 36000 },
+  { id: "snowChains", tier: 6, rank: 30, max: 5, icon: "⛓️", name: "Snow Chains", desc: "Slide less on ice", c0: 80000, t0: 14400, needs: ["iceStuds"] },
+  { id: "driftMaster", tier: 6, rank: 31, max: 5, icon: "❄️", name: "Drift Master", desc: "Bigger drift boosts", c0: 84000, t0: 14400, needs: ["iceStuds"] },
+  { id: "snowplow", tier: 6, rank: 32, max: 5, icon: "🚜", name: "Snowplow", desc: "Snowbanks slow you less", c0: 88000, t0: 14400, needs: ["iceStuds"] },
+  { id: "warmEngine", tier: 6, rank: 33, max: 5, icon: "♨️", name: "Warm Engine", desc: "Speed up faster on ice", c0: 92000, t0: 14400, needs: ["iceStuds"] },
 ];
 export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;   // lvl = current level (0-based next)
 export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.4, lvl));              // seconds
