@@ -120,7 +120,9 @@ window.__sweep = async (only) => {
   await go("s-guide", () => { td.show("s-parent"); document.getElementById("p-guide").click(); });
   await go("s-settings", () => { td.show("s-title"); document.getElementById("btn-settings").click(); });
   await go("s-parent", () => { td.show("s-title"); for (let i = 0; i < 5; i++) document.getElementById("ver").click(); });
-  for (const s of ["s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
+  await go("s-preview", () => { td.show("s-tracks"); td.openPreview("moon"); });
+  await go("s-preview:toy", () => td.openPreview("toy"), "#s-preview");
+  for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
   await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
   td.show("s-title");

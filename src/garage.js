@@ -18,11 +18,11 @@ export function howToGet(car, grid = false) {
   const owned = S.owned.includes(car.id), driving = S.car === car.id;
   const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
   const boss = car.boss && BOSSES.find(b => b.id === car.boss), bld = car.building && BUILDINGS.find(b => b.id === car.building);
-  return driving ? "✔ Driving" : owned ? (grid ? "✔ Yours" : "Drive it!") : far ? (grid ? `${w.icon} ${w.name} · Rank ${w.rank}` : `${w.icon} Reach the ${w.name}`) : cup ? `🏆 Win the ${cup.name}`
+  return driving ? "✔ Driving" : owned ? (grid ? "✔ Yours" : "Drive it!") : far ? (grid ? `${w.icon} ${w.name} · Rank ${w.rank}` : `👀 Try ${w.name}`) : cup ? `🏆 Win the ${cup.name}`
     : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name} · Rank ${bld.rank}` : car.school ? "🚦 Driver School" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
 }
 
-export function createGarage({ $, sfx, spend, celebrate, onCar }) {
+export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
   const cvs = $("g-car"), ctx = cvs.getContext("2d");
   let idx = 0, t = 0, zoom = 0, tab = "up";
 
@@ -133,6 +133,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar }) {
     const car = CARS[idx];
     if (S.car === car.id) { sfx("click"); return; }
     if (S.owned.includes(car.id)) { S.car = car.id; save(); sfx("click"); zoom = 1; render(); return; }
+    if (car.world && !worldOpen(S, car.world) && onPreview) { sfx("click"); onPreview(car.world); return; }   // 👀 try that world
     if (car.price == null || (car.world && !worldOpen(S, car.world))) { sfx("nope"); return; }
     if (!spend(car.price)) return;
     S.owned.push(car.id); S.car = car.id; onCar?.(car); save();

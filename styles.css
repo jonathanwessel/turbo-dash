@@ -792,3 +792,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .gc.driving { background: rgba(255,212,0,.28); }
 .gc.gold small { color: #ffd400; font-weight: 900; }
 #s-garage .garage[hidden] { display: none; }
+
+/* 👀 world preview cards */
+#pv-car { width: min(64vw, 320px, 36vh * 1.88); height: auto; aspect-ratio: 320 / 170; }
+.preview-card .boss-says { max-width: 520px; }
+.world-bar button.soon.peek { opacity: .8; border-style: dashed; }
