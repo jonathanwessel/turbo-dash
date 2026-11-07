@@ -24,7 +24,8 @@ Carter plays on an Android tablet, in landscape, full screen.
 6. The update path (version check → update button → update gate) never breaks.
 6b. **Every screen fits.** Before a release, run the layout checker (`await __sweep()` in the dev server console,
    from `src/dev/audit.js`) at several sizes, including a short wide tablet (1000×448) and a small phone
-   (740×360). No overlapping, spilling or off-screen text or buttons.
+   (740×360). No overlapping, spilling or off-screen text or buttons, and no broken words like "null" (use
+   `await __sweepAll()`, which also tries a brand-new save and every garage car).
 7. Tested at tablet size (1280×800) before shipping. Nothing is ever for real money; timers can only be rushed
    with in-game coins.
 

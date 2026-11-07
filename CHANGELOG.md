@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.20.2 — No More "null"
+
+- **Garage fix:** cars you earn instead of buy showed "🪙 null" on a gold, buy-looking button (the Fire Dash, and
+  boss cars like the Thunder King). Every car now says how to get it: "🚒 Fire Station · Rank 15", "👑 Beat Big
+  Bruno", "🏆 Win the Gold Cup", "🌙 Reach the Moon Base", "🚦 Driver School", or its price.
+- **The layout checker now reads the words too:** it flags "null", "undefined", "NaN" and similar anywhere on
+  screen, and steps through every car in the garage. It runs with a brand-new save, a mid-game save and a
+  late-game save, because some text only shows when you don't own something yet.
+
 ## v0.20.1 — Every Screen Fits
 
 Fixes for things Carter's dad spotted on the tablet, and a check of every screen at 8 screen sizes.

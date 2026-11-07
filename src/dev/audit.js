@@ -1,6 +1,7 @@
 // 📐 Layout check (dev builds only, never in the real game): finds text and buttons that overlap, spill out of
 // their boxes or fall off the screen. In the dev server console: await __sweep() checks every screen at the current
-// window size; __audit("#s-result") checks one. Run it at a few sizes (e.g. 1000x448, 1024x600, 1280x800) before a release.
+// window size; await __sweepAll() also tries a brand-new, a mid-game and the current save (and every garage car).
+// __audit("#s-result") checks one. Besides layout it flags broken words (null, undefined, NaN) anywhere on screen. Run it at a few sizes (e.g. 1000x448, 1024x600, 1280x800) before a release.
 window.__audit = (rootSel) => {
   const W = innerWidth, H = innerHeight, root = document.querySelector(rootSel);
   if (!root) return { err: "no " + rootSel };
@@ -54,12 +55,12 @@ window.__audit = (rootSel) => {
 };
 /* __sweepAll(): the sweep with a brand-new save, a mid-game save and the real current one (restored afterwards) */
 window.__sweepAll = async () => {
-  const S = window.__td.S, keep = JSON.stringify(S), out = {};
-  const as = async (label, patch) => { Object.assign(S, JSON.parse(keep), patch); const r = await window.__sweep(); for (const [k, v] of Object.entries(r)) out[label + " " + k] = v; };
+  const keep = JSON.stringify(window.__td.S), out = {};
+  const as = async (label, patch) => { Object.assign(window.__td.S, JSON.parse(keep), patch); const r = await window.__sweep(); for (const [k, v] of Object.entries(r)) out[label + " " + k] = v; };
   await as("new", { rank: 1, wins: 0, owned: ["zippy"], car: "zippy", world: "earth", best: {}, bestD: {}, research: {}, cups: {}, bosses: {} });
   await as("mid", { rank: 16, world: "earth" });
   await as("now", {});
-  Object.assign(S, JSON.parse(keep)); window.__td.goHub();
+  Object.assign(window.__td.S, JSON.parse(keep)); window.__td.goHub();
   return out;
 };
 window.__sweep = async (only) => {
