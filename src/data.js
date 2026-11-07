@@ -146,12 +146,15 @@ export const GOALS = [
   { id: "cup1", icon: "🏆", name: "Win a cup", goal: 1, reward: 500, have: S => Object.values(S.cups).filter(p => p === 1).length },
   { id: "cupall", icon: "🏆", name: "Win all three cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
   { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => S.chips },
+  { id: "auto1", icon: "🧠", name: "Auto Steer level 1", goal: 1, reward: 2000, have: S => S.research.autoSteer || 0 },
+  { id: "auto10", icon: "🧠", name: "Auto Steer level 10", goal: 10, reward: 8000, have: S => S.research.autoSteer || 0 },
+  { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
   { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
   { id: "power100", icon: "❓", name: "Use 100 power-ups", goal: 100, reward: 800, have: S => S.stats.powers || 0 },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
-export const RANK_CAP = 10;   // raised by later releases
+export const RANK_CAP = 20;   // raised by later releases
 export const rankNeeds = r => ({
   wins: Math.round(3 * Math.pow(r, 1.35)),
   trophies: Math.round(4 * Math.pow(r, 1.3)),
@@ -169,6 +172,8 @@ export const RANK_UNLOCKS = {
   8: { icon: "🤖", text: "Robot Brain research" },
   9: { icon: "🧪", text: "3rd lab bench" },
   10: { icon: "🧠", text: "Auto Steer research" },
+  15: { icon: "🧪", text: "4th lab bench" },
+  20: { icon: "🏆", text: "Champion title" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 export const FRONTS = [
@@ -193,7 +198,21 @@ export const RESEARCH = [
   { id: "bumper", tier: 2, rank: 6, max: 5, icon: "🛡️", name: "Bumper Shield", desc: "Bonks slow you less", c0: 600, t0: 300 },
   { id: "magnetField", tier: 2, rank: 6, max: 10, icon: "🧲", name: "Magnet Field", desc: "Every car grabs more", c0: 650, t0: 300 },
   { id: "superPaint", tier: 2, rank: 6, max: 1, icon: "✨", name: "Super Paint", desc: "Neon paints", c0: 1500, t0: 600 },
+  // tier 3: the Robot Brain chain (one level each, in order), then Auto Steer
+  { id: "rbEyes", tier: 3, rank: 8, max: 1, icon: "👀", name: "Robot Eyes", desc: "See the road ahead", c0: 1500, t0: 600 },
+  { id: "rbEars", tier: 3, rank: 8, max: 1, icon: "👂", name: "Robot Ears", desc: "Hear the rivals", c0: 2500, t0: 900, needs: ["rbEyes"] },
+  { id: "rbMap", tier: 3, rank: 8, max: 1, icon: "🗺️", name: "Map Memory", desc: "Remember every curve", c0: 4000, t0: 1200, needs: ["rbEars"] },
+  { id: "rbReflex", tier: 3, rank: 9, max: 1, icon: "⚡", name: "Reflexes", desc: "Super-quick steering", c0: 6000, t0: 1800, needs: ["rbMap"] },
+  { id: "rbSocket", tier: 3, rank: 9, max: 1, icon: "🔌", name: "Brain Chip Socket", desc: "Ready for Auto Steer", c0: 9000, t0: 2700, needs: ["rbReflex"], chips: () => 1 },
+  // THE big one: 100 levels. Costs coins, Brain Chips and hours; each level needs a higher rank.
+  { id: "autoSteer", tier: 3, rank: 10, max: 100, icon: "🧠", name: "AUTO STEER", desc: "The car drives itself", big: true, needs: ["rbSocket"],
+    cost: lvl => Math.round(25000 * Math.pow(1.025, lvl) / 1000) * 1000,
+    time: lvl => Math.round(Math.min(24, Math.pow(1.035, lvl)) * 3600),
+    chips: lvl => 2 + Math.floor((lvl + 1) / 10),
+    rankAt: lvl => 9 + Math.ceil((lvl + 1) / 2) },
 ];
-export const researchCost = (r, lvl) => Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;      // lvl = current level (0-based next)
-export const researchTime = (r, lvl) => Math.round(r.t0 * Math.pow(1.35, lvl));                 // seconds
-export const benchesFor = rank => rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;
+export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;   // lvl = current level (0-based next)
+export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.35, lvl));              // seconds
+export const researchChips = (r, lvl) => r.chips ? r.chips(lvl) : 0;
+export const researchRank = (r, lvl) => r.rankAt ? r.rankAt(lvl) : r.rank;
+export const benchesFor = rank => rank >= 15 ? 4 : rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;

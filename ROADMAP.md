@@ -41,6 +41,8 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.9.0** Parent Corner+ & Daily Missions: break reminder, volume, buzz, history, reset; missions board.
 - **v0.10.0** More Earth & Physics Engine: Beach Boardwalk, Autumn Forest, world picker, physics profiles
   (the v1.1.0 item, shipped early while v1.0 waits for the hosting decision).
+- **v0.11.0** Auto Steer: Robot Brain chain, Auto Steer 1–100 with level bands, race switch, rank cap 20
+  (the v1.2.0 item, shipped early).
 
 ## What we learned from Carter playing
 - **He doesn't stop to read.** He saw the update notice and started a race anyway. Anything important
@@ -297,7 +299,7 @@ Ships in v0.5.0 with Racer Rank.
 - **Polish:** one more layer of hills in the background; trees that sway a little. Interface: a world picker
   (only Earth for now, with "coming soon" silhouettes).
 
-### v1.2.0 Auto Steer
+### v1.2.0 Auto Steer (shipped early as v0.11.0)
 - *Robot Brain* research chain, Auto Steer levels 1–100 with level bands, and the race-screen switch.
 - Rank cap 20.
 - **Polish:** a little blinking robot icon on the car and dotted arrows on the road while Auto Steer drives. Interface: an

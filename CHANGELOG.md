@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.11.0 — Auto Steer
+
+- **Lab tier 3** (Rank 8): the **Robot Brain** chain. Robot Eyes → Robot Ears → Map Memory → Reflexes → Brain
+  Chip Socket, each one after the other. The Socket costs a 🧠 Brain Chip.
+- **🧠 AUTO STEER** (Rank 10, after the Socket): 100 levels, the biggest research in the game. Every level costs
+  coins, Brain Chips and real time (Level 1: 25,000 coins, 2 chips, 1 hour; Level 100: 288,000 coins,
+  12 chips, 24 hours). Each level also needs a higher rank, so Level 100 needs Rank 59.
+- **How Auto Steer drives** (when Carter isn't steering; tapping ◀ ▶ always wins):
+  - Levels 1+ keep the car on the road, 26+ go for coins, 46+ grab ? boxes and air coins, 66+ head for boost
+    pads and steer around slow rivals, 86+ fire Turbo on straights and use power-ups.
+  - Its strength grows with its level. **Level 100 is God mode**: the perfect line, every boost pad, with a gold
+    sparkle trail.
+- **The 🤖 switch** on the race screen turns Auto Steer on or off and shows its level. Parent Corner can turn it
+  off completely.
+- **Ranks go up to 20** now (new titles: Pro, Champion). A 4th lab bench opens at Rank 15.
+- New goals: Auto Steer level 1 and level 10, reach Rank 10.
+- `npm run sim -- auto` shows how each Auto Steer level drives with hands off the controls.
+- Fixed: in the lab, a second project finishing right after you collected another didn't show "Tap to collect".
+
+**Polish**
+- A little blinking robot rides next to the car and dotted arrows on the road show where Auto Steer is heading.
+- Auto Steer has a big glowing card in the lab, and the 🤖 switch glows pink when it's on.
+
 ## v0.10.0 — More Earth & Physics Engine
 
 - **Two new Earth tracks**:

@@ -9,19 +9,20 @@ const canvas = { getContext: () => null, width: 1, height: 1 };
 const race = new Race(canvas, { sfx() {}, engine() {}, onFinish() {} });
 
 /* One race. bot: "kid" steers late and fires Turbo whenever; "good" holds the middle and saves nothing. */
-export function runRace(track, car, ups, diff = "normal", bot = "kid", lab = {}) {
-  let res = null;
-  race.hooks = { sfx() {}, engine() {}, onFinish: r => { res = r; } };
-  race.setup(track, "race", car, statsFor(car, ups, lab), { diff });
+export function runRace(track, car, ups, diff = "normal", bot = "kid", lab = {}, autoSteer = 0) {
+  let res = null, boosts = 0;
+  race.hooks = { sfx(n) { if (n === "boost") boosts++; }, engine() {}, onFinish: r => { res = r; } };
+  race.setup(track, "race", car, statsFor(car, ups, lab), { diff, autoSteer });
   for (let t = 0; !res && t < 400; t += 1 / 60) {
     const p = race.player, edge = bot === "good" ? 0.25 : 0.7;
-    race.input.left = p.offset > edge; race.input.right = p.offset < -edge;
+    if (bot !== "none") { race.input.left = p.offset > edge; race.input.right = p.offset < -edge; }
     if (bot === "good" || Math.random() < 0.01) race.useNitro();
     if (race.power && Math.random() < 0.02) race.usePower();
     race.update(1 / 60);
   }
   race.input.left = race.input.right = false;
-  return res || { place: 6, coins: 0, time: 400, stats: { stunts: 0, turbos: 0, bams: 0 } };
+  if (res) res.boosts = boosts;
+  return res || { place: 6, coins: 0, time: 400, boosts, stats: { stunts: 0, turbos: 0, bams: 0 } };
 }
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });
@@ -71,6 +72,16 @@ function journey(diff = "normal", maxRaces = 500) {
   console.log(`\nJourney on ${diff}:\n` + log.join("\n"));
 }
 
+function auto() {
+  const car = CARS.find(c => c.id === "shark"), track = TRACKS.find(t => t.id === "lava"), totalBoosts = 2 * race.T?.segs?.length;
+  console.log("\nAuto Steer, hands off (Shark Fin +3 on Lava Mountain): level -> place, coins, boost pads hit");
+  for (const L of [0, 1, 10, 25, 50, 75, 99, 100]) {
+    const r = runRace(track, car, lvl(3), "normal", "none", {}, L);
+    console.log(`  ${String(L).padStart(3)}: ${r.place}  coins ${String(r.coins).padStart(3)}  boost pads ${r.stats.pads}/14`);
+  }
+}
+
 const mode = process.argv[2] || "table";
 if (mode === "journey") journey(process.argv[3] || "normal");
+else if (mode === "auto") auto();
 else table();

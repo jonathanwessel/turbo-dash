@@ -1,6 +1,6 @@
 // Turbo Lab: Professor Bolt researches permanent boosts for every car. Real-time timers that keep going while
 // the tablet is off. Paid with coins only; a running project can be rushed for extra coins.
-import { RESEARCH, researchCost, researchTime, benchesFor } from "./data.js";
+import { RESEARCH, researchCost, researchTime, researchChips, researchRank, benchesFor } from "./data.js";
 import { S, save } from "./save.js";
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
@@ -18,11 +18,14 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
   const freeBench = () => benches().find(b => !b.p);
   const rushCost = b => Math.max(10, Math.ceil(left(b) / 60) * 30);
 
+  const needsDone = r => (r.needs || []).every(id => levelOf(id) >= 1);
   function start(r) {
-    const lvl = levelOf(r.id), bench = freeBench();
-    if (S.rank < r.rank || lvl >= r.max || busy(r.id)) { sfx("nope"); return; }
+    const lvl = levelOf(r.id), bench = freeBench(), chips = researchChips(r, lvl);
+    if (S.rank < researchRank(r, lvl) || !needsDone(r) || lvl >= r.max || busy(r.id)) { sfx("nope"); return; }
     if (!bench) { sfx("nope"); flash("bench"); return; }
+    if (S.chips < chips) { sfx("nope"); flash("bench"); return; }
     if (!spend(researchCost(r, lvl))) return;
+    S.chips -= chips;
     bench.p = r.id; bench.end = Date.now() + researchTime(r, lvl) * 1000;
     save(); sfx("buy"); render(); onChange();
   }
@@ -38,8 +41,10 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
   }
   function flash(what) { const el = $("lab-benches"); el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
 
+  let lastDone = -1;
   function render() {
     const bs = benches();
+    lastDone = doneBenches().length;
     $("lab-benches").innerHTML = bs.map((b, i) => {
       if (!b.p) return `<div class="bench empty"><div class="bi">🧪</div><b>Bench ${i + 1}</b><small>Pick research below!</small></div>`;
       const r = RESEARCH.find(x => x.id === b.p), t = left(b), total = researchTime(r, levelOf(r.id));
@@ -49,20 +54,22 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
         <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
     }).join("") + (bs.length < 3 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${bs.length === 1 ? 4 : 9}</small></div>` : "");
 
-    const tiers = [1, 2];
+    const tiers = [1, 2, 3];
     $("lab-list").innerHTML = tiers.map(tier => {
       const items = RESEARCH.filter(r => r.tier === tier), needRank = items[0].rank, open = S.rank >= needRank;
       return `<div class="tier-head">${open ? "⚗️" : "🔒"} Lab tier ${tier}${open ? "" : ` — Rank ${needRank}`}</div>` + items.map(r => {
-        const lvl = levelOf(r.id), max = lvl >= r.max, running = busy(r.id), cost = max ? 0 : researchCost(r, lvl);
-        const can = open && !max && !running && freeBench() && S.coins >= cost;
-        return `<div class="proj ${open ? "" : "locked"} ${max ? "maxed" : ""}">
+        const lvl = levelOf(r.id), max = lvl >= r.max, running = busy(r.id), cost = max ? 0 : researchCost(r, lvl), chips = max ? 0 : researchChips(r, lvl);
+        const rk = researchRank(r, lvl), need = (r.needs || []).find(id => levelOf(id) < 1), needR = need && RESEARCH.find(x => x.id === need);
+        const ok = open && S.rank >= rk && !need;
+        const can = ok && !max && !running && freeBench() && S.coins >= cost && S.chips >= chips;
+        const short = n => n >= 10000 ? Math.round(n / 1000) + "k" : n;
+        const label = max ? "MAX!" : running ? "⏱ Working…" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " · 🧠" + chips : ""} · ⏱${fmt(researchTime(r, lvl))}`;
+        return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}">
           <div class="pi">${r.icon}</div><b>${r.name}</b><small>${r.desc}</small>
           <div class="plv">Lv ${lvl}/${r.max}</div>
-          <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${max ? "MAX!" : running ? "⏱ Working…" : !open ? "🔒 Rank " + needRank : `🪙${cost} · ⏱${fmt(researchTime(r, lvl))}`}</button></div>`;
+          <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${label}</button></div>`;
       }).join("");
-    }).join("") + `<div class="tier-head">🔒 Coming later</div>
-      <div class="proj locked teaser"><div class="pi">🤖</div><b>Robot Brain</b><small>Teach the car to think</small><div class="plv">Rank 8</div></div>
-      <div class="proj locked teaser big"><div class="pi">🧠</div><b>AUTO STEER</b><small>The car drives itself… perfectly</small><div class="plv">Lv 0/100 · Rank 10</div></div>`;
+    }).join("");
   }
 
   $("lab-benches").addEventListener("click", e => {
@@ -76,7 +83,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
   });
 
   // once a second: update countdowns, re-render when something finishes
-  let acc = 0, lastDone = -1;
+  let acc = 0;
   function tick(dt, visible) {
     acc += dt; if (acc < 1) return; acc = 0;
     const d = doneBenches().length;

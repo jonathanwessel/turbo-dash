@@ -155,7 +155,9 @@ function startRace(track) {
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
-  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper });
+  const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
+  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn ? autoLv : 0 });
+  $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   show(null); setRaceUi(true); setSong("race");
   buildProgress(); lastCount = null; hudCache = {};
 }
@@ -516,6 +518,11 @@ paintToggles();
 function pause() { if (mode !== "race") return; paused = true; engineOff(); show("s-pause"); }
 $("btn-play").onclick = () => { initAudio(); goFullscreen(); sfx("click"); goHub(); };
 $("btn-pause").onclick = () => { sfx("click"); pause(); };
+$("btn-auto").onclick = () => {
+  S.autoOn = !S.autoOn; save(); sfx("click");
+  race.autoLvl = S.autoOn ? (S.research.autoSteer || 0) : 0;
+  $("btn-auto").classList.toggle("on", S.autoOn);
+};
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
 $("btn-quit").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
@@ -528,6 +535,7 @@ $("ver").onclick = () => {
 };
 function paintParent() {
   $("p-break").innerHTML = [0, 20, 30, 45, 60].map(m => `<button data-pb="${m}" class="${S.parent.breakMin === m ? "on" : ""}">${m ? m + " min" : "Off"}</button>`).join("");
+  $("p-auto").innerHTML = [true, false].map(v => `<button data-pa="${v}" class="${S.parent.autoSteer === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
   $("p-buzz").innerHTML = [true, false].map(v => `<button data-pz="${v}" class="${S.parent.buzz === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");
   $("p-vol").value = Math.round(S.parent.volume * 100);
   $("p-rest-row").hidden = !(S.restUntil > Date.now());
@@ -543,6 +551,8 @@ $("s-parent").addEventListener("click", e => {
   const pb = e.target.closest("[data-pb]"), pz = e.target.closest("[data-pz]");
   if (pb) { S.parent.breakMin = +pb.dataset.pb; playMs = 0; save(); paintParent(); }
   if (pz) { S.parent.buzz = pz.dataset.pz === "true"; save(); paintParent(); }
+  const pa = e.target.closest("[data-pa]");
+  if (pa) { S.parent.autoSteer = pa.dataset.pa === "true"; save(); paintParent(); }
 });
 $("p-copy").onclick = async () => {
   const code = exportSave(); $("p-code").value = code;

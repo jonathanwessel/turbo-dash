@@ -16,7 +16,8 @@ const DEFAULTS = () => ({
   lab: { benches: [] }, // [{ p: projectId | null, end: ms timestamp }]
   cups: {},            // "cupId:difficulty" -> best place
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
-  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true },   // helper: 0 off, 1 a little, 2 lots
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true },
+  autoOn: false,   // helper: 0 off, 1 a little, 2 lots
   missions: null, history: [], restUntil: 0,
 });
 

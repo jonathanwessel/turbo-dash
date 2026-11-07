@@ -38,6 +38,7 @@ export function buildTrack(track) {
     for (let n = 0; n < hold; n++) add(curve, easeInOut(y0, y1, (enter + n) / total));
     for (let n = 0; n < leave; n++) add(easeInOut(curve, 0, n / leave), easeInOut(y0, y1, (enter + hold + n) / total));
   };
+  let padN = 0;
   const d = track.diff, cMax = 2.2 + d * 0.45, hMax = 18 + d * 7;
   road(30, 30, 10, 0, 0);
   const target = 1250 + d * 60;
@@ -69,7 +70,8 @@ export function buildTrack(track) {
   }
   for (let i = START + 90; i < segs.length - 30; i += 150 + Math.floor(r() * 110)) {
     const lane = [-0.55, 0, 0.55][Math.floor(r() * 3)];
-    for (let j = 0; j < 6; j++) segs[i + j].boost = lane;
+    padN = (padN || 0) + 1;
+    for (let j = 0; j < 6; j++) { segs[i + j].boost = lane; segs[i + j].padId = padN; }
   }
   for (let i = START + 130; i < segs.length - 60; i += 200 + Math.floor(r() * 120)) {
     let k = i;
@@ -118,6 +120,7 @@ export class Race {
     this.diff = diffOf(opts.diff);
     this.phys = PHYSICS[track.world] || PHYSICS.earth;
     this.assist = Math.max(this.diff.assist, opts.helper || 0);
+    this.autoLvl = mode === "race" ? (opts.autoSteer || 0) : 0; this.autoTarget = null;
     for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
     this.hooks.onPower?.(null);
@@ -127,7 +130,7 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
@@ -141,6 +144,33 @@ export class Race {
 
   segAt(dist) { const s = this.T.segs; return s[Math.floor(mod(this.startZ + dist, this.T.length) / SEG) % s.length]; }
   popup(text, color = "#fff") { this.popups.push({ text, color, age: 0, x: (Math.random() - 0.5) * 0.2 }); }
+  /* The Auto Steer brain. Each level band adds a skill (see ROADMAP.md); returns a steer value -1..1. */
+  autoSteer(seg) {
+    const L = this.autoLvl, p = this.player, segs = this.T.segs, N = segs.length, idx = seg.index;
+    let target = clamp(p.offset, -0.65, 0.65);             // 1+: stay on the road
+    const look = 8 + Math.floor(L * 0.5);
+    // priorities, nearest first within each: boost pads (66+), then ? boxes (46+), then coins (26+)
+    const scan = fn => { for (let k = 1; k <= look; k++) { const v = fn(segs[(idx + k) % N]); if (v !== undefined) return v; } };
+    let goal = L >= 66 ? scan(s => s.boost !== null ? s.boost : undefined) : undefined;
+    const toPad = goal !== undefined;
+    if (goal === undefined && L >= 46 && !this.power) goal = scan(s => s.boxes?.find(b => !(b.until > this.t))?.offset);
+    if (goal === undefined && L >= 26) goal = scan(s => s.coins.find(c => !c.taken && (!c.h || L >= 46))?.offset);
+    if (goal !== undefined) target = goal;
+    if (L >= 66 && !(toPad && L >= 100)) for (const c of this.rivals) {                                     // 66+: steer around slower rivals
+      const g = c.dist - p.dist;
+      if (g > 0 && g < 6 * SEG && c.speed < p.speed && Math.abs(c.offset - target) < CAR_W * 1.1 && this.nitroT <= 0 && this.shieldT <= 0) target = c.offset > 0 ? c.offset - 0.65 : c.offset + 0.65;
+    }
+    if (L >= 86) {                                                                                          // 86+: smart Turbo and power-ups
+      const straight = [...Array(25)].every((_, k) => Math.abs(segs[(idx + k) % N].curve) < 1.5);
+      if (this.nitro >= 1 && straight) this.useNitro();
+      if (this.power) this.usePower();
+    }
+    target = clamp(target, -0.85, 0.85);
+    this.autoTarget = target;
+    const sp = Math.min(1.4, p.speed / BASE_MAX);
+    return clamp((target - p.offset) * (2 + L / 25) + seg.curve * 0.12 * sp * (L / 100), -1, 1);
+  }
+
   /* Power-ups (no weapons): shield, coin shower, mega magnet, super turbo. */
   usePower() {
     if (this.state !== "race" || this.player.finished || !this.power) return false;
@@ -183,6 +213,9 @@ export class Race {
     let steer;
     if (auto) steer = clamp((-seg.curve * 0.06 - p.offset) * 2, -1, 1);
     else steer = (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
+    // Auto Steer: only when Carter isn't steering. Its strength grows with its level; at 100 it's perfect.
+    this.autoTarget = null;
+    if (!auto && steer === 0 && this.autoLvl > 0 && this.state === "race") steer = this.autoSteer(seg) * (0.15 + 0.85 * this.autoLvl / 100);
     this.steerVis += (steer - this.steerVis) * Math.min(1, dt * 10);
     const fast = this.nitroT > 0 || this.boostT > 0;
     const ph = this.phys;
@@ -218,6 +251,7 @@ export class Race {
     this.nitroT -= dt; this.boostT -= dt; this.bonkCD -= dt; this.bumpCD -= dt; this.shieldT -= dt; this.magnetT -= dt;
     // little effects in screen units (0..1): dust off the road
     if (Math.abs(p.offset) > 1 && p.air <= 0 && p.speed > BASE_MAX * 0.2 && Math.random() < 0.8) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.22, y: 0.97, vx: (Math.random() - 0.5) * 0.3, vy: -0.25 - Math.random() * 0.2, life: 0.6, c: "dust", r: 0.02 + Math.random() * 0.02 });
+    if (this.autoTarget !== null && this.autoLvl >= 100) for (let i = 0; i < 2; i++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.12, y: 0.95, vx: (Math.random() - 0.5) * 0.2, vy: 0.1 + Math.random() * 0.2, life: 0.5, c: Math.random() < 0.5 ? "#ffd400" : "#fff6a8", r: 0.006 + Math.random() * 0.006 });
     for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 0.8 * dt; }
     this.parts = this.parts.filter(q => q.life > 0);
 
@@ -298,6 +332,8 @@ export class Race {
     }
     if (s.boost !== null && Math.abs(p.offset - s.boost) < 0.36) {
       if (this.boostT <= 0.3) { this.hooks.sfx("boost"); this.popup("BOOST!", "#3cf2ff"); }
+      const key = s.padId + ":" + Math.floor(p.dist / this.T.length);
+      if (key !== this.lastPad) { this.lastPad = key; this.runStats.pads++; }
       this.boostT = 1.2;
     }
     if (p.air <= 0 && Math.abs(p.offset) > 1 && this.bonkCD <= 0 && this.shieldT <= 0) {
@@ -409,6 +445,17 @@ export class Race {
     }
     ctx.globalAlpha = 1;
     drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0 });
+    if (this.autoTarget !== null) {
+      const segs2 = this.T.segs, pidx = pseg.index;
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      for (const k of [4, 8, 12]) {
+        const s2 = segs2[(pidx + k) % N]; if (!(s2.p1.camera.z > CAM_DEPTH)) continue;
+        const ax = s2.p1.screen.x + s2.p1.screen.w * this.autoTarget, ay = s2.p1.screen.y, aw = s2.p1.screen.w * 0.08;
+        quad(ctx, ax - aw, ay, ax, ay - aw * 0.8, ax + aw, ay, ax, ay - aw * 0.35);
+      }
+      ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (Math.sin(t * 6) > -0.6) ctx.fillText("🤖", W / 2 + pw * 0.42, H - H * 0.02 - lift - pw * 0.55);
+    }
     if (this.shieldT > 0) {
       const a = this.shieldT < 1.5 ? (Math.sin(t * 30) > 0 ? 0.9 : 0.3) : 0.9;
       ctx.globalAlpha = a; ctx.strokeStyle = "#3cf2ff"; ctx.lineWidth = H * 0.008; ctx.fillStyle = "rgba(60,242,255,0.15)";
