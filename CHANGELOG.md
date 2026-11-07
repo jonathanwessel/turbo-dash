@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.2 — Upgrades Belong to Each Car
+
+- **Every car has its own upgrades.** Engine, Turbo, Tires and Magnet levels now belong to the car you
+  bought them for. A new car starts with no upgrades, and the Garage shows "Upgrades for <car>".
+- You can only upgrade cars you own ("Buy Shark Fin to upgrade it!").
+- Old saves: every car Carter owned before this update keeps the upgrade levels he already had, so
+  nothing he paid for is lost.
+
 ## v0.4.1 — Update Before You Race
 
 - If a new version is waiting when Carter starts a race (from the track list, Again or Next), the game

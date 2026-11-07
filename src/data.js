@@ -91,7 +91,7 @@ export const GOALS = [
   { id: "car2", icon: "🚗", name: "Buy a new car", goal: 1, reward: 150, have: S => S.owned.length - 1 },
   { id: "carall", icon: "🚗", name: "Own every car", goal: CARS.length, reward: 1500, have: S => S.owned.length },
   { id: "paint1", icon: "🎨", name: "Paint your car", goal: 1, reward: 100, have: S => S.paints.length - 1 },
-  { id: "maxup", icon: "⭐", name: "Max out an upgrade", goal: UPGRADE_MAX, reward: 300, have: S => Math.max(...Object.values(S.up)) },
+  { id: "maxup", icon: "⭐", name: "Max out an upgrade", goal: UPGRADE_MAX, reward: 300, have: S => Math.max(0, ...Object.values(S.ups).flatMap(u => Object.values(u))) },
   { id: "tracks", icon: "🗺️", name: "Open every track", goal: TRACKS.length, reward: 500, have: tracksOpen },
   { id: "golds", icon: "🥇", name: "Win on every track", goal: TRACKS.length, reward: 1500, have: S => TRACKS.filter(t => S.best[t.id] === 1).length },
   { id: "gift3", icon: "🎁", name: "Open gifts 3 days in a row", goal: 3, reward: 300, have: S => S.giftStreak },

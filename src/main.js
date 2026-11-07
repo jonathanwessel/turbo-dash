@@ -1,7 +1,7 @@
 import { CARS, TRACKS, THEMES, GOALS, PLAYER, prizeFor } from "./data.js";
 import { Race, BASE_MAX } from "./engine.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
-import { S, load, save, exportSave, importSave } from "./save.js";
+import { S, load, save, exportSave, importSave, upsOf } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
 import { createGarage, lookOf } from "./garage.js";
 
@@ -105,7 +105,7 @@ function spend(n) {
 
 /* ---------- race setup ---------- */
 function carStats() {
-  const car = CARS.find(c => c.id === S.car) || CARS[0], u = S.up;
+  const car = CARS.find(c => c.id === S.car) || CARS[0], u = upsOf(car.id);
   return {
     car: lookOf(car),
     stats: {

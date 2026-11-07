@@ -130,12 +130,13 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .bar { height: 13px; border-radius: 999px; background: rgba(255,255,255,.15); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5be36a, #ffd400); transition: width .3s; }
 .g-right { flex: 1 1 50%; max-width: 520px; display: flex; flex-direction: column; gap: 8px; min-height: 0; justify-content: center; }
-.g-ups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: center; overflow-y: auto; min-height: 0; }
+.g-ups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: safe center; overflow-y: auto; min-height: 0; }
 .g-tabs { display: flex; gap: 8px; justify-content: center; }
 .g-tabs button { flex: 1; font-size: clamp(16px, 4.4vmin, 22px); font-weight: 900; padding: 6px 10px; border-radius: 14px; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.3); }
 .g-tabs button.on { background: #ffd400; color: #4a2600; border-color: #fff3b0; }
 .g-paint { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.g-note { text-align: center; font-weight: 700; color: #ffb3b3; }
+.g-note { text-align: center; font-weight: 700; color: #ffb3b3; grid-column: 1 / -1; }
+.g-note.mine { color: #ffd400; }
 .sw-title { font-weight: 900; font-size: 18px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .sw { width: clamp(48px, 11vmin, 64px); display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; padding: 0; }

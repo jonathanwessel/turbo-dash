@@ -1,7 +1,7 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
 import { CARS, UPGRADES, UPGRADE_COST, UPGRADE_MAX, PAINTS, STICKERS } from "./data.js";
 import { drawCar } from "./draw.js";
-import { S, save } from "./save.js";
+import { S, save, upsOf } from "./save.js";
 
 /* A car with its paint and sticker applied. */
 export function lookOf(car) {
@@ -18,7 +18,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
   function open() { idx = Math.max(0, CARS.findIndex(c => c.id === S.car)); render(); }
 
   function stats(car) {
-    const u = S.up;
+    const u = upsOf(car.id);
     return [
       ["Speed", (car.speed + 0.06 * u.engine) / 0.57],
       ["Power", (car.accel + 0.04 * u.engine) / 0.45],
@@ -36,15 +36,16 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     btn.textContent = driving ? "✔ Driving" : owned ? "Drive it!" : `🪙 ${car.price}`;
     document.querySelectorAll("[data-gtab]").forEach(b => b.classList.toggle("on", b.dataset.gtab === tab));
     $("g-ups").hidden = tab !== "up"; $("g-paint").hidden = tab !== "paint";
-    if (tab === "up") renderUps(); else renderPaint(car, owned);
+    if (tab === "up") renderUps(car, owned); else renderPaint(car, owned);
   }
 
-  function renderUps() {
-    $("g-ups").innerHTML = UPGRADES.map(u => {
-      const lvl = S.up[u.id], max = lvl >= UPGRADE_MAX, cost = UPGRADE_COST[lvl];
+  function renderUps(car, owned) {
+    const ups = upsOf(car.id);
+    $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : "Buy " + car.name + " to upgrade it!"}</div>` + UPGRADES.map(u => {
+      const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = UPGRADE_COST[lvl];
       return `<div class="up-card" data-up="${u.id}"><div class="up-icon">${u.icon}</div><b>${u.name}</b><small>${u.desc}</small>
         <div class="pips">${Array.from({ length: UPGRADE_MAX }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>
-        <button class="up-buy ${max ? "max" : S.coins >= cost ? "" : "poor"}" data-buy="${u.id}">${max ? "MAX!" : "🪙 " + cost}</button></div>`;
+        <button class="up-buy ${max ? "max" : owned && S.coins >= cost ? "" : "poor"}" data-buy="${u.id}">${max ? "MAX!" : owned ? "🪙 " + cost : "🔒 " + cost}</button></div>`;
     }).join("");
   }
 
@@ -78,13 +79,15 @@ export function createGarage({ $, sfx, spend, celebrate }) {
   };
   $("g-ups").addEventListener("click", e => {
     const b = e.target.closest("[data-buy]"); if (!b) return;
-    const id = b.dataset.buy, lvl = S.up[id];
+    const car = CARS[idx];
+    if (!S.owned.includes(car.id)) { sfx("nope"); return; }
+    const ups = upsOf(car.id), id = b.dataset.buy, lvl = ups[id];
     if (lvl >= UPGRADE_MAX) { sfx("click"); return; }
     if (!spend(UPGRADE_COST[lvl])) return;
-    S.up[id]++; save(); sfx("buy");
+    ups[id]++; save(); sfx("buy");
     render();
     $("g-ups").querySelector(`[data-up="${id}"]`)?.classList.add("flash");
-    if (S.up[id] === UPGRADE_MAX) celebrate();
+    if (ups[id] === UPGRADE_MAX) celebrate();
   });
   $("g-paint").addEventListener("click", e => {
     const b = e.target.closest("[data-paint],[data-sticker]"); if (!b) return;
@@ -111,6 +114,6 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.fillText("🔒", W - 8, H * 0.2); }
   }
 
-  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || UPGRADES.some(u => S.up[u.id] < UPGRADE_MAX && S.coins >= UPGRADE_COST[S.up[u.id]]);
+  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= UPGRADE_COST[upsOf(id)[u.id]]));
   return { open, render, draw, affordable };
 }

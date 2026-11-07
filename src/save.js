@@ -4,7 +4,7 @@
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup";
 const DEFAULTS = () => ({
   v: 1, coins: 0, owned: ["zippy"], car: "zippy",
-  up: { engine: 0, turbo: 0, tires: 0, magnet: 0 },
+  ups: {},             // carId -> { engine, turbo, tires, magnet }: every car has its own upgrades
   best: {},            // trackId -> best place (1 is best)
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
@@ -17,11 +17,17 @@ export let S = DEFAULTS();
 function merge(d) {
   if (!d || typeof d !== "object" || typeof d.coins !== "number") throw new Error("not a Turbo Dash save");
   const def = DEFAULTS();
-  const s = { ...def, ...d, up: { ...def.up, ...(d.up || {}) }, best: { ...(d.best || {}) },
+  const s = { ...def, ...d, ups: { ...(d.ups || {}) }, best: { ...(d.best || {}) },
     stats: { ...def.stats, ...(d.stats || {}) }, look: { ...(d.look || {}) } };
   for (const k of ["owned", "paints", "stickers", "claimed"]) if (!Array.isArray(s[k]) || (k !== "claimed" && !s[k].length)) s[k] = def[k];
+  // v0.4.1 and older had one set of upgrades for all cars: every car owned back then keeps those levels.
+  if (d.up && !d.ups) for (const id of s.owned) s.ups[id] = { ...NO_UPS, ...d.up };
+  delete s.up;
   return s;
 }
+const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
+/* This car's upgrade levels (created at 0 the first time). */
+export function upsOf(carId) { return S.ups[carId] || (S.ups[carId] = { ...NO_UPS }); }
 
 export function load() {
   for (const key of [KEY, BACKUP]) {
