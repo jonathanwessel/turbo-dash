@@ -43,7 +43,7 @@ function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
-    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); toyRace.view.setLite(classic.lite); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
   glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);

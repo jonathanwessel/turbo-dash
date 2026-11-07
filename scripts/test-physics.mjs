@@ -166,6 +166,22 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("tracks are built the same every time", before.every((b, k) => b === after[k]), "a track changed when built again");
 }
 
+/* ---------- 🧸 Toy Track World: a whole race finishes headless, and landings are recorded for the bounce ---------- */
+{
+  const { toyRace } = await import("./racebot.mjs");
+  const toyCar = CARS.find(c => c.id === "toyRacer"), toys = TRACKS.filter(t => t.world === "toy");
+  let landings = 0, maxV = 0, done = 0;
+  for (const t of toys) {
+    const orig = toyRace.land.bind(toyRace);
+    toyRace.land = () => { orig(); landings++; maxV = Math.max(maxV, toyRace.player.landV); };
+    const res = runRace(t, toyCar, UPS, "normal", "good");
+    toyRace.land = orig;
+    if (res.time < 400) done++;
+  }
+  check("toy races finish", done === toys.length, `${toys.length - done} toy races timed out`);
+  check("toy landings recorded", landings > 0 && maxV > 0, `landings ${landings}, hardest ${maxV}`);
+}
+
 /* ---------- whole races: rails always hold, cars rarely overlap, sims sane ---------- */
 {
   let frames = 0, overlaps = 0, railBad = 0, finished = 0, races = 0;

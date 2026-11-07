@@ -17,12 +17,15 @@ function canvasTex(w, h, paint, repeat) {
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.45, ...o });
 const plastic = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.08, ...o });
 
+let blobT = null;
+const blobTex = () => blobT ||= canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, w, w); });
 /* ---------- a toy car, front facing -z ---------- */
 function carMesh(def) {
-  const g = new THREE.Group(), type = def.type, monster = type === "monster" || type === "rover";
+  const g = new THREE.Group(), body = new THREE.Group(), type = def.type, monster = type === "monster" || type === "rover";
+  g.add(body);
   const paint = plastic(def.body, { metalness: def.shiny ? 0.55 : 0.05 }), accent = std(def.accent, { roughness: 0.35 });
   const dark = std("#17171d", { roughness: 0.7 }), glass = plastic("#1d3866", { roughness: 0.05, metalness: 0.3 }), silver = std("#d8dde6", { metalness: 0.8, roughness: 0.25 });
-  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; g.add(m); return m; };
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; body.add(m); return m; };
   const wr = monster ? 0.56 : 0.37, ride = monster ? 0.62 : 0.3;
   add(new RoundedBoxGeometry(1.62, 0.56, 3.0, 3, 0.2), paint, 0, ride + 0.32, 0);
   add(new RoundedBoxGeometry(1.24, 0.46, 1.45, 3, 0.16), glass, 0, ride + 0.78, 0.18);
@@ -51,7 +54,10 @@ function carMesh(def) {
   if (type === "rover") { add(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 6), silver, 0.5, ride + 1.2, 0.5); add(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), silver, 0.5, ride + 1.45, 0.5, Math.PI, 0, 0); }
   if (type === "galaxy") for (const [x, z] of [[-0.5, -0.8], [0.4, 0.9], [-0.3, 1.1], [0.55, -0.4]]) add(new THREE.SphereGeometry(0.06, 8, 6), std(def.accent, { emissive: def.accent, emissiveIntensity: 1 }), x, ride + 0.61, z);
   extra.flames = [-0.42, 0.42].map(x => { const m = add(new THREE.ConeGeometry(0.17, 0.9, 10), new THREE.MeshBasicMaterial({ color: "#ffb02e", transparent: true, opacity: 0.9 }), x, ride + 0.3, 1.95, Math.PI / 2); m.castShadow = false; m.visible = false; return m; });
-  g.userData = { wheels, wr, extra, paint, rainbow: !!def.rainbow };
+  // a soft round shadow right under the toy (grounds it on the plastic track)
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(1.7, 24), new THREE.MeshBasicMaterial({ map: blobTex(), transparent: true, depthWrite: false, opacity: 0.55 }));
+  blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03; blob.scale.set(1, 1.6, 1); g.add(blob);
+  g.userData = { wheels, wr, extra, paint, rainbow: !!def.rainbow, body, spring: { y: 0, v: 0, pitch: 0, pv: 0 }, blob };
   return g;
 }
 
@@ -152,7 +158,7 @@ function trackMeshes(T, pal) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  const road = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.2, side: THREE.DoubleSide }));
+  const road = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.35, clearcoat: 0.85, clearcoatRoughness: 0.12, side: THREE.DoubleSide }));
   road.castShadow = road.receiveShadow = true; grp.add(road);
   // stilts down to the floor (not under loops or gaps)
   const stilt = new THREE.CylinderGeometry(0.45, 0.6, 1, 10), stMat = plastic(pal[1]), list = [];
@@ -216,12 +222,13 @@ export class ToyView {
     const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: "high-performance" });
     R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#cfeaff", 260, 900);
-    const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; this.scene.environmentIntensity = 0.45;
+    const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; this.scene.environmentIntensity = 0.8;
     this.camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2000);
     this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", 1.1));
     const sun = this.sun = new THREE.DirectionalLight("#fff1d0", 2.4);
     sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 400 }); sun.shadow.bias = -0.0005;
     this.scene.add(sun, sun.target);
+    const rim = new THREE.DirectionalLight("#d6ecff", 0.9); rim.position.set(80, 60, 140); this.scene.add(rim);   // a cool rim light from behind
     this.coinGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.18, 20); this.coinMat = std("#ffc21a", { metalness: 0.85, roughness: 0.25, emissive: "#7a5200", emissiveIntensity: 0.35 });
     this.boxTex = canvasTex(128, 128, (c, w) => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, w); c.fillStyle = "#222"; c.font = "900 96px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("?", w / 2, w / 2 + 8); });
     this.trackId = null; this.cars = new Map(); this.camPos = V(); this.camUp = V(0, 1, 0); this.lastT = 0; this.sparks = [];
@@ -254,6 +261,12 @@ export class ToyView {
     this.snapCam = true;
   }
 
+  setLite(lite) {
+    if (this.lite === lite) return;
+    this.lite = lite;
+    const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
+  }
+
   /* place a car on the track (s along, x sideways, h above) facing forward, tilted with the track */
   place(g, T, s, x, h, yaw = 0) {
     const L = T.L, ss = ((s % L) + L) % L, f = ss / DS, i = Math.floor(f) % T.N, j = (i + 1) % T.N, u = f - Math.floor(f);
@@ -264,6 +277,17 @@ export class ToyView {
     g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rt, up, fw.clone().negate()));
     if (yaw) g.rotateY(yaw);
     return { fw, up, rt };
+  }
+
+  /* the toy's body on its springs: a kick on landing, a little rattle at speed, a lean into turns */
+  bounce(g, dt, kick, speed, lean) {
+    const d = g.userData, s = d.spring; if (!d.body || dt <= 0) return;
+    if (kick) { s.v -= Math.min(6, kick * 0.18); s.pv += Math.min(1.2, kick * 0.03); }
+    s.v += (-160 * s.y - 11 * s.v) * dt; s.y += s.v * dt;
+    s.pv += (-120 * s.pitch - 9 * s.pv) * dt; s.pitch += s.pv * dt;
+    const rattle = this.lite ? 0 : (Math.random() - 0.5) * 0.03 * Math.min(1, speed / 40);
+    d.body.position.y = Math.max(-0.18, s.y) + rattle;
+    d.body.rotation.x = s.pitch * 0.25; d.body.rotation.z = -lean * 0.07;
   }
 
   spinCar(g, speed, dt, fast, t) {
@@ -285,7 +309,14 @@ export class ToyView {
     const pg = this.cars.get("p");
     const fr = this.place(pg, T, p.dist, p.x, Math.max(-12, p.air), -(race.steerVis || 0) * 0.18);
     this.spinCar(pg, p.speed, dt, fast, t);
-    race.rivals.forEach((c, k) => { const g = this.cars.get("r" + k); if (!g) return; this.place(g, T, c.dist, c.x, c.air || 0, c.knockT > 0 ? Math.sin(t * 30) * 0.4 : 0); this.spinCar(g, c.speed, dt, false, t); });
+    const kick = (p.landN || 0) !== this.landSeen ? p.landV : 0; this.landSeen = p.landN || 0;
+    this.bounce(pg, dt, kick, p.speed, race.steerVis || 0);
+    race.rivals.forEach((c, k) => {
+      const g = this.cars.get("r" + k); if (!g) return; this.place(g, T, c.dist, c.x, c.air || 0, c.knockT > 0 ? Math.sin(t * 30) * 0.4 : 0); this.spinCar(g, c.speed, dt, false, t);
+      const up = g.userData.wasAir > 0.3 && !(c.air > 0.3); g.userData.wasAir = c.air || 0;
+      this.bounce(g, dt, up ? 8 : 0, c.speed, 0);
+    });
+    this.coinMat.emissiveIntensity = 0.35 + 0.3 * Math.max(0, Math.sin(t * 6));   // coins twinkle
     const gg = this.cars.get("g");
     if (gg) { const gp = race.state !== "countdown" && race.ghostAt(race.raceTime); gg.visible = !!gp; if (gp) this.place(gg, T, gp.dist, gp.x, gp.air); }
     this.shield.visible = race.shieldT > 0 && (race.shieldT > 1.5 || Math.sin(t * 30) > 0);

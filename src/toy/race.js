@@ -38,7 +38,7 @@ export class ToyRace {
     this.coins = 0; this.popups = []; this.fx = []; this.order = [];
     this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 };
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5, x: k % 2 ? 1.7 : -1.7 });
-    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? V0 * 1.2 : 0, finished: false, air: 0, vy: 0, airT: 0, fly: false, fallT: 0, ...slot(5),
+    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? V0 * 1.2 : 0, finished: false, air: 0, vy: 0, airT: 0, fly: false, fallT: 0, landV: 0, landN: 0, ...slot(5),
       get offset() { return this.x / LIMIT; } };   // the classic engine's -1..1 across the road, for the race bot
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({ def, ...slot(i), speed: mode === "demo" ? V0 : 0, lane: slot(i).x, laneT: 1 + i, knockT: 0, finished: false, air: 0,
@@ -199,7 +199,7 @@ export class ToyRace {
   }
 
   land() {
-    const p = this.player; p.fly = false; p.air = 0; p.vy = 0;
+    const p = this.player; p.landV = Math.max(0, -p.vy); p.landN = (p.landN || 0) + 1; p.fly = false; p.air = 0; p.vy = 0;
     if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35) {
