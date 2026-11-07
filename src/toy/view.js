@@ -222,7 +222,17 @@ export class ToyView {
     const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: "high-performance" });
     R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#cfeaff", 260, 900);
-    const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; this.scene.environmentIntensity = 0.8;
+    // Shiny reflections need a room "environment map", which needs half-float render targets. Many tablets can't
+    // render to those, and a broken map blows the whole picture out to white. No support: no map (safe look).
+    this.diag = { why: "" };
+    R.debug.onShaderError = (gl, program, vs, fs) => { this.diag.why = this.diag.why || "shader"; this.badShader = true; };
+    const gl = R.getContext(), halfOk = R.capabilities.isWebGL2 ? !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float")) : !!gl.getExtension("EXT_color_buffer_half_float");
+    if (halfOk) { const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; pm.dispose(); }
+    else this.diag.why = "no half-float targets";
+    this.scene.environmentIntensity = 0.8;
+    this.checkT = 0; this.safe = false;
+    glCanvas.addEventListener("webglcontextlost", e => { e.preventDefault(); this.diag.why = "context lost"; this.lost = true; });
+    glCanvas.addEventListener("webglcontextrestored", () => { this.lost = false; });
     this.camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2000);
     this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", 1.1));
     const sun = this.sun = new THREE.DirectionalLight("#fff1d0", 2.4);
@@ -259,6 +269,37 @@ export class ToyView {
     if (race.trial && race.ghost) make("g", race.ghostDef, true);
     this.shield = new THREE.Mesh(new THREE.SphereGeometry(2.4, 24, 16), new THREE.MeshBasicMaterial({ color: "#3cf2ff", transparent: true, opacity: 0.18 })); this.scene.add(this.shield);
     this.snapCam = true;
+    if (this.safe) { this.safe = false; this.goSafe(); }   // everything just built gets the safe look too
+  }
+
+  /* Right after the first frames, look at a few pixels: if the picture is blown out to plain white (or a shader
+     failed to build on this tablet's graphics chip), switch to the safe look: no reflections, plainer materials. */
+  watchdog(W, H) {
+    if (this.safe || this.checkT > 40) return;
+    this.checkT++;
+    if (this.badShader) { this.goSafe(); return; }
+    if (this.checkT !== 8 && this.checkT !== 40) return;
+    const gl = this.renderer.getContext(), px = new Uint8Array(4);
+    let white = 0, n = 0;
+    for (const [u, v] of [[0.2, 0.3], [0.5, 0.3], [0.8, 0.3], [0.2, 0.6], [0.5, 0.6], [0.8, 0.6], [0.3, 0.85], [0.5, 0.85], [0.7, 0.85]]) {
+      gl.readPixels(Math.floor(W * u), Math.floor(H * v), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); n++;
+      if (px[0] > 180 && px[1] > 215 && px[2] > 235) white++;   // white, or just the pale sky / fog: nothing drawn there
+    }
+    this.diag.white = white + "/" + n;
+    if (white >= 8) { this.diag.why = this.diag.why || "white picture"; this.goSafe(); }
+  }
+  goSafe() {
+    if (this.safe) return;
+    this.safe = true;
+    this.scene.environment = null;
+    const swap = m => {
+      if (!m || !m.isMeshPhysicalMaterial) return m;
+      const s = new THREE.MeshStandardMaterial({ color: m.color, map: m.map, vertexColors: m.vertexColors, roughness: Math.max(0.5, m.roughness), metalness: Math.min(0.2, m.metalness), emissive: m.emissive, emissiveIntensity: m.emissiveIntensity, transparent: m.transparent, opacity: m.opacity, side: m.side });
+      m.dispose(); return s;
+    };
+    this.scene.traverse(o => { if (o.material) o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material); });
+    this.safeMats = true; this.safeMsg = true;
+    console.warn("Turbo Dash: Toy Track World switched to the safe 3D look (" + this.diag.why + ")");
   }
 
   setLite(lite) {
@@ -357,7 +398,10 @@ export class ToyView {
     this.camera.position.copy(this.camPos).add(V((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0));
     this.camera.up.copy(this.camUp); this.camera.lookAt(this.look);
     this.camera.fov = 62 + (fast ? 8 : 0) * 1; this.camera.updateProjectionMatrix();
+    if (this.safeMsg) { this.safeMsg = false; race.popup("🧸 Simple 3D", "#ffffff"); }
+    if (this.lost) { this.overlay(race, W, H, t, fast, falling); return; }
     R.render(this.scene, this.camera);
+    this.watchdog(W, H);
     this.overlay(race, W, H, t, fast, falling);
   }
 

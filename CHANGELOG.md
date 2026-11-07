@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.1 — Toy Track World on more tablets 🧸
+
+- **Fixed: Toy Track World could show only a white screen on some tablets.** Its shiny reflections need a graphics
+  feature ("half-float" render targets) that many tablets don't have. Now the game checks first, and if the picture
+  still comes out blank or white in the first frames (or the tablet can't build a shader), it switches to a
+  simpler 3D look by itself and says "🧸 Simple 3D". Nothing else changes.
+
 ## v1.2.0 — Feel the Speed 🏎️
 
 Racing looks and feels better on every track, plus a garage with every car, world previews and a tricky new bonus course.
