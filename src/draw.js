@@ -37,13 +37,21 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   ctx.translate(x, yb);
   ctx.rotate(steer * 0.035);
 
-  ctx.fillStyle = "rgba(0,0,0,0.33)";
-  ell(ctx, 0, -w * 0.01, w * 0.6, w * 0.07);
+  ctx.fillStyle = "rgba(0,0,0,0.18)"; ell(ctx, 0, -w * 0.005, w * 0.68, w * 0.09);
+  ctx.fillStyle = "rgba(0,0,0,0.3)"; ell(ctx, 0, -w * 0.01, w * 0.56, w * 0.06);
 
   const wh = monster ? w * 0.42 : w * 0.21, ww = monster ? w * 0.27 : w * 0.18;
   ctx.fillStyle = "#151515";
   rr(ctx, -w * 0.52, -wh, ww, wh, ww * 0.3);
   rr(ctx, w * 0.52 - ww, -wh, ww, wh, ww * 0.3);
+  if (!monster && w > 24) {
+    const roll = (o.spin || 0) % 1;
+    for (const wx of [-w * 0.52, w * 0.52 - ww]) {
+      ctx.fillStyle = "#2b2b2b"; rr(ctx, wx + ww * 0.18, -wh + 2, ww * 0.64, wh - 4, ww * 0.2);
+      ctx.fillStyle = "#3d3d3d";
+      for (let i = 0; i < 3; i++) { const yy = -wh + ((i / 3 + roll) % 1) * wh; if (yy > -wh + 3 && yy < -4) ctx.fillRect(wx + ww * 0.22, yy, ww * 0.56, Math.max(1, wh * 0.08)); }
+    }
+  }
   if (monster && w > 30) {
     ctx.fillStyle = "#3a3a3a";
     const off = (t * 40) % (wh / 4);
@@ -118,6 +126,12 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   rr(ctx, -w * 0.09, top + bh * 0.5, w * 0.18, w * 0.075, w * 0.015);
   ctx.fillStyle = "rgba(0,0,0,0.45)";
   rr(ctx, -w * 0.49, by - w * 0.055, w * 0.98, w * 0.055, w * 0.02);
+  if (w > 24) {
+    ctx.fillStyle = "#8d96a3"; ell(ctx, -w * 0.2, by - w * 0.025, w * 0.045, w * 0.028); ell(ctx, w * 0.2, by - w * 0.025, w * 0.045, w * 0.028);
+    ctx.fillStyle = "#333"; ell(ctx, -w * 0.2, by - w * 0.025, w * 0.028, w * 0.016); ell(ctx, w * 0.2, by - w * 0.025, w * 0.028, w * 0.016);
+    ctx.fillStyle = "rgba(255,255,255,0.35)"; rr(ctx, -w * 0.42, top + bh * 0.08, w * 0.84, Math.max(1, bh * 0.07), bh * 0.04);
+    ctx.fillStyle = "rgba(255,60,60,0.28)"; ell(ctx, -w * 0.36, top + bh * 0.34, w * 0.13, w * 0.06); ell(ctx, w * 0.36, top + bh * 0.34, w * 0.13, w * 0.06);
+  }
 
   if (type === "racer" || type === "galaxy" || type === "sport") {
     ctx.fillStyle = "#222";
@@ -189,7 +203,7 @@ export const SPRITES = {
   lollipop: { w: 950, collide: true }, candycane: { w: 800, collide: true }, cupcake: { w: 1000, collide: true },
   volcanorock: { w: 1100, collide: true }, lavaflame: { w: 700, collide: false },
   planet: { w: 1700, collide: false }, crystal: { w: 950, collide: true }, ufo: { w: 1300, collide: false },
-  sign: { w: 2200, collide: true },
+  sign: { w: 2200, collide: true }, lamp: { w: 500, collide: true },
   autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
 };
@@ -327,6 +341,12 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = (t * 4 | 0) % 2 ? "#ffd400" : "#ff3fa4"; for (let i = -2; i <= 2; i++) ell(ctx, x + i * w * 0.17, yy + w * 0.02, w * 0.035, w * 0.035);
       break;
     }
+    case "lamp":
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.12, h * 2.4);
+      ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.6, w * 0.1);
+      ctx.fillStyle = "#fff59a"; ell(ctx, x + w * 0.5, yb - h * 2.28, w * 0.16, w * 0.12);
+      ctx.fillStyle = "rgba(255,245,154,0.25)"; ell(ctx, x + w * 0.5, yb - h * 2.28, w * 0.34, w * 0.28);
+      break;
     case "sign":
       ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.4, yb - h * 0.45, w * 0.05, h * 0.45); ctx.fillRect(x + w * 0.35, yb - h * 0.45, w * 0.05, h * 0.45);
       ctx.fillStyle = "#ffd400"; rr(ctx, x - w * 0.5, yb - h * 0.75, w, h * 0.32, w * 0.04);
@@ -361,7 +381,17 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
   }
   ctx.fillStyle = th.sun;
   ctx.globalAlpha = 0.35; ell(ctx, W * 0.78, hz * 0.32, H * 0.13, H * 0.13);
+  ctx.globalAlpha = 0.18; ell(ctx, W * 0.78, hz * 0.32, H * 0.2, H * 0.2);
   ctx.globalAlpha = 1; ell(ctx, W * 0.78, hz * 0.32, H * 0.08, H * 0.08);
+  if (!th.stars) {
+    ctx.strokeStyle = "rgba(40,50,80,0.7)"; ctx.lineWidth = Math.max(1.5, H * 0.004); ctx.lineCap = "round";
+    for (let i = 0; i < 4; i++) {
+      const bx = (((t * 0.025 * (1 + i * 0.3) + i * 0.27 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.2 + 0.09 * i) + Math.sin(t * 1.3 + i) * H * 0.01;
+      const flap = Math.sin(t * 8 + i * 2) * H * 0.008, s = H * (0.012 + 0.003 * (i % 2));
+      ctx.beginPath(); ctx.moveTo(bx - s, by - flap); ctx.quadraticCurveTo(bx - s / 2, by - s * 0.6, bx, by); ctx.quadraticCurveTo(bx + s / 2, by - s * 0.6, bx + s, by - flap); ctx.stroke();
+    }
+    ctx.lineCap = "butt";
+  }
 
   if (th.clouds) {
     ctx.fillStyle = "rgba(255,255,255,0.9)";

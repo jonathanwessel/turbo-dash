@@ -76,7 +76,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -496,7 +496,8 @@ function refreshHub() {
   const ls = lab.status();
   tb("tb-lab", S.rank >= 2 && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
-  $("town").setAttribute("preserveAspectRatio", innerHeight > innerWidth ? "xMidYMid meet" : "xMidYMax slice");
+  // wide screens: fill and trim the sky; squarer or portrait screens: show the whole street
+  $("town").setAttribute("preserveAspectRatio", innerWidth / innerHeight < 1.55 ? "xMidYMid meet" : "xMidYMax slice");
 }
 addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
 $("town-wrap").addEventListener("click", e => {
@@ -508,6 +509,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "gift") { sfx("click"); openGift(); }
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
+  else if (go === "school") { sfx("nope"); b.classList.remove("shake"); void b.getBBox(); b.classList.add("shake"); toast("🚦 Driver School is coming soon!"); }
   else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
 });
@@ -520,7 +522,10 @@ function goHub() {
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
-function paintToggles() { $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx); }
+function paintToggles() {
+  $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx);
+  $("set-music").textContent = S.music ? "On" : "Off"; $("set-sfx").textContent = S.sfx ? "On" : "Off";
+}
 $("btn-music").onclick = () => { S.music = !S.music; save(); setAudioOpts({ music: S.music }); paintToggles(); sfx("click"); };
 $("btn-sfx").onclick = () => { S.sfx = !S.sfx; save(); setAudioOpts({ sfx: S.sfx }); paintToggles(); sfx("click"); };
 paintToggles();
@@ -594,11 +599,37 @@ $("p-load").onclick = () => {
 $("p-close").onclick = () => show("s-title");
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
 $("p-endrest").onclick = () => { S.restUntil = 0; playMs = 0; save(); paintParent(); };
-$("p-reset").onclick = () => {
-  if (!confirm("Erase ALL of Carter's progress on this tablet? (Copy the save code first if you might want it back.)")) return;
-  if (!confirm("Are you sure? This can't be undone.")) return;
-  resetSave(); location.reload();
-};
+/* ---------- settings ---------- */
+$("btn-settings").onclick = () => { sfx("click"); $("set-ver").textContent = VERSION === "dev" ? "dev build" : "v" + VERSION; paintToggles(); show("s-settings"); };
+/* Grown-up check: a sum a 6-year-old can't do yet, with four big answers to tap. */
+let guPass = null, guBack = "s-settings";
+function grownUp(back, onPass) {
+  guPass = onPass; guBack = back;
+  const a = 6 + Math.floor(Math.random() * 4), b = 6 + Math.floor(Math.random() * 4), ans = a + b;
+  const opts = [...new Set([ans, ans + 1, ans - 1, ans + 2, ans - 2])].slice(0, 5).sort(() => Math.random() - 0.5).slice(0, 4);
+  if (!opts.includes(ans)) opts[0] = ans;
+  $("gq").textContent = `What is ${a} + ${b}?`;
+  $("ga").innerHTML = opts.sort((x, y) => x - y).map(n => `<button data-ans="${n === ans ? 1 : 0}">${n}</button>`).join("");
+  show("s-grownup");
+}
+$("ga").addEventListener("click", e => {
+  const b = e.target.closest("[data-ans]"); if (!b) return;
+  if (b.dataset.ans === "1") { sfx("click"); const f = guPass; guPass = null; f(); }
+  else { sfx("nope"); const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); setTimeout(() => grownUp(guBack, guPass), 450); }
+});
+$("gu-cancel").onclick = () => { sfx("click"); show(guBack); };
+$("set-parent").onclick = () => { sfx("click"); grownUp("s-settings", () => { $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }); };
+$("set-reset").onclick = () => { sfx("click"); grownUp("s-settings", openReset); };
+/* Reset: grown-up check, then hold for 3 seconds, then a last "are you sure". */
+let holdT = 0, holdStart = 0, resetBack = "s-settings";
+function openReset(back = "s-settings") { resetBack = back; $("rs-step1").hidden = false; $("rs-step2").hidden = true; $("rs-fill").style.width = "0"; show("s-reset"); }
+const holdDone = () => { cancelAnimationFrame(holdT); holdT = 0; sfx("nope"); $("rs-step1").hidden = true; $("rs-step2").hidden = false; };
+const holdTick = () => { const p = Math.min(1, (performance.now() - holdStart) / 3000); $("rs-fill").style.width = (p * 100) + "%"; if (p >= 1) holdDone(); else holdT = requestAnimationFrame(holdTick); };
+$("rs-hold").addEventListener("pointerdown", e => { e.preventDefault(); try { $("rs-hold").setPointerCapture(e.pointerId); } catch (err) { /* fine without capture */ } holdStart = performance.now(); cancelAnimationFrame(holdT); holdT = requestAnimationFrame(holdTick); });
+for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) $("rs-hold").addEventListener(ev, () => { if (holdT) { cancelAnimationFrame(holdT); holdT = 0; $("rs-fill").style.width = "0"; } });
+$("rs-no").onclick = $("rs-no2").onclick = () => { sfx("click"); show(resetBack); };
+$("rs-yes").onclick = () => { if (cloudLinked()) cloudSignOut(); resetSave(); location.reload(); };
+$("p-reset").onclick = () => { sfx("click"); openReset("s-parent"); };
 // tap the moon 5 times on the break screen to reach Parent Corner
 let moonTaps = [];
 $("rest-moon").onclick = () => { const n = Date.now(); moonTaps = moonTaps.filter(t => n - t < 3000); moonTaps.push(n); if (moonTaps.length >= 5) { moonTaps = []; $("p-code").value = exportSave(); paintParent(); show("s-parent"); } };

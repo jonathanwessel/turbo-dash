@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.13.0 — Piqua Main Street
+
+- **Main Street in Piqua, Ohio.** The town is redrawn: eight separate buildings, each on its own lot with a tree
+  or lamp post between neighbors, a big picture on every roof and one clear word on every sign (Garage, Gifts,
+  Missions, Race Track, Rank, Turbo Lab, Trophies, School). A "Welcome to PIQUA, Ohio" sign stands on the hill
+  by the river.
+- **A big green RACE! button** sits over the Race Track.
+- **🚦 Driver School** (coming soon): its schoolhouse is on Main Street now. It will turn real-world reading and
+  outdoor time, logged by a grown-up, into driver training in the game.
+- **⚙️ Settings** (the gear in town): Music, Sounds, Full screen, Parent Corner and **Reset progress**.
+  - Parent Corner and Reset both start with a grown-ups-only question (a sum with four big answers).
+  - Reset then needs a **3-second hold** and a final "Last chance!" before anything is erased. A copy is kept
+    for Undo, and Google Save is signed out so the old cloud copy can't bring the progress back.
+- **New title screen**: a giant logo with speed streaks, bigger "Made for Carter" credits and a huge PLAY button.
+
+**Polish (a big graphics pass, same flat style)**
+- Cars: softer two-layer shadows, tire treads that roll with speed, exhaust pipes, a shine line on the body,
+  glowing tail lights.
+- Roadside: silver guardrails on every bend, lamp posts along the road, solid white edge lines.
+- Sky: a glow ring around the sun and birds flapping across (not in space).
+- Town: buildings never overlap, decorations never block taps, and squarer screens show the whole street.
+
 ## v0.12.0 — The Long Game
 
 - **A much longer game.** A new career simulator (`npm run career`) plays the whole game day by day like a kid

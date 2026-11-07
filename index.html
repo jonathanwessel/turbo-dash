@@ -37,9 +37,12 @@
 
   <!-- screens -->
   <section id="s-title" class="screen">
-    <div class="logo"><span>TURBO</span><span>DASH</span></div>
+    <div class="title-hero">
+      <div class="streaks"><i></i><i></i><i></i><i></i></div>
+      <div class="logo"><span>TURBO</span><span>DASH</span></div>
+    </div>
     <div class="credits"><div class="made">Made for <b>Carter</b></div><div class="by">by Carter's Dad</div></div>
-    <button id="btn-play" class="big-btn go">▶ PLAY</button>
+    <button id="btn-play" class="big-btn go play-btn">▶ PLAY</button>
     <button class="ver" id="ver" aria-label="Version"></button>
   </section>
 
@@ -181,6 +184,43 @@
     </div>
   </section>
 
+  <section id="s-settings" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Settings</h2></div>
+    <div class="set-grid">
+      <button id="btn-music" class="set-tile"><span>🎵</span><b>Music</b><small id="set-music">On</small></button>
+      <button id="btn-sfx" class="set-tile"><span>🔊</span><b>Sounds</b><small id="set-sfx">On</small></button>
+      <button id="btn-full" class="set-tile"><span>⛶</span><b>Full screen</b><small>Fill the screen</small></button>
+      <button id="set-parent" class="set-tile"><span>👪</span><b>Parent Corner</b><small>Grown-ups</small></button>
+      <button id="set-reset" class="set-tile danger"><span>🗑️</span><b>Reset progress</b><small>Grown-ups</small></button>
+    </div>
+    <div class="set-foot">Made for Carter · by Carter's Dad · <span id="set-ver"></span></div>
+  </section>
+
+  <section id="s-grownup" class="screen dim" hidden>
+    <div class="card">
+      <h1>Grown-ups only</h1>
+      <div class="gq" id="gq">What is 8 + 7?</div>
+      <div class="row ga" id="ga"></div>
+      <div class="row"><button id="gu-cancel" class="big-btn small">Cancel</button></div>
+    </div>
+  </section>
+
+  <section id="s-reset" class="screen dim" hidden>
+    <div class="card reset">
+      <h1>Reset progress?</h1>
+      <div id="rs-step1">
+        <p>This erases <b>all</b> of Carter's progress on this device: coins, cars, upgrades, ranks, trophies and research.
+          A copy is kept, so Parent Corner can <b>Undo</b> it. Google Save is signed out so it can't bring the old save back.</p>
+        <button id="rs-hold" class="hold-btn"><span class="hold-fill" id="rs-fill"></span><span class="hold-txt">Hold for 3 seconds to erase</span></button>
+        <div class="row"><button id="rs-no" class="big-btn go">Keep my progress</button></div>
+      </div>
+      <div id="rs-step2" hidden>
+        <p class="rs-last">Last chance! Erase everything?</p>
+        <div class="row"><button id="rs-yes" class="big-btn danger">Yes, erase</button><button id="rs-no2" class="big-btn go">No, keep it</button></div>
+      </div>
+    </div>
+  </section>
+
   <section id="s-missions" class="screen panel" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Daily Missions</h2></div>
     <div class="missions" id="mis-list"></div>
@@ -227,7 +267,7 @@
 
   <div id="coinbar" class="coinbar" hidden>🪙 <span id="coin-n">0</span><span id="chip-wrap" hidden> · 🧠 <span id="chip-n">0</span></span></div>
   <div id="toast" class="toast" hidden></div>
-  <div id="topright" class="topright" hidden><button id="btn-music" class="icon-btn" aria-label="Music">🎵</button><button id="btn-sfx" class="icon-btn" aria-label="Sound">🔊</button><button id="btn-full" class="icon-btn" aria-label="Full screen">⛶</button></div>
+  <div id="topright" class="topright" hidden><button id="btn-settings" class="icon-btn gear" aria-label="Settings">⚙️</button></div>
   <canvas id="fx"></canvas>
   <button id="update" class="update" hidden>✨ New version! Tap to update <small id="upd-v"></small></button>
 </div>

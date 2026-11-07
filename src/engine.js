@@ -61,6 +61,8 @@ export function buildTrack(track) {
     for (const side of [-1, 1]) if (r() < 0.75) segs[i].sprites.push({ type: types[Math.floor(r() * types.length)], offset: side * (1.4 + r() * 2.2) });
   }
   for (const s of [-1, 1]) segs[START + 8].sprites = [{ type: "sign", offset: s * 1.75 }];
+  for (const s of segs) if (Math.abs(s.curve) > 1.5) s.rail = true;
+  for (let i = START + 20; i < segs.length; i += 24) if (!segs[i].rail) segs[i].sprites.push({ type: "lamp", offset: (i / 24) % 2 ? 1.25 : -1.25 });
   segs[START].finish = segs[START + 1].finish = true;
 
   for (let i = START + 40; i < segs.length - 25; i += 50 + Math.floor(r() * 45)) {
@@ -412,6 +414,7 @@ export class Race {
       ctx.globalAlpha = n > DRAW_DIST * 0.65 ? Math.max(0, (DRAW_DIST - n) / (DRAW_DIST * 0.35)) : 1;
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
       if (s.index === START) this.drawArch(ctx, s, F);
+      if (s.rail) this.drawRails(ctx, s, F);
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
@@ -444,7 +447,7 @@ export class Race {
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
     }
     ctx.globalAlpha = 1;
-    drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0 });
+    drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900 });
     if (this.autoTarget !== null) {
       const segs2 = this.T.segs, pidx = pseg.index;
       ctx.fillStyle = "rgba(255,255,255,0.8)";
@@ -500,10 +503,25 @@ export class Race {
     const w = sc * CAR_W * ROAD_W * F;
     if (x + w < 0 || x - w > this.canvas.width) return;
     const steer = c.knockT > 0 ? Math.sin(this.t * 30) * 4 : clamp((c.lane - c.offset) * 3, -1, 1);
-    this.clipped(ctx, s, y, () => drawCar(ctx, x, y, w, c.def, { t: this.t, steer }));
+    this.clipped(ctx, s, y, () => drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900 }));
   }
 
   // The ramp is a striped slope from the road surface up to RAMP_H at its far end.
+  // Guardrails on curvy stretches: a silver band on short posts just outside both rumble strips.
+  drawRails(ctx, s, F) {
+    if (s.p1.camera.z <= CAM_DEPTH || s.p2.camera.z <= CAM_DEPTH) return;
+    const a = s.p1.screen, b = s.p2.screen, ha = a.scale * 260 * F, hb = b.scale * 260 * F;
+    if (ha < 0.6) return;
+    this.clipped(ctx, s, a.y, () => {
+      for (const side of [-1, 1]) {
+        const xa = a.x + side * a.w * 1.22, xb = b.x + side * b.w * 1.22;
+        if (s.index % 2 === 0) { ctx.fillStyle = "#6d7480"; ctx.fillRect(xa - ha * 0.12, a.y - ha, ha * 0.24, ha); }
+        ctx.fillStyle = s.alt ? "#e6ebf1" : "#c9d1db";
+        quad(ctx, xa, a.y - ha, xb, b.y - hb, xb, b.y - hb * 0.55, xa, a.y - ha * 0.55);
+      }
+    });
+  }
+
   // Start/finish arch: two poles and a checkered banner over the road.
   drawArch(ctx, s, F) {
     const sc = s.p1.screen.scale, x = s.p1.screen.x, w = s.p1.screen.w, y = s.p1.screen.y;
@@ -555,7 +573,13 @@ export class Race {
         const a2 = x2 - w2 + (2 * w2 * c) / cols, b2 = x2 - w2 + (2 * w2 * (c + 1)) / cols;
         quad(ctx, a1, y1, b1, y1, b2, y2, a2, y2);
       }
-    } else if (a === 0) {
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      const e1 = w1 * 0.035, e2 = w2 * 0.035;
+      quad(ctx, x1 - w1 + e1, y1, x1 - w1 + 2 * e1, y1, x2 - w2 + 2 * e2, y2, x2 - w2 + e2, y2);
+      quad(ctx, x1 + w1 - 2 * e1, y1, x1 + w1 - e1, y1, x2 + w2 - e2, y2, x2 + w2 - 2 * e2, y2);
+    }
+    if (!s.finish && a === 0) {
       ctx.fillStyle = th.lane;
       const l1 = w1 / 32, l2 = w2 / 32;
       for (let lane = 1; lane < LANES; lane++) {
