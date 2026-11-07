@@ -1,0 +1,94 @@
+// Turbo Lab: Professor Bolt researches permanent boosts for every car. Real-time timers that keep going while
+// the tablet is off. Paid with coins only; a running project can be rushed for extra coins.
+import { RESEARCH, researchCost, researchTime, benchesFor } from "./data.js";
+import { S, save } from "./save.js";
+
+const fmt = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
+export const levelOf = id => S.research[id] || 0;
+
+export function createLab({ $, sfx, spend, celebrate, onChange }) {
+  const benches = () => {
+    const n = benchesFor(S.rank);
+    while (S.lab.benches.length < n) S.lab.benches.push({ p: null, end: 0 });
+    return S.lab.benches.slice(0, n);
+  };
+  const busy = id => benches().some(b => b.p === id);
+  const left = b => (b.end - Date.now()) / 1000;
+  const doneBenches = () => benches().filter(b => b.p && left(b) <= 0);
+  const freeBench = () => benches().find(b => !b.p);
+  const rushCost = b => Math.max(10, Math.ceil(left(b) / 60) * 30);
+
+  function start(r) {
+    const lvl = levelOf(r.id), bench = freeBench();
+    if (S.rank < r.rank || lvl >= r.max || busy(r.id)) { sfx("nope"); return; }
+    if (!bench) { sfx("nope"); flash("bench"); return; }
+    if (!spend(researchCost(r, lvl))) return;
+    bench.p = r.id; bench.end = Date.now() + researchTime(r, lvl) * 1000;
+    save(); sfx("buy"); render(); onChange();
+  }
+  function collect(b) {
+    const r = RESEARCH.find(x => x.id === b.p);
+    S.research[r.id] = levelOf(r.id) + 1;
+    b.p = null; b.end = 0; save();
+    sfx("chest"); celebrate(); render(); onChange();
+  }
+  function rush(b) {
+    if (!spend(rushCost(b))) return;
+    b.end = Date.now(); save(); collect(b);
+  }
+  function flash(what) { const el = $("lab-benches"); el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+
+  function render() {
+    const bs = benches();
+    $("lab-benches").innerHTML = bs.map((b, i) => {
+      if (!b.p) return `<div class="bench empty"><div class="bi">🧪</div><b>Bench ${i + 1}</b><small>Pick research below!</small></div>`;
+      const r = RESEARCH.find(x => x.id === b.p), t = left(b), total = researchTime(r, levelOf(r.id));
+      if (t <= 0) return `<button class="bench done" data-collect="${i}"><div class="bi">${r.icon}</div><b>${r.name}</b><span class="collect">✔ Tap to collect!</span></button>`;
+      return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name} ${levelOf(r.id) + 1}</b>
+        <div class="bar"><i style="width:${Math.round(100 * (1 - t / total))}%"></i></div><span class="timer" data-timer="${i}">⏱ ${fmt(t)}</span>
+        <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
+    }).join("") + (bs.length < 3 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${bs.length === 1 ? 4 : 9}</small></div>` : "");
+
+    const tiers = [1, 2];
+    $("lab-list").innerHTML = tiers.map(tier => {
+      const items = RESEARCH.filter(r => r.tier === tier), needRank = items[0].rank, open = S.rank >= needRank;
+      return `<div class="tier-head">${open ? "⚗️" : "🔒"} Lab tier ${tier}${open ? "" : ` — Rank ${needRank}`}</div>` + items.map(r => {
+        const lvl = levelOf(r.id), max = lvl >= r.max, running = busy(r.id), cost = max ? 0 : researchCost(r, lvl);
+        const can = open && !max && !running && freeBench() && S.coins >= cost;
+        return `<div class="proj ${open ? "" : "locked"} ${max ? "maxed" : ""}">
+          <div class="pi">${r.icon}</div><b>${r.name}</b><small>${r.desc}</small>
+          <div class="plv">Lv ${lvl}/${r.max}</div>
+          <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${max ? "MAX!" : running ? "⏱ Working…" : !open ? "🔒 Rank " + needRank : `🪙${cost} · ⏱${fmt(researchTime(r, lvl))}`}</button></div>`;
+      }).join("");
+    }).join("") + `<div class="tier-head">🔒 Coming later</div>
+      <div class="proj locked teaser"><div class="pi">🤖</div><b>Robot Brain</b><small>Teach the car to think</small><div class="plv">Rank 8</div></div>
+      <div class="proj locked teaser big"><div class="pi">🧠</div><b>AUTO STEER</b><small>The car drives itself… perfectly</small><div class="plv">Lv 0/100 · Rank 10</div></div>`;
+  }
+
+  $("lab-benches").addEventListener("click", e => {
+    const c = e.target.closest("[data-collect]"), r = e.target.closest("[data-rush]");
+    if (c) collect(benches()[+c.dataset.collect]);
+    else if (r) rush(benches()[+r.dataset.rush]);
+  });
+  $("lab-list").addEventListener("click", e => {
+    const b = e.target.closest("[data-start]"); if (!b) return;
+    start(RESEARCH.find(r => r.id === b.dataset.start));
+  });
+
+  // once a second: update countdowns, re-render when something finishes
+  let acc = 0, lastDone = -1;
+  function tick(dt, visible) {
+    acc += dt; if (acc < 1) return; acc = 0;
+    const d = doneBenches().length;
+    if (d !== lastDone) { lastDone = d; if (visible) render(); onChange(); } else if (!visible) onChange();
+    if (visible) for (const el of document.querySelectorAll("[data-timer]")) { const b = benches()[+el.dataset.timer]; if (b && b.p) el.textContent = "⏱ " + fmt(left(b)); }
+  }
+  const status = () => {
+    const bs = benches(), running = bs.filter(b => b.p);
+    if (!bs.length) return { done: false, text: "" };
+    if (doneBenches().length) return { done: true, text: "DONE!" };
+    if (running.length) return { done: false, text: fmt(Math.min(...running.map(left))) };
+    return { done: false, text: "", idle: true };
+  };
+  return { open: render, render, tick, status };
+}

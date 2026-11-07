@@ -48,9 +48,9 @@ export const prizeFor = (track, place, diff = "normal") => {
   return Math.round(top * diffOf(diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] / 5) * 5;
 };
 // Upgrades on fancier cars cost a little more.
-export const upgradeCost = (carId, lvl) => {
+export const upgradeCost = (carId, lvl, pitCrew = 0) => {
   const i = Math.max(0, CARS.findIndex(c => c.id === carId));
-  return Math.round(UPGRADE_COST[lvl] * (1 + 0.2 * i) / 10) * 10;
+  return Math.round(UPGRADE_COST[lvl] * (1 + 0.2 * i) * (1 - 0.03 * pitCrew) / 10) * 10;
 };
 
 export const THEMES = {
@@ -79,6 +79,9 @@ export const PAINTS = [
   { id: "chrome", name: "Chrome", color: "#c9d6e3", price: 500, shiny: true },
   { id: "gold", name: "Gold", color: "#f5b301", price: 800, shiny: true },
   { id: "rainbow", name: "Rainbow", color: "#ff3fa4", price: 1200, rainbow: true },
+  { id: "neonGreen", name: "Neon Green", color: "#39ff14", price: 900, shiny: true, lab: "superPaint" },
+  { id: "neonPink", name: "Neon Pink", color: "#ff2bd6", price: 900, shiny: true, lab: "superPaint" },
+  { id: "neonBlue", name: "Neon Blue", color: "#14e1ff", price: 900, shiny: true, lab: "superPaint" },
 ];
 export const STICKERS = [
   { id: "none", name: "None", icon: "✖", price: 0 },
@@ -107,6 +110,10 @@ export const GOALS = [
   { id: "tracks", icon: "🗺️", name: "Open every track", goal: TRACKS.length, reward: 500, have: tracksOpen },
   { id: "golds", icon: "🥇", name: "Win on every track", goal: TRACKS.length, reward: 1500, have: S => TRACKS.filter(t => S.best[t.id] === 1).length },
   { id: "gift3", icon: "🎁", name: "Open gifts 3 days in a row", goal: 3, reward: 300, have: S => S.giftStreak },
+  { id: "lab1", icon: "🔬", name: "Finish a research", goal: 1, reward: 150, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
+  { id: "lab10", icon: "🔬", name: "Finish 10 research levels", goal: 10, reward: 500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
+  { id: "lab30", icon: "🔬", name: "Finish 30 research levels", goal: 30, reward: 1500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
+  { id: "rank5", icon: "⭐", name: "Reach Rank 5", goal: 5, reward: 600, have: S => S.rank },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
@@ -139,3 +146,20 @@ export const FRONTS = [
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
     have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
 ];
+
+/* ---------- Turbo Lab research. Real-time timers; levels count toward the Research rank gauge. ---------- */
+// tier: lab tier (needs that rank). cost/time grow 45% / 35% per level. Effects are read through S.research[id].
+export const RESEARCH = [
+  { id: "coinBoost", tier: 1, rank: 2, max: 10, icon: "🪙", name: "Coin Boost", desc: "+5% race prizes", c0: 200, t0: 120 },
+  { id: "luckyChests", tier: 1, rank: 2, max: 5, icon: "🎁", name: "Lucky Chests", desc: "Bigger treasure chests", c0: 250, t0: 150 },
+  { id: "headStart", tier: 1, rank: 2, max: 5, icon: "🚦", name: "Head Start", desc: "Start races with Turbo", c0: 300, t0: 180 },
+  { id: "pitCrew", tier: 1, rank: 2, max: 10, icon: "🔧", name: "Pit Crew", desc: "Upgrades 3% cheaper", c0: 250, t0: 150 },
+  { id: "turboTanks", tier: 2, rank: 6, max: 10, icon: "🚀", name: "Turbo Tanks", desc: "Turbo lasts longer", c0: 600, t0: 300 },
+  { id: "bigRamps", tier: 2, rank: 6, max: 5, icon: "🦘", name: "Bigger Ramps", desc: "Jump higher", c0: 700, t0: 300 },
+  { id: "bumper", tier: 2, rank: 6, max: 5, icon: "🛡️", name: "Bumper Shield", desc: "Bonks slow you less", c0: 600, t0: 300 },
+  { id: "magnetField", tier: 2, rank: 6, max: 10, icon: "🧲", name: "Magnet Field", desc: "Every car grabs more", c0: 650, t0: 300 },
+  { id: "superPaint", tier: 2, rank: 6, max: 1, icon: "✨", name: "Super Paint", desc: "Neon paints", c0: 1500, t0: 600 },
+];
+export const researchCost = (r, lvl) => Math.round(r.c0 * Math.pow(1.45, lvl) / 10) * 10;      // lvl = current level (0-based next)
+export const researchTime = (r, lvl) => Math.round(r.t0 * Math.pow(1.35, lvl));                 // seconds
+export const benchesFor = rank => rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;

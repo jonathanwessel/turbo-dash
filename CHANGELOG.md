@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.0 — Turbo Lab
+
+- **The Turbo Lab opens at Rank 2.** Professor Bolt researches boosts that help **every** car. Research costs
+  coins and takes real time (2 minutes at first, longer for higher levels), and keeps going while the tablet is
+  off. Tap **Rush** to finish now for a few coins.
+- **Lab tier 1 (Rank 2):** Coin Boost (+5% prizes per level), Lucky Chests, Head Start (start with Turbo),
+  Pit Crew (cheaper upgrades).
+- **Lab tier 2 (Rank 6):** Turbo Tanks, Bigger Ramps, Bumper Shield, Magnet Field, and Super Paint (unlocks
+  three Neon paints in the Paint Shop).
+- **Lab benches:** one at Rank 2, a second at Rank 4, a third at Rank 9.
+- Every finished research level fills the 🔬 Research gauge for ranking up.
+- New goals: finish 1, 10 and 30 research levels; reach Rank 5.
+- Robot Brain and the 100-level **AUTO STEER** are on display in the lab as locked machines to work toward.
+
+**Polish**
+- Bubbling tubes in the lab and on the town's lab building; Professor Bolt bobs and talks to Carter.
+- The lab building in town shows a countdown, then a red "!" when research is done or a bench is free.
+
 ## v0.5.0 — Turbo Town, Racer Rank & Difficulty
 
 - **Turbo Town**: the home screen is now a little town. Tap the **Race Track**, **Garage**, **Gifts**,

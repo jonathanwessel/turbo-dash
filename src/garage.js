@@ -42,7 +42,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
   function renderUps(car, owned) {
     const ups = upsOf(car.id);
     $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : "Buy " + car.name + " to upgrade it!"}</div>` + UPGRADES.map(u => {
-      const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = max ? 0 : upgradeCost(car.id, lvl);
+      const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = max ? 0 : upgradeCost(car.id, lvl, S.research.pitCrew || 0);
       return `<div class="up-card" data-up="${u.id}"><div class="up-icon">${u.icon}</div><b>${u.name}</b><small>${u.desc}</small>
         <div class="pips">${Array.from({ length: UPGRADE_MAX }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>
         <button class="up-buy ${max ? "max" : owned && S.coins >= cost ? "" : "poor"}" data-buy="${u.id}">${max ? "MAX!" : owned ? "🪙 " + cost : "🔒 " + cost}</button></div>`;
@@ -55,7 +55,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     const label = (has, price) => has ? "" : `<small class="${S.coins >= price ? "" : "poor"}">🪙${price}</small>`;
     $("g-paint").innerHTML = (owned ? "" : `<div class="g-note">Buy ${car.name} first to paint it!</div>`) +
       `<div class="sw-title">🎨 Paint</div><div class="swatches">` +
-      PAINTS.map(p => { const has = S.paints.includes(p.id); return `<button class="sw ${cur === p.id ? "on" : ""} ${has ? "" : "locked"}" data-paint="${p.id}" title="${p.name}"><i style="background:${swatch(p)}"></i>${label(has, p.price)}</button>`; }).join("") +
+      PAINTS.map(p => { const has = S.paints.includes(p.id), lab = p.lab && !S.research[p.lab]; return `<button class="sw ${cur === p.id ? "on" : ""} ${has ? "" : "locked"} ${lab ? "lablock" : ""}" data-paint="${p.id}" title="${p.name}"><i style="background:${swatch(p)}">${lab ? "🔬" : ""}</i>${lab ? "<small>Lab</small>" : label(has, p.price)}</button>`; }).join("") +
       `</div><div class="sw-title">✨ Stickers</div><div class="swatches">` +
       STICKERS.map(k => { const has = S.stickers.includes(k.id); return `<button class="sw st ${curS === k.id ? "on" : ""} ${has ? "" : "locked"}" data-sticker="${k.id}" title="${k.name}"><i>${k.icon}</i>${label(has, k.price)}</button>`; }).join("") +
       `</div>`;
@@ -83,7 +83,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { sfx("nope"); return; }
     const ups = upsOf(car.id), id = b.dataset.buy, lvl = ups[id];
     if (lvl >= UPGRADE_MAX) { sfx("click"); return; }
-    if (!spend(upgradeCost(car.id, lvl))) return;
+    if (!spend(upgradeCost(car.id, lvl, S.research.pitCrew || 0))) return;
     ups[id]++; save(); sfx("buy");
     render();
     $("g-ups").querySelector(`[data-up="${id}"]`)?.classList.add("flash");
@@ -95,6 +95,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { sfx("nope"); return; }
     const isPaint = !!b.dataset.paint, id = b.dataset.paint || b.dataset.sticker;
     const list = isPaint ? S.paints : S.stickers, item = (isPaint ? PAINTS : STICKERS).find(x => x.id === id);
+    if (item.lab && !S.research[item.lab]) { sfx("nope"); return; }
     if (!list.includes(id)) {
       if (!spend(item.price)) return;
       list.push(id); sfx("buy"); celebrate();
@@ -114,6 +115,6 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.fillText("🔒", W - 8, H * 0.2); }
   }
 
-  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id])));
+  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
   return { open, render, draw, affordable };
 }

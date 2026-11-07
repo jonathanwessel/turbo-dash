@@ -246,7 +246,7 @@ export class Race {
     const p = this.player, S = this.stats;
     if (this.state === "demo") return;
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
-      p.air = 1; p.vy = JUMP_VY; p.airT = 0; this.hooks.sfx("jump");
+      p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1); p.airT = 0; this.hooks.sfx("jump");
     }
     for (const c of s.coins) {
       const reach = c.h ? p.air > 120 : p.air < 200;

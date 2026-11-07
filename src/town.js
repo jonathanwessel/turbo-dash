@@ -61,7 +61,8 @@ const lab = () => `
   <line x1="1205" y1="${BASE - 315}" x2="1205" y2="${BASE - 370}" stroke="#555" stroke-width="6"/><circle class="blink" cx="1205" cy="${BASE - 372}" r="12" fill="#ff3d3d"/>
   ${win(1105, BASE - 175, 44, 50)}${win(1260, BASE - 175, 44, 50)}
   <rect x="1170" y="${BASE - 110}" width="70" height="110" rx="8" fill="#1b6f7a"/>
-  <g class="tubes">${[0, 1, 2].map(i => `<rect x="${1110 + i * 34}" y="${BASE - 95}" width="22" height="70" rx="11" fill="#fff" opacity=".8"/><rect x="${1113 + i * 34}" y="${BASE - 60}" width="16" height="32" rx="8" fill="${["#5be36a", "#ff3fa4", "#ffd400"][i]}"/>`).join("")}</g>
+  <g class="tubes bubbling">${[0, 1, 2].map(i => `<rect x="${1110 + i * 34}" y="${BASE - 95}" width="22" height="70" rx="11" fill="#fff" opacity=".8"/><rect x="${1113 + i * 34}" y="${BASE - 60}" width="16" height="32" rx="8" fill="${["#5be36a", "#ff3fa4", "#ffd400"][i]}"/>`).join("")}</g>
+  <text x="1205" y="${BASE - 282}" class="lbl" font-size="30" id="lab-timer"></text>
   ${sign(1205, BASE - 270, 230, "TURBO LAB", "#ffd400", 34)}
   <g id="lab-lock">
     <rect x="1080" y="${BASE - 220}" width="250" height="220" fill="rgba(0,0,0,.35)"/>

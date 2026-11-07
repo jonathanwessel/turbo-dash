@@ -287,3 +287,52 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 /* polish: screens and cards bounce in */
 .screen:not([hidden]) > .card, .screen.panel:not([hidden]) > * { animation: popin .28s ease-out; }
 @keyframes popin { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- v0.6: Turbo Lab ---------- */
+.lab { flex: 1; width: 100%; min-height: 0; display: flex; gap: 16px; }
+.lab-left { flex: 0 0 auto; width: min(40%, 400px); display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.prof { display: flex; align-items: center; gap: 10px; }
+.robot { font-size: clamp(50px, 13vmin, 84px); animation: bob 1.2s ease-in-out infinite alternate; }
+.speech { position: relative; background: #fff; color: #2a1460; font-weight: 900; font-size: clamp(14px, 3.8vmin, 19px); border-radius: 18px; padding: 8px 14px; }
+.speech::before { content: ""; position: absolute; left: -12px; top: 50%; border: 8px solid transparent; border-right: 14px solid #fff; transform: translateY(-50%); }
+.machine { display: flex; gap: 10px; justify-content: center; height: 44px; }
+.machine i { width: 26px; border-radius: 13px; background: rgba(255,255,255,.25); border: 3px solid #fff; position: relative; overflow: hidden; }
+.machine i::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60%; animation: fill 1.6s ease-in-out infinite alternate; }
+.machine i:nth-child(1)::after { background: #5be36a; } .machine i:nth-child(2)::after { background: #ff3fa4; animation-delay: .4s; }
+.machine i:nth-child(3)::after { background: #ffd400; animation-delay: .8s; } .machine i:nth-child(4)::after { background: #3cf2ff; animation-delay: 1.2s; }
+@keyframes fill { from { height: 25%; } to { height: 90%; } }
+.benches { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; }
+.benches.shake { animation: shake .4s; }
+.bench { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; column-gap: 10px; align-items: center; text-align: left;
+  background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.3); border-radius: 18px; padding: 8px 12px; }
+.bench .bi { grid-row: 1 / 4; font-size: 38px; }
+.bench .bi.spin { animation: wiggle 1.2s ease-in-out infinite; }
+.bench b { font-size: 18px; }
+.bench small { opacity: .8; }
+.bench .bar { margin: 3px 0; }
+.bench .timer { font-weight: 900; font-size: 16px; }
+.bench .rush { justify-self: start; margin-top: 4px; font-weight: 900; font-size: 14px; padding: 4px 10px; border-radius: 10px; background: #ff7a00; color: #fff; }
+.bench.done { border-color: #5be36a; background: rgba(91,227,106,.2); animation: pulse .6s ease-in-out infinite alternate; width: 100%; color: #fff; }
+.bench.done .collect { font-weight: 900; color: #5be36a; font-size: 18px; }
+.bench.locked { opacity: .5; }
+.lab-list { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-content: start; touch-action: pan-y; padding-right: 4px; }
+.tier-head { grid-column: 1 / -1; font-weight: 900; font-size: 18px; color: #ffd400; margin-top: 4px; }
+.proj { background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.3); border-radius: 18px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.proj .pi { font-size: 34px; line-height: 1.1; }
+.proj b { font-size: 16px; }
+.proj small { font-size: 12px; opacity: .8; }
+.proj .plv { font-weight: 900; font-size: 13px; color: #ffd400; }
+.proj .pbtn { margin-top: 3px; font-weight: 900; font-size: 13px; padding: 5px 8px; border-radius: 12px; background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; }
+.proj .pbtn.poor { background: #5a4a7a; color: #cfc6e6; }
+.proj.locked { opacity: .5; }
+.proj.maxed { border-color: #5be36a; }
+.proj.teaser.big { grid-column: span 2; border-color: #ff3fe5; background: linear-gradient(135deg, rgba(255,63,229,.2), rgba(60,242,255,.2)); opacity: .8; }
+.proj.teaser.big .pi { font-size: 50px; }
+#town .bubbling rect:nth-child(even) { animation: fill2 1.4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes fill2 { from { transform: scaleY(.5); } to { transform: scaleY(1.1); } }
+.sw.lablock i { opacity: .4; }
+@media (orientation: portrait) {
+  .lab { flex-direction: column; overflow-y: auto; }
+  .lab-left { width: 100%; }
+  .lab-list { overflow: visible; }
+}

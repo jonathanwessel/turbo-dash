@@ -2,6 +2,7 @@ import { CARS, TRACKS, THEMES, GOALS, PLAYER, DIFFS, diffOf, FRONTS, RANK_CAP, R
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
+import { createLab } from "./lab.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
@@ -39,6 +40,7 @@ function frame(now) {
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
+  lab.tick(dt, screen === "s-lab");
   requestAnimationFrame(frame);
 }
 
@@ -62,7 +64,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -195,7 +197,7 @@ $("track-list").addEventListener("click", e => {
 let chestValues = [], chestDone = false;
 function showResult(r) {
   const ti = TRACKS.indexOf(currentTrack), wasOpen = unlocked(ti + 1);
-  const prize = prizeFor(currentTrack, r.place, S.diff);
+  const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
   S.races++; if (r.place === 1) S.wins++;
   S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
   const dk = currentTrack.id + ":" + S.diff;
@@ -215,7 +217,7 @@ function showResult(r) {
   const next = TRACKS[ti + 1], nowOpen = next && unlocked(ti + 1);
   $("r-unlock").hidden = !(nowOpen && !wasOpen);
   if (nowOpen && !wasOpen) $("r-unlock").textContent = `🔓 New track: ${next.icon} ${next.name}!`;
-  const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay);
+  const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay * (1 + 0.15 * (S.research.luckyChests || 0)));
   chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
@@ -329,6 +331,8 @@ const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
 function refreshHub() {
   tb("tb-gift", giftReady()); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
+  const ls = lab.status();
+  tb("tb-lab", S.rank >= 2 && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
   $("town").setAttribute("preserveAspectRatio", innerHeight > innerWidth ? "xMidYMid meet" : "xMidYMax slice");
 }
@@ -344,8 +348,9 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
 });
-// The Turbo Lab arrives in the next release; until then it shows its sign and a "soon" note.
-function openLab() { $("rk-hint").textContent = ""; openRank(); $("rk-next").textContent = "🔬 The Turbo Lab opens in the next update!"; }
+const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { if (screen === "s-hub") refreshHub(); } });
+const PROF = ["Hi " + PLAYER + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + PLAYER + "!"];
+function openLab() { $("prof-say").textContent = PROF[Math.floor(Math.random() * PROF.length)]; lab.open(); show("s-lab"); }
 function goHub() {
   show("s-hub");
   if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(openGift, 400); }
