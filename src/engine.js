@@ -1,6 +1,6 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, diffOf } from "./data.js";
-import { drawCar, drawSprite, drawCoin, drawBackground, SPRITES } from "./draw.js";
+import { drawCar, drawSprite, drawCoin, drawBackground, drawBox, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
 export const BASE_MAX = 10000;     // starter car top speed (world units / s)
@@ -29,7 +29,7 @@ export function buildTrack(track) {
   const lastY = () => segs.length ? segs[segs.length - 1].p2.world.y : 0;
   const add = (curve, y) => {
     const n = segs.length;
-    segs.push({ index: n, curve, alt: Math.floor(n / RUMBLE) % 2, sprites: [], coins: [], boost: null, finish: false, clip: 0,
+    segs.push({ index: n, curve, alt: Math.floor(n / RUMBLE) % 2, sprites: [], coins: [], boost: null, boxes: null, finish: false, clip: 0,
       p1: { world: { y: lastY(), z: n * SEG }, camera: {}, screen: {} }, p2: { world: { y, z: (n + 1) * SEG }, camera: {}, screen: {} } });
   };
   const road = (enter, hold, leave, curve, hill) => {
@@ -82,6 +82,14 @@ export function buildTrack(track) {
     for (let j = 0; j < 7; j++) segs[k + RAMP_LEN + 2 + j * 3].coins.push({ offset: lane, taken: false, h: RAMP_H * 0.6 + 380 * Math.sin(Math.PI * (j + 0.5) / 7) });
     i = k;
   }
+  // power-up boxes: a row of three across the road, a few times per lap
+  for (let i = START + 70; i < segs.length - 40; i += 170 + Math.floor(r() * 90)) {
+    let k = i;
+    while (k < segs.length - 40 && segs.slice(k - 3, k + 3).some(q => q.ramp || q.boost !== null || q.coins.length)) k++;
+    if (k >= segs.length - 40) break;
+    segs[k].boxes = [-0.6, 0, 0.6].map(o => ({ offset: o, until: 0 }));
+    i = k;
+  }
   const T = { segs, length: segs.length * SEG, theme: th, track };
   trackCache.set(track.id, T);
   return T;
@@ -109,14 +117,16 @@ export class Race {
     this.T = buildTrack(track);
     this.diff = diffOf(opts.diff);
     this.assist = Math.max(this.diff.assist, opts.helper || 0);
-    for (const s of this.T.segs) for (const c of s.coins) c.taken = false;
+    for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
+    this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
+    this.hooks.onPower?.(null);
     this.track = track; this.mode = mode; this.stats = stats;
     this.state = mode === "demo" ? "demo" : "countdown";
     this.count = 3.6; this.raceTime = 0;
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
@@ -130,6 +140,18 @@ export class Race {
 
   segAt(dist) { const s = this.T.segs; return s[Math.floor(mod(this.startZ + dist, this.T.length) / SEG) % s.length]; }
   popup(text, color = "#fff") { this.popups.push({ text, color, age: 0, x: (Math.random() - 0.5) * 0.2 }); }
+  /* Power-ups (no weapons): shield, coin shower, mega magnet, super turbo. */
+  usePower() {
+    if (this.state !== "race" || this.player.finished || !this.power) return false;
+    const p = this.power; this.power = null; this.hooks.onPower?.(null); this.runStats.powers++;
+    if (p === "shield") { this.shieldT = 5; this.popup("SHIELD!", "#3cf2ff"); this.hooks.sfx("boost"); }
+    else if (p === "coins") { this.coins += 8; this.popup("+8 COINS!", "#ffd400"); for (let i = 0; i < 6; i++) setTimeout(() => this.hooks.sfx("coin"), i * 70); }
+    else if (p === "magnet") { this.magnetT = 8; this.popup("MEGA MAGNET!", "#ff3fa4"); this.hooks.sfx("boost"); }
+    else if (p === "turbo") { this.nitroT = this.stats.nitroTime * 1.6; this.popup("SUPER TURBO!", "#ff7a00"); this.hooks.sfx("nitro"); }
+    return true;
+  }
+  sparks(x, y, n, color) { for (let i = 0; i < n; i++) this.parts.push({ x, y, vx: (Math.random() - 0.5) * 2, vy: -Math.random() * 1.4, life: 0.5 + Math.random() * 0.3, c: color, r: 0.006 + Math.random() * 0.006 }); }
+
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
     this.nitro = 0; this.nitroT = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
@@ -191,7 +213,11 @@ export class Race {
     this.prevIdx = cur;
 
     if (racing && !p.finished) this.nitro = Math.min(1, this.nitro + S.nitroFill * dt);
-    this.nitroT -= dt; this.boostT -= dt; this.bonkCD -= dt; this.bumpCD -= dt;
+    this.nitroT -= dt; this.boostT -= dt; this.bonkCD -= dt; this.bumpCD -= dt; this.shieldT -= dt; this.magnetT -= dt;
+    // little effects in screen units (0..1): dust off the road
+    if (Math.abs(p.offset) > 1 && p.air <= 0 && p.speed > BASE_MAX * 0.2 && Math.random() < 0.8) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.22, y: 0.97, vx: (Math.random() - 0.5) * 0.3, vy: -0.25 - Math.random() * 0.2, life: 0.6, c: "dust", r: 0.02 + Math.random() * 0.02 });
+    for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 0.8 * dt; }
+    this.parts = this.parts.filter(q => q.life > 0);
 
     // rivals
     const d = this.track.diff;
@@ -223,14 +249,15 @@ export class Race {
       // bumping into each other
       const g = c.dist - p.dist;
       if (this.state !== "demo" && Math.abs(p.air - c.air) < 250 && Math.abs(g) < SEG * 0.9 && overlap(p.offset, CAR_W, c.offset, CAR_W * 0.9)) {
-        if (fast) {
+        if (fast || this.shieldT > 0) {
           if (c.knockT <= 0) {
+            this.sparks(0.5, 0.78, 14, "#ffd400");
             c.offset += (c.offset >= p.offset ? 1 : -1) * 0.7; c.lane = clamp(c.offset, -0.8, 0.8); c.knockT = 1;
             this.popup("BAM!", "#ff6b3d"); h.sfx("bam"); this.shake = 0.2; this.runStats.bams++;
           }
         } else if (g > 0 && p.speed > c.speed) {
           p.speed = c.speed * 0.9; p.dist = c.dist - SEG * 0.9;
-          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; }
+          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; this.sparks(0.5, 0.78, 8, "#fff6a8"); }
         } else if (g <= 0 && c.speed > p.speed) { c.speed = p.speed * 0.9; c.dist = p.dist - SEG * 0.9; }
       }
     }
@@ -253,16 +280,25 @@ export class Race {
     }
     for (const c of s.coins) {
       const reach = c.h ? p.air > 120 : p.air < 200;
-      if (!c.taken && reach && Math.abs(c.offset - p.offset) < CAR_W * 0.5 + 0.1 + S.magnet) {
+      if (!c.taken && reach && Math.abs(c.offset - p.offset) < CAR_W * 0.5 + 0.1 + S.magnet + (this.magnetT > 0 ? 1.4 : 0)) {
         c.taken = true; this.coins++; this.nitro = Math.min(1, this.nitro + 0.012); this.hooks.sfx("coin");
         if (this.coins % 5 === 0) this.popup("+" + this.coins, "#ffd400");
+      }
+    }
+    if (s.boxes && p.air < 200) for (const b of s.boxes) {
+      if (b.until > this.t || Math.abs(b.offset - p.offset) > CAR_W * 0.5 + 0.12) continue;
+      b.until = this.t + 6;
+      if (!this.power) {
+        const r = Math.random();
+        this.power = r < 0.3 ? "shield" : r < 0.55 ? "coins" : r < 0.8 ? "magnet" : "turbo";
+        this.hooks.onPower?.(this.power); this.hooks.sfx("chest"); this.popup("?!", "#ffffff");
       }
     }
     if (s.boost !== null && Math.abs(p.offset - s.boost) < 0.36) {
       if (this.boostT <= 0.3) { this.hooks.sfx("boost"); this.popup("BOOST!", "#3cf2ff"); }
       this.boostT = 1.2;
     }
-    if (p.air <= 0 && Math.abs(p.offset) > 1 && this.bonkCD <= 0) {
+    if (p.air <= 0 && Math.abs(p.offset) > 1 && this.bonkCD <= 0 && this.shieldT <= 0) {
       for (const spr of s.sprites) {
         const info = SPRITES[spr.type];
         if (info.collide && overlap(p.offset, CAR_W, spr.offset, info.w / ROAD_W * 0.6)) {
@@ -348,6 +384,11 @@ export class Race {
         const cw = sc * COIN_W * F, cx = s.p1.screen.x + s.p1.screen.w * c.offset, cy = sy - cw * 0.9 - (c.h ? sc * c.h * F : 0);
         this.clipped(ctx, s, sy, () => drawCoin(ctx, cx, cy, cw, t));
       }
+      if (s.boxes) for (const b of s.boxes) {
+        if (b.until > t) continue;
+        const bw = sc * 420 * F, bx = s.p1.screen.x + s.p1.screen.w * b.offset;
+        this.clipped(ctx, s, sy, () => drawBox(ctx, bx, sy - bw * 0.85, bw, t));
+      }
       const list = bySeg.get(s.index);
       if (list) for (const it of list) this.drawRival(ctx, it, F);
     }
@@ -357,7 +398,20 @@ export class Race {
     const bounce = Math.abs(p.offset) > 1 && p.speed > 100 ? (Math.random() - 0.5) * H * 0.012 : Math.sin(t * 20) * H * 0.002 * Math.min(1, p.speed / BASE_MAX);
     const lift = p.air * 0.45 / CAM_H * F;
     if (p.air > 0) { ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(W / 2, H - H * 0.01, pw * 0.5 * (1 - Math.min(0.5, p.air / 1500)), pw * 0.06, 0, 0, 7); ctx.fill(); }
+    const dustCol = th.grass[0];
+    for (const q of this.parts) {
+      ctx.globalAlpha = Math.min(1, q.life * 2);
+      ctx.fillStyle = q.c === "dust" ? dustCol : q.c;
+      ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H * (q.c === "dust" ? 1.5 - q.life : 1), 0, 7); ctx.fill();
+      if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
     drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0 });
+    if (this.shieldT > 0) {
+      const a = this.shieldT < 1.5 ? (Math.sin(t * 30) > 0 ? 0.9 : 0.3) : 0.9;
+      ctx.globalAlpha = a; ctx.strokeStyle = "#3cf2ff"; ctx.lineWidth = H * 0.008; ctx.fillStyle = "rgba(60,242,255,0.15)";
+      ctx.beginPath(); ctx.ellipse(W / 2, H - H * 0.02 - lift - pw * 0.28, pw * 0.68, pw * 0.42, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+    }
     behind.sort((a, b) => b.c.dist - a.c.dist);
     for (const it of behind) this.drawRival(ctx, it, F);
 

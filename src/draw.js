@@ -351,3 +351,14 @@ function hills(ctx, W, H, hz, col, off, amp, freq, seed) {
   }
   ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
 }
+
+/* Power-up box: a spinning, color-changing block with a question mark and a soft glow. */
+export function drawBox(ctx, x, y, w, t) {
+  if (w < 2) return;
+  ctx.fillStyle = "rgba(255,255,255,0.28)"; ell(ctx, x, y, w * 0.72, w * 0.72);
+  const sx = 0.6 + 0.4 * Math.abs(Math.cos(t * 2.2 + x * 0.01)), s = w * 0.5;
+  ctx.fillStyle = `hsl(${(t * 140 + x * 0.3) % 360}, 90%, 58%)`;
+  rr(ctx, x - s * sx, y - s, s * 2 * sx, s * 2, s * 0.35);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, w * 0.06); ctx.stroke();
+  if (w > 14) { ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * 0.7)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", x, y + w * 0.04); }
+}

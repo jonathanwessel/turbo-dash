@@ -17,6 +17,7 @@ export function runRace(track, car, ups, diff = "normal", bot = "kid", lab = {})
     const p = race.player, edge = bot === "good" ? 0.25 : 0.7;
     race.input.left = p.offset > edge; race.input.right = p.offset < -edge;
     if (bot === "good" || Math.random() < 0.01) race.useNitro();
+    if (race.power && Math.random() < 0.02) race.usePower();
     race.update(1 / 60);
   }
   race.input.left = race.input.right = false;

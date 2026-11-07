@@ -17,8 +17,10 @@ const STEP = 1 / 60;
 load();
 setAudioOpts({ music: S.music, sfx: S.sfx });
 
+const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "🚀" };
 const race = new Race(canvas, {
   sfx, engine,
+  onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
   onFinish: r => setTimeout(() => showResult(r), 1300),
 });
 
@@ -55,13 +57,14 @@ function holdButton(el, on, off) {
 holdButton($("btn-left"), () => race.input.left = true, () => race.input.left = false);
 holdButton($("btn-right"), () => race.input.right = true, () => race.input.right = false);
 $("btn-nitro").addEventListener("pointerdown", e => { e.preventDefault(); race.useNitro(); });
+$("btn-power").addEventListener("pointerdown", e => { e.preventDefault(); race.usePower(); });
 // Touching the left or right half of the race picture also steers.
 const touches = new Map();
 const touchSteer = () => { let l = false, r = false; for (const v of touches.values()) v ? (r = true) : (l = true); race.input.left = l; race.input.right = r; };
 canvas.addEventListener("pointerdown", e => { if (mode !== "race") return; touches.set(e.pointerId, e.clientX > innerWidth / 2); touchSteer(); });
 for (const ev of ["pointerup", "pointercancel", "pointerleave"]) canvas.addEventListener(ev, e => { if (touches.delete(e.pointerId)) touchSteer(); });
 const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
-addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = true; if ((e.key === " " || e.key === "ArrowUp") && mode === "race") race.useNitro(); if (e.key === "Escape" && mode === "race") pause(); });
+addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = true; if ((e.key === " " || e.key === "ArrowUp") && mode === "race") race.useNitro(); if ((e.key === "Enter" || e.key === "ArrowDown") && mode === "race") race.usePower(); if (e.key === "Escape" && mode === "race") pause(); });
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
@@ -74,7 +77,7 @@ function show(id) {
   if (id === "s-hub") refreshHub();
   paintUpdate();
 }
-function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) $("countdown").hidden = true; }
+function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; } }
 
 function goFullscreen() {
   if (matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || document.fullscreenElement) return;
@@ -285,7 +288,7 @@ function showResult(r) {
   const goalsBefore = claimable().length;
   if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -442,7 +445,7 @@ const PROF = ["Hi " + PLAYER + "! What should we invent?", "Beep boop! Science t
 function openLab() { $("prof-say").textContent = PROF[Math.floor(Math.random() * PROF.length)]; lab.open(); show("s-lab"); }
 function goHub() {
   show("s-hub");
-  if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(openGift, 400); }
+  if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(() => { if (screen === "s-hub") openGift(); }, 400); }
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 

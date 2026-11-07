@@ -9,7 +9,7 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0 }, claimed: [],
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0 }, claimed: [],
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
   research: {},        // projectId -> level (Turbo Lab)

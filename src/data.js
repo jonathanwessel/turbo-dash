@@ -129,6 +129,8 @@ export const GOALS = [
   { id: "cup1", icon: "🏆", name: "Win a cup", goal: 1, reward: 500, have: S => Object.values(S.cups).filter(p => p === 1).length },
   { id: "cupall", icon: "🏆", name: "Win all three cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
   { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => S.chips },
+  { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
+  { id: "power100", icon: "❓", name: "Use 100 power-ups", goal: 100, reward: 800, have: S => S.stats.powers || 0 },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */

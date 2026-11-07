@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.8.0 — Power-Up Boxes
+
+- **? boxes** sit in rows of three across the road a few times every lap. Drive through one to get a power-up,
+  then tap the big pink button (bottom left) to use it:
+  - 🛡️ **Shield**: 5 seconds of no bonks or slow-downs, and rivals bounce off you.
+  - 💰 **Coin Shower**: +8 coins right away.
+  - 🧲 **Mega Magnet**: grabs coins from all over the road for 8 seconds.
+  - 🚀 **Super Turbo**: a longer-than-normal Turbo.
+  - Boxes come back after a few seconds. No weapons, nothing mean.
+- New goals: use 10 and 100 power-ups.
+- Fixed: the daily gift could pop up over a race if one was started right away.
+
+**Polish**
+- Spinning, color-changing boxes with a soft glow.
+- Dust puffs when driving off the road, and sparks when bumping or BAM-ing a rival.
+- The power-up button wiggles so it's easy to spot.
+
 ## v0.7.0 — Cups & Brain Chips
 
 - **Cups open at Rank 5** (Race Track → 🏆 Cups). Three races in a row with points for every place
