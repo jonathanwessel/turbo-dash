@@ -33,7 +33,11 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     const car = CARS[idx], owned = S.owned.includes(car.id), driving = S.car === car.id;
     $("g-name").textContent = car.name + (car.ice ? " ❄️" : "");
     const here = worldOf(car);
-    $("g-worlds").innerHTML = WORLDS.filter(w => CARS.some(c => worldOf(c) === w.id)).map(w => {
+    // like the race screen: the worlds he can race in (or owns a car from), plus just the next one as a goal
+    const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
+    const chips = WORLDS.filter(w => CARS.some(c => worldOf(c) === w.id) && (worldOpen(S, w.id) || (w === nextW && S.rank >= (w.rank || 0) - 5) || CARS.some(c => worldOf(c) === w.id && S.owned.includes(c.id))));
+    $("g-worlds").hidden = chips.length < 2;
+    $("g-worlds").innerHTML = chips.map(w => {
       const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
       return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.icon}</span><small>${mine}/${list.length}</small></button>`;
     }).join("");

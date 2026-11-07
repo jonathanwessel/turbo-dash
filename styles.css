@@ -662,3 +662,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
   .set-grid { margin-top: 10px; gap: 8px; }
   .screen-head .back { transform: scale(.85); transform-origin: top right; }
 }
+/* a locked track card shows just its picture, a big lock and what to win; the rest would pile up under the lock */
+.track-card.locked > :not(.tc-lock):not(.tc-icon) { visibility: hidden; }
+.track-card .tc-lock { background: rgba(0,0,0,.5); align-content: end; padding-bottom: 14%; }
+.g-worlds[hidden] { display: none; }
+.chest i { line-height: 1.15; display: block; }
+.chest b { line-height: 1.1; display: block; }
+.chest.open, .chest.other { gap: 0; }
+.cup-card .cc-cup { line-height: 1.25; margin-bottom: 2px; }

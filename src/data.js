@@ -82,7 +82,7 @@ export const UPGRADE_COST = [300, 600, 1100, 1800, 2800];
 export const UPGRADE_MAX = UPGRADE_COST.length;
 
 // diff drives opponent speed. prize[i] = coins for finishing place i+1.
-// after: the track you need 3rd place or better on to open this one (unlocks never depend on list order).
+// after: the track you need to WIN to open this one (unlocks never depend on list order).
 export const TRACKS = [
   { id: "sunny",  name: "Sunny Hills",    icon: "🌳", diff: 0,   laps: 2, seed: 11, theme: "sunny",  world: "earth" },
   { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
@@ -109,9 +109,11 @@ export const TRACKS = [
   { id: "grandprix", name: "Playroom Grand Prix", icon: "🏁", diff: 13.1, laps: 2, seed: 229, theme: "toy", world: "toy", after: "kitchen", pal: ["#a63cff", "#c070ff"] },
   { id: "summit",     name: "Glacier Summit", icon: "🏔️", diff: 11.8, laps: 2, seed: 197, theme: "glacier", world: "glacier", after: "aurora" },
 ];
-// A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins.
+// A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins,
+// unless a grown-up allows only Easy (Parent Corner): then Easy wins count too, or nothing could ever open.
 // A track already raced on stays open, so older saves never lose a track.
-export const trackOpen = (S, t) => (t.world === "earth" || worldOpen(S, t.world)) && (!t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || !!S.best[t.id]);
+const easyOnly = S => { const d = S.parent?.diffs; return Array.isArray(d) && d.length > 0 && !d.includes("normal") && !d.includes("hard"); };
+export const trackOpen = (S, t) => (t.world === "earth" || worldOpen(S, t.world)) && (!t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || (easyOnly(S) && S.bestD[t.after + ":easy"] === 1) || !!S.best[t.id]);
 /* A world opens at its rank once its World Kit research is done (Earth is always open). */
 export const worldOpen = (S, id) => { const w = WORLDS.find(x => x.id === id); return !!w && (!w.rank || (S.rank >= w.rank && (!w.kit || (S.research?.[w.kit] || 0) >= 1))); };
 
@@ -221,7 +223,7 @@ export const GOALS = [
   { id: "lab30", icon: "🔬", name: "Finish 30 research levels", goal: 30, reward: 1500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
   { id: "rank5", icon: "⭐", name: "Reach Rank 5", goal: 5, reward: 600, have: S => S.rank },
   { id: "cup1", icon: "🏆", name: "Win a cup", goal: 1, reward: 500, have: S => Object.values(S.cups).filter(p => p === 1).length },
-  { id: "cupall", icon: "🏆", name: "Win all three cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
+  { id: "cupall", icon: "🏆", name: "Win 3 different cups", goal: 3, reward: 2000, have: S => new Set(Object.entries(S.cups).filter(([, p]) => p === 1).map(([k]) => k.split(":")[0])).size },
   { id: "chips3", icon: "🧠", name: "Collect 3 Brain Chips", goal: 3, reward: 400, have: S => Object.keys(S.chipLog || {}).length },
   { id: "auto1", icon: "🧠", name: "Auto Steer level 1", goal: 1, reward: 2000, have: S => S.research.autoSteer || 0 },
   { id: "auto10", icon: "🧠", name: "Auto Steer level 10", goal: 10, reward: 8000, have: S => S.research.autoSteer || 0 },
@@ -259,15 +261,15 @@ export const rankTitle = r => r >= 60 ? "Turbo God" : r >= 50 ? "Mega Legend" : 
 export const RANK_UNLOCKS = {
   2: { icon: "🔬", text: "Turbo Lab" },
   3: { icon: "🔥", text: "Hard races" },
-  4: { icon: "🧪", text: "2nd lab bench" },
+  4: { icon: "⏱️", text: "Time Trials + a 2nd lab bench" },
   5: { icon: "🏆", text: "Cups" },
   6: { icon: "⚗️", text: "Lab tier 2" },
-  7: { icon: "📋", text: "Daily missions" },
+  7: { icon: "📋", text: "Daily missions + the Champion Cup" },
   8: { icon: "🤖", text: "Robot Brain research" },
-  9: { icon: "🧪", text: "3rd lab bench" },
+  9: { icon: "🦏", text: "Boss: Big Bruno + a 3rd lab bench" },
   10: { icon: "🧠", text: "Auto Steer research" },
   12: { icon: "🍦", text: "Ice Cream Shop" },
-  15: { icon: "🚒", text: "Fire Station (and a fire truck!)" },
+  15: { icon: "🚒", text: "Fire Station (and a fire truck!) + a 4th lab bench" },
   20: { icon: "🌙", text: "Moon Base (research Moon Tires) + Park" },
   21: { icon: "🏆", text: "Moon Cup" },
   23: { icon: "👩‍🚀", text: "Boss: Captain Luna" },

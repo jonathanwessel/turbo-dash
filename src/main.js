@@ -33,7 +33,7 @@ const hooks = {
 /* Two engines: the classic pseudo-3D road, and (from Toy Track World on) the Next Gen 3D engine. The toy engine's
    3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
 const classic = new Race(canvas, hooks);
-let race = classic, toyRace = null, ToyView = null, toyLoading = null, toyFailed = false;
+let race = classic, toyRace = null, ToyView = null, toyLoading = null, toyFailed = false, toyWaiting = false;
 const glCanvas = $("gl");
 function loadToy() {
   return toyLoading ||= import("./toy/view.js").then(m => { ToyView = m.ToyView; }).catch(e => { toyFailed = true; console.warn("Turbo Dash: Toy Track World couldn't load", e); });
@@ -42,7 +42,7 @@ function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
-    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return engineFor(TRACKS[0]); }
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
   glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);
@@ -139,9 +139,9 @@ function toast(text) { const t = $("toast"); t.textContent = text; t.hidden = fa
 /* One-time Brain Chip rewards (each key pays once). */
 function awardChip(key) { if (S.chipLog[key]) return false; S.chipLog[key] = 1; S.chips++; save(); refreshChips(); setTimeout(() => { toast("+1 🧠 Brain Chip!"); sfx("chest"); }, 900); return true; }
 function countUp(el, to, ms = 800) { const t0 = performance.now(); const step = now => { const p = Math.min(1, (now - t0) / ms); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
-function earn(n, x, y) { S.coins += n; save(); refreshCoins(); if (x != null) coinBurst(x, y); }
+function earn(n, x, y) { if (!Number.isFinite(n)) return; S.coins += n; save(); refreshCoins(); if (x != null) coinBurst(x, y); }
 function spend(n) {
-  if (S.coins < n) { sfx("nope"); const b = $("coinbar"); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); return false; }
+  if (!Number.isFinite(n) || n < 0 || S.coins < n) { sfx("nope"); const b = $("coinbar"); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); return false; }
   S.coins -= n; save(); refreshCoins(); return true;
 }
 
@@ -156,7 +156,7 @@ function menuDemo() {
   let track = TRACKS.find(t => t.id === S.lastTrack) || TRACKS[0];
   if (track.world === "toy" && !ToyView) { if (!toyFailed) loadToy().then(() => { if (mode === "menu" && ToyView) menuDemo(); }); track = TRACKS[0]; }
   const { car, stats } = carStats();
-  engineFor(track).setup(track, "demo", car, stats);
+  (engineFor(track) || engineFor(track = TRACKS[0])).setup(track, "demo", car, stats);
 }
 
 let currentTrack = TRACKS[0];
@@ -178,10 +178,13 @@ function startRace(track) {
   if (!midCup && restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
   if (track.world === "toy" && !ToyView) {
     if (toyFailed) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); return; }
-    toast("🧸 Shrinking down to toy size…"); loadToy().then(() => startRace(track)); return;
+    if (toyWaiting) return;   // a second tap while it loads
+    toyWaiting = true; toast("🧸 Shrinking down to toy size…");
+    loadToy().then(() => { toyWaiting = false; if (screen === "s-tracks" || screen === "s-boss" || screen === "s-result") startRace(track); }); return;
   }
+  if (!engineFor(track)) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); engineFor(TRACKS[0]); return; }
+  clearTimeout(resultT);
   currentTrack = track; S.lastTrack = track.id; save();
-  engineFor(track);
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
@@ -191,7 +194,7 @@ function startRace(track) {
   race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   show(null); setRaceUi(true); setSong("race"); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
-  if (trial) $("btn-auto").hidden = true;
+  if (trial || boss) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
 
@@ -448,10 +451,12 @@ function showResult(r) {
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
   S.races++; if (r.place === 1) S.wins++;
-  S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
-  const dk = currentTrack.id + ":" + S.diff;
-  S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
-  if (r.place === 1) {
+  const dk = currentTrack.id + ":" + S.diff, bossRace = !!bossRun;
+  if (!bossRace) {
+    S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
+    S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
+  }
+  if (r.place === 1 && !bossRace) {
     const before = starsFor(S.mastery[dk] || 0);
     S.mastery[dk] = (S.mastery[dk] || 0) + 1;
     if (starsFor(S.mastery[dk]) > before) setTimeout(() => toast(`⭐ Mastery star ${starsFor(S.mastery[dk])} on ${currentTrack.name}!`), 1800);
@@ -459,7 +464,7 @@ function showResult(r) {
   S.coins += prize + r.coins;
   if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
-  countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
+  if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
   S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0); S.stats.loops = (S.stats.loops || 0) + (r.stats.loops || 0);
@@ -487,10 +492,12 @@ function showResult(r) {
     const b = bossRun, car = CARS.find(c => c.id === b.car);
     if (r.place === 1) {
       const first = !S.bosses[b.id];
-      S.bosses[b.id] = true; S.coins += 5000; save();
+      const bonus = first ? 5000 : 1000;
+      S.bosses[b.id] = true; S.coins += bonus; save();
       if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); save(); }
       awardChip("boss:" + b.id);
-      $("r-unlock").hidden = false; $("r-unlock").textContent = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙5000` : `👑 You beat ${b.name} again! +🪙5000`;
+      const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
+      $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
     } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + PLAYER + "!"; }
     lastBoss = b; bossRun = null;
@@ -517,7 +524,7 @@ $("btn-next").onclick = () => {
   if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
   if (nextTrack) startRace(nextTrack);
 };
-$("btn-home").onclick = () => { sfx("click"); cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
+$("btn-home").onclick = () => { sfx("click"); if (cupRun && cupRun.i >= 2) { showCupEnd(); return; } cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -709,7 +716,7 @@ $("mis-list").addEventListener("click", e => {
   m.claimed = true;
   const r = b.getBoundingClientRect();
   earn(Math.round(m.reward * (1 + 0.1 * S.school.skills.smarts)), r.left + r.width / 2, r.top); sfx("chest");
-  setTimeout(openMissions, 350);
+  setTimeout(() => { if (screen === "s-missions") openMissions(); }, 350);
 });
 
 /* ---------- hub, garage, settings ---------- */
@@ -745,7 +752,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
-  else if (go === "library") { sfx("click"); toast("📚 Read a real book! A grown-up can log it at the Driver School."); setTimeout(openSchool, 600); }
+  else if (go === "library") { sfx("click"); toast("📚 Read a real book! A grown-up can log it at the Driver School."); setTimeout(() => { if (screen === "s-hub") openSchool(); }, 600); }
   else if (["icecream", "fire", "park"].includes(go)) {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 3;
@@ -755,8 +762,9 @@ $("town-wrap").addEventListener("click", e => {
     } else if (go === "park") {
       if (S.daily.park === today()) { sfx("click"); toast("🧺 The picnic is packed up. Come back tomorrow!"); return; }
       S.daily.park = today(); earn(500 + 25 * S.rank, x, y); sfx("chest");
-      const dn = Math.floor(Date.now() / 86400000);
-      if (dn % 3 === 0 && awardChip("park:" + today())) toast("🧺 Picnic! +🪙 and a 🧠 Brain Chip!"); else toast(`🧺 Picnic in the park: +🪙${500 + 25 * S.rank}`);
+      const nd = new Date(), dn = Math.floor(Date.UTC(nd.getFullYear(), nd.getMonth(), nd.getDate()) / 86400000);
+      toast(`🧺 Picnic in the park: +🪙${500 + 25 * S.rank}`);
+      if (dn % 3 === 0) awardChip("park:" + today());
     } else if (go === "fire") {
       if (S.owned.includes("firetruck")) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
       S.owned.push("firetruck"); upsOf("firetruck"); save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
@@ -764,7 +772,7 @@ $("town-wrap").addEventListener("click", e => {
     refreshHub();
   }
   else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
-  else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
+  else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(() => { if (screen === "s-hub") openRank(); }, 350); } else { sfx("click"); openLab(); } }
 });
 const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { refreshChips(); if (screen === "s-hub") refreshHub(); } });
 const PROF = ["Hi " + PLAYER + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + PLAYER + "!"];
@@ -783,7 +791,7 @@ $("btn-music").onclick = () => { S.music = !S.music; save(); setAudioOpts({ musi
 $("btn-sfx").onclick = () => { S.sfx = !S.sfx; save(); setAudioOpts({ sfx: S.sfx }); paintToggles(); sfx("click"); };
 paintToggles();
 
-function pause() { if (mode !== "race") return; paused = true; engineOff(); show("s-pause"); }
+function pause() { if (mode !== "race" || race.state === "done") return; paused = true; engineOff(); show("s-pause"); }
 $("btn-play").onclick = () => {
   initAudio(); goFullscreen(); sfx("click"); goHub();
   cloudWake().then(r => { if (r === "loaded") location.reload(); });   // quietly reconnect Google Save (needs this tap)
@@ -867,10 +875,11 @@ function grownUp(back, onPass) {
 }
 $("ga").addEventListener("click", e => {
   const b = e.target.closest("[data-ans]"); if (!b) return;
-  if (b.dataset.ans === "1") { sfx("click"); const f = guPass; guPass = null; f(); }
-  else { sfx("nope"); const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); setTimeout(() => grownUp(guBack, guPass), 450); }
+  if (b.dataset.ans === "1") { clearTimeout(guRetry); if (!guPass) return; sfx("click"); const f = guPass; guPass = null; f(); }
+  else { sfx("nope"); const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); const back = guBack, pass = guPass; clearTimeout(guRetry); guRetry = setTimeout(() => { if (screen === "s-grownup") grownUp(back, pass); }, 450); }
 });
-$("gu-cancel").onclick = () => { sfx("click"); show(guBack); };
+let guRetry = 0;
+$("gu-cancel").onclick = () => { sfx("click"); clearTimeout(guRetry); guPass = null; show(guBack); };
 $("set-parent").onclick = () => { sfx("click"); grownUp("s-settings", () => { $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }); };
 $("set-reset").onclick = () => { sfx("click"); grownUp("s-settings", openReset); };
 /* Reset: grown-up check, then hold for 3 seconds, then a last "are you sure". */
@@ -891,7 +900,7 @@ document.addEventListener("pointerdown", e => { if (e.target.closest("button, .b
 
 /* ---------- versions & offline ---------- */
 let updateReady = false;
-function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent" && screen !== "s-update"); }
+function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent" && screen !== "s-update" && !cupRun); }
 function doUpdate() { save(); location.reload(); }
 // A new version is waiting and Carter tried to race: stop, show a big notice, and update by itself in a few seconds.
 let gateTimer = 0;

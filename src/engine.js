@@ -188,6 +188,7 @@ export class Race {
     if (this.trial) this.rivals = [];
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
+    this.lastPad = null; this.beamT = 0; this.snowHit = null; this.driftT = 0;
   }
 
   /* where the ghost was at this moment of its run (samples every 0.1 s), or null once it has finished */
@@ -280,7 +281,7 @@ export class Race {
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
-    if (!flying && !auto) p.speed = Math.max(BASE_MAX * 0.2, p.speed - slopeOf(seg) * HILL * dt);
+    if (!flying && !auto) { const hill = slopeOf(seg) * HILL * dt; if (hill) p.speed = Math.max(Math.min(p.speed, BASE_MAX * 0.2), p.speed - hill); }
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
     const lat = steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
@@ -334,6 +335,8 @@ export class Race {
     // everything the car drove over this frame
     const segs = this.T.segs, N = segs.length, cur = this.segAt(p.dist).index;
     let i = this.prevIdx, guard = 0;
+    const ahead = mod(cur - i, N);
+    if (ahead > N / 2) i = cur;   // moved backwards (a bump): nothing new was driven over
     while (i !== cur && guard++ < 30) { i = (i + 1) % N; this.touch(segs[i]); }
     this.touch(segs[cur]);
     this.prevIdx = cur;
@@ -362,7 +365,7 @@ export class Race {
       c.knockT -= dt;
       if (c.knockT > 0) target *= 0.75;
       c.speed += clamp(target - c.speed, -BASE_MAX * dt / 2, BASE_MAX * dt / 4);
-      if (c.air <= 0 && this.state !== "demo") c.speed = Math.max(BASE_MAX * 0.2, c.speed - slopeOf(this.segAt(c.dist)) * HILL * dt);
+      if (c.air <= 0 && this.state !== "demo") { const hill = slopeOf(this.segAt(c.dist)) * HILL * dt; if (hill) c.speed = Math.max(Math.min(c.speed, BASE_MAX * 0.2), c.speed - hill); }
       c.laneT -= dt;
       if (c.laneT <= 0) { c.lane = [-0.6, 0, 0.6][Math.floor(Math.random() * 3)]; c.laneT = 2 + Math.random() * 4; }
       for (const o of [p, ...this.rivals]) {
@@ -428,7 +431,8 @@ export class Race {
     if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
       p.air = 1; p.vy = JUMP_VY * 0.85; p.airT = 0; this.hooks.sfx("jump"); this.popup("BUBBLES!", "#bff6ff");
     }
-    if (s.snow != null && p.air < 150 && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
+    if (s.snow != null && p.air < 150 && this.snowHit !== s.index + ":" + Math.floor(p.dist / this.T.length) && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
+      this.snowHit = s.index + ":" + Math.floor(p.dist / this.T.length);
       if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= Math.min(0.9, 0.62 + (S.plow || 0));
       for (let k = 0; k < 18; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.9, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.4, life: 0.7, c: "#ffffff", r: 0.008 + Math.random() * 0.012 });
       this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup("POOF!", "#ffffff");

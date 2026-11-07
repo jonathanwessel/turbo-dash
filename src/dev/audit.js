@@ -12,8 +12,6 @@ window.__audit = (rootSel) => {
   for (const e of root.querySelectorAll("*")) {
     if (!vis(e)) continue;
     if (e.closest("svg")) continue;
-    const inBtn = e.closest("button") && e.tagName !== "BUTTON";
-    if (inBtn) continue;
     let r = null;
     if (["BUTTON", "CANVAS", "IMG", "INPUT", "SELECT", "TEXTAREA"].includes(e.tagName)) r = e.getBoundingClientRect();
     else r = textRect(e);

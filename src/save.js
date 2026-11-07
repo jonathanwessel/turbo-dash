@@ -106,7 +106,9 @@ export function port(d) {
     buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, license: p.license !== false,
   };
   const M = obj(d.missions);
-  s.missions = typeof M.day === "string" && Array.isArray(M.list) ? M : null;
+  const KINDS = ["races", "wins", "podium", "coins", "jumps", "powers", "bams", "track"], fin = v => typeof v === "number" && Number.isFinite(v);
+  const okM = m => m && typeof m === "object" && KINDS.includes(m.kind) && fin(m.goal) && m.goal > 0 && fin(m.have) && fin(m.reward) && m.reward >= 0 && (m.kind !== "track" || TRACKS.some(t => t.id === m.track));
+  s.missions = typeof M.day === "string" && Array.isArray(M.list) && M.list.length && M.list.every(okM) ? { ...M, list: M.list.map(m => ({ ...m, claimed: m.claimed === true })) } : null;
   s.history = arr(d.history).filter(h => h && typeof h === "object").slice(0, 30);
   s.cloud = { linked: obj(d.cloud).linked === true };
   const sc = obj(d.school), sk = obj(sc.skills);

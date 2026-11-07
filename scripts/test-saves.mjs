@@ -30,6 +30,7 @@ const FIXTURES = {
   "v0.17 (deep blue, time trials)": { v: 13, coins: 150000, owned: ["zippy", "rover", "sub"], car: "sub", ups: { sub: { engine: 1, turbo: 0, tires: 0, magnet: 0 } }, rank: 26, world: "ocean", research: { moonTires: 1, snorkel: 1, propellers: 2 }, best: { kelp: 1 }, bestD: { "kelp:normal": 1 }, stats: { roadCoins: 20000, stunts: 900, turbos: 500, bams: 90, powers: 120, rings: 40, pearls: 77 }, trials: { sunny: 61.42, kelp: 80.1 }, trialMedals: { sunny: 3, kelp: 1 } },
   "v0.18 (glacier rink, drifts)": { v: 14, coins: 240000, owned: ["zippy", "sub", "frost"], car: "frost", ups: { frost: { engine: 2, turbo: 1, tires: 1, magnet: 0 } }, rank: 31, world: "glacier", research: { moonTires: 1, snorkel: 1, iceStuds: 1, snowChains: 2 }, best: { icecave: 1 }, bestD: { "icecave:normal": 1 }, stats: { roadCoins: 900, stunts: 40, turbos: 60, bams: 3, powers: 20, rings: 30, pearls: 55, drifts: 12 }, trials: { icecave: 61.5 }, trialMedals: { icecave: 2 } },
   "v0.19 (toy track world)": { v: 14, coins: 410000, owned: ["zippy", "frost", "toyRacer"], car: "toyRacer", ups: { toyRacer: { engine: 1, turbo: 1, tires: 0, magnet: 0 } }, rank: 36, world: "toy", research: { iceStuds: 1, shrinkRay: 1, loopGrip: 1 }, best: { bedroom: 1 }, bestD: { "bedroom:normal": 1 }, stats: { roadCoins: 1200, stunts: 60, turbos: 80, bams: 5, powers: 30, rings: 30, pearls: 55, drifts: 70, loops: 14 }, seen: { toy: true }, trials: { bedroom: 28.4 }, trialMedals: { bedroom: 2 } },
+  "damaged missions (null entry, unknown kind, no reward)": { v: 14, coins: 777, owned: ["zippy"], rank: 8, missions: { day: "2026-11-07", list: [null, { kind: "fly", goal: 3, have: 0, reward: 100 }, { kind: "wins", goal: 2, have: 1 }] } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -70,6 +71,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.trials) check(name, Object.entries(raw.trials).every(([k, v]) => S.trials[k] === v), "trial times lost");
   if (raw.trialMedals) check(name, Object.entries(raw.trialMedals).every(([k, v]) => S.trialMedals[k] === v), "trial medals lost");
   if (raw.stats?.pearls) check(name, S.stats.pearls === raw.stats.pearls, "pearl count lost");
+  if (name.startsWith("damaged missions")) check(name, S.missions === null && S.coins === 777, "broken missions were kept (they crash the result screen)");
   if (raw.stats?.loops) check(name, S.stats.loops === raw.stats.loops, "loop count lost");
   if (raw.seen) check(name, Object.keys(raw.seen).every(k => S.seen[k] === true), "seen moments lost");
   if (raw.stats?.drifts) check(name, S.stats.drifts === raw.stats.drifts, "drift count lost");
@@ -87,6 +89,15 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   // porting twice changes nothing
   check(name, JSON.stringify({ ...port(saveMod.S), savedAt: 0 }) === JSON.stringify({ ...saveMod.S, savedAt: 0 }), "porting a current save changed it");
   console.log(`  ${failed ? "…" : "✔"} ${name}`);
+}
+
+// a grown-up who allows only Easy must still be able to open tracks (Easy wins count then)
+{
+  const { trackOpen, TRACKS } = await import("../src/data.js");
+  const beach = TRACKS.find(t => t.id === "beach");
+  const st = { rank: 1, best: {}, bestD: { "sunny:easy": 1 }, research: {}, parent: { diffs: ["easy"] } };
+  check("easy-only unlocks", trackOpen(st, beach), "an Easy win doesn't open the next track when only Easy is allowed");
+  check("normal still needed", !trackOpen({ ...st, parent: { diffs: ["easy", "normal"] } }, beach), "an Easy win opened a track while Normal is allowed");
 }
 
 // a broken main save must fall back to the backup, never to an empty game

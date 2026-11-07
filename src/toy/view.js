@@ -231,7 +231,7 @@ export class ToyView {
   reset(race) {
     const T = race.T;
     if (this.trackId !== T.track.id) {
-      if (this.world) this.scene.remove(this.world);
+      if (this.world) { this.scene.remove(this.world); this.world.traverse(m => { m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x?.map?.dispose(); x?.dispose?.(); }); }); }
       this.world = new THREE.Group(); this.scene.add(this.world);
       const pal = T.track.pal || ["#ff7a1a", "#ff9b45"];
       this.room = playroom(this.world, T);
@@ -242,7 +242,10 @@ export class ToyView {
       this.boxes.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, nb) * 3), 3); this.world.add(this.boxes);
       this.trackId = T.track.id;
     }
-    for (const g of this.cars.values()) this.scene.remove(g);
+    // free the old cars (and the old shield) so GPU memory doesn't grow race after race
+    const free = o => o.traverse(m => { m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => x?.dispose?.()); });
+    for (const g of this.cars.values()) { this.scene.remove(g); free(g); }
+    if (this.shield) { this.scene.remove(this.shield); free(this.shield); }
     this.cars = new Map();
     const make = (key, def, ghost) => { const g = carMesh(def); if (ghost) g.traverse(m => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.4; m.castShadow = false; } }); this.scene.add(g); this.cars.set(key, g); return g; };
     make("p", race.player.def); race.rivals.forEach((c, k) => make("r" + k, c.def));

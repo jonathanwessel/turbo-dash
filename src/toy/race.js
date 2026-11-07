@@ -167,13 +167,10 @@ export class ToyRace {
 
     // everything we drove over this frame
     let k = this.prevIdx, guard = 0;
+    if ((((j - k) % N) + N) % N > N / 2) k = j;   // moved backwards (a bump): nothing new was driven over
     while (k !== j && guard++ < 60) { k = (k + 1) % N; this.touch(k); }
     this.prevIdx = j;
 
-    if (this.trial && racing && !p.finished) {
-      this.recT += dt;
-      while (this.recT >= 0.1) { this.recT -= 0.1; this.rec.d.push(Math.round(p.dist * 10) / 10); this.rec.o.push(Math.round(p.x * 100) / 100); this.rec.a.push(Math.round(Math.max(0, p.air) * 10) / 10); }
-    }
     this.tickRivals(dt);
     this.timers(dt, racing, p);
 
@@ -187,6 +184,11 @@ export class ToyRace {
   }
 
   timers(dt, racing, p) {
+    if (this.trial && racing && !p.finished) {
+      this.recT += dt;
+      while (this.recT >= 0.1) { this.recT -= 0.1; this.rec.d.push(Math.round(p.dist * 10) / 10); this.rec.o.push(Math.round(p.x * 100) / 100); this.rec.a.push(Math.round(Math.max(0, p.air) * 10) / 10); }
+    }
+    if (this.fx.length > 30) this.fx.splice(0, this.fx.length - 30);
     if (racing && !p.finished) this.nitro = Math.min(1, this.nitro + this.stats.nitroFill * dt);
     this.nitroT -= dt; this.boostT -= dt; this.wallCD -= dt; this.bumpCD -= dt; this.shieldT -= dt; this.magnetT -= dt;
   }
@@ -262,6 +264,11 @@ export class ToyRace {
         if (g > 0 && g < 9 && c.speed > o.speed && Math.abs(o.x - c.lane) < 1.8) c.lane = clamp(o.x > 0 ? o.x - 2.3 : o.x + 2.3, -LIMIT, LIMIT);
       }
       c.x += clamp(c.lane - c.x, -1, 1) * dt * 3;
+      for (const o of this.rivals) {
+        if (o === c || Math.abs(o.dist - c.dist) > 3) continue;
+        const dx = c.x - o.x, need = 1.75 - Math.abs(dx);
+        if (need > 0) { const dir = dx > 0 || (dx === 0 && c.dist > o.dist) ? 1 : -1, k = Math.min(need, dt * 6) / 2; c.x = clamp(c.x + dir * k, -LIMIT, LIMIT); o.x = clamp(o.x - dir * k, -LIMIT, LIMIT); }
+      }
       c.dist += c.speed * dt;
       // over a gap rivals fly in a neat arc (they never miss)
       const g = (T.flag[ci] & 2) && T.gaps.find(g => c.dist % T.L >= g.s0 && c.dist % T.L <= g.s1);
@@ -270,7 +277,10 @@ export class ToyRace {
       const gap = c.dist - p.dist;
       if (this.state !== "demo" && p.fallT <= 0 && Math.abs(p.air - c.air) < 1.5 && Math.abs(gap) < 2.6 && Math.abs(p.x - c.x) < 1.6) {
         if (fast || this.shieldT > 0) {
-          if (c.knockT <= 0) { c.x += (c.x >= p.x ? 1 : -1) * 2.4; c.lane = clamp(c.x, -LIMIT, LIMIT); c.knockT = 1; this.popup("BAM!", "#ff6b3d"); this.hooks.sfx("bam"); this.shake = 0.2; this.runStats.bams++; this.fx.push({ type: "spark", dist: c.dist, x: c.x, t: this.t }); }
+          if (c.knockT <= 0) { c.x = clamp(c.x + (c.x >= p.x ? 1 : -1) * 2.4, -LIMIT, LIMIT); c.lane = c.x; c.knockT = 1; this.popup("BAM!", "#ff6b3d"); this.hooks.sfx("bam"); this.shake = 0.2; this.runStats.bams++; this.fx.push({ type: "spark", dist: c.dist, x: c.x, t: this.t }); }
+        } else if (Math.abs(gap) < 1.2) {
+          const dir = p.x >= c.x ? 1 : -1; p.x = clamp(p.x + dir * 0.3, -LIMIT, LIMIT); c.x = clamp(c.x - dir * 0.4, -LIMIT, LIMIT); c.lane = c.x;
+          if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; }
         } else if (gap > 0 && p.speed > c.speed) { p.speed = c.speed * 0.9; p.dist = c.dist - 2.6; if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; } }
         else if (gap <= 0 && c.speed > p.speed) { c.speed = p.speed * 0.9; c.dist = p.dist - 2.6; }
       }

@@ -1,7 +1,7 @@
 {
   "name": "turbo-dash",
   "private": true,
-  "version": "0.20.2",
+  "version": "0.21.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5184 --strictPort",

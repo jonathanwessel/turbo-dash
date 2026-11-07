@@ -1,5 +1,55 @@
 # Changelog
 
+## v0.21.0 — Bug Hunt
+
+A full bug hunt: three independent code reviews (menus and flow, both race engines, saves and data), a scripted
+first session as a brand-new player, and the layout checker now looking inside every button. 25 fixes.
+
+**Things Carter could hit**
+- **Easy-only games could never open a new track.** If a grown-up allows only Easy in Parent Corner, Easy wins
+  now open the next track (before, only Normal or Hard wins counted, so the game was stuck on the first track).
+- **🏠 after the last race of a cup threw the cup away** (no prize car, no coins, no trophy). It now shows the cup
+  results first.
+- **The "update now" banner no longer appears in the middle of a cup** (tapping it reloaded the game and lost the
+  cup).
+- **Pausing right after the finish line lost the race's coins.** The pause button now waits for the results.
+- **Losing a boss race counted as "2nd place"** (a silver medal and mission credit for losing). It no longer
+  does; beating a boss again pays a 1,000 bonus (the first win still pays 5,000).
+- **The 🤖 Auto Steer button showed in boss races**, where Auto Steer is meant to be off.
+- **Locked track cards were a jumble** (lock, "Win first!", name and stars on top of each other). They now show
+  the track's picture, a big lock and what to win.
+- **The garage showed future worlds (🌙 🌊 🧊 🧸 0/3) to a new player.** It now shows the worlds he can race in
+  plus the next one, like the race screen.
+- **The rank-up screen now names everything that opens** (Time Trials at Rank 4, the Champion Cup at 7, Big Bruno
+  at 9, the 4th lab bench at 15).
+- The "Win all three cups" goal is now "Win 3 different cups" (there are more than three now).
+- Tapping a Toy Track World race while it loads, then leaving, no longer starts a race on some other screen.
+- Screens that open a moment later (missions, the library, a locked lab) no longer pull him back if he already
+  tapped something else.
+- The park's Brain Chip day follows the local calendar, and its message shows the coins.
+
+**Racing**
+- **A bump could set off boost pads, ? boxes and coins far ahead.** After a bump pushed a car back, the next
+  frame "drove over" up to 30 pieces of road. Fixed in both engines.
+- **A snowbank hit 5 to 7 times instead of once** (cutting speed far more than it should). It hits once now.
+- **A hidden minimum speed:** the hill code quietly raised every car to a minimum speed (which also made Bumper
+  Shield level 1 do nothing). Hills now only slow or speed cars on slopes.
+- **Toy Time Trials:** the ghost ran ahead after a fall (it stopped recording while the toy hand carried you).
+- **Toy Track World:** rivals no longer pass through each other or get knocked through the wall; a rival level
+  with you bumps you sideways instead of pushing you back.
+- Toy Track World no longer leaks graphics memory race after race (old cars, shields and tracks are freed).
+- Some per-race state (boost pad counter, tractor beam) no longer carries into the next race.
+
+**Saves and grown-up screens**
+- A save with broken daily missions no longer crashes the result screen (which could lose a session's
+  progress); the missions are simply made fresh. Coins can never become "not a number".
+- The grown-up check no longer pops back up after a quick wrong-then-right answer (or a quick Cancel).
+- If a tablet can't show 3D, Toy Track World says so instead of running a toy track in the wrong engine.
+
+**Checks:** 18 save checks (new: broken missions, Easy-only unlocks), the reviewers' own repro scripts all pass,
+hands-off driving still finishes last, the starter car still has to be upgraded to win, the career simulator has
+no stuck gates, and the layout checker is clean.
+
 ## v0.20.2 — No More "null"
 
 - **Garage fix:** cars you earn instead of buy showed "🪙 null" on a gold, buy-looking button (the Fire Dash, and
