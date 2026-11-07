@@ -63,4 +63,12 @@ function auto() {
 const mode = process.argv[2] || "table";
 if (mode === "journey") journey(process.argv[3] || "normal");
 else if (mode === "auto") auto();
+else if (mode === "start") {
+  // first races of a brand-new save: hands off must never place; a kid with the starter car should not win yet
+  const z = CARS[0], t = TRACKS[0];
+  for (const bot of ["none", "kid", "good"]) for (const up of [0, 1, 2, 3]) {
+    const places = Array.from({ length: 6 }, () => runRace(t, z, lvl(up), "normal", bot).place);
+    console.log(`  ${bot.padEnd(5)} Zippy +${up} on Sunny Hills: ${places.join(" ")}`);
+  }
+}
 else table();

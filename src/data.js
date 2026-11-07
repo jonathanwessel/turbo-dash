@@ -2,7 +2,7 @@
 
 export const CARS = [
   { id: "zippy",   name: "Zippy",        price: 0,    body: "#e8262b", accent: "#ffd400", type: "racer",   speed: 0.00, accel: 0.00, grip: 0.00 },
-  { id: "bolt",    name: "Blue Bolt",    price: 700,  body: "#1f6fff", accent: "#ffffff", type: "sport",   speed: 0.05, accel: 0.05, grip: 0.05 },
+  { id: "bolt",    name: "Blue Bolt",    price: 1500, body: "#1f6fff", accent: "#ffffff", type: "sport",   speed: 0.05, accel: 0.05, grip: 0.05 },
   { id: "monster", name: "Mega Monster", price: 3000, body: "#2fbf3a", accent: "#ffe600", type: "monster", speed: 0.09, accel: 0.15, grip: 0.10 },
   { id: "shark",   name: "Shark Fin",    price: 9000, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
   { id: "rocket",  name: "Rocket Rex",   price: 20000, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
@@ -36,7 +36,7 @@ export const UPGRADES = [
   { id: "tires",  name: "Tires",  icon: "🛞", desc: "Turn better" },
   { id: "magnet", name: "Magnet", icon: "🧲", desc: "Grab coins" },
 ];
-export const UPGRADE_COST = [150, 300, 600, 1000, 1600];
+export const UPGRADE_COST = [300, 600, 1100, 1800, 2800];
 export const UPGRADE_MAX = UPGRADE_COST.length;
 
 // diff drives opponent speed. prize[i] = coins for finishing place i+1.
@@ -44,14 +44,16 @@ export const UPGRADE_MAX = UPGRADE_COST.length;
 export const TRACKS = [
   { id: "sunny",  name: "Sunny Hills",    icon: "🌳", diff: 0,   laps: 2, seed: 11, theme: "sunny",  world: "earth" },
   { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
-  { id: "desert", name: "Desert Dash",    icon: "🌵", diff: 1,   laps: 2, seed: 23, theme: "desert", world: "earth", after: "sunny" },
+  { id: "desert", name: "Desert Dash",    icon: "🌵", diff: 1,   laps: 2, seed: 23, theme: "desert", world: "earth", after: "beach" },
   { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
   { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
   { id: "lava",   name: "Lava Mountain",  icon: "🌋", diff: 4,   laps: 2, seed: 59, theme: "lava",   world: "earth", after: "candy" },
   { id: "space",  name: "Space Road",     icon: "🪐", diff: 5,   laps: 2, seed: 67, theme: "space",  world: "earth", after: "lava" },
 ];
-export const trackOpen = (S, t) => !t.after || (S.best[t.after] || 99) <= 3;
+// A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins.
+// A track already raced on stays open, so older saves never lose a track.
+export const trackOpen = (S, t) => !t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || !!S.best[t.id];
 
 /* Worlds and their physics. Earth is today's game; other worlds change how cars move. */
 export const WORLDS = [
@@ -65,7 +67,7 @@ export const PHYSICS = {
 };
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
 export const DIFFS = [
-  { id: "easy", name: "Easy", icon: "🐢", pay: 0.75, rival: 0.86, assist: 2 },
+  { id: "easy", name: "Easy", icon: "🐢", pay: 0.75, rival: 0.9, assist: 1 },
   { id: "normal", name: "Normal", icon: "🚗", pay: 1, rival: 1, assist: 0 },
   { id: "hard", name: "Hard", icon: "🔥", pay: 1.5, rival: 1.07, assist: 0, rank: 3 },
 ];

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.13.1 — Earn Your Wins
+
+- **No more steering for you.** The car used to drift back onto the road on its own when no button was held,
+  so letting go could still win. Now the car only steers itself if a grown-up turns on the **steering helper**
+  in Parent Corner. 🐢 Easy makes curves pull a little less, but it doesn't steer either.
+- **You have to build up to 1st place.** Rivals are faster from the very first race: the starter car finishes
+  around 3rd–5th until Carter saves up for upgrades (first upgrades now 300, 600, 1,100… coins; Blue Bolt
+  1,500). Hands off the controls finishes last.
+- **One new track at a time.** A track now opens only after **winning** (1st place) the track before it on
+  🚗 Normal or 🔥 Hard (Easy is for practice, coins and stars). Tracks already opened stay open.
+- Checked with the career simulator: the first win comes after a few races and upgrades, each later track
+  takes longer than the last, and today's whole game still runs about 4½ months with no stuck gates.
+
 ## v0.13.0 — Piqua Main Street
 
 - **Main Street in Piqua, Ohio.** The town is redrawn: eight separate buildings, each on its own lot with a tree

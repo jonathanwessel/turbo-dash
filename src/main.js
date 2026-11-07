@@ -247,7 +247,7 @@ function openTracks() {
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>Get 🥉 on ${TRACKS.find(x => x.id === t.after).name}</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>Win 🏆 on ${TRACKS.find(x => x.id === t.after).name} (🚗 or 🔥)</small></div>`}</button>`;
   }).join("");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);

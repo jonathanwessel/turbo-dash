@@ -121,7 +121,8 @@ export class Race {
     this.T = buildTrack(track);
     this.diff = diffOf(opts.diff);
     this.phys = PHYSICS[track.world] || PHYSICS.earth;
-    this.assist = Math.max(this.diff.assist, opts.helper || 0);
+    this.assist = Math.max(this.diff.assist, opts.helper || 0);   // softer curves (Easy, or the parent helper)
+    this.pull = opts.helper || 0;                                   // steering FOR the kid: only if a grown-up turns it on
     this.autoLvl = mode === "race" ? (opts.autoSteer || 0) : 0; this.autoTarget = null;
     for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
@@ -138,7 +139,7 @@ export class Race {
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
-      base: BASE_MAX * (0.62 + d * 0.16 + (4 - i) * 0.04) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
+      base: BASE_MAX * (1.06 + d * 0.12 + (4 - i) * 0.035) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
     }));
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
@@ -231,7 +232,7 @@ export class Race {
     const help = this.assist;   // 0 none, 1 a little, 2 lots
     if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
     // gentle pull back toward the road (stronger with steering help)
-    if (!auto && steer === 0 && Math.abs(p.offset) > 0.8 - 0.15 * help) p.offset -= Math.sign(p.offset) * dt * (0.45 + 0.45 * help);
+    if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     p.offset = clamp(p.offset, -2.6, 2.6);
     p.dist += p.speed * dt;
     if (flying) {
@@ -265,7 +266,7 @@ export class Race {
       else {
         const gap = c.dist - p.dist;
         const hard = this.diff.id === "hard", easy = this.diff.id === "easy";
-        if (gap > 45 * SEG) target *= easy ? 0.8 : hard ? 1 : d <= 1 ? 0.84 : 0.98;
+        if (gap > 45 * SEG) target *= easy ? 0.8 : hard ? 1 : d <= 1 ? 0.93 : 0.98;
         else if (gap < -45 * SEG) target *= hard ? 1.04 : 1.07;
       }
       c.knockT -= dt;
