@@ -96,6 +96,9 @@ window.__sweep = async (only) => {
     if (k > 0 && document.getElementById("g-name").textContent === window.__firstCar) break;
     if (k === 0) window.__firstCar = before;
   }
+  await go("s-garage:grid", () => document.getElementById("g-gridbtn").click(), "#s-garage");
+  await go("s-garage:grid-end", async () => { const g = document.getElementById("g-grid"); g.scrollTop = g.scrollHeight; await wait(100); }, "#s-garage");
+  document.getElementById("g-gridbtn").click();
   await go("s-tracks", hub("race"));
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");
   document.querySelector('[data-rtab="races"]').click();

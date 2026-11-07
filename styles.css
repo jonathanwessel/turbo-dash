@@ -776,3 +776,19 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .ga.pad button { font-size: clamp(20px, 5.5vmin, 32px); width: 2.3em; height: 1.6em; border-radius: 14px; }
 .ga.pad button.ok { background: #2fbf4a; } .ga.pad button.del { background: #7a3a2a; }
 .gu-msg { min-height: 1.2em; font-weight: 900; color: #ffd400; }
+
+/* ---------- garage grid: every car at a glance ---------- */
+.g-gridbtn { margin-left: 14px; font-weight: 900; font-size: clamp(14px, 3.6vmin, 18px); padding: 6px 12px; border-radius: 14px; background: #2a1460; color: #fff; border: 3px solid rgba(255,255,255,.5); white-space: nowrap; }
+.g-gridbtn.on { background: #ffd400; color: #4a2600; border-color: #fff3b0; }
+.g-grid { flex: 1; min-height: 0; width: min(100%, 1000px); overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; align-content: start; padding: 4px; touch-action: pan-y; }
+.g-grid[hidden] { display: none; }
+.gg-head { grid-column: 1 / -1; margin: 6px 0 0; font-size: clamp(16px, 4vmin, 22px); color: #ffd400; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.gg-head small { color: #fff; font-size: .75em; margin-left: 6px; }
+.gc { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 6px 8px; border-radius: 16px; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.3); color: #fff; min-width: 0; }
+.gc canvas { width: 100%; max-width: 170px; aspect-ratio: 160 / 95; }
+.gc b { font-size: clamp(13px, 3.2vmin, 16px); text-align: center; line-height: 1.15; }
+.gc small { font-size: clamp(11px, 2.8vmin, 13px); text-align: center; line-height: 1.2; opacity: .92; }
+.gc.mine { border-color: #ffd400; }
+.gc.driving { background: rgba(255,212,0,.28); }
+.gc.gold small { color: #ffd400; font-weight: 900; }
+#s-garage .garage[hidden] { display: none; }
