@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.2 — Toy Track World on tablets, for real 🧸
+
+- **Fixed: Toy Track World turned white a few seconds into a race on tablets.** The tablet's graphics chip gave up
+  (Chrome shows a little sad face in the corner when that happens). Tablets now get a **light 3D look**: no edge
+  smoothing, simpler shadows and plastic, no reflection map and a slightly lower 3D resolution, which is far less
+  work for the chip. (✨ Effects → Full still gives the shiny look, if a tablet can handle it.)
+- **If the 3D stops anyway,** the game goes back to the track list ("Toy Track World needed a little rest") and the
+  next try starts a fresh 3D screen. If it happens twice, it says the tablet can't show Toy Track World yet instead
+  of trying again. Everything else keeps working.
+
 ## v1.2.1 — Toy Track World on more tablets 🧸
 
 - **Fixed: Toy Track World could show only a white screen on some tablets.** Its shiny reflections need a graphics

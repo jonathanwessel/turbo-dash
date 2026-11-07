@@ -35,15 +35,27 @@ const hooks = {
    3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
 const classic = new Race(canvas, hooks);
 let race = classic, toyRace = null, ToyView = null, toyLoading = null, toyFailed = false, toyWaiting = false;
-const glCanvas = $("gl");
+let glCanvas = $("gl"), toyCrashed = false, toyCrashes = 0, lostT = 0;
+/* Tablets get the light 3D look (Effects: Auto or Simple); Full forces the shiny one. After a 3D crash, always light. */
+const toyLight = () => toyCrashed || S.opts.fx === "simple" || (S.opts.fx !== "full" && matchMedia("(pointer: coarse)").matches);
 function loadToy() {
   return toyLoading ||= import("./toy/view.js").then(m => { ToyView = m.ToyView; }).catch(e => { toyFailed = true; console.warn("Turbo Dash: Toy Track World couldn't load", e); });
+}
+function recoverToy() {
+  lostT = 0; toyCrashed = true; if (++toyCrashes >= 2) toyFailed = true;   // twice: this tablet just can't do 3D yet
+  const fresh = glCanvas.cloneNode(false); glCanvas.replaceWith(fresh); glCanvas = fresh;   // a lost canvas can't draw again
+  try { toyRace.view.renderer.dispose(); } catch (e) { /* already gone */ }
+  toyRace.view = null; cupRun = null; bossRun = null; trialRun = false; previewRun = null;
+  const wasRace = mode === "race";
+  S.lastTrack = "sunny"; menuDemo(); resize();
+  if (wasRace) openTracks();
+  toast(toyFailed ? "🧸 This tablet can't show Toy Track World yet. Try updating its browser!" : "🧸 Toy Track World needed a little rest. Tap it to try again!");
 }
 function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
-    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); toyRace.view.setLite(classic.lite); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { light: toyLight() }); toyRace.view.setLite(classic.lite); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
   glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);
@@ -78,6 +90,7 @@ function frame(now) {
     if (slowT > 3 && !autoLite) { autoLite = true; setLite(); }
   }
   if (!paused && screen !== "s-hub") { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
+  if (race === toyRace && toyRace?.view?.lost) { lostT += dt; if (lostT > 0.6) recoverToy(); } else lostT = 0;
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
@@ -1232,7 +1245,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyCrashed() { return toyCrashed; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

@@ -217,24 +217,26 @@ function trackMeshes(T, pal) {
 }
 
 export class ToyView {
-  constructor(glCanvas, overlay) {
-    this.gl = glCanvas; this.ov = overlay; this.ctx = overlay.getContext("2d");
-    const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: "high-performance" });
-    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
+  /* opts.light: the tablet look. No edge smoothing, simple shadows, plain (not clear-coated) plastic, no reflection
+     map and 75% resolution: far less work and memory for a tablet's graphics chip, so its 3D doesn't give up. */
+  constructor(glCanvas, overlay, opts = {}) {
+    this.gl = glCanvas; this.ov = overlay; this.ctx = overlay.getContext("2d"); this.light = !!opts.light;
+    const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !this.light, powerPreference: "high-performance" });
+    R.shadowMap.enabled = true; R.shadowMap.type = this.light ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; R.toneMapping = THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#cfeaff", 260, 900);
     // Shiny reflections need a room "environment map", which needs half-float render targets. Many tablets can't
     // render to those, and a broken map blows the whole picture out to white. No support: no map (safe look).
     this.diag = { why: "" };
     R.debug.onShaderError = (gl, program, vs, fs) => { this.diag.why = this.diag.why || "shader"; this.badShader = true; };
     const gl = R.getContext(), halfOk = R.capabilities.isWebGL2 ? !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float")) : !!gl.getExtension("EXT_color_buffer_half_float");
-    if (halfOk) { const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; pm.dispose(); }
+    if (halfOk && !this.light) { const pm = new THREE.PMREMGenerator(R); this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; pm.dispose(); }
     else this.diag.why = "no half-float targets";
     this.scene.environmentIntensity = 0.8;
-    this.checkT = 0; this.safe = false;
+    this.checkT = 0; this.safe = this.light; this.quietSafe = this.light;   // the light look starts plain (no "Simple 3D" note)
     glCanvas.addEventListener("webglcontextlost", e => { e.preventDefault(); this.diag.why = "context lost"; this.lost = true; });
     glCanvas.addEventListener("webglcontextrestored", () => { this.lost = false; });
     this.camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2000);
-    this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", 1.1));
+    this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", this.light ? 1.6 : 1.1));   // brighter without reflections
     const sun = this.sun = new THREE.DirectionalLight("#fff1d0", 2.4);
     sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 400 }); sun.shadow.bias = -0.0005;
     this.scene.add(sun, sun.target);
@@ -298,11 +300,12 @@ export class ToyView {
       m.dispose(); return s;
     };
     this.scene.traverse(o => { if (o.material) o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material); });
-    this.safeMats = true; this.safeMsg = true;
+    this.safeMats = true; this.safeMsg = !this.quietSafe;
     console.warn("Turbo Dash: Toy Track World switched to the safe 3D look (" + this.diag.why + ")");
   }
 
   setLite(lite) {
+    lite = lite || this.light;
     if (this.lite === lite) return;
     this.lite = lite;
     const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
@@ -343,7 +346,8 @@ export class ToyView {
   draw(race) {
     const T = race.T, R = this.renderer, W = this.ov.width, H = this.ov.height;
     if (!this.world || this.trackId !== T.track.id) this.reset(race);
-    if (this.gl.width !== W || this.gl.height !== H || this.cam !== W + "x" + H) { R.setPixelRatio(1); R.setSize(W, H, false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = W + "x" + H; }
+    const key = W + "x" + H;
+    if (this.cam !== key) { const k = this.light ? 0.75 : 1; R.setPixelRatio(1); R.setSize(Math.round(W * k), Math.round(H * k), false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = key; }
     const t = race.t, dt = Math.min(0.05, Math.max(0, t - this.lastT)); this.lastT = t;
     const p = race.player, fast = race.nitroT > 0 || race.boostT > 0;
     // cars
@@ -401,7 +405,7 @@ export class ToyView {
     if (this.safeMsg) { this.safeMsg = false; race.popup("🧸 Simple 3D", "#ffffff"); }
     if (this.lost) { this.overlay(race, W, H, t, fast, falling); return; }
     R.render(this.scene, this.camera);
-    this.watchdog(W, H);
+    this.watchdog(this.gl.width, this.gl.height);
     this.overlay(race, W, H, t, fast, falling);
   }
 
