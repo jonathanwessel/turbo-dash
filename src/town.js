@@ -7,6 +7,16 @@ const sign = (x, y, w, text, fill = "#ffd400", fs = 38) => `
 const badge = (id, x, y) => `<g class="tbadge" id="${id}" style="display:none"><circle cx="${x}" cy="${y}" r="30" fill="#ff2d2d" stroke="#fff" stroke-width="6"/><text x="${x}" y="${y + 14}" class="bt">!</text></g>`;
 const win = (x, y, w = 34, h = 40) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#bfe9ff" stroke="#fff" stroke-width="4"/>`;
 
+const board = () => `
+<g class="bld" data-go="missions">
+  <rect x="148" y="${BASE - 480}" width="14" height="220" fill="#555"/><rect x="258" y="${BASE - 480}" width="14" height="220" fill="#555"/>
+  <rect x="100" y="${BASE - 500}" width="220" height="130" rx="16" fill="#2a1460" stroke="#ffd400" stroke-width="7"/>
+  <text x="210" y="${BASE - 440}" font-size="50" text-anchor="middle">📋</text>
+  <text x="210" y="${BASE - 392}" class="lbl" font-size="30" style="fill:#ffd400">MISSIONS</text>
+  <g id="mis-lock"><rect x="100" y="${BASE - 500}" width="220" height="130" rx="16" fill="rgba(0,0,0,.6)"/><text x="210" y="${BASE - 425}" font-size="50" text-anchor="middle">🔒</text><text x="210" y="${BASE - 385}" class="lbl" font-size="26" style="fill:#ffd400">RANK 7</text></g>
+  ${badge("tb-missions", 315, BASE - 500)}
+</g>`;
+
 const garage = () => `
 <g class="bld" data-go="garage">
   <rect x="70" y="${BASE - 250}" width="280" height="250" rx="12" fill="#ff8a00"/>
@@ -69,7 +79,7 @@ const lab = () => `
     <rect x="1070" y="${BASE - 160}" width="270" height="26" fill="#8a5a2b" transform="rotate(-8 1205 ${BASE - 147})"/>
     <rect x="1070" y="${BASE - 100}" width="270" height="26" fill="#8a5a2b" transform="rotate(6 1205 ${BASE - 87})"/>
     <text x="1205" y="${BASE - 120}" font-size="70" text-anchor="middle">🔒</text>
-    <rect x="1135" y="${BASE - 60}" width="140" height="46" rx="12" fill="#222"/><text x="1205" y="${BASE - 26}" class="lbl" font-size="30" fill="#ffd400" id="lab-need">RANK 2</text>
+    <rect x="1135" y="${BASE - 60}" width="140" height="46" rx="12" fill="#222"/><text x="1205" y="${BASE - 26}" class="lbl" font-size="30" style="fill:#ffd400" id="lab-need">RANK 2</text>
   </g>
   ${badge("tb-lab", 1325, BASE - 270)}
 </g>`;
@@ -95,7 +105,7 @@ export function townSVG() {
   <path d="M0 520 Q220 400 460 500 T900 470 T1320 450 T1600 500 V900 H0Z" fill="#3fa553"/>
   <path d="M0 600 Q300 520 620 590 T1200 570 T1600 590 V900 H0Z" fill="#5cc46a"/>
   <rect y="640" width="1600" height="260" fill="#5fd068"/>
-  <g transform="translate(80 78) scale(0.9)">${garage()}${gifts()}${track()}${tower()}${lab()}${hall()}</g>
+  <g transform="translate(80 78) scale(0.9)">${board()}${garage()}${gifts()}${track()}${tower()}${lab()}${hall()}</g>
   <rect y="${BASE}" width="1600" height="14" fill="#e9e9ef"/>
   <rect y="${BASE + 14}" width="1600" height="96" fill="#6b6f78"/>
   <line x1="0" y1="${BASE + 62}" x2="1600" y2="${BASE + 62}" stroke="#fff" stroke-width="8" stroke-dasharray="50 40"/>

@@ -38,6 +38,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.6.0** Turbo Lab: research tiers 1–2, real-time benches, rushing, neon paints, lab goals.
 - **v0.7.0** Cups & Brain Chips: three cups with prize cars, points and podium, Brain Chips, named rivals.
 - **v0.8.0** Power-Up Boxes: shield, coin shower, mega magnet, super turbo; dust and sparks.
+- **v0.9.0** Parent Corner+ & Daily Missions: break reminder, volume, buzz, history, reset; missions board.
 
 ## What we learned from Carter playing
 - **He doesn't stop to read.** He saw the update notice and started a race anyway. Anything important

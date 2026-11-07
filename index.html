@@ -148,16 +148,41 @@
   <section id="s-parent" class="screen dim" hidden>
     <div class="card parent">
       <h1>Parent Corner</h1>
-      <p>Carter's progress saves on this tablet automatically. Copy this code to keep a backup, or paste a code to bring progress back.</p>
-      <textarea id="p-code" rows="3" spellcheck="false"></textarea>
-      <div class="p-set"><b>Difficulties Carter can pick:</b> <span id="p-diffs"></span></div>
-      <div class="p-set"><b>Steering helper:</b> <span id="p-helper"></span></div>
-      <div class="row">
-        <button id="p-copy" class="big-btn small">📋 Copy code</button>
-        <button id="p-load" class="big-btn small">📥 Load pasted code</button>
-        <button id="p-close" class="big-btn small go">Done</button>
+      <div class="p-grid">
+        <div class="p-box"><h3>🎮 Play</h3>
+          <div class="p-set"><b>Difficulties Carter can pick</b><span id="p-diffs"></span></div>
+          <div class="p-set"><b>Steering helper</b><span id="p-helper"></span></div>
+          <div class="p-set"><b>Break reminder after</b><span id="p-break"></span></div>
+          <div class="p-set" id="p-rest-row" hidden><b id="p-rest-txt">Resting</b><button id="p-endrest">End rest now</button></div>
+        </div>
+        <div class="p-box"><h3>🔊 Sound & feel</h3>
+          <div class="p-set"><b>Volume</b><input type="range" id="p-vol" min="0" max="100" step="5"></div>
+          <div class="p-set"><b>Buzz on taps</b><span id="p-buzz"></span></div>
+        </div>
+        <div class="p-box"><h3>📜 Recent races</h3><div class="p-hist" id="p-hist"></div></div>
+        <div class="p-box"><h3>💾 Save</h3>
+          <p>Progress saves on this tablet by itself. Copy the code to keep a backup, or paste one to bring progress back.</p>
+          <textarea id="p-code" rows="3" spellcheck="false"></textarea>
+          <div class="row"><button id="p-copy" class="big-btn small">📋 Copy</button><button id="p-load" class="big-btn small">📥 Load pasted</button><button id="p-reset" class="big-btn small danger">🗑 Reset all</button></div>
+          <div class="p-msg" id="p-msg"></div>
+        </div>
       </div>
-      <div class="p-msg" id="p-msg"></div>
+      <div class="row"><button id="p-close" class="big-btn small go">Done</button></div>
+    </div>
+  </section>
+
+  <section id="s-missions" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Daily Missions</h2></div>
+    <div class="missions" id="mis-list"></div>
+    <div class="mis-bonus" id="mis-bonus"></div>
+  </section>
+
+  <section id="s-rest" class="screen dim" hidden>
+    <div class="card gift">
+      <div class="trophy" id="rest-moon">🌙</div>
+      <h1>Break time!</h1>
+      <div class="gift-day" id="rest-txt">Great racing today, Carter! Your car is resting too.</div>
+      <div class="r-coins">⏱ <span id="rest-left">10:00</span></div>
     </div>
   </section>
 

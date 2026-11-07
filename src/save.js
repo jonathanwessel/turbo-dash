@@ -16,7 +16,8 @@ const DEFAULTS = () => ({
   lab: { benches: [] }, // [{ p: projectId | null, end: ms timestamp }]
   cups: {},            // "cupId:difficulty" -> best place
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
-  parent: { diffs: ["easy", "normal", "hard"], helper: 0 },   // helper: 0 off, 1 a little, 2 lots
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true },   // helper: 0 off, 1 a little, 2 lots
+  missions: null, history: [], restUntil: 0,
 });
 
 export let S = DEFAULTS();
@@ -27,7 +28,7 @@ function merge(d) {
   const s = { ...def, ...d, ups: { ...(d.ups || {}) }, best: { ...(d.best || {}) },
     stats: { ...def.stats, ...(d.stats || {}) }, look: { ...(d.look || {}) },
     bestD: { ...(d.bestD || {}) }, research: { ...(d.research || {}) },
-    lab: { benches: Array.isArray(d.lab?.benches) ? d.lab.benches : [] }, cups: { ...(d.cups || {}) }, chipLog: { ...(d.chipLog || {}) }, parent: { ...def.parent, ...(d.parent || {}) } };
+    lab: { benches: Array.isArray(d.lab?.benches) ? d.lab.benches : [] }, history: Array.isArray(d.history) ? d.history : [], cups: { ...(d.cups || {}) }, chipLog: { ...(d.chipLog || {}) }, parent: { ...def.parent, ...(d.parent || {}) } };
   // v0.4 and older kept one best place per track: those were all Normal races.
   if (!d.bestD && d.best) for (const [id, p] of Object.entries(d.best)) s.bestD[id + ":normal"] = p;
   if (!(s.rank >= 1)) s.rank = 1;

@@ -372,3 +372,29 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
   width: clamp(70px, 19vmin, 120px); height: clamp(70px, 19vmin, 120px); font-size: clamp(34px, 9vmin, 58px);
   background: radial-gradient(circle, #fff 0, #ff8ad8 60%, #7a2cff 100%); border: 5px solid #fff; box-shadow: 0 0 24px 6px rgba(255,138,216,.8); animation: wiggle 1s ease-in-out infinite; }
 @media (orientation: portrait) { .power { left: 6vw; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 34vw); width: 22vw; height: 22vw; } }
+
+/* ---------- v0.9: missions, parent corner+, break time ---------- */
+.missions { flex: 1; width: 100%; display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; overflow-y: auto; }
+.mis { width: clamp(180px, 28vw, 260px); background: rgba(255,255,255,.1); border: 4px solid rgba(255,255,255,.3); border-radius: 24px; padding: 12px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.mis .mi { font-size: clamp(44px, 12vmin, 72px); line-height: 1; }
+.mis b { font-size: clamp(16px, 4.4vmin, 22px); min-height: 2.4em; display: grid; place-items: center; }
+.mis .bar { width: 100%; height: 16px; }
+.mis small { font-weight: 900; }
+.mis button { font-weight: 900; font-size: 18px; padding: 6px 16px; border-radius: 14px; background: #5a4a7a; color: #cfc6e6; }
+.mis.ready { border-color: #ffd400; background: rgba(255,212,0,.15); }
+.mis.ready button { background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; animation: pulse .6s ease-in-out infinite alternate; }
+.mis.done { opacity: .6; border-color: #5be36a; }
+.mis-bonus { font-size: clamp(16px, 4.4vmin, 22px); font-weight: 900; background: rgba(0,0,0,.35); border-radius: 18px; padding: 8px 16px; text-align: center; }
+.mis-bonus.got { color: #5be36a; }
+.card.parent { max-width: min(96vw, 980px); width: 100%; text-align: left; }
+.card.parent h1 { text-align: center; }
+.p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.p-box { background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2); border-radius: 16px; padding: 8px 12px; }
+.p-box h3 { margin: 0 0 6px; color: #ffd400; font-size: 17px; }
+.p-box p { font-size: 13px; margin: 0 0 6px; }
+.p-set { justify-content: flex-start; }
+.p-set b { flex: 1 0 100%; font-size: 14px; }
+.p-set input[type=range] { width: 100%; }
+.p-hist { font-size: 13px; max-height: 150px; overflow-y: auto; display: grid; grid-template-columns: auto auto auto auto auto; gap: 2px 10px; }
+.big-btn.danger { background: #a3203a; border-color: #ffb3c1; }
+@media (max-width: 700px) { .p-grid { grid-template-columns: 1fr; } }

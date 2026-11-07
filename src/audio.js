@@ -1,6 +1,6 @@
 // Synthesized sound: effects, an engine hum and a little looping tune. Starts on the first tap (browsers require it).
 let ac = null, master, sfxBus, musicBus, engOsc, engOsc2, engGain, engFilter, noiseBuf;
-const opts = { sfx: true, music: true };
+const opts = { sfx: true, music: true, volume: 0.8 };
 let musicTimer = null, step = 0, nextT = 0, song = "menu";
 
 export function initAudio() {
@@ -28,6 +28,7 @@ export function initAudio() {
 export function setAudioOpts(o) { Object.assign(opts, o); applyOpts(); }
 function applyOpts() {
   if (!ac) return;
+  master.gain.value = opts.volume;
   sfxBus.gain.value = opts.sfx ? 1 : 0;
   musicBus.gain.value = opts.music ? 0.22 : 0;
 }

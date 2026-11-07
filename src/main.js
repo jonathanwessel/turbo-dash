@@ -4,8 +4,9 @@ import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
+import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
-import { S, load, save, exportSave, importSave, upsOf } from "./save.js";
+import { S, load, save, exportSave, importSave, upsOf, resetSave } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
 import { createGarage, lookOf } from "./garage.js";
 
@@ -15,11 +16,13 @@ const canvas = $("game");
 const STEP = 1 / 60;
 
 load();
-setAudioOpts({ music: S.music, sfx: S.sfx });
+setAudioOpts({ music: S.music, sfx: S.sfx, volume: S.parent.volume });
 
 const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "🚀" };
+const buzz = ms => { if (S.parent.buzz) navigator.vibrate?.(ms); };
 const race = new Race(canvas, {
-  sfx, engine,
+  sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
+  engine,
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
   onFinish: r => setTimeout(() => showResult(r), 1300),
 });
@@ -43,6 +46,8 @@ function frame(now) {
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
+  if (!document.hidden && screen !== "s-rest") playMs += dt * 1000;
+  if (screen === "s-rest") paintRest();
   lab.tick(dt, screen === "s-lab");
   requestAnimationFrame(frame);
 }
@@ -68,7 +73,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -131,8 +136,21 @@ function menuDemo() {
 }
 
 let currentTrack = TRACKS[0];
+/* Break reminder: after the parent's set play time, the next race start shows a 10-minute rest screen. */
+let playMs = 0;
+function restDue() {
+  if (S.restUntil > Date.now()) return true;
+  if (S.parent.breakMin && playMs >= S.parent.breakMin * 60000) { S.restUntil = Date.now() + 10 * 60000; playMs = 0; save(); return true; }
+  return false;
+}
+function paintRest() {
+  const left = Math.max(0, S.restUntil - Date.now());
+  $("rest-left").textContent = `${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, "0")}`;
+  if (left <= 0) { S.restUntil = 0; save(); show("s-title"); }
+}
 function startRace(track) {
   if (updateReady) { updateGate(); return; }   // never start a race on an old version
+  if (restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
   currentTrack = track; S.lastTrack = track.id; save();
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
@@ -288,6 +306,8 @@ function showResult(r) {
   const goalsBefore = claimable().length;
   if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
+  countRace(r, currentTrack.id);
+  S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
   save();
   mode = "result"; setRaceUi(false); engineOff();
@@ -415,6 +435,35 @@ $("rk-up").onclick = () => {
 $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
+/* ---------- daily missions ---------- */
+function openMissions() {
+  const M = todaysMissions(dayKey(new Date()), unlocked);
+  $("mis-list").innerHTML = M.list.map((m, i) => {
+    const { icon, text } = missionText(m), ready = !m.claimed && m.have >= m.goal;
+    return `<div class="mis ${ready ? "ready" : m.claimed ? "done" : ""}"><div class="mi">${icon}</div><b>${text}</b>
+      <div class="bar"><i style="width:${Math.round(100 * m.have / m.goal)}%"></i></div><small>${m.have} / ${m.goal}</small>
+      <button data-mis="${i}">${m.claimed ? "✔ Done" : "🪙 " + m.reward}</button></div>`;
+  }).join("");
+  const all = M.list.every(m => m.claimed);
+  if (all && !M.bonus) {
+    M.bonus = true; S.coins += 200 + 50 * S.rank; save();
+    awardChip("missions:" + M.day); refreshCoins(); confetti(140); sfx("win");
+  }
+  $("mis-bonus").className = "mis-bonus " + (M.bonus ? "got" : "");
+  $("mis-bonus").textContent = M.bonus ? "✔ All done today! New missions tomorrow." : `Finish all 3 → 🧠 Brain Chip + 🪙 ${200 + 50 * S.rank}`;
+  show("s-missions");
+}
+$("mis-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-mis]"); if (!b) return;
+  const m = S.missions.list[+b.dataset.mis];
+  if (m.claimed) { sfx("click"); return; }
+  if (m.have < m.goal) { sfx("nope"); return; }
+  m.claimed = true;
+  const r = b.getBoundingClientRect();
+  earn(m.reward, r.left + r.width / 2, r.top); sfx("chest");
+  setTimeout(openMissions, 350);
+});
+
 /* ---------- hub, garage, settings ---------- */
 const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100) });
 let giftShownThisVisit = false;
@@ -423,6 +472,9 @@ const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
 function refreshHub() {
   tb("tb-gift", giftReady()); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
+  $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
+  if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
+  tb("tb-missions", S.rank >= MISSIONS_RANK && missionsReady());
   const ls = lab.status();
   tb("tb-lab", S.rank >= 2 && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
@@ -438,6 +490,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "gift") { sfx("click"); openGift(); }
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
+  else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
 });
 const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { if (screen === "s-hub") refreshHub(); } });
@@ -468,6 +521,12 @@ $("ver").onclick = () => {
   if (verTaps.length >= 5) { verTaps = []; $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }
 };
 function paintParent() {
+  $("p-break").innerHTML = [0, 20, 30, 45, 60].map(m => `<button data-pb="${m}" class="${S.parent.breakMin === m ? "on" : ""}">${m ? m + " min" : "Off"}</button>`).join("");
+  $("p-buzz").innerHTML = [true, false].map(v => `<button data-pz="${v}" class="${S.parent.buzz === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");
+  $("p-vol").value = Math.round(S.parent.volume * 100);
+  $("p-rest-row").hidden = !(S.restUntil > Date.now());
+  const nm = id => TRACKS.find(t => t.id === id)?.icon || "", df = id => diffOf(id).icon;
+  $("p-hist").innerHTML = S.history.length ? S.history.slice(0, 20).map(h => `<span>${h.d.slice(5)}</span><span>${nm(h.t)}</span><span>${df(h.df)}</span><span>${h.p}${suffix(h.p)}</span><span>🪙${h.c}</span>`).join("") : "<span>No races yet.</span>";
   $("p-diffs").innerHTML = DIFFS.map(d => `<button data-pd="${d.id}" class="${S.parent.diffs.includes(d.id) ? "on" : ""}">${d.icon} ${d.name}</button>`).join("");
   $("p-helper").innerHTML = ["Off", "A little", "Lots"].map((n, i) => `<button data-ph="${i}" class="${S.parent.helper === i ? "on" : ""}">${n}</button>`).join("");
 }
@@ -475,6 +534,9 @@ $("s-parent").addEventListener("click", e => {
   const d = e.target.closest("[data-pd]"), h = e.target.closest("[data-ph]");
   if (d) { const id = d.dataset.pd, L = S.parent.diffs; if (L.includes(id)) { if (L.length > 1) L.splice(L.indexOf(id), 1); } else L.push(id); save(); paintParent(); }
   if (h) { S.parent.helper = +h.dataset.ph; save(); paintParent(); }
+  const pb = e.target.closest("[data-pb]"), pz = e.target.closest("[data-pz]");
+  if (pb) { S.parent.breakMin = +pb.dataset.pb; playMs = 0; save(); paintParent(); }
+  if (pz) { S.parent.buzz = pz.dataset.pz === "true"; save(); paintParent(); }
 });
 $("p-copy").onclick = async () => {
   const code = exportSave(); $("p-code").value = code;
@@ -489,6 +551,18 @@ $("p-load").onclick = () => {
   catch (e) { $("p-msg").textContent = "That code didn't work. Check that the whole code was pasted."; }
 };
 $("p-close").onclick = () => show("s-title");
+$("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
+$("p-endrest").onclick = () => { S.restUntil = 0; playMs = 0; save(); paintParent(); };
+$("p-reset").onclick = () => {
+  if (!confirm("Erase ALL of Carter's progress on this tablet? (Copy the save code first if you might want it back.)")) return;
+  if (!confirm("Are you sure? This can't be undone.")) return;
+  resetSave(); location.reload();
+};
+// tap the moon 5 times on the break screen to reach Parent Corner
+let moonTaps = [];
+$("rest-moon").onclick = () => { const n = Date.now(); moonTaps = moonTaps.filter(t => n - t < 3000); moonTaps.push(n); if (moonTaps.length >= 5) { moonTaps = []; $("p-code").value = exportSave(); paintParent(); show("s-parent"); } };
+// a short buzz on taps (Parent Corner can turn it off)
+document.addEventListener("pointerdown", e => { if (e.target.closest("button, .bld")) buzz(10); }, true);
 
 /* ---------- versions & offline ---------- */
 let updateReady = false;

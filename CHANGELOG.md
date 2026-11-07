@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.0 — Parent Corner+ & Daily Missions
+
+- **Daily Missions** (the 📋 board in town, Rank 7): three picture missions a day, like "BAM 3 cars", "Do 8
+  big jumps" or "Win on 🌵 Desert Dash". Each pays coins; finishing all three pays a **🧠 Brain Chip** and a
+  coin bonus. New missions every day.
+- **Parent Corner+** (tap the version number on the title screen 5 times):
+  - **Break reminder**: Off, 20, 30, 45 or 60 minutes. When time is up, the next race start shows a 10-minute
+    "Break time!" screen instead. "End rest now" lifts it early. (Tap the moon 5 times on the break screen to
+    reach Parent Corner.)
+  - **Volume** slider and **buzz on taps** (vibration) on/off.
+  - **Recent races**: the last 20 races with date, track, difficulty, place and coins.
+  - **Reset all**: erase progress (asks twice; the old save is kept as a backup copy).
+  - Difficulty limits, steering helper and save codes, now in one organized screen.
+
+**Polish**
+- A short buzz on taps, and a bigger rumble when bonking a tree (on tablets that can vibrate).
+- The Missions board in town, and "RANK" labels on locked buildings are easier to read.
+
 ## v0.8.0 — Power-Up Boxes
 
 - **? boxes** sit in rows of three across the road a few times every lap. Drive through one to get a power-up,
