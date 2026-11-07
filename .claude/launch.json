@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "turbo-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 5184
+    },
+    {
+      "name": "turbo-play",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "play"
+      ],
+      "port": 5183
+    },
+    {
+      "name": "turbo-stage",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "stage"
+      ],
+      "port": 5185
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#1a0b3d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Turbo Dash</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- race HUD -->
+  <div id="hud" hidden>
+    <div class="hud-pos"><span id="h-pos">6</span><small id="h-suffix">th</small></div>
+    <div class="hud-mid">
+      <div class="hud-lap">LAP <span id="h-lap">1</span>/<span id="h-laps">2</span></div>
+      <div id="h-track"></div>
+    </div>
+    <div class="hud-coins">🪙 <span id="h-coins">0</span></div>
+    <button id="btn-pause" class="hud-btn" aria-label="Pause">⏸</button>
+  </div>
+  <div id="countdown" hidden></div>
+  <div id="controls" hidden>
+    <button id="btn-left" class="steer" aria-label="Left">◀</button>
+    <button id="btn-nitro" class="nitro" aria-label="Turbo"><span class="nitro-fill" id="nitro-fill"></span><span class="nitro-label">🚀</span></button>
+    <button id="btn-right" class="steer" aria-label="Right">▶</button>
+  </div>
+
+  <!-- screens -->
+  <section id="s-title" class="screen">
+    <div class="logo"><span>TURBO</span><span>DASH</span></div>
+    <button id="btn-play" class="big-btn go">▶ PLAY</button>
+    <div class="ver" id="ver"></div>
+  </section>
+
+  <section id="s-result" class="screen" hidden>
+    <div class="card result">
+      <div class="trophy" id="r-trophy">🏆</div>
+      <h1 id="r-title">1st PLACE!</h1>
+      <div class="r-coins">🪙 <span id="r-coins">0</span></div>
+      <div class="row">
+        <button id="btn-again" class="big-btn go">↻ Race Again</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-pause" class="screen dim" hidden>
+    <div class="card">
+      <h1>Paused</h1>
+      <div class="row">
+        <button id="btn-resume" class="big-btn go">▶ Go!</button>
+        <button id="btn-quit" class="big-btn">🏠 Home</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="update" class="update" hidden>New version <b id="upd-v"></b> is ready! <button id="upd-go">Update</button></div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
