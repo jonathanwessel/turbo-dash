@@ -6,9 +6,10 @@ import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, draw
 export const SEG = 200;            // segment length (world units)
 export const BASE_MAX = 10000;     // starter car top speed (world units / s)
 const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, DRAW_DIST = 170, LANES = 3;
+export const RAIL_IN = 1.04, RAIL_OUT = 1.4;   // a car on a railed curve stays inside 1.04 (or outside 1.4, if it was already out there)
 const CAM_DEPTH = 1 / Math.tan((100 / 2) * Math.PI / 180);
 const PLAYER_Z = CAM_H * CAM_DEPTH;
-const CAR_W = 0.36;                // car width in road half-widths
+export const CAR_W = 0.36;         // car width in road half-widths
 const COIN_W = 280;
 const START = 15;                  // segment of the start/finish line
 const GRAVITY = 9000, JUMP_VY = 2700, RAMP_H = 380, RAMP_LEN = 4;
@@ -172,15 +173,16 @@ export class Race {
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
     this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
-    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, ...slot(5) };
+    this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
+    this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.railOut = false;
     this.driftT = 0;
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
-      def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
+      def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
       base: BASE_MAX * (1.06 + d * 0.12 + (4 - i) * 0.035) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
     }));
     // 👑 boss race: just you and the boss (who fires Turbo every few seconds)
-    if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, finished: false, air: 0, vy: 0,
+    if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
       base: BASE_MAX * opts.boss.speed * this.diff.rival * this.phys.top, boss: true, btT: 5, bt: 0 }];
     // ⏱️ Time Trial: alone on the road (plus your best run as a see-through ghost); the run is recorded for the next ghost
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
@@ -249,6 +251,16 @@ export class Race {
   }
   sparks(x, y, n, color) { for (let i = 0; i < n; i++) this.parts.push({ x, y, vx: (Math.random() - 0.5) * 2, vy: -Math.random() * 1.4, life: 0.5 + Math.random() * 0.3, c: color, r: 0.006 + Math.random() * 0.006 }); }
 
+  /* rubbing a guardrail: held at the rail, a little slower (4% every 0.3 s), sparks fly */
+  scrape(side, at, steer, real) {
+    const p = this.player;
+    p.offset = side * at;
+    if (this.scrapeCD > 0) return;
+    this.scrapeCD = 0.3;
+    if (real) { p.speed *= 0.96; this.hooks.sfx("scrape"); this.shake = Math.max(this.shake, 0.06); }
+    for (let k = 0; k < 10; k++) this.parts.push({ x: 0.5 + side * (0.1 + Math.random() * 0.05), y: 0.9 + Math.random() * 0.05, vx: -side * (0.2 + Math.random() * 0.5), vy: -0.3 - Math.random() * 0.5, life: 0.35 + Math.random() * 0.2, c: Math.random() < 0.5 ? "#ffb020" : "#fff3a0", r: 0.004 + Math.random() * 0.004 });
+  }
+
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
     this.nitro = 0; this.nitroT = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
@@ -286,8 +298,9 @@ export class Race {
     const fast = this.nitroT > 0 || this.boostT > 0;
     const ph = this.phys;
     // ❄️ cars that aren't made for ice (no ❄️ in the garage) spin their wheels a little on the Glacier Rink
-    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1)) * ph.top;
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : 1) * dt);
+    const draft = this.drafting && !auto && !fast;
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1) * (draft ? 1.06 : 1)) * ph.top;
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : draft ? 1.3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
@@ -322,6 +335,14 @@ export class Race {
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
     p.offset = clamp(p.offset, -2.6, 2.6);
+    this.scrapeCD -= dt; p.landT -= dt;
+    if (seg.rail && !flying) {
+      const a = Math.abs(p.offset), side = Math.sign(p.offset) || 1;
+      if (!this.wasRail) this.railOut = a > (RAIL_IN + RAIL_OUT) / 2;
+      if (!this.railOut && a > RAIL_IN) this.scrape(side, RAIL_IN - 0.02, steer, !auto);
+      else if (this.railOut && a < RAIL_OUT) this.scrape(side, RAIL_OUT + 0.02, steer, !auto);
+    }
+    this.wasRail = !!seg.rail && !flying;
     p.dist += p.speed * dt;
     if (this.trial && racing && !p.finished) {
       this.recT += dt;
@@ -362,8 +383,18 @@ export class Race {
 
     // rivals
     const d = this.track.diff;
+    let behindOne = false;
+    for (const c of this.rivals) {
+      const g0 = c.dist - p.dist;
+      if (this.state === "race" && !p.finished && g0 > SEG && g0 < 8 * SEG && Math.abs(c.offset - p.offset) < CAR_W && p.air <= 0 && c.air <= 0) behindOne = true;
+    }
+    p.draftT = behindOne ? p.draftT + dt : 0;
+    const wasDrafting = this.drafting;
+    this.drafting = p.draftT >= 0.4;
+    if (this.drafting && !wasDrafting) { h.sfx("draft"); if (!this.draftShown) { this.draftShown = true; this.popup("💨 DRAFT!", "#dff6ff"); } }
     for (const c of this.rivals) {
       let target = c.base;
+      if (this.state !== "demo" && this.rivals.some(o => o !== c && o.dist - c.dist > SEG && o.dist - c.dist < 8 * SEG && Math.abs(o.offset - c.offset) < CAR_W && !o.air && !c.air)) target *= 1.03;
       if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
@@ -372,7 +403,7 @@ export class Race {
         if (gap > 45 * SEG) target *= easy ? 0.8 : hard ? 1 : d <= 1 ? 0.93 : 0.98;
         else if (gap < -45 * SEG) target *= hard ? 1.04 : 1.07;
       }
-      c.knockT -= dt;
+      c.knockT -= dt; c.wobT -= dt;
       if (c.knockT > 0) target *= 0.75;
       c.speed += clamp(target - c.speed, -BASE_MAX * dt / 2, BASE_MAX * dt / 4);
       if (c.air <= 0 && this.state !== "demo") { const hill = slopeOf(this.segAt(c.dist)) * HILL * dt; if (hill) c.speed = Math.max(Math.min(c.speed, BASE_MAX * 0.2), c.speed - hill); }
@@ -411,14 +442,16 @@ export class Race {
             this.popup("BAM!", "#ff6b3d"); h.sfx("bam"); this.shake = 0.2; this.runStats.bams++;
           }
         } else if (Math.abs(g) < SEG * 0.45) {
-          // side by side: bump apart sideways (both lose a little speed)
-          const dir = p.offset >= c.offset ? 1 : -1;
-          p.offset += dir * 0.1; c.offset -= dir * 0.14; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8);
-          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
+          // side by side: the rival gets nudged aside and wobbles. Only steering INTO it costs a little speed (1%).
+          const dir = p.offset >= c.offset ? 1 : -1, into = steer !== 0 && Math.sign(steer) === -dir;
+          p.offset += dir * 0.06; c.offset -= dir * 0.21; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8); c.wobT = 0.5;
+          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; if (into) { p.speed *= 0.99; c.speed *= 0.99; } this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
         } else if (g > 0 && p.speed > c.speed) {
-          p.speed = c.speed * 0.9; p.dist = c.dist - SEG * 0.9;
+          // catching a slower car from behind: ease off (no wall), stay behind it, and slide a little to get around
+          p.speed = Math.max(c.speed * 0.97, p.speed - BASE_MAX * 3 * dt); p.dist = c.dist - SEG * 0.9;
+          p.offset += (p.offset >= c.offset ? 1 : -1) * dt * 0.8;
           if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; this.sparks(0.5, 0.78, 8, "#fff6a8"); }
-        } else if (g <= 0 && c.speed > p.speed) { c.speed = p.speed * 0.9; c.dist = p.dist - SEG * 0.9; }
+        } else if (g <= 0 && c.speed > p.speed) { c.speed = Math.min(c.speed, p.speed * 0.97); c.dist = p.dist - SEG * 0.9; }
       }
     }
 
@@ -504,7 +537,9 @@ export class Race {
 
   land() {
     const p = this.player;
+    p.landV = Math.max(0, -p.vy); p.landT = 0.35;
     p.air = 0; p.vy = 0;
+    if (p.landV > JUMP_VY * 0.8) for (let k = 0; k < 12; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.97, vx: (Math.random() - 0.5) * 0.8, vy: -0.2 - Math.random() * 0.25, life: 0.6, c: "dust", r: 0.02 + Math.random() * 0.02 });
     if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
@@ -706,7 +741,7 @@ export class Race {
     const y = lerp(s.p1.screen.y, s.p2.screen.y, pct) - sc * c.air * F;
     const w = sc * CAR_W * ROAD_W * F;
     if (x + w < 0 || x - w > this.canvas.width) return;
-    const steer = c.knockT > 0 ? Math.sin(this.t * 30) * 4 : clamp((c.lane - c.offset) * 3, -1, 1);
+    const steer = c.knockT > 0 ? Math.sin(this.t * 30) * 4 : c.wobT > 0 ? Math.sin(this.t * 40) * 2.5 * c.wobT : clamp((c.lane - c.offset) * 3, -1, 1);
     this.clipped(ctx, s, y, () => {
       if (this.T.theme.ice && c.air < 60 && w > 6) {
         // shiny ice: a faint upside-down reflection under the car

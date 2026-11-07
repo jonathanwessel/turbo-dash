@@ -11,7 +11,7 @@
     "stage": "vite build --outDir .staging --emptyOutDir && vite preview --host --outDir .staging --port 5185 --strictPort",
     "sim": "node scripts/sim.mjs",
     "career": "node scripts/career.mjs",
-    "test": "node scripts/test-saves.mjs"
+    "test": "node scripts/test-saves.mjs && node scripts/test-physics.mjs"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

@@ -70,6 +70,8 @@ export function sfx(name) {
     case "boost": noise(0.6, 0.35, 400, 0, 6); tone(300, 0.5, "sawtooth", 0.08, 0, 3); break;
     case "nitro": noise(0.9, 0.45, 300, 0, 8); tone(200, 0.8, "sawtooth", 0.12, 0, 4); break;
     case "bump": tone(120, 0.15, "square", 0.15, 0, 0.5); break;
+    case "draft": noise(0.5, 0.12, 1800, 0, 0.6); break;
+    case "scrape": noise(0.25, 0.18, 3200, 0, 0.7); tone(900, 0.12, "sawtooth", 0.04, 0, 0.8); break;
     case "jump": tone(300, 0.35, "square", 0.12, 0, 2.5); noise(0.3, 0.2, 600, 0, 3); break;
     case "land": tone(90, 0.2, "triangle", 0.4, 0, 0.5); noise(0.2, 0.3, 250); break;
     case "bonk": tone(200, 0.3, "triangle", 0.35, 0, 0.3); noise(0.15, 0.3, 300); break;

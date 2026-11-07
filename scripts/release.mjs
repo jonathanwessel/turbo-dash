@@ -11,7 +11,7 @@ const root = resolve(import.meta.dirname, "..");
 const sh = cmd => execSync(cmd, { cwd: root, encoding: "utf8" }).trim();
 
 // Never ship a release that can't load an older save.
-try { execSync("node scripts/test-saves.mjs", { cwd: root, stdio: "inherit" }); }
+try { execSync("npm test", { cwd: root, stdio: "inherit" }); }
 catch (e) { console.error("Save test failed: release stopped."); process.exit(1); }
 
 let tag = process.argv[2];
