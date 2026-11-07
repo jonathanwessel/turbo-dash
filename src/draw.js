@@ -273,13 +273,15 @@ export const SPRITES = {
   icepine: { w: 1300, collide: true }, icecrystal: { w: 1000, collide: true }, igloo: { w: 1600, collide: true }, penguin: { w: 600, collide: true }, snowfort: { w: 1500, collide: true },
 };
 
-export function drawSprite(ctx, type, x, yb, w, t) {
+export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
+  // seed: this object's own number, so its colors and wobble never change as the screen moves (no flicker)
+  const ph = seed * 2.39996;
   if (w < 2) return;
   const h = w;
   switch (type) {
     case "tree":
     case "autumnTree": {
-      const sway = Math.sin(t * 1.6 + x * 0.013) * w * 0.035, fall = type === "autumnTree";
+      const sway = Math.sin(t * 1.6 + ph) * w * 0.035, fall = type === "autumnTree";
       ctx.fillStyle = "#7a4a22"; ctx.fillRect(x - w * 0.08, yb - h * 0.55, w * 0.16, h * 0.55);
       ctx.fillStyle = fall ? "#d9481f" : "#2f9a3d"; ell(ctx, x + sway, yb - h * 0.85, w * 0.45, h * 0.38);
       ctx.fillStyle = fall ? "#ff9d1c" : "#3fb84e"; ell(ctx, x - w * 0.12 + sway * 1.3, yb - h * 0.95, w * 0.28, h * 0.24);
@@ -339,7 +341,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     case "palm":
       ctx.strokeStyle = "#9b6a3a"; ctx.lineWidth = w * 0.08; ctx.beginPath(); ctx.moveTo(x, yb); ctx.quadraticCurveTo(x + w * 0.15, yb - h * 0.6, x + w * 0.05, yb - h * 1.1); ctx.stroke();
-      ctx.fillStyle = "#2fa84a"; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.7 + Math.sin(t * 1.4 + x * 0.01) * 0.08; ctx.save(); ctx.translate(x + w * 0.05, yb - h * 1.1); ctx.rotate(a); ell(ctx, w * 0.3, 0, w * 0.32, w * 0.08); ctx.restore(); }
+      ctx.fillStyle = "#2fa84a"; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.7 + Math.sin(t * 1.4 + ph) * 0.08; ctx.save(); ctx.translate(x + w * 0.05, yb - h * 1.1); ctx.rotate(a); ell(ctx, w * 0.3, 0, w * 0.32, w * 0.08); ctx.restore(); }
       break;
     case "pine":
       ctx.fillStyle = "#6b4423"; ctx.fillRect(x - w * 0.07, yb - h * 0.3, w * 0.14, h * 0.3);
@@ -387,7 +389,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     }
     case "planet": {
-      const yy = yb - h * 1.0 + Math.sin(t * 1.5 + x * 0.01) * h * 0.08;
+      const yy = yb - h * 1.0 + Math.sin(t * 1.5 + ph) * h * 0.08;
       ctx.fillStyle = "#ff8a3c"; ell(ctx, x, yy, w * 0.32, w * 0.32);
       ctx.fillStyle = "#ffb27a"; ell(ctx, x - w * 0.08, yy - w * 0.1, w * 0.1, w * 0.06);
       ctx.strokeStyle = "#ffe8a8"; ctx.lineWidth = Math.max(1, w * 0.04); ctx.beginPath(); ctx.ellipse(x, yy, w * 0.5, w * 0.12, -0.3, 0, Math.PI * 2); ctx.stroke();
@@ -399,7 +401,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "#ff3fe5"; poly(ctx, [x + w * 0.15, yb, x + w * 0.25, yb - h * 0.5, x + w * 0.4, yb - h * 0.6, x + w * 0.38, yb]);
       break;
     case "ufo": {
-      const yy = yb - h * 1.1 + Math.sin(t * 2 + x * 0.02) * h * 0.1;
+      const yy = yb - h * 1.1 + Math.sin(t * 2 + ph) * h * 0.1;
       ctx.fillStyle = "rgba(120,255,140,0.25)"; poly(ctx, [x - w * 0.2, yy, x + w * 0.2, yy, x + w * 0.45, yb, x - w * 0.45, yb]);
       ctx.fillStyle = "#9fd8ff"; ell(ctx, x, yy - w * 0.08, w * 0.2, w * 0.15);
       ctx.fillStyle = "#b5bcc8"; ell(ctx, x, yy, w * 0.5, w * 0.12);
@@ -421,7 +423,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
     case "dish": {
       ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.04, yb - h * 0.75, w * 0.08, h * 0.75);
       const g = ctx.createLinearGradient(x - w * 0.4, 0, x + w * 0.4, 0); g.addColorStop(0, "#f4f6fa"); g.addColorStop(1, "#9aa4b1");
-      ctx.save(); ctx.translate(x, yb - h * 0.85); ctx.rotate(-0.5 + Math.sin(t * 0.6 + x * 0.01) * 0.15);
+      ctx.save(); ctx.translate(x, yb - h * 0.85); ctx.rotate(-0.5 + Math.sin(t * 0.6 + ph) * 0.15);
       ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.42, w * 0.18, 0, 0, Math.PI); ctx.fill();
       ctx.fillStyle = "#59606b"; ctx.fillRect(-w * 0.015, -w * 0.25, w * 0.03, w * 0.25);
       ctx.fillStyle = (t * 2 | 0) % 2 ? "#ff3d3d" : "#ff9d9d"; ell(ctx, 0, -w * 0.27, w * 0.035, w * 0.035);
@@ -443,17 +445,17 @@ export function drawSprite(ctx, type, x, yb, w, t) {
         const bx = x + k * w * 0.18, tall = h * (1.5 + 0.3 * ((k + 2) % 2));
         ctx.strokeStyle = k ? "#2f9a5a" : "#3fb86a"; ctx.lineWidth = Math.max(1, w * 0.07); ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(bx, yb);
-        for (let j = 1; j <= 6; j++) ctx.lineTo(bx + Math.sin(t * 1.3 + j * 0.8 + k + x * 0.01) * w * 0.07 * j / 3, yb - tall * j / 6);
+        for (let j = 1; j <= 6; j++) ctx.lineTo(bx + Math.sin(t * 1.3 + j * 0.8 + k + ph) * w * 0.07 * j / 3, yb - tall * j / 6);
         ctx.stroke();
         ctx.fillStyle = "#4fd07a";
-        for (let j = 1; j < 6; j += 2) { const lx = bx + Math.sin(t * 1.3 + j * 0.8 + k + x * 0.01) * w * 0.07 * j / 3, ly = yb - tall * j / 6; ctx.beginPath(); ctx.ellipse(lx + w * 0.06 * (j % 4 ? 1 : -1), ly, w * 0.07, w * 0.03, (j % 4 ? -0.5 : 0.5), 0, 7); ctx.fill(); }
+        for (let j = 1; j < 6; j += 2) { const lx = bx + Math.sin(t * 1.3 + j * 0.8 + k + ph) * w * 0.07 * j / 3, ly = yb - tall * j / 6; ctx.beginPath(); ctx.ellipse(lx + w * 0.06 * (j % 4 ? 1 : -1), ly, w * 0.07, w * 0.03, (j % 4 ? -0.5 : 0.5), 0, 7); ctx.fill(); }
       }
       ctx.lineCap = "butt";
       break;
     }
     case "coral": {
       // branching coral: a fan of rounded arms
-      const col = ["#ff7a59", "#ff5fa2", "#ffb347"][Math.abs(Math.round(x)) % 3];
+      const col = ["#ff7a59", "#ff5fa2", "#ffb347"][Math.abs(seed) % 3];
       ctx.strokeStyle = col; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1, w * 0.09);
       const arm = (ax, ay, a, len, d) => {
         const ex = ax + Math.sin(a) * len, ey = ay - Math.cos(a) * len;
@@ -477,7 +479,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
     }
     case "jelly": {
       // a jellyfish bobbing above the sand, glowing a little
-      const by = yb - h * (1.3 + 0.15 * Math.sin(t * 1.5 + x * 0.02));
+      const by = yb - h * (1.3 + 0.15 * Math.sin(t * 1.5 + ph));
       ctx.fillStyle = "rgba(255,150,230,0.25)"; ell(ctx, x, by, w * 0.42, w * 0.32);
       ctx.fillStyle = "rgba(255,170,235,0.85)"; ctx.beginPath(); ctx.ellipse(x, by, w * 0.3, w * 0.22, 0, Math.PI, 0); ctx.fill();
       ctx.strokeStyle = "rgba(255,190,240,0.8)"; ctx.lineWidth = Math.max(1, w * 0.03);
@@ -491,7 +493,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "#a8743c"; ctx.beginPath(); ctx.ellipse(x, yb - h * 0.42, w * 0.4, h * 0.2, 0, Math.PI, 0); ctx.fill();
       ctx.fillStyle = "#ffd400"; ctx.fillRect(x - w * 0.4, yb - h * 0.45, w * 0.8, h * 0.06); ctx.fillRect(x - w * 0.06, yb - h * 0.5, w * 0.12, h * 0.2);
       for (let k = -1; k <= 1; k++) ell(ctx, x + k * w * 0.18, yb - h * 0.6 - Math.abs(k) * h * 0.04, w * 0.08, w * 0.08);
-      if (Math.sin(t * 4 + x * 0.01) > 0.7) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.2, yb - h * 0.7, w * 0.07); }
+      if (Math.sin(t * 4 + ph) > 0.7) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.2, yb - h * 0.7, w * 0.07); }
       break;
     }
     case "anemone": {
@@ -521,7 +523,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
         ctx.fillStyle = "rgba(150,220,255,0.75)"; poly(ctx, [bx - bw, yb, bx - bw * 0.8 + lean * w * 0.3, top + h * 0.12, bx + lean * w * 0.3, top, bx + bw * 0.8 + lean * w * 0.3, top + h * 0.12, bx + bw, yb]);
         ctx.fillStyle = "rgba(255,255,255,0.65)"; poly(ctx, [bx - bw * 0.5, yb, bx - bw * 0.4 + lean * w * 0.3, top + h * 0.14, bx + lean * w * 0.3, top + h * 0.02, bx - bw * 0.1, yb]);
       }
-      if (w > 10 && Math.sin(t * 3 + x * 0.02) > 0.4) { ctx.fillStyle = "#ffffff"; star(ctx, x + w * 0.05, yb - h * 0.95, w * 0.09); }
+      if (w > 10 && Math.sin(t * 3 + ph) > 0.4) { ctx.fillStyle = "#ffffff"; star(ctx, x + w * 0.05, yb - h * 0.95, w * 0.09); }
       break;
     }
     case "igloo": {
@@ -535,7 +537,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
     }
     case "penguin": {
       // a waddling penguin
-      const wob = Math.sin(t * 6 + x * 0.05) * 0.12;
+      const wob = Math.sin(t * 6 + ph) * 0.12;
       ctx.save(); ctx.translate(x, yb); ctx.rotate(wob);
       ctx.fillStyle = "#ff9d00"; ell(ctx, -w * 0.14, -h * 0.02, w * 0.12, h * 0.04); ell(ctx, w * 0.14, -h * 0.02, w * 0.12, h * 0.04);
       ctx.fillStyle = "#1c2233"; ell(ctx, 0, -h * 0.45, w * 0.32, h * 0.44);
@@ -568,7 +570,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     }
     case "cow": {
-      const bob = Math.sin(t * 2 + x * 0.03) * h * 0.02;
+      const bob = Math.sin(t * 2 + ph) * h * 0.02;
       ctx.fillStyle = "#ffffff"; ctx.fillRect(x - w * 0.4, yb - h * 0.58 + bob, w * 0.7, h * 0.32);
       ctx.fillStyle = "#222"; ell(ctx, x - w * 0.15, yb - h * 0.48 + bob, w * 0.12, h * 0.08); ell(ctx, x + w * 0.12, yb - h * 0.42 + bob, w * 0.08, h * 0.06);
       ctx.fillStyle = "#ffffff"; ctx.fillRect(x + w * 0.24, yb - h * 0.7 + bob, w * 0.22, h * 0.22);
@@ -580,20 +582,20 @@ export function drawSprite(ctx, type, x, yb, w, t) {
     case "windmill": {
       ctx.fillStyle = "#e9e0c8"; poly(ctx, [x - w * 0.16, yb, x - w * 0.08, yb - h * 0.8, x + w * 0.08, yb - h * 0.8, x + w * 0.16, yb]);
       ctx.fillStyle = "#8a5a2b"; poly(ctx, [x - w * 0.11, yb - h * 0.8, x, yb - h * 0.95, x + w * 0.11, yb - h * 0.8]);
-      ctx.save(); ctx.translate(x, yb - h * 0.82); ctx.rotate(t * 1.5 + x * 0.01);
+      ctx.save(); ctx.translate(x, yb - h * 0.82); ctx.rotate(t * 1.5 + ph);
       ctx.fillStyle = "#ffffff"; for (let k = 0; k < 4; k++) { ctx.rotate(Math.PI / 2); ctx.fillRect(-w * 0.04, 0, w * 0.08, h * 0.42); }
       ctx.restore(); ctx.fillStyle = "#555"; ell(ctx, x, yb - h * 0.82, w * 0.03, w * 0.03);
       break;
     }
     case "corn":
       for (let k = -1; k <= 1; k++) {
-        const cx2 = x + k * w * 0.3, sway = Math.sin(t * 2 + x * 0.02 + k) * w * 0.04;
+        const cx2 = x + k * w * 0.3, sway = Math.sin(t * 2 + ph + k) * w * 0.04;
         ctx.fillStyle = "#3f9a3a"; poly(ctx, [cx2 - w * 0.05, yb, cx2 + sway, yb - h * 1.1, cx2 + w * 0.05, yb]);
         ctx.fillStyle = "#ffd400"; ell(ctx, cx2 + sway * 0.6, yb - h * 0.62, w * 0.05, h * 0.12);
       }
       break;
     case "pirateship": {
-      const rock = Math.sin(t * 1.2 + x * 0.01) * 0.05;
+      const rock = Math.sin(t * 1.2 + ph) * 0.05;
       ctx.save(); ctx.translate(x, yb); ctx.rotate(rock);
       ctx.fillStyle = "#7a4a22"; poly(ctx, [-w * 0.48, -h * 0.28, w * 0.48, -h * 0.28, w * 0.36, 0, -w * 0.36, 0]);
       ctx.fillStyle = "#ffd400"; ctx.fillRect(-w * 0.4, -h * 0.2, w * 0.8, h * 0.03);
@@ -610,7 +612,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fillRect(x - w * 0.2, yb - h * 0.78, w * 0.08, h * 0.76);
       break;
     case "parrot": {
-      const flap = Math.sin(t * 9 + x * 0.05) * h * 0.06;
+      const flap = Math.sin(t * 9 + ph) * h * 0.06;
       ctx.fillStyle = "#5a3416"; ctx.fillRect(x - w * 0.03, yb - h * 1.4, w * 0.06, h * 1.4);
       ctx.fillStyle = "#e8262b"; ell(ctx, x, yb - h * 1.6, w * 0.22, h * 0.3);
       ctx.fillStyle = "#1f6fff"; poly(ctx, [x - w * 0.1, yb - h * 1.6, x - w * 0.45, yb - h * 1.5 + flap, x - w * 0.12, yb - h * 1.4]);
@@ -625,13 +627,13 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     case "cattail":
       for (let k = -1; k <= 1; k++) {
-        const cx2 = x + k * w * 0.25, sway = Math.sin(t * 1.8 + x * 0.03 + k * 2) * w * 0.05;
+        const cx2 = x + k * w * 0.25, sway = Math.sin(t * 1.8 + ph + k * 2) * w * 0.05;
         ctx.strokeStyle = "#3d8a3a"; ctx.lineWidth = Math.max(1, w * 0.05); ctx.beginPath(); ctx.moveTo(cx2, yb); ctx.lineTo(cx2 + sway, yb - h * (1 + 0.15 * k)); ctx.stroke();
         ctx.fillStyle = "#7a4a22"; ell(ctx, cx2 + sway, yb - h * (0.85 + 0.15 * k), w * 0.06, h * 0.13);
       }
       break;
     case "duck": {
-      const bob = Math.sin(t * 3 + x * 0.04) * h * 0.04;
+      const bob = Math.sin(t * 3 + ph) * h * 0.04;
       ctx.fillStyle = "#4fb6ff"; ell(ctx, x, yb - h * 0.04, w * 0.6, h * 0.08);
       ctx.fillStyle = "#ffffff"; ell(ctx, x, yb - h * 0.25 + bob, w * 0.38, h * 0.2); ell(ctx, x + w * 0.25, yb - h * 0.55 + bob, w * 0.17, h * 0.17);
       ctx.fillStyle = "#ff9d00"; poly(ctx, [x + w * 0.38, yb - h * 0.58 + bob, x + w * 0.58, yb - h * 0.53 + bob, x + w * 0.38, yb - h * 0.48 + bob]);
@@ -661,10 +663,10 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     case "shop": case "house": case "building": {
       // Piqua storefronts and houses; the windows glow at night (the sprite draws the same, the theme is dark)
-      const tall = type === "building" ? 1.5 : type === "shop" ? 0.85 : 0.75, col = ["#c0563f", "#5b7fa6", "#d9a441", "#7a5aa6", "#4f9a6a"][Math.abs(Math.round(x * 0.37)) % 5];
+      const tall = type === "building" ? 1.5 : type === "shop" ? 0.85 : 0.75, col = ["#c0563f", "#5b7fa6", "#d9a441", "#7a5aa6", "#4f9a6a"][Math.abs(seed) % 5];
       ctx.fillStyle = type === "house" ? "#e8dcc4" : col; ctx.fillRect(x - w * 0.45, yb - h * tall, w * 0.9, h * tall);
       if (type === "house") { ctx.fillStyle = "#8a3a2a"; poly(ctx, [x - w * 0.52, yb - h * tall, x, yb - h * (tall + 0.35), x + w * 0.52, yb - h * tall]); }
-      if (type === "shop") { ctx.fillStyle = "#ffe08a"; ctx.fillRect(x - w * 0.38, yb - h * 0.42, w * 0.76, h * 0.3); ctx.fillStyle = ["#e8262b", "#2f7fff", "#2fbf4a"][Math.abs(Math.round(x * 0.11)) % 3]; ctx.fillRect(x - w * 0.45, yb - h * 0.62, w * 0.9, h * 0.12); }
+      if (type === "shop") { ctx.fillStyle = "#ffe08a"; ctx.fillRect(x - w * 0.38, yb - h * 0.42, w * 0.76, h * 0.3); ctx.fillStyle = ["#e8262b", "#2f7fff", "#2fbf4a"][(Math.abs(seed) >> 1) % 3]; ctx.fillRect(x - w * 0.45, yb - h * 0.62, w * 0.9, h * 0.12); }
       ctx.fillStyle = "#ffe9a8";
       const rows = type === "building" ? 5 : 1;
       for (let r = 0; r < rows; r++) for (const c of [-0.25, 0.05, 0.25]) { if (type !== "building" && c === 0.05) continue; ctx.fillRect(x + w * c - w * 0.06, yb - h * tall + h * (0.12 + r * 0.26), w * 0.12, h * 0.12); }
@@ -699,7 +701,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
     case "trafficlight": {
       ctx.fillStyle = "#3a3f48"; ctx.fillRect(x - w * 0.06, yb - h * 2.2, w * 0.12, h * 2.2);
       ctx.fillStyle = "#222"; rr(ctx, x - w * 0.22, yb - h * 3, w * 0.44, h * 0.85, w * 0.08);
-      const on = Math.floor(t / 2 + x * 0.001) % 3;
+      const on = Math.floor(t / 2 + seed * 0.37) % 3;
       ["#ff3b3b", "#ffd400", "#2fdc5a"].forEach((c, k) => { ctx.fillStyle = k === on ? c : "#4a4a4a"; ell(ctx, x, yb - h * (2.82 - k * 0.26), w * 0.12, w * 0.12); });
       break;
     }
@@ -933,7 +935,7 @@ export function drawBox(ctx, x, y, w, t) {
   if (w < 2) return;
   ctx.fillStyle = "rgba(255,255,255,0.28)"; ell(ctx, x, y, w * 0.72, w * 0.72);
   const sx = 0.6 + 0.4 * Math.abs(Math.cos(t * 2.2 + x * 0.01)), s = w * 0.5;
-  ctx.fillStyle = `hsl(${(t * 140 + x * 0.3) % 360}, 90%, 58%)`;
+  ctx.fillStyle = `hsl(${(t * 60) % 360}, 90%, 58%)`;   // a slow, gentle color cycle (never flashing)
   rr(ctx, x - s * sx, y - s, s * 2 * sx, s * 2, s * 0.35);
   ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, w * 0.06); ctx.stroke();
   if (w > 14) { ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(w * 0.7)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", x, y + w * 0.04); }

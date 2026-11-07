@@ -1,7 +1,7 @@
 {
   "name": "turbo-dash",
   "private": true,
-  "version": "1.2.4",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5184 --strictPort",
@@ -11,7 +11,8 @@
     "stage": "vite build --outDir .staging --emptyOutDir && vite preview --host --outDir .staging --port 5185 --strictPort",
     "sim": "node scripts/sim.mjs",
     "career": "node scripts/career.mjs",
-    "test": "node scripts/test-saves.mjs && node scripts/test-physics.mjs"
+    "test": "node scripts/test-saves.mjs && node scripts/test-physics.mjs && node scripts/emoji.mjs --check",
+    "emoji": "node scripts/emoji.mjs"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

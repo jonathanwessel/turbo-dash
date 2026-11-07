@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.0 — The game's own pictures 🎨
+
+- **Every emoji is now the game's own picture.** Phones and tablets draw emoji with their own fonts, so the same game
+  looked different on every device (a gold coin on one, a silver coin with a bird on another). Now all ~140 emoji in
+  menus, buttons, the town, track cards and race messages use one picture set that ships with the game and works
+  offline: Twemoji (© Twitter, Inc. and other contributors, CC-BY 4.0). Coins are the game's own gold coin.
+  Plain arrows and ticks (◀ ▶ ✔) stay normal text.
+- **Fixed: Downtown's buildings flashed colors** (and traffic lights and beach umbrellas flickered) while driving.
+  Each roadside thing now keeps its own colors. The ❓ power-up boxes change color slowly instead of fast.
+- **Track stars mean something you can see:** earned stars are gold, the rest dim, and a small bar under them shows
+  how close the next one is (a star at 3, 10, 25, 50 and 100 wins on that track and difficulty).
+- For grown-ups: `npm run emoji` fetches the picture for any new emoji added to the code, and `npm test` fails
+  if one is missing.
+
 ## v1.2.4 — Toy Track World on the Pixel 10, mystery cars stay mystery
 
 - **Toy Track World on phones and tablets:** the 3D now has three levels: full (computers), light (tablets) and

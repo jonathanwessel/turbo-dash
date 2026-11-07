@@ -1,6 +1,7 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
 import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen } from "./data.js";
 import { drawCar } from "./draw.js";
+import { drawEmojiText } from "./emoji.js";
 import { S, save, upsOf } from "./save.js";
 
 /* A car with its paint and sticker applied. */
@@ -26,7 +27,7 @@ export function drawCarOrMystery(ctx, x, yb, w, car, o = {}) {
   drawCar(c, x, yb, w, { ...car, sticker: "none", dirt: 0 }, { ...o, noShadow: true, nitro: false });
   c.globalCompositeOperation = "source-atop"; c.fillStyle = MYSTERY; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "source-over";
   ctx.drawImage(off, 0, 0);
-  ctx.font = `${Math.round(w * 0.32)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("❓", x + w * 0.42, yb - w * 0.62);
+  ctx.font = `${Math.round(w * 0.32)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; drawEmojiText(ctx, "❓", x + w * 0.42, yb - w * 0.62);
 }
 
 // which world a car belongs to: its own world, or the world of the cup that gives it (Earth otherwise)
@@ -69,7 +70,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
       drawCar(x, 80, 88, 96, lookOf(c), { t: 0, noShadow: !owned });
       if (!owned) {
         x.globalCompositeOperation = "source-atop"; x.fillStyle = buy ? "rgba(20,10,50,0.45)" : MYSTERY; x.fillRect(0, 0, 160, 95); x.globalCompositeOperation = "source-over";
-        x.font = "26px system-ui"; x.textAlign = "right"; x.textBaseline = "top"; x.fillText(buy ? "🔒" : "❓", 156, 2);
+        x.font = "26px system-ui"; x.textAlign = "right"; x.textBaseline = "top"; drawEmojiText(x, buy ? "🔒" : "❓", 156, 2);
       }
     }
   }
@@ -192,7 +193,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.88, W * 0.48, H * 0.14, 0, 0, 7); ctx.fill();
     const w = W * 0.62 * (1 + zoom * 0.08);
     drawCarOrMystery(ctx, W / 2, H * 0.9 + Math.sin(t * 3) * 3, w, car, { t, steer: Math.sin(t * 1.3) * 0.5, nitro: Math.sin(t * 0.8) > 0.6 });
-    if (!S.owned.includes(car.id) && carKnown(car)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.fillText("🔒", W - 8, H * 0.2); }
+    if (!S.owned.includes(car.id) && carKnown(car)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; drawEmojiText(ctx, "🔒", W - 8, H * 0.2); }
   }
 
   const affordable = () => CARS.some(c => c.price != null && !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));

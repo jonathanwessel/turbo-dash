@@ -1,6 +1,7 @@
 import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
-import "./coins.js";
+import { startEmoji, drawEmojiText } from "./emoji.js";
+startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
 import { townSVG, SITE_PIPS } from "./town.js";
@@ -502,7 +503,10 @@ function openTracks() {
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
-      <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
+      ${(() => { const w = S.mastery[t.id + ":" + S.diff] || 0, s = starsFor(w), lo = MASTERY[s - 1] || 0, hi = MASTERY[s];
+        // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
+        return `<div class="tc-stars" title="Win here to earn stars">${MASTERY.map((n, k) => `<i class="${k < s ? "on" : ""}">★</i>`).join("")}</div>`
+          + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><small>${w}/${hi}</small>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
@@ -600,7 +604,7 @@ function drawWash(dt) {
   ctx.fillStyle = "rgba(127,216,255,0.25)"; ctx.fillRect(0, H * 0.86, W, H * 0.14);
   const car = CARS.find(c => c.id === S.car) || CARS[0];
   drawCar(ctx, W / 2, H * 0.9, W * 0.62, lookOf(car), { t: washT });
-  if (!(S.dirt[S.car] || 0)) for (let k = 0; k < 4; k++) { const a = washT * 2 + k * 1.6; ctx.fillStyle = "#fff"; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(a * 2); ctx.font = `${Math.round(H * 0.08)}px system-ui`; ctx.fillText("✨", W * (0.25 + 0.5 * ((k * 0.37) % 1)), H * (0.25 + 0.15 * (k % 2))); }
+  if (!(S.dirt[S.car] || 0)) for (let k = 0; k < 4; k++) { const a = washT * 2 + k * 1.6; ctx.fillStyle = "#fff"; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(a * 2); ctx.font = `${Math.round(H * 0.08)}px system-ui`; drawEmojiText(ctx, "✨", W * (0.25 + 0.5 * ((k * 0.37) % 1)), H * (0.25 + 0.15 * (k % 2))); }
   ctx.globalAlpha = 1;
   for (const b of washBubbles) { b.life -= dt * 0.8; b.y -= dt * 0.08; ctx.strokeStyle = `rgba(255,255,255,${Math.max(0, b.life)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x * W, b.y * H, b.r * W, 0, 7); ctx.stroke(); }
   washBubbles = washBubbles.filter(b => b.life > 0).slice(-120);

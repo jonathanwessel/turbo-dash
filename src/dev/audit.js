@@ -33,7 +33,7 @@ window.__audit = (rootSel) => {
   const issues = [];
   const BAD = /\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n; (n = walker.nextNode());) if (n.textContent.includes("🪙") && n.parentElement && vis(n.parentElement)) issues.push("EMOJI COIN (device-drawn, not our gold coin) in " + name(n.parentElement));
+  for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));
   const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker2.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
   for (const el of root.querySelectorAll("[title],[aria-label]")) for (const a of ["title", "aria-label"]) if (BAD.test(el.getAttribute(a) || "")) issues.push("BAD TEXT in " + a + " of " + name(el));

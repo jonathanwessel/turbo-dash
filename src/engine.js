@@ -1,5 +1,6 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
+import { drawEmojiText } from "./emoji.js";
 import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
 
@@ -672,7 +673,7 @@ export class Race {
         if (sx + sw < 0 || sx - sw > W || sw < 1) continue;
         this.clipped(ctx, s, sy, () => {
           if (SPRITES[spr.type].collide && sw > 6) { ctx.fillStyle = "rgba(0,0,0,0.16)"; ctx.beginPath(); ctx.ellipse(sx, sy, sw * 0.42, sw * 0.07, 0, 0, 7); ctx.fill(); }
-          drawSprite(ctx, spr.type, sx, sy, sw, t);
+          drawSprite(ctx, spr.type, sx, sy, sw, t, s.index * 7 + s.sprites.indexOf(spr));
         });
       }
       for (const c of s.coins) {
@@ -725,7 +726,7 @@ export class Race {
         quad(ctx, ax - aw, ay, ax, ay - aw * 0.8, ax + aw, ay, ax, ay - aw * 0.35);
       }
       ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      if (Math.sin(t * 6) > -0.6) ctx.fillText("🤖", W / 2 + pw * 0.42, H - H * 0.02 - lift - pw * 0.55);
+      if (Math.sin(t * 6) > -0.6) drawEmojiText(ctx, "🤖", W / 2 + pw * 0.42, H - H * 0.02 - lift - pw * 0.55);
     }
     if (this.beamT > 0) {
       ctx.globalAlpha = Math.min(1, this.beamT) * 0.45; ctx.fillStyle = "#9fe8ff";
@@ -790,7 +791,7 @@ export class Race {
       ctx.font = `900 ${Math.round(H * 0.08 * s)}px system-ui,sans-serif`;
       ctx.lineWidth = H * 0.012; ctx.strokeStyle = "rgba(0,0,0,0.6)";
       const qx = W / 2 + q.x * W, qy = H * 0.5 - q.age * H * 0.15;
-      ctx.strokeText(q.text, qx, qy); ctx.fillStyle = q.color; ctx.fillText(q.text, qx, qy);
+      drawEmojiText(ctx, q.text, qx, qy, true, q.color);
     }
     ctx.globalAlpha = 1;
     ctx.restore();

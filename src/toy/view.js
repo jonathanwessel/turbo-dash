@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { toyPoint, DS, HW, WALL_H } from "./track.js";
+import { drawEmojiText } from "../emoji.js";
 
 const V = (a = 0, b = 0, c = 0) => new THREE.Vector3(a, b, c);
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -212,7 +213,7 @@ function trackMeshes(T, pal) {
       station.add(wheel); wheels.push(wheel);
     }
     const roof = new THREE.Mesh(new RoundedBoxGeometry(2 * HW + 5.6, 1.2, 5, 2, 0.3), red); roof.position.set(0, 4.1, 0); roof.castShadow = true; station.add(roof);
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.1), new THREE.MeshBasicMaterial({ map: canvasTex(256, 56, (c, w, h) => { c.fillStyle = "#ffd400"; c.fillRect(0, 0, w, h); c.fillStyle = "#e8262b"; c.font = "900 40px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("⚡ BOOST ⚡", w / 2, h / 2 + 2); }) }));
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.1), new THREE.MeshBasicMaterial({ map: canvasTex(256, 56, (c, w, h) => { c.fillStyle = "#ffd400"; c.fillRect(0, 0, w, h); c.fillStyle = "#e8262b"; c.font = "900 40px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; drawEmojiText(c, "⚡ BOOST ⚡", w / 2, h / 2 + 2); }) }));
     sign.position.set(0, 4.1, 2.52); sign.rotation.y = Math.PI; station.add(sign);
     const sign2 = sign.clone(); sign2.position.z = -2.52; sign2.rotation.y = 0; station.add(sign2);
     grp.add(station);
@@ -441,15 +442,15 @@ export class ToyView {
     }
     if (falling) {
       const p = race.player, k = Math.max(0, Math.min(1, 1.4 - p.fallT)), y = -H * 0.3 + k * H * 0.55;
-      ctx.font = `${Math.round(H * 0.4)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🖐️", W / 2, y);
+      ctx.font = `${Math.round(H * 0.4)}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; drawEmojiText(ctx, "🖐️", W / 2, y);
     }
-    if (race.autoTarget !== null && Math.sin(t * 6) > -0.6) { ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; ctx.fillText("🤖", W * 0.58, H * 0.72); }
+    if (race.autoTarget !== null && Math.sin(t * 6) > -0.6) { ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; drawEmojiText(ctx, "🤖", W * 0.58, H * 0.72); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     for (const q of race.popups) {
       const s = 1 + Math.min(0.3, q.age * 2); ctx.globalAlpha = 1 - q.age;
       ctx.font = `900 ${Math.round(H * 0.08 * s)}px system-ui,sans-serif`; ctx.lineWidth = H * 0.012; ctx.strokeStyle = "rgba(0,0,0,0.6)";
       const qx = W / 2 + q.x * W, qy = H * 0.42 - q.age * H * 0.15;
-      ctx.strokeText(q.text, qx, qy); ctx.fillStyle = q.color; ctx.fillText(q.text, qx, qy);
+      drawEmojiText(ctx, q.text, qx, qy, true, q.color);
     }
     ctx.globalAlpha = 1;
   }

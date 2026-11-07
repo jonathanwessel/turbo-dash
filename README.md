@@ -72,3 +72,6 @@ is further along (races, research, Driver School, cars, upgrades, goals and rank
 3. `npm run release` tags `v<version>` at HEAD and builds that tag into `live/`.
 
 `npm run release -- v0.1.0` rebuilds an older tag, which is also how to roll back.
+
+## Credits
+Emoji pictures: [Twemoji](https://github.com/jdecked/twemoji) by Twitter, Inc. and other contributors, licensed CC-BY 4.0 (in `public/emoji/`).
