@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.0 — Garage & Tracks (MVP)
+
+- **Six tracks** to unlock: Sunny Hills, Desert Dash, Snowy Peaks, Candy Land, Lava Mountain, Space Road.
+  Finish 3rd or better to open the next one. Each is faster and pays more.
+- **Garage**: six cars to buy with coins (Zippy, Blue Bolt, Mega Monster, Shark Fin, Rocket Rex, Galaxy GT),
+  each faster than the last.
+- **Upgrades**: Engine (speed), Turbo (more and longer turbo), Tires (turning), Magnet (grab coins from
+  farther away), five levels each.
+- **Prizes**: coins for your place, every coin you drove over, and a **treasure chest** pick after each race.
+- **Free daily gift** that grows each day in a row (up to 450 coins).
+- Hub screen, coin counter, music and sound toggles, confetti, and a red "!" when you can afford something.
+- Full screen on tablets and phones: any tap returns to full screen, plus a ⛶ button on the hub.
+
 ## v0.1.0 — Proof of Concept
 
 - Pseudo-3D racing on a looping road with curves and hills (Sunny Hills).
