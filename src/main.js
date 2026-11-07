@@ -2,17 +2,18 @@ import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpe
 import { Race, trackLen } from "./engine.js";
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
-import { townSVG } from "./town.js";
+import { townSVG, SITE_PIPS } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
-import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater } from "./audio.js";
+import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
 import { createGarage, lookOf } from "./garage.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
+const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
 const $ = id => document.getElementById(id);
 const canvas = $("game");
 const STEP = 1 / 60;
@@ -96,7 +97,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = ["s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -193,7 +194,7 @@ function startRace(track) {
   const trial = trialRun && !boss;
   race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  show(null); setRaceUi(true); setSong("race"); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
+  show(null); setRaceUi(true); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
@@ -297,7 +298,7 @@ function showTrialResult(r) {
   const [b, s, g] = trialTimes(t, len);
   $("r-trophy").textContent = TRIAL_MEDALS[medal] || "⏱️";
   $("r-title").textContent = record ? `NEW RECORD! ${time.toFixed(1)}s` : `${time.toFixed(1)} seconds`;
-  $("r-sub").textContent = !before ? `Your first time on ${t.name}! Next time, race your ghost.` : record ? `You beat your ghost by ${(before - time).toFixed(1)}s, ${PLAYER}!` : `Your record is ${before.toFixed(1)}s. Catch your ghost!`;
+  $("r-sub").textContent = !before ? `Your first time on ${t.name}! Next time, race your ghost.` : record ? `You beat your ghost by ${(before - time).toFixed(1)}s, ${who()}!` : `Your record is ${before.toFixed(1)}s. Catch your ghost!`;
   countUp($("r-prize"), pay); countUp($("r-road"), r.coins);
   $("r-goal").hidden = claimable().length <= goalsBefore;
   $("r-unlock").hidden = medal <= oldMedal;
@@ -401,7 +402,7 @@ $("track-list").addEventListener("click", e => {
 /* ---------- cups ---------- */
 let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
 function startCup(cup) { bossRun = null; trialRun = false; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
-const racerName = k => k === 0 ? PLAYER : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
+const racerName = k => k === 0 ? who() : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
 const cupOrder = () => [0, 1, 2, 3, 4, 5].sort((a, b) => cupRun.pts[b] - cupRun.pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));
 function paintCupResult() {
   const c = cupRun, order = cupOrder();
@@ -422,7 +423,7 @@ function showCupEnd() {
   }
   save(); cupRun = null;
   $("ce-title").textContent = c.cup.name + "!";
-  $("ce-place").textContent = place <= 3 ? `${place}${suffix(place)} place, ${PLAYER}!` : `${place}${suffix(place)} — try again!`;
+  $("ce-place").textContent = place <= 3 ? `${place}${suffix(place)} place, ${who()}!` : `${place}${suffix(place)} — try again!`;
   $("ce-prizes").innerHTML = prizes.map(p => `<span>${p}</span>`).join("");
   drawPodium(order);
   show("s-cupend"); refreshCoins(); sfx(place <= 3 ? "win" : "lose"); if (place <= 3) confetti(place === 1 ? 220 : 100);
@@ -473,8 +474,8 @@ function showResult(r) {
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
   $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} PLACE!` : `${r.place}${suffix(r.place)} — Good try!`;
   countUp($("r-prize"), prize); countUp($("r-road"), r.coins);
-  const cheers = r.place === 1 ? ["Way to go, " + PLAYER + "!", "You're the champ, " + PLAYER + "!", "Super fast, " + PLAYER + "!"]
-    : r.place <= 3 ? ["Great driving, " + PLAYER + "!", "So close, " + PLAYER + "!"] : ["Upgrade your car and try again, " + PLAYER + "!", "Keep going, " + PLAYER + "!"];
+  const cheers = r.place === 1 ? ["Way to go, " + who() + "!", "You're the champ, " + who() + "!", "Super fast, " + who() + "!"]
+    : r.place <= 3 ? ["Great driving, " + who() + "!", "So close, " + who() + "!"] : ["Upgrade your car and try again, " + who() + "!", "Keep going, " + who() + "!"];
   $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
   $("r-goal").hidden = claimable().length <= goalsBefore;
   const fresh = TRACKS.filter(t => trackOpen(S, t) && !openBefore.includes(t));
@@ -499,7 +500,7 @@ function showResult(r) {
       const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
       $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
-    } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + PLAYER + "!"; }
+    } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }
     lastBoss = b; bossRun = null;
   } else lastBoss = null;
   if (cupRun) { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = cupRun.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
@@ -622,16 +623,16 @@ $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
 /* ---------- 🚦 Driver School ---------- */
-const COACH = ["Hi " + PLAYER + "! Ready for a lesson?", "Reading makes great drivers!", "Playing outside earns tickets!", "Buckle up, let's learn!", "Great job off the screen, " + PLAYER + "!"];
+const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Reading makes great drivers!", "Playing outside earns tickets!", "Buckle up, let's learn!", "Great job off the screen, " + who() + "!"];
 function openSchool() {
-  $("coach-say").textContent = COACH[Math.floor(Math.random() * COACH.length)];
+  { const L = COACH(); $("coach-say").textContent = L[Math.floor(Math.random() * L.length)]; }
   paintSchool(); show("s-school");
 }
 function paintSchool() {
   const sc = S.school, L = licenseLevel(S), lic = LICENSES[L], next = LICENSES[L + 1], n = lessonsOf(S);
   $("sch-tickets").textContent = sc.tickets;
   $("license").style.background = `linear-gradient(135deg, ${lic.color}, #fff)`;
-  $("license").innerHTML = `<div class="lc-pic">🚗</div><b>DRIVER LICENSE · ${PLAYER.toUpperCase()}</b><small>${lic.name}${next ? ` → ${next.name} at ${next.lessons} lessons` : " · the very best!"}</small>
+  $("license").innerHTML = `<div class="lc-pic">🚗</div><b>DRIVER LICENSE · ${who().toUpperCase()}</b><small>${lic.name}${next ? ` → ${next.name} at ${next.lessons} lessons` : " · the very best!"}</small>
     <div class="bar"><i style="width:${next ? Math.round(100 * (n - lic.lessons) / (next.lessons - lic.lessons)) : 100}%"></i></div>`;
   $("skills").innerHTML = SKILLS.map(k => {
     const lv = sc.skills[k.id], max = lv >= SKILL_MAX, cost = skillCost(lv);
@@ -685,7 +686,7 @@ $("log-add").onclick = () => {
   const t = ticketsFor(logAct, mins, sc.readingDouble);
   sc.log.unshift({ d: dayKey(new Date()), a: logAct, m: mins, t }); sc.log.length = Math.min(sc.log.length, 60);
   sc.tickets += t; sc.earned += t; save();
-  sfx("buy"); confetti(70); toast(`+${t} 🎟️ for ${PLAYER}!`); paintLog();
+  sfx("buy"); confetti(70); toast(`+${t} 🎟️ for ${who()}!`); paintLog();
 };
 $("log-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 
@@ -726,7 +727,15 @@ $("town-wrap").innerHTML = townSVG();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
 const today = () => dayKey(new Date());
 function refreshHub() {
-  for (const b of BUILDINGS) if ($("bld-" + b.id)) { const open = buildingOpen(S, b.id); $("bld-" + b.id).style.display = open ? "" : "none"; $("site-" + b.id).style.display = open ? "none" : ""; }
+  for (const b of BUILDINGS) if ($("bld-" + b.id)) {
+    const open = buildingOpen(S, b.id); $("bld-" + b.id).style.display = open ? "" : "none"; $("site-" + b.id).style.display = open ? "none" : "";
+    if (!open && $("site-" + b.id + "-0")) {
+      // the site grows over the last SITE_PIPS ranks before it opens: dirt → foundation + crane → tall walls
+      const done = Math.max(0, SITE_PIPS - (b.rank - S.rank)), stage = done >= 4 ? 2 : done >= 2 ? 1 : 0;
+      for (let k = 0; k < 3; k++) $("site-" + b.id + "-" + k).style.display = k === stage ? "" : "none";
+      document.querySelectorAll(`#site-${b.id} .pip`).forEach(p => p.setAttribute("fill", +p.dataset.pip < done ? "#5be36a" : "#fff"));
+    }
+  }
   tb("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today());
   tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
   tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
@@ -775,8 +784,8 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(() => { if (screen === "s-hub") openRank(); }, 350); } else { sfx("click"); openLab(); } }
 });
 const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { refreshChips(); if (screen === "s-hub") refreshHub(); } });
-const PROF = ["Hi " + PLAYER + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + PLAYER + "!"];
-function openLab() { $("prof-say").textContent = PROF[Math.floor(Math.random() * PROF.length)]; lab.open(); show("s-lab"); }
+const PROF = () => ["Hi " + who() + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + who() + "!"];
+function openLab() { { const L = PROF(); $("prof-say").textContent = L[Math.floor(Math.random() * L.length)]; } lab.open(); show("s-lab"); }
 function goHub() {
   show("s-hub");
   if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(() => { if (screen === "s-hub") openGift(); }, 400); }
@@ -784,6 +793,7 @@ function goHub() {
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
 function paintToggles() {
+  $("set-name-now").textContent = S.name || "Tap to add";
   $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx);
   $("set-music").textContent = S.music ? "On" : "Off"; $("set-sfx").textContent = S.sfx ? "On" : "Off";
 }
@@ -793,10 +803,27 @@ paintToggles();
 
 function pause() { if (mode !== "race" || race.state === "done") return; paused = true; engineOff(); show("s-pause"); }
 $("btn-play").onclick = () => {
-  initAudio(); goFullscreen(); sfx("click"); goHub();
+  initAudio(); goFullscreen(); sfx("click");
+  if (!S.name) askName(); else goHub();
   cloudWake().then(r => { if (r === "loaded") location.reload(); });   // quietly reconnect Google Save (needs this tap)
 };
 whenSaved(cloudSaved);
+/* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
+let nameBack = "s-hub";
+function askName(back = "s-hub") {
+  nameBack = back; $("name-in").value = S.name || ""; paintNameOk(); show("s-name");
+  setTimeout(() => $("name-in").focus(), 250);
+}
+const paintNameOk = () => { $("name-ok").disabled = !$("name-in").value.trim(); };
+$("name-in").addEventListener("input", paintNameOk);
+$("name-in").addEventListener("keydown", e => { if (e.key === "Enter") $("name-ok").click(); });
+$("name-ok").onclick = () => {
+  const n = $("name-in").value.replace(/[<>&"]/g, "").trim().slice(0, 14); if (!n) { sfx("nope"); return; }
+  S.name = n.charAt(0).toUpperCase() + n.slice(1); save(); sfx("buy"); $("name-in").blur();
+  toast(`👋 Hi ${S.name}! Let's race!`); confetti(60);
+  if (nameBack === "s-hub") goHub(); else { show(nameBack); paintToggles(); }
+};
+$("set-name").onclick = () => { sfx("click"); askName("s-settings"); };
 function paintCloud() {
   const ok = cloudReady(), linked = cloudLinked();
   $("g-in").hidden = linked || !ok; $("g-now").hidden = !linked || !ok; $("g-out").hidden = !linked;

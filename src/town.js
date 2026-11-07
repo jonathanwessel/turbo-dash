@@ -92,7 +92,7 @@ const lab = () => { const { x, w } = B.lab, top = BASE - 200; return `
   <text x="${cx("lab")}" y="${top - 18}" class="lbl" font-size="26" id="lab-timer"></text>
   <rect x="${cx("lab") - 30}" y="${BASE - 96}" width="60" height="96" rx="8" fill="#1b6f7a"/>
   <g class="tubes bubbling">${[0, 1].map(i => `<rect x="${x + 16 + i * 30}" y="${BASE - 84}" width="20" height="62" rx="10" fill="#fff" opacity=".8"/><rect x="${x + 19 + i * 30}" y="${BASE - 52}" width="14" height="28" rx="7" fill="${["#5be36a", "#ff3fa4"][i]}"/>`).join("")}${[0, 1].map(i => `<rect x="${x + w - 36 - i * 30}" y="${BASE - 84}" width="20" height="62" rx="10" fill="#fff" opacity=".8"/><rect x="${x + w - 33 - i * 30}" y="${BASE - 52}" width="14" height="28" rx="7" fill="${["#ffd400", "#3cf2ff"][i]}"/>`).join("")}</g>
-  ${label(cx("lab"), top + 16, w - 10, "TURBO LAB", 26)}
+  ${label(cx("lab"), top + 16, w - 10, "TURBO LAB", 23)}
   ${lock("lab-lock", x, w, top, 200, "RANK 2")}
   ${badge("tb-lab", x + w, top - 20)}
 </g>`; };
@@ -169,15 +169,38 @@ const park = () => { const { x, w } = B.park, top = BASE - 150; return `
   ${site("park", x, w, 20)}
 </g>`; };
 
-/* A building not open yet: a construction site with a fence and the rank it opens at. */
+/* A building not open yet: a construction site that grows as Carter ranks up toward it (stages 0-2, shown by
+   main.js): dirt and a digger → foundation, low walls and a crane → tall walls with scaffolding → the finished building.
+   The sign says what it will be, and one pip per rank to go fills up. */
+const SITE_INFO = {
+  icecream: { icon: "🍦", name: "ICE CREAM", color: "#bff4ff", roof: "#ff8ad8", h: 180 },
+  fire: { icon: "🚒", name: "FIRE STATION", color: "#c0392b", roof: "#8a1f16", h: 220 },
+  park: { icon: "🧺", name: "PARK", color: "#3fb84e", roof: "#2f9a3d", h: 150 },
+};
+export const SITE_PIPS = 5;   // ranks of building before it opens (pips on the sign)
 function site(id, x, w, rank) {
+  const I = SITE_INFO[id], sw = Math.min(w - 6, 200), sx = x + (w - sw) / 2, cx0 = x + w / 2;
+  const fit = (text, max, size) => Math.min(size, Math.floor(max / (text.length * 0.62 + 1.2)));   // font size that fits the board
+  const nameFs = fit(I.name, sw - 74, 26), rankFs = fit("RANK " + rank, sw - 74, 28);
+  const fence = hgt => `<rect x="${x}" y="${BASE - hgt}" width="${w}" height="${hgt}" fill="#ff8a00"/>${Array.from({ length: Math.floor(w / 24) }, (_, i) => `<rect x="${x + i * 24 + 4}" y="${BASE - hgt}" width="12" height="${hgt}" fill="#fff"/>`).join("")}`;
+  const crane = h => `<g><rect x="${x + w - 30}" y="${BASE - h - 70}" width="10" height="${h + 70}" fill="#ffc400"/>${Array.from({ length: Math.floor((h + 70) / 18) }, (_, i) => `<line x1="${x + w - 30}" y1="${BASE - h - 70 + i * 18}" x2="${x + w - 20}" y2="${BASE - h - 52 + i * 18}" stroke="#b38900" stroke-width="2"/>`).join("")}
+    <rect x="${x + w * 0.25}" y="${BASE - h - 78}" width="${w * 0.75 - 10}" height="10" fill="#ffc400"/><line x1="${x + w * 0.4}" y1="${BASE - h - 68}" x2="${x + w * 0.4}" y2="${BASE - h - 20}" stroke="#555" stroke-width="3"/>
+    <rect x="${x + w * 0.4 - 14}" y="${BASE - h - 22}" width="28" height="16" fill="${I.color}" stroke="#4a2600" stroke-width="2"/></g>`;
+  const walls = (h, scaffold) => `<rect x="${x + 8}" y="${BASE - h}" width="${w - 16}" height="${h}" fill="${I.color}" stroke="rgba(0,0,0,.15)" stroke-width="3"/>
+    ${Array.from({ length: Math.floor(h / 26) }, (_, r) => `<line x1="${x + 8}" y1="${BASE - r * 26}" x2="${x + w - 8}" y2="${BASE - r * 26}" stroke="rgba(0,0,0,.12)" stroke-width="2"/>`).join("")}
+    ${scaffold ? `${[0.2, 0.5, 0.8].map(f => `<line x1="${x + w * f}" y1="${BASE}" x2="${x + w * f}" y2="${BASE - h - 20}" stroke="#8a6a3a" stroke-width="5"/>`).join("")}${[0.35, 0.7].map(f => `<line x1="${x + 4}" y1="${BASE - h * f}" x2="${x + w - 4}" y2="${BASE - h * f}" stroke="#8a6a3a" stroke-width="5"/>`).join("")}` : ""}`;
+  const sign = `<g class="site-sign"><rect x="${cx0 - 5}" y="${BASE - I.h - 70}" width="10" height="${I.h + 70}" fill="#555"/>
+    <rect x="${sx}" y="${BASE - I.h - 156}" width="${sw}" height="98" rx="14" fill="#ffd400" stroke="#4a2600" stroke-width="5"/>
+    <text x="${sx + 34}" y="${BASE - I.h - 92}" font-size="48" text-anchor="middle">${I.icon}</text>
+    <text x="${sx + 34 + (sw - 34) / 2}" y="${BASE - I.h - 120}" class="lbl" font-size="${nameFs}">${I.name}</text>
+    <text x="${sx + 34 + (sw - 34) / 2}" y="${BASE - I.h - 88}" class="lbl" font-size="${rankFs}">RANK ${rank}</text>
+    ${Array.from({ length: SITE_PIPS }, (_, i) => `<circle class="pip" data-site="${id}" data-pip="${i}" cx="${cx0 + (i - (SITE_PIPS - 1) / 2) * 20}" cy="${BASE - I.h - 72}" r="7" fill="#fff" stroke="#4a2600" stroke-width="3"/>`).join("")}</g>`;
   return `<g id="site-${id}" style="display:none">${lot(x, w)}
-    <rect x="${x}" y="${BASE - 70}" width="${w}" height="70" fill="#ff8a00"/>
-    ${Array.from({ length: Math.floor(w / 24) }, (_, i) => `<rect x="${x + i * 24 + 4}" y="${BASE - 70}" width="12" height="70" fill="#fff"/>`).join("")}
-    <rect x="${x + w / 2 - 5}" y="${BASE - 190}" width="10" height="122" fill="#555"/>
-    <rect x="${x + w / 2 - 70}" y="${BASE - 196}" width="140" height="64" rx="10" fill="#ffd400" stroke="#4a2600" stroke-width="5"/>
-    <text x="${x + w / 2}" y="${BASE - 156}" class="lbl" font-size="26">🚧 RANK ${rank}</text>
-    <text x="${x + w / 2}" y="${BASE - 210}" font-size="48" text-anchor="middle">🏗️</text></g>`;
+    <g id="site-${id}-0"><ellipse cx="${cx0 - 10}" cy="${BASE}" rx="${w * 0.35}" ry="34" fill="#a0703a"/><ellipse cx="${cx0 - 20}" cy="${BASE - 6}" rx="${w * 0.2}" ry="22" fill="#b98448"/>
+      <text x="${x + w * 0.72}" y="${BASE - 4}" font-size="52" text-anchor="middle">🚜</text>${fence(46)}</g>
+    <g id="site-${id}-1" style="display:none"><rect x="${x + 4}" y="${BASE - 14}" width="${w - 8}" height="14" fill="#9aa0aa"/>${walls(I.h * 0.35, false)}${crane(I.h)}${fence(40)}</g>
+    <g id="site-${id}-2" style="display:none">${walls(I.h * 0.8, true)}<rect x="${x}" y="${BASE - I.h * 0.8 - 14}" width="${w}" height="14" fill="${I.roof}" opacity=".6"/>${crane(I.h)}${fence(34)}</g>
+    ${sign}</g>`;
 }
 
 // little things in the gaps between buildings (they never take taps)

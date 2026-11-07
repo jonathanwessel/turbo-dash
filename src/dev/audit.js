@@ -34,6 +34,20 @@ window.__audit = (rootSel) => {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
   for (const el of root.querySelectorAll("[title],[aria-label]")) for (const a of ["title", "aria-label"]) if (BAD.test(el.getAttribute(a) || "")) issues.push("BAD TEXT in " + a + " of " + name(el));
+  // 🖼️ pictures drawn as SVG (Main Street): every label must fit on its sign board, and no button may sit on a label
+  const svgVis = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const st = getComputedStyle(e); if (st.display === "none" || st.visibility === "hidden" || e.getAttribute?.("style")?.includes("display:none")) return false; } return true; };
+  const svgTexts = [...root.querySelectorAll("svg text")].filter(t => t.textContent.trim() && svgVis(t));
+  for (const t of svgTexts) {
+    const r = t.getBoundingClientRect(); if (r.width < 2) continue;
+    const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
+    const board = [...t.parentElement.children].filter(c => c.tagName === "rect" && svgVis(c)).map(c => c.getBoundingClientRect())
+      .filter(b => cx > b.left && cx < b.right && cy > b.top && cy < b.bottom).sort((a, b) => a.width * a.height - b.width * b.height)[0];
+    if (board && (r.left < board.left - 1 || r.right > board.right + 1)) issues.push(`SVG LABEL SPILLS "${t.textContent.trim().slice(0, 24)}" (${Math.round(r.width)}px on a ${Math.round(board.width)}px sign)`);
+    if (r.right > 0 && r.left < W) for (const it of items) if (it.e.tagName === "BUTTON" && getComputedStyle(it.e).position !== "static") {
+      const b = it.r, ix = Math.min(b.right, r.right) - Math.max(b.left, r.left), iy = Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top);
+      if (ix > 4 && iy > 4) issues.push(`BUTTON COVERS LABEL ${name(it.e)} over "${t.textContent.trim().slice(0, 20)}"`);
+    }
+  }
   for (const it of items) {
     if (!it.scrolled && (it.r.left < -2 || it.r.top < -2 || it.r.right > W + 2 || it.r.bottom > H + 2)) issues.push("OFF-SCREEN " + name(it.e) + ` [${Math.round(it.r.left)},${Math.round(it.r.top)},${Math.round(it.r.right)},${Math.round(it.r.bottom)}]`);
     if (it.clipped) issues.push("CUT OFF " + name(it.e) + " by " + it.clipped);
@@ -70,6 +84,8 @@ window.__sweep = async (only) => {
   const hub = g => async () => { td.goHub(); await wait(60); document.querySelector(`[data-go="${g}"]`).dispatchEvent(new MouseEvent("click", { bubbles: true })); };
   await go("s-title", () => td.show("s-title"));
   await go("s-hub", () => td.goHub());
+  for (const [k, f] of [["mid", 0.5], ["end", 1]]) await go("s-hub:" + k, async () => { const w = document.getElementById("town-wrap"); w.scrollLeft = (w.scrollWidth - w.clientWidth) * f; await wait(150); }, "#s-hub");
+  document.getElementById("town-wrap").scrollLeft = 0;
   await go("s-garage", hub("garage"));
   await go("s-garage:paint", () => document.querySelector('[data-gtab="paint"]').click(), "#s-garage");
   document.querySelector('[data-gtab="up"]').click();
@@ -91,7 +107,7 @@ window.__sweep = async (only) => {
   await go("s-gift", hub("gift"));
   await go("s-settings", () => { td.show("s-title"); document.getElementById("btn-settings").click(); });
   await go("s-parent", () => { td.show("s-title"); for (let i = 0; i < 5; i++) document.getElementById("ver").click(); });
-  for (const s of ["s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
+  for (const s of ["s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
   await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
   td.show("s-title");

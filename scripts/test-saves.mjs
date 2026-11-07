@@ -100,6 +100,20 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   check("normal still needed", !trackOpen({ ...st, parent: { diffs: ["easy", "normal"] } }, beach), "an Easy win opened a track while Normal is allowed");
 }
 
+// Google Save: the three-way sync decision (what changed where since the last sync)
+{
+  const { decide, fingerprint } = await import("../src/cloud.js");
+  const base = { races: 100, rank: 5, research: { coinBoost: 2 }, school: { skills: { focus: 1 }, earned: 10 }, owned: ["zippy"], ups: {}, claimed: [] };
+  const bk = { mt: "t1", print: fingerprint(base) };
+  const tablet = { ...base, races: 104 };                                     // raced 4 more on this device
+  const phone = { ...base, school: { skills: { focus: 1 }, earned: 30 } };      // reading tickets logged on the phone
+  check("cloud: nothing new", decide(base, { mt: "t1", save: null }, bk) === "nothing", "synced copies should do nothing");
+  check("cloud: only here changed", decide(tablet, { mt: "t1", save: null }, bk) === "upload", "local progress wasn't uploaded");
+  check("cloud: only Google changed", decide(base, { mt: "t2", save: phone }, bk) === "load", "the other device's progress wasn't loaded");
+  check("cloud: no file yet", decide(base, null, {}) === "upload", "first sign-in didn't upload");
+  check("cloud: both changed, keep the further one", decide({ ...tablet, races: 140 }, { mt: "t2", save: phone }, bk) === "upload" && decide(tablet, { mt: "t2", save: { ...phone, rank: 7 } }, bk) === "load", "conflict didn't keep the save that is further along");
+}
+
 // a broken main save must fall back to the backup, never to an empty game
 store.clear(); store.set("turbodash.save", "{oops"); store.set("turbodash.save.backup", JSON.stringify(base01));
 load(); check("broken main save", saveMod.S.coins === base01.coins, "did not fall back to the backup copy");

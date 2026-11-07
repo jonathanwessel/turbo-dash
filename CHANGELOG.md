@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.22.0 — A Growing Town, Your Name & New Sounds
+
+- **Construction sites that grow.** The 🍦 Ice Cream Shop (Rank 12), 🚒 Fire Station (Rank 15) and 🧺 Park
+  (Rank 20) are built step by step over the 5 ranks before they open: a fenced lot with a dirt pile and a digger,
+  then a foundation, low walls and a crane, then tall walls with scaffolding, then the finished building. Each
+  site's sign shows what it will be and fills one green pip per rank.
+- **"What's your name?"** The first time someone plays (and after a reset), the game asks for the player's
+  name, and every message uses it ("Way to go, Carter!", the Driver License, Coach Cone, the professor). Change it
+  any time in Settings → ✏️ My name. Friends who play from the shared link get their own name. (The title still
+  says "Made for Carter".)
+- **Every world sounds different.** Each Earth track, the Moon, Deep Blue, Glacier Rink and Toy Track World has its
+  own race tune, speed and instruments (dreamy on the Moon, bubbly under the sea, sparkly bells on the ice, a toy
+  piano in the playroom).
+- **Every kind of car sounds different:** monster trucks rumble low, sports cars whine high, rockets roar, the
+  submarine hums, the fire truck chugs.
+- **Google Save syncs safely between devices.** It now checks what changed on each side since the last sync, so
+  reading tickets logged on one device aren't overwritten by more races on another. (It still needs the Google
+  sign-in key: see README → "Google Save".)
+- **Fixes:** the construction-site signs ("RANK 12", "RANK 15", "RANK 20") ran off their boards; the ◀ ▶ scroll
+  arrows on Main Street covered building signs (they now sit on the road); "TURBO LAB" was a pixel too wide.
+- **The layout checker now checks Main Street too.** It's drawn as one big picture (SVG), which the checker used
+  to skip; now it measures every label against its sign, checks for buttons covering labels, and looks at the
+  street scrolled to the start, middle and end.
+- New release checks: the Google Save sync decision (5 cases).
+
 ## v0.21.0 — Bug Hunt
 
 A full bug hunt: three independent code reviews (menus and flow, both race engines, saves and data), a scripted

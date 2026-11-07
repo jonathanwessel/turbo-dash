@@ -236,8 +236,7 @@ showroom, holiday events (Halloween, winter, his birthday), photo mode.
 - The City of Piqua's feather in the Q, if we find a version that looks good (set aside in v0.13).
 
 ## Known issues (not fixed yet)
-- **Google Save (not switched on yet):** when two devices sync, the one with more races wins, so non-race progress
-  (Driver School tickets, research) made on the other device can be overwritten. Fix the merge before turning it on.
+- **Google Save** is ready (three-way sync since v0.22) but needs the Google sign-in key (README → "Google Save").
 - Saves from before v0.13.1 lost tracks that were open under the old "3rd place opens the next track" rule but
   never raced.
 - On a device that can't show 3D, the Toy Track World goals and cars can't be finished, and a daily mission can

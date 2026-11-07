@@ -58,6 +58,13 @@ It needs a free sign-in key from Google, made once:
 5. Copy the **Client ID** (it ends in `.apps.googleusercontent.com`) into `src/cloud-config.js` and release.
    The client ID is not a secret; Google only accepts it from the origins you listed.
 
+While the app stays in **Testing**, only the Google accounts listed as test users can sign in (add any family
+account you want to use). Friends who play from the shared link still save on their own device as usual.
+
+How syncing works: each device remembers what it last agreed with Google on. If only this device changed, it
+uploads; if only Google changed (another device played), it loads that; if both changed, it keeps the save that
+is further along (races, research, Driver School, cars, upgrades, goals and rank all count).
+
 ## Releasing
 
 1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry.

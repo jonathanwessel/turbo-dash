@@ -248,6 +248,7 @@
       <button id="btn-music" class="set-tile"><span>🎵</span><b>Music</b><small id="set-music">On</small></button>
       <button id="btn-sfx" class="set-tile"><span>🔊</span><b>Sounds</b><small id="set-sfx">On</small></button>
       <button id="btn-full" class="set-tile"><span>⛶</span><b>Full screen</b><small>Fill the screen</small></button>
+      <button id="set-name" class="set-tile"><span>✏️</span><b>My name</b><small id="set-name-now"></small></button>
       <button id="set-parent" class="set-tile"><span>👪</span><b>Parent Corner</b><small>Grown-ups</small></button>
       <button id="set-reset" class="set-tile danger"><span>🗑️</span><b>Reset progress</b><small>Grown-ups</small></button>
     </div>
@@ -334,6 +335,15 @@
     <p class="lu-tip">🎢 Go fast into loops, or you'll fall off! 🖐️</p>
     <button id="lu-go" class="big-btn go">LET'S GO!</button>
   </div></div>
+  <section id="s-name" class="screen dim" hidden>
+    <div class="card name-card">
+      <div class="trophy">👋</div>
+      <h1>What's your name?</h1>
+      <input id="name-in" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type your name" aria-label="Your name">
+      <div class="row"><button id="name-ok" class="big-btn go">OK! ▶</button></div>
+      <p class="name-tip">A grown-up can help type it.</p>
+    </div>
+  </section>
   <canvas id="fx"></canvas>
   <button id="update" class="update" hidden>✨ New version! Tap to update <small id="upd-v"></small></button>
 </div>

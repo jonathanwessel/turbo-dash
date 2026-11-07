@@ -670,3 +670,13 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .chest b { line-height: 1.1; display: block; }
 .chest.open, .chest.other { gap: 0; }
 .cup-card .cc-cup { line-height: 1.25; margin-bottom: 2px; }
+/* Main Street scroll arrows sit down on the road, so they never cover a building's sign */
+.town-arrow { top: auto; bottom: max(14px, 5vh); transform: none; height: 70px; }
+
+/* 👋 the name screen */
+.name-card { width: min(92vw, 560px); }
+#name-in { display: block; width: 100%; margin: 6px 0 14px; font: 900 clamp(26px, 7vmin, 44px) system-ui, sans-serif; text-align: center; padding: .3em .4em; border-radius: 18px; border: 4px solid #ffd400; background: #fff; color: #2a1a5a; user-select: text; -webkit-user-select: text; }
+#name-ok:disabled { opacity: .45; }
+.name-tip { margin: 10px 0 0; font-weight: 700; opacity: .8; }
+@media (max-height: 560px) and (orientation: landscape) { .name-card .trophy { font-size: 44px; } .name-card h1 { font-size: clamp(24px, 7vmin, 40px); } #name-in { margin: 4px 0 8px; } }
+.chest.open i, .chest.other i { font-size: 1.05em; margin-bottom: .3em; }

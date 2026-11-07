@@ -83,23 +83,56 @@ export function sfx(name) {
   }
 }
 
+/* Every kind of car has its own engine voice: monster trucks rumble low, sports cars whine high, the sub hums. */
+const VOICES = {
+  racer:   { a: "sawtooth", b: "square",   base: 45, span: 110, f: 350, fs: 900, v: 1 },
+  sport:   { a: "sawtooth", b: "sawtooth", base: 62, span: 150, f: 500, fs: 1300, v: 0.9 },
+  monster: { a: "square",   b: "square",   base: 30, span: 62,  f: 230, fs: 520, v: 1.25 },
+  rocket:  { a: "sawtooth", b: "sawtooth", base: 72, span: 175, f: 650, fs: 1600, v: 0.85 },
+  galaxy:  { a: "triangle", b: "sawtooth", base: 85, span: 170, f: 700, fs: 1500, v: 1 },
+  shark:   { a: "sawtooth", b: "triangle", base: 52, span: 125, f: 420, fs: 1000, v: 1 },
+  rover:   { a: "triangle", b: "square",   base: 58, span: 95,  f: 400, fs: 800, v: 1.1 },
+  fire:    { a: "square",   b: "sawtooth", base: 36, span: 78,  f: 280, fs: 650, v: 1.15 },
+  patrol:  { a: "sawtooth", b: "square",   base: 55, span: 125, f: 420, fs: 1100, v: 0.95 },
+  sub:     { a: "sine",     b: "triangle", base: 40, span: 72,  f: 300, fs: 420, v: 1.5 },
+  skis:    { a: "triangle", b: "sawtooth", base: 60, span: 125, f: 450, fs: 1100, v: 1 },
+};
+let voice = VOICES.racer;
+export function setEngineVoice(type) {
+  voice = VOICES[type] || VOICES.racer;
+  if (ac) { engOsc.type = voice.a; engOsc2.type = voice.b; }
+}
 export function engine(ratio, boosting) {
   if (!ac) return;
-  const t = ac.currentTime;
-  engOsc.frequency.setTargetAtTime(45 + ratio * 110 + (boosting ? 30 : 0), t, 0.08);
-  engOsc2.frequency.setTargetAtTime(22 + ratio * 55, t, 0.08);
-  engFilter.frequency.setTargetAtTime(350 + ratio * 900, t, 0.1);
-  engGain.gain.setTargetAtTime(ratio > 0.01 ? 0.05 + ratio * 0.03 : 0, t, 0.1);
+  const t = ac.currentTime, V = voice;
+  if (engOsc.type !== V.a) { engOsc.type = V.a; engOsc2.type = V.b; }
+  engOsc.frequency.setTargetAtTime(V.base + ratio * V.span + (boosting ? 30 : 0), t, 0.08);
+  engOsc2.frequency.setTargetAtTime(V.base / 2 + ratio * V.span / 2, t, 0.08);
+  engFilter.frequency.setTargetAtTime(V.f + ratio * V.fs, t, 0.1);
+  engGain.gain.setTargetAtTime(ratio > 0.01 ? (0.05 + ratio * 0.03) * V.v : 0, t, 0.1);
 }
 export function engineOff() { if (ac) engGain.gain.setTargetAtTime(0, ac.currentTime, 0.1); }
 
-// Music: two 16-step patterns (menu / race) of bass + melody.
+// Music: 16-step patterns of bass + melody. The menu has its own tune, and every race theme (each Earth track,
+// the Moon, Deep Blue, Glacier Rink, Toy Track World) has its own tune, speed and instruments.
 const N = n => 440 * Math.pow(2, (n - 69) / 12);
 const SONGS = {
   menu: { bpm: 112, bass: [48, 0, 48, 0, 53, 0, 53, 0, 55, 0, 55, 0, 53, 0, 52, 0], mel: [72, 0, 76, 79, 0, 76, 77, 0, 79, 0, 81, 79, 77, 0, 76, 0] },
   race: { bpm: 150, bass: [45, 45, 57, 45, 43, 43, 55, 43, 41, 41, 53, 41, 43, 43, 55, 47], mel: [69, 0, 72, 0, 76, 0, 74, 72, 71, 0, 74, 0, 72, 0, 71, 67] },
+  "race:sunny":   { bpm: 150, bass: [48, 0, 55, 0, 57, 0, 55, 0, 53, 0, 52, 0, 50, 0, 55, 0], mel: [72, 76, 79, 76, 77, 76, 74, 72, 74, 77, 81, 79, 77, 76, 74, 0] },
+  "race:beach":   { bpm: 140, lead: "triangle", bass: [41, 0, 48, 0, 46, 0, 53, 0, 43, 0, 50, 0, 48, 0, 45, 0], mel: [77, 0, 81, 79, 77, 0, 72, 74, 76, 0, 77, 79, 81, 0, 79, 0] },
+  "race:desert":  { bpm: 146, bass: [38, 38, 50, 38, 39, 39, 51, 39, 38, 38, 50, 38, 36, 36, 48, 41], mel: [74, 0, 75, 0, 77, 0, 75, 74, 72, 0, 74, 0, 75, 77, 74, 0] },
+  "race:snow":    { bpm: 138, lead: "triangle", mvol: 0.22, bass: [43, 0, 50, 0, 47, 0, 50, 0, 40, 0, 47, 0, 45, 0, 50, 0], mel: [79, 83, 86, 83, 81, 79, 78, 79, 76, 0, 79, 83, 81, 0, 79, 0] },
+  "race:autumn":  { bpm: 144, bass: [40, 0, 47, 0, 43, 0, 50, 0, 45, 0, 52, 0, 47, 0, 50, 0], mel: [76, 0, 79, 81, 79, 76, 74, 0, 72, 74, 76, 0, 74, 72, 71, 0] },
+  "race:candy":   { bpm: 166, bass: [48, 60, 48, 60, 53, 65, 53, 65, 55, 67, 55, 67, 53, 65, 55, 67], mel: [84, 0, 84, 88, 0, 86, 84, 0, 81, 0, 83, 84, 86, 0, 88, 0] },
+  "race:lava":    { bpm: 156, lead: "sawtooth", mvol: 0.11, bass: [36, 36, 48, 36, 39, 39, 51, 39, 41, 41, 53, 41, 43, 43, 55, 43], mel: [72, 0, 75, 0, 79, 0, 77, 75, 74, 0, 75, 0, 72, 0, 70, 67] },
+  "race:space":   { bpm: 150, bass: [45, 0, 45, 0, 41, 0, 41, 0, 43, 0, 43, 0, 40, 0, 40, 0], mel: [69, 72, 76, 81, 65, 69, 72, 77, 67, 71, 74, 79, 64, 68, 71, 76] },
+  "race:moon":    { bpm: 120, lead: "sine", mvol: 0.3, kick: 8, bass: [45, 0, 0, 0, 41, 0, 0, 0, 43, 0, 0, 0, 40, 0, 0, 0], mel: [76, 0, 81, 0, 79, 0, 76, 0, 74, 0, 77, 0, 76, 0, 72, 0] },
+  "race:ocean":   { bpm: 128, lead: "sine", mvol: 0.28, bassType: "sine", bass: [41, 0, 48, 0, 43, 0, 50, 0, 45, 0, 52, 0, 43, 0, 50, 0], mel: [72, 74, 77, 0, 79, 77, 74, 0, 72, 76, 79, 0, 81, 79, 76, 0] },
+  "race:glacier": { bpm: 138, lead: "triangle", mvol: 0.24, bass: [38, 0, 45, 0, 43, 0, 50, 0, 40, 0, 47, 0, 45, 0, 49, 0], mel: [86, 0, 90, 88, 86, 0, 81, 0, 83, 85, 86, 0, 88, 0, 85, 0] },
+  "race:toy":     { bpm: 160, short: true, bass: [48, 0, 52, 0, 55, 0, 52, 0, 53, 0, 57, 0, 55, 0, 59, 0], mel: [72, 76, 79, 79, 81, 79, 76, 0, 77, 76, 74, 77, 76, 74, 72, 0] },
 };
-export function setSong(name) { song = name; step = 0; }
+export function setSong(name, theme) { const k = theme && SONGS[name + ":" + theme] ? name + ":" + theme : name; if (k !== song) step = 0; song = k; }
 function startMusic() {
   nextT = ac.currentTime + 0.1;
   musicTimer = setInterval(() => {
@@ -107,9 +140,9 @@ function startMusic() {
     const S = SONGS[song], dur = 60 / S.bpm / 2;
     while (nextT < ac.currentTime + 0.25) {
       const when = nextT - ac.currentTime, b = S.bass[step % 16], m = S.mel[(step + (Math.floor(step / 16) % 2 ? 0 : 0)) % 16];
-      if (b) tone(N(b), dur * 0.9, "triangle", 0.5, when, 0, musicBus);
-      if (m) tone(N(m), dur * 0.8, "square", 0.16, when, 0, musicBus);
-      if (step % 4 === 0) { /* kick */ tone(110, 0.12, "sine", 0.6, when, 0.3, musicBus); }
+      if (b) tone(N(b), dur * 0.9, S.bassType || "triangle", 0.5, when, 0, musicBus);
+      if (m) tone(N(m), dur * (S.short ? 0.45 : 0.8), S.lead || "square", S.mvol || 0.16, when, 0, musicBus);
+      if (step % (S.kick || 4) === 0) { /* kick */ tone(110, 0.12, "sine", 0.6, when, 0.3, musicBus); }
       nextT += dur; step++;
     }
   }, 60);

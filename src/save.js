@@ -12,6 +12,7 @@ const DEFAULTS = () => ({
   v: SAVE_VERSION, savedAt: 0, coins: 0, owned: ["zippy"], car: "zippy",
   ups: { zippy: { ...NO_UPS } },   // carId -> { engine, turbo, tires, magnet }: every car has its own upgrades
   best: {},            // trackId -> best place (1 is best), any difficulty
+  name: "",            // the player's name (asked on the first run; used in the game's messages)
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
@@ -56,6 +57,7 @@ export function port(d) {
   s.lastGift = typeof d.lastGift === "string" ? d.lastGift : "";
   s.giftStreak = num(d.giftStreak, 0, 0);
   s.lastTrack = TRACKS.some(t => t.id === d.lastTrack) ? d.lastTrack : "sunny";
+  s.name = typeof d.name === "string" ? d.name.replace(/[<>&"]/g, "").trim().slice(0, 14) : "";
   s.diff = DIFFS.some(x => x.id === d.diff) ? d.diff : "normal";
   s.chips = Math.round(num(d.chips, 0, 0));
   s.restUntil = num(d.restUntil, 0, 0);
