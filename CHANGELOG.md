@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.1.0 — Math School 🧮
+
+The Driver School's tickets now come from a math game he plays himself, instead of time a grown-up logs.
+
+- **🧮 Math Lap** (Driver School → the big green button): 5 questions with pictures to count (cars, coins, apples,
+  ducks…). Adding starts with sums to 5; taking away shows the pictures with some crossed out. Big answer buttons, no
+  timer, and a wrong answer just fades out so he can try again. His car drives along a little track as he answers.
+- **Tickets:** every lap earns a 🎟️, and a lap with no mistakes earns two. Two perfect laps in a row make the
+  questions a step harder (adding to 5 → adding to 10 → adding and taking away to 10 → to 20); a lap with lots of
+  tries steps back down.
+- Tickets still buy the same lessons (Focus, Reflexes, Courage, Smarts) and the same license levels, so the License
+  gauge from Rank 10 works as before.
+- **For grown-ups** (Driver School → 👪 Grown-ups): the hardest level allowed (adding to 10, adding and taking away
+  to 10, or to 20), the most tickets per day (3, 6, 10 or no limit; 6 to start), the License gauge switch, and the
+  history. Progress shows laps, right answers, tries and the current level. The reading/outside log is gone, so
+  there's nothing to fake; tickets, lessons and history from before carry over.
+- **A harder grown-up check:** a two-digit multiplication (like 24 × 8) typed on a number pad, with no answers to
+  pick from, and a 30-second wait after two wrong tries.
+- The Main Street library, the break screen and Coach Cone now point to Math Laps.
+
 ## v1.0.1 — Faster early ranks 🏁
 
 - **Ranking up is much quicker at the start.** Rank 3 now needs 10 wins in total (was 36), Rank 4 needs 23 (was 70)

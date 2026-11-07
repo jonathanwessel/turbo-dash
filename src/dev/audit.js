@@ -102,6 +102,12 @@ window.__sweep = async (only) => {
   await go("s-trophies", hub("trophy"));
   await go("s-rank", hub("rank"));
   await go("s-school", hub("school"));
+  await go("s-math", async () => { await hub("school")(); await wait(60); document.getElementById("sch-math").click(); });
+  await go("s-math:20pics", () => td.mathShow({ a: 10, b: 10, op: "+", ans: 20 }), "#s-math");
+  await go("s-math:minus", () => td.mathShow({ a: 10, b: 7, op: "-", ans: 3 }), "#s-math");
+  await go("s-math:big", () => td.mathShow({ a: 18, b: 9, op: "-", ans: 9 }), "#s-math");
+  await go("s-math:done", () => td.mathDone(), "#s-math");
+  await go("s-log:painted", () => td.openLog(), "#s-log");
   await go("s-missions", hub("missions"));
   await go("s-lab", hub("lab"));
   await go("s-gift", hub("gift"));

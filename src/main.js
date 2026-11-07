@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
@@ -100,7 +100,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = ["s-math", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -733,7 +733,7 @@ $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
 /* ---------- 🚦 Driver School ---------- */
-const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Reading makes great drivers!", "Playing outside earns tickets!", "Buckle up, let's learn!", "Great job off the screen, " + who() + "!"];
+const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Math makes great drivers!", "A Math Lap earns tickets!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!"];
 function openSchool() {
   { const L = COACH(); $("coach-say").textContent = L[Math.floor(Math.random() * L.length)]; }
   paintSchool(); show("s-school");
@@ -755,7 +755,7 @@ $("skills").addEventListener("click", e => {
   const b = e.target.closest("[data-learn]"); if (!b) return;
   const id = b.dataset.learn, sc = S.school, lv = sc.skills[id];
   if (lv >= SKILL_MAX) { sfx("click"); return; }
-  if (sc.tickets < skillCost(lv)) { sfx("nope"); toast("🎟️ Read or play outside to earn tickets!"); return; }
+  if (sc.tickets < skillCost(lv)) { sfx("nope"); toast("🎟️ Do a Math Lap to earn tickets!"); return; }
   const before = licenseLevel(S);
   sc.tickets -= skillCost(lv); sc.skills[id]++; save(); sfx("buy");
   paintSchool(); $("skills").querySelector(`[data-sk="${id}"]`)?.classList.add("flash");
@@ -765,40 +765,73 @@ $("skills").addEventListener("click", e => {
     if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); upsOf("patrol"); save(); setTimeout(() => toast("🚓 You earned the Piqua Patrol car!"), 2700); }
   }
 });
-// grown-ups log real-world time (behind the grown-up check)
-let logAct = "read", logMin = 20;
+// grown-up settings for the Math School (behind the grown-up check)
 $("sch-log").onclick = () => { sfx("click"); grownUp("s-school", openLog); };
-function todayMinutes() { const d = dayKey(new Date()); return S.school.log.filter(e => e.d === d).reduce((a, e) => a + e.m, 0); }
+const mathToday = () => { const e = S.school.log[0]; return e && e.a === "math" && e.d === dayKey(new Date()) ? e : null; };
+const ticketsLeftToday = () => S.school.capT ? Math.max(0, S.school.capT - (mathToday()?.t || 0)) : Infinity;
 function openLog() { paintLog(); show("s-log"); }
 function paintLog() {
-  const sc = S.school;
-  $("acts").innerHTML = ACTIVITIES.map(a => `<button data-act="${a.id}" class="${logAct === a.id ? "on" : ""}"><span>${a.icon}</span>${a.name}</button>`).join("");
-  $("mins").innerHTML = [10, 20, 30, 45, 60].map(m => `<button data-min="${m}" class="${logMin === m ? "on" : ""}">${m} min</button>`).join("");
-  const t = todayMinutes();
-  $("log-today").textContent = `Today: ${t} minutes logged${sc.capMin ? ` (most ${sc.capMin})` : ""} · 🎟️ ${sc.tickets} to spend`;
-  $("log-dbl").innerHTML = [true, false].map(v => `<button data-dbl="${v}" class="${sc.readingDouble === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
-  $("log-cap").innerHTML = [0, 30, 60, 120].map(m => `<button data-cap="${m}" class="${sc.capMin === m ? "on" : ""}">${m ? m + " min" : "No limit"}</button>`).join("");
+  const sc = S.school, m = sc.math, today = mathToday(), pct = m.right + m.wrong ? Math.round(100 * m.right / (m.right + m.wrong)) : 0;
+  $("log-today").textContent = `Today: ${today ? today.m : 0} questions · 🎟️ ${today ? today.t : 0} earned${sc.capT ? ` (most ${sc.capT})` : ""} · all time ${m.laps} laps, ${pct}% right`;
+  $("log-lvl").innerHTML = [["add10", "Adding to 10"], ["10", "+ and − to 10"], ["20", "+ and − to 20"]].map(([v, l]) => `<button data-lvl="${v}" class="${sc.mathMax === v ? "on" : ""}">${l}</button>`).join("");
+  $("log-cap").innerHTML = MATH_CAPS.map(n => `<button data-cap="${n}" class="${sc.capT === n ? "on" : ""}">${n || "No limit"}</button>`).join("");
   $("log-lic").innerHTML = [true, false].map(v => `<button data-lic="${v}" class="${S.parent.license === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
-  const name = id => ACTIVITIES.find(a => a.id === id);
-  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} min</span><span>🎟️ ${e.t}</span>`).join("");
+  const name = id => id === "math" ? { icon: "🧮", name: "Math Laps" } : ACTIVITIES.find(a => a.id === id);
+  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} ${e.a === "math" ? "questions" : "min"}</span><span>🎟️ ${e.t}</span>`).join("");
 }
 $("s-log").addEventListener("click", e => {
-  const a = e.target.closest("[data-act]"), m = e.target.closest("[data-min]"), d = e.target.closest("[data-dbl]"), c = e.target.closest("[data-cap]"), l = e.target.closest("[data-lic]");
-  if (a) logAct = a.dataset.act; if (m) logMin = +m.dataset.min;
-  if (d) { S.school.readingDouble = d.dataset.dbl === "true"; save(); }
-  if (c) { S.school.capMin = +c.dataset.cap; save(); }
+  const v = e.target.closest("[data-lvl]"), c = e.target.closest("[data-cap]"), l = e.target.closest("[data-lic]");
+  if (v) { S.school.mathMax = v.dataset.lvl; S.school.math.lv = Math.min(S.school.math.lv, MATH_LEVELS[v.dataset.lvl]); save(); }
+  if (c) { S.school.capT = +c.dataset.cap; save(); }
   if (l) { S.parent.license = l.dataset.lic === "true"; save(); }
-  if (a || m || d || c || l) { sfx("click"); paintLog(); }
+  if (v || c || l) { sfx("click"); paintLog(); }
 });
-$("log-add").onclick = () => {
-  const sc = S.school, room = sc.capMin ? Math.max(0, sc.capMin - todayMinutes()) : Infinity, mins = Math.min(logMin, room);
-  if (mins < 10) { sfx("nope"); toast("That's the most for today. Great job!"); return; }
-  const t = ticketsFor(logAct, mins, sc.readingDouble);
-  sc.log.unshift({ d: dayKey(new Date()), a: logAct, m: mins, t }); sc.log.length = Math.min(sc.log.length, 60);
-  sc.tickets += t; sc.earned += t; save();
-  sfx("buy"); confetti(70); toast(`+${t} 🎟️ for ${who()}!`); paintLog();
-};
 $("log-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+
+/* ---------- 🧮 Math Lap: 5 questions with pictures to count; every lap earns a ticket ---------- */
+const MATH_PICS = ["🚗", "🚙", "🪙", "⭐", "🍎", "🦆", "🎈", "🍪"];
+let mqSeen = new Set(), mq = null, mqN = 0, mqMiss = 0, mqFirst = true, mqLock = false, mqPic = "🚗";
+function openMath() { mqSeen = new Set(); mqN = 0; mqMiss = 0; mqPic = MATH_PICS[Math.floor(Math.random() * MATH_PICS.length)]; $("s-math").classList.remove("finished"); $("math-done").hidden = true; nextMath(); show("s-math"); }
+function paintLap() { $("math-lap").innerHTML = Array.from({ length: MATH_LAP }, (_, i) => `<i class="${i < mqN ? "done" : i === mqN ? "car" : ""}">${i < mqN ? "⭐" : i === mqN ? "🏎️" : "⚪"}</i>`).join("") + `<i class="done">${mqN >= MATH_LAP ? "🏎️" : "🏁"}</i>`; }
+function nextMath(force) {
+  const m = S.school.math, top = MATH_LEVELS[S.school.mathMax] || 3;
+  let q = force; if (!q) for (let k = 0; k < 30; k++) { q = mathQuestion(Math.min(m.lv, top)); if (!mqSeen.has(q.a + q.op + q.b)) break; }   // no repeats in a lap
+  mqSeen.add(q.a + q.op + q.b);
+  mq = q; mqFirst = true; mqLock = false; paintLap();
+  const grp = (n, gone = 0) => `<div class="grp">${Array.from({ length: n }, (_, i) => `<span class="${i >= n - gone ? "gone" : ""}">${mqPic}</span>`).join("")}</div>`;
+  $("math-pics").hidden = q.a > 10 || q.b > 10;
+  $("math-pics").innerHTML = q.a > 10 || q.b > 10 ? "" : q.op === "+" ? grp(q.a) + `<span class="op">+</span>` + grp(q.b) : grp(q.a, q.b);
+  $("math-q").textContent = `${q.a} ${q.op === "+" ? "+" : "−"} ${q.b} = ?`;
+  $("math-ans").innerHTML = mathChoices(q.ans).map(n => `<button data-n="${n}">${n}</button>`).join("");
+}
+$("math-ans").addEventListener("click", e => {
+  const b = e.target.closest("[data-n]"); if (!b || mqLock || b.classList.contains("no")) return;
+  const m = S.school.math;
+  if (+b.dataset.n !== mq.ans) {
+    sfx("nope"); b.classList.add("no"); mqMiss++; m.wrong++; mqFirst = false;
+    const g = $("math-ans"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); save(); return;
+  }
+  mqLock = true; b.classList.add("yes"); sfx("coin"); m.right++; mqN++;
+  $("math-q").textContent = `${mq.a} ${mq.op === "+" ? "+" : "−"} ${mq.b} = ${mq.ans}`; paintLap();
+  setTimeout(() => { if (screen !== "s-math") return; mqN >= MATH_LAP ? finishLap() : nextMath(); }, 750);
+});
+function finishLap() {
+  const sc = S.school, m = sc.math, top = MATH_LEVELS[sc.mathMax] || 3, perfect = mqMiss === 0;
+  const want = perfect ? 2 : 1, got = Math.min(want, ticketsLeftToday());
+  m.laps++;
+  // two perfect laps in a row move up a level; a lap with lots of tries moves back down
+  m.p = perfect ? m.p + 1 : 0;
+  if (m.p >= 2 && m.lv < top) { m.lv++; m.p = 0; } else if (mqMiss >= 4 && m.lv > 1) m.lv--;
+  let e = mathToday(); if (!e) { e = { d: dayKey(new Date()), a: "math", m: 0, t: 0 }; sc.log.unshift(e); sc.log.length = Math.min(sc.log.length, 60); }
+  e.m += MATH_LAP; e.t += got; sc.tickets += got; sc.earned += got; save();
+  $("s-math").classList.add("finished"); $("math-done").hidden = false;
+  $("math-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great math, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
+    : `🏁 Lap done!<small>That's all the tickets for today. Great practice, ${who()}!</small>`;
+  sfx(got ? "win" : "buy"); confetti(got ? 120 : 50);
+}
+$("sch-math").onclick = () => { sfx("click"); openMath(); };
+$("math-again").onclick = () => { sfx("click"); openMath(); };
+$("math-school").onclick = $("math-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 
 /* ---------- daily missions ---------- */
 function openMissions() {
@@ -850,7 +883,7 @@ function refreshHub() {
   tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
   tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
   tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
-  tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id]))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
+  tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!mathToday() && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
   if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
@@ -872,7 +905,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
-  else if (go === "library") { sfx("click"); toast("📚 Read a real book! A grown-up can log it at the Driver School."); setTimeout(() => { if (screen === "s-hub") openSchool(); }, 600); }
+  else if (go === "library") { sfx("click"); toast("📚 Read a real book with a grown-up! Then try a 🧮 Math Lap at the Driver School."); setTimeout(() => { if (screen === "s-hub") openSchool(); }, 600); }
   else if (go === "carwash" || go === "museum") {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     sfx("click"); if (go === "carwash") openWash(); else openMuseum();
@@ -1050,32 +1083,46 @@ function openProgress() {
     <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace${fr.some(f => f.id === "license" && f.have < f.need) ? ", plus a Driver School lesson" : ""}.`}</small>`;
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
   $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
-  const mins = Object.fromEntries(ACTIVITIES.map(a => [a.id, 0])); for (const e of S.school.log || []) if (mins[e.a] != null) mins[e.a] += e.m || 0;
-  $("pg-school").innerHTML = ACTIVITIES.map(a => `<span>${a.icon} ${a.name} <b>${mins[a.id]} min</b></span>`).join("") + `<small>Driver School: ${lessonsOf(S)} lessons · ${S.school.tickets} 🎟️ waiting · license ${LICENSES[licenseLevel(S)].name}</small>`;
+  const mm = S.school.math, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
+  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>✔ Right <b>${mm.right}</b></span><span>✖ Tries again <b>${mm.wrong}</b></span><span>📈 Level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons · ${S.school.tickets} 🎟️ waiting · license ${LICENSES[licenseLevel(S)].name}</small>`;
   show("s-progress");
 }
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
 $("p-endrest").onclick = () => { S.restUntil = 0; playMs = 0; save(); paintParent(); };
 /* ---------- settings ---------- */
 $("btn-settings").onclick = () => { sfx("click"); $("set-ver").textContent = VERSION === "dev" ? "dev build" : "v" + VERSION; paintToggles(); show("s-settings"); };
-/* Grown-up check: a sum a 6-year-old can't do yet, with four big answers to tap. */
-let guPass = null, guBack = "s-settings";
+/* Grown-up check: a two-digit multiplication typed on a number pad (no answers to pick from), and a
+   30-second wait after two wrong answers, so guessing doesn't get a child in. */
+let guPass = null, guBack = "s-settings", guAns = 0, guTyped = "", guMiss = 0, guLockUntil = 0, guTimer = 0;
 function grownUp(back, onPass) {
   guPass = onPass; guBack = back;
-  const a = 6 + Math.floor(Math.random() * 4), b = 6 + Math.floor(Math.random() * 4), ans = a + b;
-  const opts = [...new Set([ans, ans + 1, ans - 1, ans + 2, ans - 2])].slice(0, 5).sort(() => Math.random() - 0.5).slice(0, 4);
-  if (!opts.includes(ans)) opts[0] = ans;
-  $("gq").textContent = `What is ${a} + ${b}?`;
-  $("ga").innerHTML = opts.sort((x, y) => x - y).map(n => `<button data-ans="${n === ans ? 1 : 0}">${n}</button>`).join("");
-  show("s-grownup");
+  const a = 12 + Math.floor(Math.random() * 17), b = 3 + Math.floor(Math.random() * 7);
+  guAns = a * b; guTyped = "";
+  $("gq").textContent = `What is ${a} × ${b}?`;
+  $("ga").innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(n => `<button data-k="${n}">${n}</button>`).join("") + `<button data-k="del" class="del">⌫</button><button data-k="ok" class="ok">OK</button>`;
+  paintGu(); show("s-grownup");
+}
+function paintGu() {
+  const wait = Math.ceil((guLockUntil - Date.now()) / 1000);
+  $("gu-in").textContent = guTyped || "?";
+  $("gu-msg").textContent = wait > 0 ? `Please wait ${wait} s, then try again.` : guMiss ? "Not quite. Try this one." : "";
+  clearTimeout(guTimer); if (wait > 0) guTimer = setTimeout(() => { if (screen === "s-grownup") paintGu(); }, 500);
 }
 $("ga").addEventListener("click", e => {
-  const b = e.target.closest("[data-ans]"); if (!b) return;
-  if (b.dataset.ans === "1") { clearTimeout(guRetry); if (!guPass) return; sfx("click"); const f = guPass; guPass = null; f(); }
-  else { sfx("nope"); const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); const back = guBack, pass = guPass; clearTimeout(guRetry); guRetry = setTimeout(() => { if (screen === "s-grownup") grownUp(back, pass); }, 450); }
+  const b = e.target.closest("[data-k]"); if (!b) return;
+  if (Date.now() < guLockUntil) { sfx("nope"); paintGu(); return; }
+  const k = b.dataset.k;
+  if (k === "del") guTyped = guTyped.slice(0, -1);
+  else if (k !== "ok") { if (guTyped.length < 4) guTyped += k; }
+  else if (+guTyped === guAns && guTyped) { if (!guPass) return; guMiss = 0; sfx("click"); const f = guPass; guPass = null; f(); return; }
+  else {
+    sfx("nope"); guMiss++; const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake");
+    if (guMiss % 2 === 0) guLockUntil = Date.now() + 30000;
+    const back = guBack, pass = guPass; grownUp(back, pass); return;
+  }
+  sfx("click"); paintGu();
 });
-let guRetry = 0;
-$("gu-cancel").onclick = () => { sfx("click"); clearTimeout(guRetry); guPass = null; show(guBack); };
+$("gu-cancel").onclick = () => { sfx("click"); clearTimeout(guTimer); guPass = null; show(guBack); };
 $("set-parent").onclick = () => { sfx("click"); grownUp("s-settings", () => { $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }); };
 $("set-reset").onclick = () => { sfx("click"); grownUp("s-settings", openReset); };
 /* Reset: grown-up check, then hold for 3 seconds, then a last "are you sure". */
@@ -1125,7 +1172,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

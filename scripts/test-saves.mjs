@@ -33,6 +33,7 @@ const FIXTURES = {
   "v0.22 (name, growing town)": { v: 14, name: "Carter", coins: 1171, owned: ["zippy", "bolt"], car: "bolt", ups: { bolt: { engine: 1, turbo: 0, tires: 0, magnet: 0 } }, rank: 3, best: { sunny: 1, beach: 2 }, bestD: { "sunny:normal": 1, "beach:normal": 2 }, cups: { "green:easy": 1 }, bosses: {}, stats: { roadCoins: 400, stunts: 9, turbos: 12, bams: 1, powers: 3, rings: 0, pearls: 0, drifts: 0, loops: 0 } },
   "v1.0 (progress, car wash, museum)": { v: 15, name: "Carter", coins: 2500, owned: ["zippy"], rank: 4, best: { sunny: 1 }, bestD: { "sunny:normal": 1 }, stats: { roadCoins: 500, stunts: 10, turbos: 10, bams: 0, powers: 2, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 3600000, coinsEarned: 9000 }, days: { "2026-11-07": 12, "2026-11-06": 8 }, dirt: { zippy: 3 }, sparkle: "2026-11-07", museum: [{ d: "2026-11-07", icon: "🏆", text: "First win on Sunny Hills" }], opts: { tilt: true }, parent: { diffs: ["easy", "normal"], weather: false } },
   "damaged missions (null entry, unknown kind, no reward)": { v: 14, coins: 777, owned: ["zippy"], rank: 8, missions: { day: "2026-11-07", list: [null, { kind: "fly", goal: 3, have: 0, reward: 100 }, { kind: "wins", goal: 2, have: 1 }] } },
+  "v1.1 (math school)": { v: 16, name: "Carter", coins: 800, owned: ["zippy"], rank: 3, school: { tickets: 4, earned: 9, skills: { focus: 2, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "math", m: 15, t: 4 }, { d: "2026-11-01", a: "read", m: 20, t: 4 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 6, laps: 9, lv: 3, p: 1 }, mathMax: "20", capT: 10 } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -65,7 +66,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (Number.isFinite(raw.rank)) check(name, S.rank === Math.max(1, raw.rank), "rank lost");
   for (const k of ["stunts", "turbos", "bams", "roadCoins"]) if (raw.stats && typeof raw.stats[k] === "number") check(name, S.stats[k] === raw.stats[k], `stat ${k} lost`);
   if (raw.mastery) for (const [k, v] of Object.entries(raw.mastery)) check(name, S.mastery[k] === v, `mastery ${k} lost`);
-  if (raw.school) { check(name, S.school.tickets === raw.school.tickets && S.school.earned === raw.school.earned, "tickets lost"); for (const [k, v] of Object.entries(raw.school.skills)) check(name, S.school.skills[k] === v, `skill ${k} lost`); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); check(name, S.school.readingDouble === raw.school.readingDouble, "reading setting lost"); }
+  if (raw.school) { check(name, S.school.tickets === raw.school.tickets && S.school.earned === raw.school.earned, "tickets lost"); for (const [k, v] of Object.entries(raw.school.skills)) check(name, S.school.skills[k] === v, `skill ${k} lost`); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); check(name, S.school.readingDouble === raw.school.readingDouble, "reading setting lost"); if (raw.school.math) check(name, JSON.stringify(S.school.math) === JSON.stringify(raw.school.math) && S.school.mathMax === raw.school.mathMax && S.school.capT === raw.school.capT, "math school progress lost"); }
   if (raw.parent && raw.parent.license === false) check(name, S.parent.license === false, "license gauge setting lost");
   if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
   if (raw.daily) check(name, Object.entries(raw.daily).every(([k, v]) => S.daily[k] === v), "daily treats lost");
@@ -86,7 +87,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.seen) check(name, Object.keys(raw.seen).every(k => S.seen[k] === true), "seen moments lost");
   if (raw.stats?.drifts) check(name, S.stats.drifts === raw.stats.drifts, "drift count lost");
   if (raw.stats?.rings) check(name, S.stats.rings === raw.stats.rings, "ring count lost");
-  check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object", "school data broken");
+  check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object" && S.school.math.lv >= 1 && S.school.math.lv <= 4 && ["add10", "10", "20"].includes(S.school.mathMax), "school data broken");
   check(name, Array.isArray(S.lab.benches) && S.lab.benches.every(b => b.p === null || typeof b.p === "string"), "bad lab benches");
   check(name, Array.isArray(S.parent.diffs) && S.parent.diffs.length > 0, "no allowed difficulty");
   check(name, Array.isArray(S.history) && Array.isArray(S.claimed) && Array.isArray(S.paints), "lists broken");
@@ -101,6 +102,18 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   console.log(`  ${failed ? "…" : "✔"} ${name}`);
 }
 
+// Math Laps: every question has a whole, non-negative answer within its level, and the four choices include it
+{
+  const { mathQuestion, mathChoices } = await import("../src/data.js");
+  const top = [0, 5, 10, 10, 20];
+  for (let lv = 1; lv <= 4; lv++) for (let i = 0; i < 3000; i++) {
+    const q = mathQuestion(lv), c = mathChoices(q.ans);
+    const ok = Number.isInteger(q.a) && Number.isInteger(q.b) && q.a >= 0 && q.b >= 1 && q.ans >= 0 && q.ans === (q.op === "+" ? q.a + q.b : q.a - q.b)
+      && (q.op === "+" ? q.ans <= top[lv] : q.a <= top[lv]) && (lv >= 3 || q.op === "+");
+    if (!ok) { check("math level " + lv, false, JSON.stringify(q)); break; }
+    if (c.length !== 4 || new Set(c).size !== 4 || !c.includes(q.ans) || c.some(n => n < 0)) { check("math choices", false, JSON.stringify([q, c])); break; }
+  }
+}
 // a grown-up who allows only Easy must still be able to open tracks (Easy wins count then)
 {
   const { trackOpen, TRACKS } = await import("../src/data.js");

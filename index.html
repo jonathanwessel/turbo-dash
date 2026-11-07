@@ -221,7 +221,8 @@
           <path d="M100 74 l20 6 l-2 8 l-20 -6z" fill="#ffd400"/><circle cx="122" cy="86" r="5" fill="#ffd400"/>
         </svg><div class="speech" id="coach-say">Hi Carter!</div></div>
         <div class="tickets"><span>🎟️</span><b id="sch-tickets">0</b><small>tickets</small></div>
-        <button id="sch-log" class="big-btn small">👪 Grown-ups: log time</button>
+        <button id="sch-math" class="big-btn go">🧮 Math Lap!</button>
+        <button id="sch-log" class="big-btn small">👪 Grown-ups</button>
       </div>
       <div class="school-right">
         <div class="license" id="license"></div>
@@ -230,16 +231,27 @@
     </div>
   </section>
 
+  <section id="s-math" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" id="math-back">◀</button><h2>🧮 Math Lap</h2></div>
+    <div class="math-wrap">
+      <div class="math-lap" id="math-lap"></div>
+      <div class="math-pics" id="math-pics"></div>
+      <div class="math-q" id="math-q"></div>
+      <div class="math-ans" id="math-ans"></div>
+      <div class="math-done" id="math-done" hidden>
+        <div class="math-win" id="math-win"></div>
+        <div class="row"><button id="math-again" class="big-btn go">🧮 Another lap</button><button id="math-school" class="big-btn small">🚦 Driver School</button></div>
+      </div>
+    </div>
+  </section>
+
   <section id="s-log" class="screen panel" hidden>
-    <div class="screen-head"><button class="back" id="log-back">◀</button><h2>Log real-world time</h2></div>
+    <div class="screen-head"><button class="back" id="log-back">◀</button><h2>Math School settings</h2></div>
     <div class="log-wrap">
-      <p class="log-help">What did Carter do away from the screen? Pick it, pick how long, and tap <b>Add</b>. Every 10 minutes = 1 🎟️.</p>
-      <div class="acts" id="acts"></div>
-      <div class="mins" id="mins"></div>
-      <div class="row"><button id="log-add" class="big-btn go">➕ Add</button></div>
+      <p class="log-help">Tickets come from <b>Math Laps</b>: 5 questions, and every lap earns a 🎟️ (two for a lap with no mistakes). Two perfect laps in a row make the questions a little harder, up to the level you pick.</p>
       <div class="log-today" id="log-today"></div>
-      <div class="p-set"><b>Reading counts double</b><span id="log-dbl"></span></div>
-      <div class="p-set"><b>Most minutes per day</b><span id="log-cap"></span></div>
+      <div class="p-set"><b>Hardest questions</b><span id="log-lvl"></span></div>
+      <div class="p-set"><b>Most tickets per day</b><span id="log-cap"></span></div>
       <div class="p-set"><b>License needed to rank up (from Rank 10)</b><span id="log-lic"></span></div>
       <div class="log-hist" id="log-hist"></div>
     </div>
@@ -274,8 +286,9 @@
   <section id="s-grownup" class="screen dim" hidden>
     <div class="card">
       <h1>Grown-ups only</h1>
-      <div class="gq" id="gq">What is 8 + 7?</div>
-      <div class="row ga" id="ga"></div>
+      <div class="gq"><span id="gq">What is 23 × 4?</span> <b id="gu-in" class="gu-in"></b></div>
+      <div class="ga pad" id="ga"></div>
+      <div class="gu-msg" id="gu-msg"></div>
       <div class="row"><button id="gu-cancel" class="big-btn small">Cancel</button></div>
     </div>
   </section>
@@ -307,7 +320,7 @@
       <div class="trophy" id="rest-moon">🌙</div>
       <h1>Break time!</h1>
       <div class="gift-day" id="rest-txt">Great racing today, Carter! Your car is resting too.</div>
-      <div class="gift-day rest-tip">📚 Read a book or 🌳 play outside, and a grown-up can turn it into 🎟️ Driver School tickets!</div>
+      <div class="gift-day rest-tip">📚 Read a book or 🌳 play outside! After the break, a 🧮 Math Lap at the Driver School earns 🎟️ tickets.</div>
       <div class="r-coins">⏱ <span id="rest-left">10:00</span></div>
     </div>
   </section>
@@ -384,8 +397,8 @@
       <div class="g-sec"><h3>🏁 Racing</h3><p>Steer with the ◀ ▶ buttons (or tilt the tablet, in Settings). 🚀 fires Turbo when it's full; ❓ boxes give a power-up. Every race pays coins, plus a treasure chest. A new track opens when the one before it is <b>won</b> on Normal or Hard (or on Easy, if Easy is the only difficulty you allow).</p></div>
       <div class="g-sec"><h3>⭐ Racer Rank</h3><p>Ranking up needs every gauge full: 🏁 wins, 🏆 trophies (medals, cups, goals, mastery stars), 🔧 garage (cars and upgrades) and 🔬 research. From Rank 10 a 🪪 Driver License gauge joins (you can turn it off below). New ranks open buildings, cups, bosses and new worlds.</p></div>
       <div class="g-sec"><h3>🔬 Turbo Lab</h3><p>Research takes real time (minutes to hours) and coins. It keeps going while the tablet is off, so there's a reason to come back tomorrow. The big one, 🧠 Auto Steer, has 100 levels and takes years. It's off in boss races and Time Trials, and you can switch it off.</p></div>
-      <div class="g-sec"><h3>🚦 Driver School (real life → game)</h3><p>In Parent Corner, log time he spent 📚 reading, 🌳 playing outside, 🧹 helping, 🎨 making or 🚲 moving. Every 10 minutes is a 🎟️ ticket (reading counts double if you like). Tickets buy lessons that make him a better driver in every car.</p></div>
-      <div class="g-sec"><h3>👪 Your controls (Parent Corner)</h3><p>Which difficulties he may pick · a steering helper for young drivers · a break reminder (a 10-minute rest screen after the time you choose) · volume and vibration · Auto Steer on/off · the License gauge · weather. Parent Corner opens by tapping the version number 5 times on the title screen, behind a grown-up sum.</p></div>
+      <div class="g-sec"><h3>🚦 Driver School &amp; 🧮 Math Laps</h3><p>A Math Lap is 5 adding or taking-away questions with pictures to count. Each lap earns a 🎟️ ticket (two with no mistakes), up to a daily limit you choose. Wrong answers just try again. The questions grow from sums to 5 up to the level you allow (adding to 10, to 10, or to 20). Tickets buy lessons that make him a better driver in every car, and lessons earn the license. Settings: Driver School → 👪 Grown-ups.</p></div>
+      <div class="g-sec"><h3>👪 Your controls (Parent Corner)</h3><p>Which difficulties he may pick · a steering helper for young drivers · a break reminder (a 10-minute rest screen after the time you choose) · volume and vibration · Auto Steer on/off · the License gauge · weather. Parent Corner opens by tapping the version number 5 times on the title screen, behind a grown-up question (a multiplication typed on a number pad).</p></div>
       <div class="g-sec"><h3>💾 Saving</h3><p>Progress saves on this tablet by itself. A <b>save code</b> in Parent Corner copies it to another device. Installed from the website (📲 Install on the title screen), the game opens full screen and works offline. There are no purchases, no ads and no accounts, ever.</p></div>
       <div class="row"><button class="big-btn small go" data-backto="s-parent">◀ Back</button></div>
     </div>

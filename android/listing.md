@@ -23,8 +23,8 @@ finally shrink down into Toy Track World: real 3D plastic tracks with loop-the-l
 Research upgrades in the Turbo Lab, open a daily gift, finish daily missions, grow the town as you rank up, wash your
 muddy car at the Car Wash, and fill the Museum with your trophies.
 
-📚 REWARDS FOR REAL LIFE
-In Parent Corner, a grown-up logs time spent reading, playing outside or helping out. It becomes Driver School
+🧮 MATH SCHOOL
+Math Laps with pictures to count: simple adding and taking away that grows with your child. Right answers earn Driver School
 tickets that make your child a better driver in the game.
 
 👪 MADE FOR KIDS, SET UP BY PARENTS

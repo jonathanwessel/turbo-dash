@@ -105,7 +105,7 @@ Super Paint. Tier 3 (Rank 8+): the Robot Brain chain → **Auto Steer**. Future 
 (46+), boost pads and dodging (66+), smart Turbo (86+), perfect line with gold trail (100). Hand steering always
 wins, it's off in time trials and boss races, and Parent Corner can disable it.
 
-## 🚦 Driver School & real-world rewards (shipped in v0.14.0; becomes Math School in v1.1)
+## 🚦 Driver School & real-world rewards (shipped in v0.14.0; became Math School in v1.1)
 **Goal: the game gives Carter a reason to put the tablet down.** A grown-up logs what he did away from the screen,
 and that becomes driver training in the game.
 - **Parent log (Parent Corner → Driver School, behind the grown-up check):** big buttons for 📚 Reading,
@@ -208,7 +208,7 @@ plan for it was:
 - **A parent's guide page.**
 - **A review of every screen:** a full code review, the career sim, and a save test from every version.
 
-### Next: v1.1 🧮 Math School (Driver School becomes a math game)
+### v1.1.0 🧮 Math School (shipped)
 The grown-up check was a math question, and Carter learned to answer it and log reading time he never did. So the
 Driver School stops depending on a parent's log and earns its tickets from a math game he plays himself:
 - **Coach Cone's Math Lap:** simple addition and subtraction (sums to 10 at first, then to 20; no negative

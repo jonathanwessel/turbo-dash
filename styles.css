@@ -747,3 +747,32 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 @media (orientation: portrait) { .track-card .tc-lock { align-content: center; padding-bottom: 0; grid-auto-flow: column; gap: 12px; } }
 @media (max-height: 560px) and (orientation: landscape) { .cup-card .cc-cup { line-height: 1.35; margin-bottom: 10px; } }
+
+/* ---------- 🧮 Math Lap ---------- */
+.math-wrap { flex: 1; width: min(100%, 900px); min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; gap: 6px; }
+.math-lap { display: flex; align-items: center; gap: clamp(6px, 2vmin, 14px); background: #5a5f6a; border-radius: 999px; padding: 4px 14px; border: 3px dashed #fff; }
+.math-lap i { font-style: normal; font-size: clamp(18px, 5vmin, 28px); width: 1.4em; text-align: center; opacity: .45; }
+.math-lap i.done { opacity: 1; } .math-lap i.car { opacity: 1; transform: scaleX(-1); display: inline-block; }
+.math-pics[hidden] { display: none; }
+.math-pics { background: rgba(255,255,255,.92); border-radius: 20px; padding: 6px 14px; box-shadow: 0 5px 0 rgba(0,0,0,.2); color: #2a1460; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 3vmin, 24px); min-height: 1em; }
+.math-pics .grp { display: grid; grid-template-columns: repeat(5, 1.3em); gap: 3px; font-size: clamp(16px, 5vmin, 30px); line-height: 1.1; }
+.math-pics .grp span { display: block; width: 1.3em; text-align: center; overflow: hidden; }
+.math-pics .grp span.gone { opacity: .3; filter: grayscale(1); position: relative; }
+.math-pics .grp span.gone::after { content: "✖"; position: absolute; inset: 0; color: #ff3b3b; text-align: center; font-weight: 900; }
+.math-pics .op { font-size: clamp(28px, 8vmin, 48px); font-weight: 900; }
+.math-q { font-size: clamp(40px, 13vmin, 84px); font-weight: 900; letter-spacing: .05em; text-shadow: 0 4px 0 rgba(0,0,0,.25); line-height: 1; }
+.math-ans { display: flex; gap: clamp(10px, 3vmin, 22px); }
+.math-ans button { font-size: clamp(30px, 9vmin, 56px); font-weight: 900; min-width: 2.2em; height: 1.6em; border-radius: 22px; background: #3a2a7a; border: 4px solid rgba(255,255,255,.55); box-shadow: 0 6px 0 rgba(0,0,0,.25); }
+.math-ans button.no { opacity: .3; } .math-ans button.yes { background: #2fbf4a; border-color: #c8ffd2; }
+.math-ans.shake { animation: shake .4s; }
+.math-done { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.math-win { font-size: clamp(26px, 8vmin, 46px); font-weight: 900; text-align: center; }
+.math-win small { display: block; font-size: clamp(14px, 3.6vmin, 20px); opacity: .9; }
+#s-math.finished .math-pics, #s-math.finished .math-q, #s-math.finished .math-ans { display: none; }
+.classroom .big-btn.go { font-size: clamp(20px, 5.5vmin, 30px); }
+/* the grown-up number pad */
+.gu-in { display: inline-block; min-width: 2.6em; border-bottom: 4px solid #ffd400; text-align: center; color: #ffd400; }
+.ga.pad { display: grid; grid-template-columns: repeat(6, auto); gap: 6px; justify-content: center; margin-bottom: 6px; }
+.ga.pad button { font-size: clamp(20px, 5.5vmin, 32px); width: 2.3em; height: 1.6em; border-radius: 14px; }
+.ga.pad button.ok { background: #2fbf4a; } .ga.pad button.del { background: #7a3a2a; }
+.gu-msg { min-height: 1.2em; font-weight: 900; color: #ffd400; }

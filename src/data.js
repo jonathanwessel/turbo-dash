@@ -11,7 +11,7 @@ export const CARS = [
   { id: "greenMachine", name: "Green Machine", price: null, cup: "green", body: "#39d353", accent: "#ffffff", type: "sport", speed: 0.12, accel: 0.15, grip: 0.15 },
   { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
   { id: "champX", name: "Champion X", price: null, cup: "champ", body: "#1c1c24", accent: "#ffd400", type: "galaxy", speed: 0.32, accel: 0.3, grip: 0.3 },
-  // earned at the Driver School (Gold license): real-world reading and outdoor time pays for this one
+  // earned at the Driver School (Gold license): Math Laps pay for this one
   // 🌙 Moon Base cars
   { id: "rover", name: "Lunar Rover", price: 60000, world: "moon", body: "#e9edf3", accent: "#ff8a00", type: "rover", speed: 0.36, accel: 0.32, grip: 0.32 },
   { id: "comet", name: "Comet", price: null, cup: "moon", body: "#9fe8ff", accent: "#ffffff", type: "rocket", speed: 0.42, accel: 0.36, grip: 0.35 },
@@ -312,7 +312,7 @@ export const FRONTS = [
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
     have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
-  { id: "license", icon: "🪪", name: "License", hint: "Read or play outside, then train at the Driver School!", have: S => licenseLevel(S) },
+  { id: "license", icon: "🪪", name: "License", hint: "Do Math Laps at the Driver School, then take a lesson!", have: S => licenseLevel(S) },
 ];
 
 /* ---------- 🚦 Driver School: real-world time (logged by a grown-up) becomes driver training ---------- */
@@ -323,6 +323,24 @@ export const ACTIVITIES = [
   { id: "make", icon: "🎨", name: "Making something" },
   { id: "move", icon: "🚲", name: "Exercise" },
 ];
+/* ---------- 🧮 Math School: Math Laps earn the Driver School tickets ----------
+   Levels: 1 adding to 5 · 2 adding to 10 · 3 adding and taking away to 10 · 4 adding and taking away to 20.
+   A grown-up picks the top level: "add10" (adding to 10), "10" (to 10), "20" (to 20). Never a negative answer. */
+export const MATH_LAP = 5;                // questions in a lap
+export const MATH_LEVELS = { add10: 2, "10": 3, "20": 4 };
+export const MATH_CAPS = [3, 6, 10, 0];   // tickets a day (0 = no limit)
+export function mathQuestion(lv, rnd = Math.random) {
+  const int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const top = lv >= 4 ? 20 : lv >= 2 ? 10 : 5, minus = lv >= 3 && rnd() < 0.5;
+  if (minus) { const a = int(lv >= 4 ? 6 : 2, top), b = int(1, Math.min(a, lv >= 4 ? 10 : a)); return { a, b, op: "-", ans: a - b }; }
+  const sum = int(2, top), a = int(1, sum - 1); return { a, b: sum - a, op: "+", ans: sum };
+}
+export function mathChoices(ans, rnd = Math.random) {
+  const c = new Set([ans]);
+  for (const d of [1, -1, 2, -2, 3, -3, 10, 4]) { if (c.size >= 4) break; if (ans + d >= 0 && rnd() < 0.8) c.add(ans + d); }
+  for (let d = 1; c.size < 4; d++) c.add(ans + d);
+  return [...c].sort((x, y) => x - y);
+}
 export const ticketsFor = (activity, minutes, readingDouble) => Math.floor(minutes / 10) * (activity === "read" && readingDouble ? 2 : 1);
 export const SKILLS = [
   { id: "focus", icon: "🎯", name: "Focus", desc: "Curves pull you less" },
