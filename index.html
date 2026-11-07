@@ -184,6 +184,46 @@
     </div>
   </section>
 
+  <section id="s-school" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Driver School</h2></div>
+    <div class="school">
+      <div class="classroom">
+        <div class="board"><b>DRIVER SCHOOL</b><div class="lights"><i></i><i></i><i></i></div></div>
+        <div class="coach-row"><svg class="coach" viewBox="0 0 160 200" aria-hidden="true">
+          <ellipse cx="80" cy="190" rx="70" ry="9" fill="rgba(0,0,0,.25)"/>
+          <rect x="18" y="168" width="124" height="20" rx="6" fill="#e86a00"/>
+          <path d="M80 8 L132 170 H28 Z" fill="#ff8a00"/>
+          <path d="M62 62 L98 62 L106 88 L54 88 Z M48 108 L112 108 L119 132 L41 132 Z" fill="#fff"/>
+          <ellipse cx="68" cy="50" rx="7" ry="9" fill="#fff"/><ellipse cx="92" cy="50" rx="7" ry="9" fill="#fff"/>
+          <circle class="eye" cx="69" cy="52" r="4" fill="#222"/><circle class="eye" cx="93" cy="52" r="4" fill="#222"/>
+          <path d="M68 70 Q80 80 92 70" stroke="#7a2a00" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M100 74 l20 6 l-2 8 l-20 -6z" fill="#ffd400"/><circle cx="122" cy="86" r="5" fill="#ffd400"/>
+        </svg><div class="speech" id="coach-say">Hi Carter!</div></div>
+        <div class="tickets"><span>🎟️</span><b id="sch-tickets">0</b><small>tickets</small></div>
+        <button id="sch-log" class="big-btn small">👪 Grown-ups: log time</button>
+      </div>
+      <div class="school-right">
+        <div class="license" id="license"></div>
+        <div class="skills" id="skills"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-log" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" id="log-back">◀</button><h2>Log real-world time</h2></div>
+    <div class="log-wrap">
+      <p class="log-help">What did Carter do away from the screen? Pick it, pick how long, and tap <b>Add</b>. Every 10 minutes = 1 🎟️.</p>
+      <div class="acts" id="acts"></div>
+      <div class="mins" id="mins"></div>
+      <div class="row"><button id="log-add" class="big-btn go">➕ Add</button></div>
+      <div class="log-today" id="log-today"></div>
+      <div class="p-set"><b>Reading counts double</b><span id="log-dbl"></span></div>
+      <div class="p-set"><b>Most minutes per day</b><span id="log-cap"></span></div>
+      <div class="p-set"><b>License needed to rank up (from Rank 10)</b><span id="log-lic"></span></div>
+      <div class="log-hist" id="log-hist"></div>
+    </div>
+  </section>
+
   <section id="s-settings" class="screen panel" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Settings</h2></div>
     <div class="set-grid">
@@ -232,6 +272,7 @@
       <div class="trophy" id="rest-moon">🌙</div>
       <h1>Break time!</h1>
       <div class="gift-day" id="rest-txt">Great racing today, Carter! Your car is resting too.</div>
+      <div class="gift-day rest-tip">📚 Read a book or 🌳 play outside, and a grown-up can turn it into 🎟️ Driver School tickets!</div>
       <div class="r-coins">⏱ <span id="rest-left">10:00</span></div>
     </div>
   </section>

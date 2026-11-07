@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.14.0 — Driver School
+
+- **🚦 The Driver School opens** on Main Street. It turns time away from the screen into driver training:
+  - **Grown-ups log real-world time** (Driver School → "Grown-ups: log time", behind the grown-up check):
+    📚 Reading, 🌳 Playing outside, 🧹 Helping out, 🎨 Making something, 🚲 Exercise, in 10–60 minute steps.
+    Every 10 minutes = 1 🎟️ Training Ticket (reading can count double). Optional daily limit and a history list.
+  - **Coach Cone** teaches lessons: spend tickets on four **Driver Skills** that help every car:
+    🎯 Focus (curves pull less), ⚡ Reflexes (Turbo fills faster), 🦁 Courage (bigger jump boosts and stunt coins),
+    🧠 Smarts (more mission coins). Ten levels each.
+  - **🪪 Driver License**: lessons raise it from Learner → Bronze → Silver → Gold → Platinum → Piqua Pro.
+    **Gold** wins the **🚓 Piqua Patrol** car, with flashing lights.
+  - **From Rank 10 the License is a 5th rank gauge**, so ranking up also takes some real-world time. A grown-up
+    can switch that gauge off on the log page.
+- The break screen now suggests reading or playing outside to earn tickets.
+- New goals: take a lesson, earn a Gold license.
+- Old saves get an empty Driver School; nothing else changes. The save test now covers v0.13 and v0.14 saves.
+- Career simulator: with ~20 minutes a day of logged reading/outside time, today's content runs about 6 months.
+
+**Polish**
+- The Driver School classroom: a chalkboard sign with a working traffic light, Coach Cone (a blinking, bobbing
+  traffic cone with a whistle), a big ticket counter, a license card in its level's color, skill cards with pips.
+- The schoolhouse in town lost its "Coming soon" sash and gets a red "!" when there's a lesson to buy.
+
 ## v0.13.2 — Smooth Roads
 
 - **No more horizontal lines on the road.** The road and grass used two alternating shades that raced toward

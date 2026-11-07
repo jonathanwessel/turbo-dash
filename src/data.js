@@ -11,6 +11,8 @@ export const CARS = [
   { id: "greenMachine", name: "Green Machine", price: null, cup: "green", body: "#39d353", accent: "#ffffff", type: "sport", speed: 0.12, accel: 0.15, grip: 0.15 },
   { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
   { id: "champX", name: "Champion X", price: null, cup: "champ", body: "#1c1c24", accent: "#ffd400", type: "galaxy", speed: 0.32, accel: 0.3, grip: 0.3 },
+  // earned at the Driver School (Gold license): real-world reading and outdoor time pays for this one
+  { id: "patrol", name: "Piqua Patrol", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
@@ -151,13 +153,19 @@ export const GOALS = [
   { id: "auto1", icon: "🧠", name: "Auto Steer level 1", goal: 1, reward: 2000, have: S => S.research.autoSteer || 0 },
   { id: "auto10", icon: "🧠", name: "Auto Steer level 10", goal: 10, reward: 8000, have: S => S.research.autoSteer || 0 },
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
+  { id: "school1", icon: "🚦", name: "Take a Driver School lesson", goal: 1, reward: 300, have: S => lessonsOf(S) },
+  { id: "license3", icon: "🪪", name: "Earn a Gold license", goal: 3, reward: 2000, have: S => licenseLevel(S) },
   { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
   { id: "power100", icon: "❓", name: "Use 100 power-ups", goal: 100, reward: 800, have: S => S.stats.powers || 0 },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
 export const RANK_CAP = 20;   // raised by later releases
-export const rankNeeds = r => ({
+/* License gauge (from Rank 10): Bronze for Rank 10→11, then one license level per two ranks, up to Piqua Pro.
+   Pass the save so a parent can switch the gauge off in Parent Corner. */
+export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
+export const rankNeeds = (r, S) => ({
+  license: licenseNeed(r, S),
   wins: Math.round(12 * Math.pow(r, 1.6)),
   trophies: Math.round(4.5 * Math.pow(r, 1.35)),
   garage: Math.round(6 * Math.pow(r, 1.2)),
@@ -195,7 +203,36 @@ export const FRONTS = [
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
     have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
+  { id: "license", icon: "🪪", name: "License", hint: "Read or play outside, then train at the Driver School!", have: S => licenseLevel(S) },
 ];
+
+/* ---------- 🚦 Driver School: real-world time (logged by a grown-up) becomes driver training ---------- */
+export const ACTIVITIES = [
+  { id: "read", icon: "📚", name: "Reading" },
+  { id: "outside", icon: "🌳", name: "Playing outside" },
+  { id: "help", icon: "🧹", name: "Helping out" },
+  { id: "make", icon: "🎨", name: "Making something" },
+  { id: "move", icon: "🚲", name: "Exercise" },
+];
+export const ticketsFor = (activity, minutes, readingDouble) => Math.floor(minutes / 10) * (activity === "read" && readingDouble ? 2 : 1);
+export const SKILLS = [
+  { id: "focus", icon: "🎯", name: "Focus", desc: "Curves pull you less" },
+  { id: "reflex", icon: "⚡", name: "Reflexes", desc: "Turbo fills faster" },
+  { id: "courage", icon: "🦁", name: "Courage", desc: "Bigger jump boosts" },
+  { id: "smarts", icon: "🧠", name: "Smarts", desc: "More mission coins" },
+];
+export const SKILL_MAX = 10;
+export const skillCost = lvl => lvl + 1;   // tickets for the next lesson (1, 2, … 10)
+export const LICENSES = [
+  { name: "Learner", lessons: 0, color: "#9aa4b1" },
+  { name: "Bronze", lessons: 5, color: "#cd7f32" },
+  { name: "Silver", lessons: 12, color: "#c0c8d6" },
+  { name: "Gold", lessons: 20, color: "#ffd400" },
+  { name: "Platinum", lessons: 30, color: "#b8f3ff" },
+  { name: "Piqua Pro", lessons: 40, color: "#ff3fe5" },
+];
+export const lessonsOf = S => Object.values(S.school?.skills || {}).reduce((a, b) => a + b, 0);
+export const licenseLevel = S => { const n = lessonsOf(S); let L = 0; LICENSES.forEach((x, i) => { if (n >= x.lessons) L = i; }); return L; };
 
 /* ---------- Turbo Lab research. Real-time timers; levels count toward the Research rank gauge. ---------- */
 // tier: lab tier (needs that rank). cost/time grow 45% / 35% per level. Effects are read through S.research[id].

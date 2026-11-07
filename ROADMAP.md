@@ -13,8 +13,10 @@ Carter plays on an Android tablet, in landscape, full screen.
    Carter right now.
 2. **Every release has a substantial graphics piece and an interface piece**, listed under "Polish" in the
    changelog. Graphics means new art, animation or scenery, not a color tweak.
-3. **Keep the look.** Retro pseudo-3D road, bright flat colors, chunky shapes drawn in code, cars from behind.
-   No real 3D engine, photos or heavy effects. New worlds use the same style with their own colors and props.
+3. **Keep the look (until the Next Gen leap).** Retro pseudo-3D road, bright flat colors, chunky shapes drawn in
+   code, cars from behind. No photos or heavy effects. New worlds use the same style with their own colors and
+   props. The one planned exception is **Next Gen: Toy Track World** (below), where the game deliberately
+   levels up into a more futuristic, 3D look as a reward for getting far.
 4. **Every old save loads.** `npm test` loads a save from every past release (plus a broken one) and runs
    automatically before every release. Any save change adds a new fixture to `scripts/test-saves.mjs`.
 5. **No stuck stage gates.** `npm run career` plays the whole game day by day; a release can't ship if it reports
@@ -31,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock)
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -97,7 +99,7 @@ Super Paint. Tier 3 (Rank 8+): the Robot Brain chain → **Auto Steer**. Future 
 (46+), boost pads and dodging (66+), smart Turbo (86+), perfect line with gold trail (100). Hand steering always
 wins, it's off in time trials and boss races, and Parent Corner can disable it.
 
-## 🚦 Driver School & real-world rewards (next release)
+## 🚦 Driver School & real-world rewards (shipped in v0.14.0)
 **Goal: the game gives Carter a reason to put the tablet down.** A grown-up logs what he did away from the screen,
 and that becomes driver training in the game.
 - **Parent log (Parent Corner → Driver School, behind the grown-up check):** big buttons for 📚 Reading,
@@ -132,20 +134,12 @@ supported by the engine) and its own cars, lab kit and boss:
 | ❄️ Glacier Rink | low grip: sliding and drift turns | 30 |
 | ☁️ Cloud Kingdom | bouncy clouds, wind gusts, rainbow bridges | 35 |
 | 🦖 Dino Jungle | mud, vine swings, friendly dino stampedes | 40 |
-| 🧸 Toy Room | loop-the-loops, wall rides, giant blocks | 45 |
 | 🌃 Neon City | night driving, headlights, rooftop jumps | 50 |
 | 🌀 Gravity Flip | gravity changes mid-track | 55 |
 
 ---
 
 # Release plan
-
-### v0.14.0 Driver School
-The Driver School opens: parent activity log, Training Tickets, Coach Cone, Driver Skills, Driver License and the
-optional License rank gauge.
-- **Graphics:** the Driver School interior (a classroom with a traffic-light board and Coach Cone), animated
-  license cards, a little practice lot with cones.
-- **Interface:** the parent log is a page of big activity buttons; the school shows tickets as a big counter.
 
 ### v0.15.0 🌙 Moon Base
 The first new world: four low-gravity tracks, gaps to jump, boost rings, Thrusters part, Moon Tires research, two
@@ -179,8 +173,24 @@ A milestone release:
 - **A review of every screen:** a full code review, the career sim, and a save test from every version.
 
 ### v1.1 – v1.6 More worlds
-Glacier Rink, Cloud Kingdom, Dino Jungle, Toy Room, Neon City and Gravity Flip, about one world per release, each
+Glacier Rink, Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.
+
+## 🚀 Next Gen: Toy Track World (the big leap)
+A late-game chapter that feels like a whole new game Carter advances into: **plastic toy-car tracks** with side
+walls, **loop-the-loops**, banked curves, jumps between track pieces and **booster stations** (spinning wheels that
+fling the car forward), all set in a giant playroom.
+- **A new engine:** true 3D track pieces (straights, curves, loops, ramps, boosters) on a path the car follows,
+  with wall collisions, loop physics (enough speed or you fall off!) and a chase camera. Built as a separate
+  module so the classic game keeps working; likely WebGL (three.js) for the 3D.
+- **A new look:** the graphics jump from today's flat retro style to a shinier, more futuristic one (glossy
+  plastic, lighting, reflections). The leap itself is the reward: Carter "graduates" into it.
+- **How you get there:** after the classic worlds (around Rank 40) plus a Next Gen license at the Driver School,
+  with a big "the game levels up" moment.
+- **Track Builder fits here:** snapping plastic track pieces together is the most natural track builder.
+- **Name:** "Toy Track World" in the game (Matchbox is a toy brand name, and the game is public).
+- **Plan:** a prototype release (one test track with loops and boosters working), then the world (cars, tracks,
+  bosses), then the builder.
 
 ### v2.x Make your own
 A track builder (Carter designs tracks from curve, hill, ramp and boost pieces), a car designer, a car

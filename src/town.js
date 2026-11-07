@@ -116,7 +116,7 @@ const school = () => { const { x, w } = B.school, top = BASE - 200; return `
   <rect x="${x + w + 6}" y="${BASE - 110}" width="10" height="110" fill="#555"/><rect x="${x + w - 2}" y="${BASE - 168}" width="26" height="62" rx="8" fill="#222"/>
   <circle cx="${x + w + 11}" cy="${BASE - 154}" r="7" fill="#ff3d3d"/><circle cx="${x + w + 11}" cy="${BASE - 137}" r="7" fill="#ffd400"/><circle cx="${x + w + 11}" cy="${BASE - 120}" r="7" fill="#5be36a"/>
   ${label(cx("school"), top + 14, w - 6, "SCHOOL", 26)}
-  <g transform="rotate(-10 ${cx("school")} ${top + 120})"><rect x="${x - 16}" y="${top + 100}" width="${w + 32}" height="40" fill="#ffd400" stroke="#4a2600" stroke-width="4"/><text x="${cx("school")}" y="${top + 129}" class="lbl" font-size="24">COMING SOON</text></g>
+  ${badge("tb-school", x + w, top - 60)}
 </g>`; };
 
 // little things in the gaps between buildings (they never take taps)

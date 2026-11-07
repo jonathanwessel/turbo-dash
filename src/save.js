@@ -23,10 +23,12 @@ const DEFAULTS = () => ({
   lab: { benches: [] }, // [{ p: projectId | null, end: ms timestamp }]
   cups: {},            // "cupId:difficulty" -> best place
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
-  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true },  // helper: 0 off, 1 a little, 2 lots
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, license: true },  // helper: 0 off, 1 a little, 2 lots
   autoOn: false,
   missions: null, history: [], restUntil: 0,
   cloud: { linked: false },   // Google Save
+  // Driver School: tickets come from real-world time a grown-up logs; skills are bought with tickets
+  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], readingDouble: true, capMin: 0 },
 });
 
 export let S = DEFAULTS();
@@ -92,12 +94,19 @@ export function port(d) {
   s.parent = {
     diffs: pd.length ? pd : def.parent.diffs,
     helper: Math.round(num(p.helper, 0, 0, 2)), breakMin: num(p.breakMin, 0, 0, 240), volume: num(p.volume, 0.8, 0, 1),
-    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false,
+    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, license: p.license !== false,
   };
   const M = obj(d.missions);
   s.missions = typeof M.day === "string" && Array.isArray(M.list) ? M : null;
   s.history = arr(d.history).filter(h => h && typeof h === "object").slice(0, 30);
   s.cloud = { linked: obj(d.cloud).linked === true };
+  const sc = obj(d.school), sk = obj(sc.skills);
+  s.school = {
+    tickets: Math.round(num(sc.tickets, 0, 0)), earned: Math.round(num(sc.earned, 0, 0)),
+    skills: Object.fromEntries(["focus", "reflex", "courage", "smarts"].map(k => [k, Math.round(num(sk[k], 0, 0, 10))])),
+    log: arr(sc.log).filter(e => e && typeof e === "object" && typeof e.a === "string").slice(0, 60),
+    readingDouble: sc.readingDouble !== false, capMin: num(sc.capMin, 0, 0, 600),
+  };
   s.v = SAVE_VERSION;
   return s;
 }

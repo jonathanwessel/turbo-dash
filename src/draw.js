@@ -140,6 +140,13 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillStyle = type === "sport" ? "#222" : def.accent;
     rr(ctx, -w * 0.53, top - w * 0.15, w * 1.06, w * 0.065, w * 0.02);
   }
+  if (type === "patrol" && w > 20) {
+    ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.42, w, bh * 0.22);
+    const on = Math.sin(t * 12) > 0;
+    ctx.fillStyle = "#222"; rr(ctx, -w * 0.2 + cx, top - ch - w * 0.07, w * 0.4, w * 0.08, w * 0.03);
+    ctx.fillStyle = on ? "#ff3d3d" : "#7a1515"; rr(ctx, -w * 0.19 + cx, top - ch - w * 0.065, w * 0.18, w * 0.06, w * 0.02);
+    ctx.fillStyle = on ? "#1a3a7a" : "#3cb6ff"; rr(ctx, w * 0.01 + cx, top - ch - w * 0.065, w * 0.18, w * 0.06, w * 0.02);
+  }
   if (type === "shark") {
     ctx.fillStyle = shade(def.body, -0.2);
     poly(ctx, [cx - w * 0.06, top - ch, cx + w * 0.02, top - ch - w * 0.25, cx + w * 0.07, top - ch]);

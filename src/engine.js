@@ -358,7 +358,7 @@ export class Race {
     if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
-      this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);
+      this.coins += 3 + Math.floor((this.stats.courage || 0) / 3); this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9 + 0.08 * (this.stats.courage || 0)); this.nitro = Math.min(1, this.nitro + 0.1);
       this.popup(["STUNT!", "AIR TIME!", "WHOOSH!", "AWESOME!"][Math.floor(Math.random() * 4)], "#5be36a");
     }
   }

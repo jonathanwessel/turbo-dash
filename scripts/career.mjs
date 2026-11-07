@@ -4,6 +4,8 @@
 // It uses the game's own rules from src/data.js (prizes, ranks, research, goals) and races with the real engine.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
+import { SKILLS, SKILL_MAX, skillCost, licenseLevel } from "../src/data.js";
+const REAL_MIN = +(process.argv[4] || 20);   // minutes of real-world time logged per day (reading/outside)
 import {
   CARS, TRACKS, CUPS, CUP_POINTS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
   prizeFor, upgradeCost, trackOpen, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
@@ -17,6 +19,7 @@ const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
   cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0 },
   wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
+  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 } }, parent: { license: true },
 };
 let day = 0, clock = 0, raceNo = 0, lastRankDay = 0;
 const gates = [];
@@ -25,7 +28,7 @@ const chip = key => { if (S.chipLog[key]) return; S.chipLog[key] = 1; S.chips++;
 const lv = id => S.research[id] || 0;
 
 function rankUps() {
-  while (S.rank < RANK_CAP && FRONTS.every(f => f.have(S) >= rankNeeds(S.rank)[f.id])) {
+  while (S.rank < RANK_CAP && FRONTS.every(f => f.have(S) >= rankNeeds(S.rank, S)[f.id])) {
     S.rank++; S.coins += 200 * S.rank; if (S.rank >= 5) chip("rank:" + S.rank);
     gate("rank" + S.rank, `Rank ${S.rank}`); lastRankDay = day;
   }
@@ -47,7 +50,7 @@ function reward(track, r, diff) {
 }
 
 const carOf = () => CARS.find(c => c.id === S.car);
-const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"));
+const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), S.school.skills);
 
 function playCup(cup, diff) {
   const pts = [0, 0, 0, 0, 0, 0];
@@ -124,6 +127,15 @@ for (day = 1; day <= MAX_DAYS; day++) {
   collectLab();
   S.giftStreak++; S.coins += 100 + 50 * Math.min(S.giftStreak, 7); if (S.giftStreak % 7 === 0) chip("gift7:" + day);
   if (S.rank >= 7) { S.coins += 3 * (100 + 25 * S.rank) + 200 + 50 * S.rank; chip("missions:" + day); }   // assume he finishes the 3 daily missions
+  // the grown-up logs real-world time; the kid spends tickets on the cheapest lesson
+  S.school.tickets += Math.floor(REAL_MIN / 10);
+  for (let bought = true; bought;) {
+    bought = false; const before = licenseLevel(S);
+    const k = SKILLS.filter(x => S.school.skills[x.id] < SKILL_MAX).sort((a, b) => S.school.skills[a.id] - S.school.skills[b.id])[0];
+    if (k && S.school.tickets >= skillCost(S.school.skills[k.id])) { S.school.tickets -= skillCost(S.school.skills[k.id]); S.school.skills[k.id]++; bought = true; }
+    const after = licenseLevel(S); if (after > before) gate("lic" + after, `License level ${after}`);
+    if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); S.ups.patrol = NO_UPS(); gate("car:patrol", "Earned the Piqua Patrol"); }
+  }
   for (let n = 0; n < RACES_PER_DAY; n++) {
     const pick = pickRace();
     if (pick.cup) {
@@ -141,7 +153,7 @@ for (day = 1; day <= MAX_DAYS; day++) {
   }
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
   if (day - lastRankDay > 60 && S.rank < RANK_CAP && !gates.some(g => g.key === "stuck" + S.rank)) {
-    const need = rankNeeds(S.rank);
+    const need = rankNeeds(S.rank, S);
     gate("stuck" + S.rank, `⚠ STUCK at Rank ${S.rank} for 60 days: ` + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
   }
   if (lv("autoSteer") >= 2 * (RANK_CAP - 9) && S.rank >= RANK_CAP) { gate("done", "Everything currently reachable is done"); break; }
@@ -151,4 +163,4 @@ const months = d => d < 60 ? `day ${d}` : `day ${d} (~${(d / 30).toFixed(1)} mon
 console.log(`\nCareer: ${RACES_PER_DAY} races a day (${Math.round(RACES_PER_DAY * 75 / 60)} min), rank cap ${RANK_CAP}\n`);
 for (const g of gates) console.log(`  ${months(g.day).padEnd(24)} race ${String(g.race).padStart(5)}  ${g.text}`);
 console.log(`\nAfter ${Math.min(day, MAX_DAYS)} days: rank ${S.rank}, Auto Steer ${lv("autoSteer")}, coins ${S.coins}, chips ${S.chips}, research levels ${Object.values(S.research).reduce((a, b) => a + b, 0)}, cars ${S.owned.length}/${CARS.length}`);
-const need = rankNeeds(S.rank); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
+const need = rankNeeds(S.rank, S); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
