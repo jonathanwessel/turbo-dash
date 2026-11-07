@@ -9,10 +9,9 @@ Releases go to the play server (`npm run play`, port 5183, on the LAN at http://
 - **v0.1.0** Proof of Concept: one track, rivals, coins, boost pads, Turbo, sound.
 - **v0.2.0** Garage & Tracks (MVP): six tracks, six cars, four upgrades, prizes, treasure chests,
   daily gift, full screen on tablets.
+- **v0.3.0** Jumps & Stunts: ramps, air coins, stunt landings.
 
 ## Next
-- **v0.3.0 Jumps & Stunts**: ramps that launch the car into the air, air-time coins, a landing boost,
-  and "STUNT!" popups. Rivals jump too.
 - **v0.4.0 Paint Shop & Trophy Room**: buy paint colors and stickers for each car; a shelf showing
   every trophy won; goals ("Win 5 races", "Collect 500 coins") that pay coin rewards.
 - **v0.5.0 Cups**: three-race championships with points, a big cup trophy, and a special car for winning

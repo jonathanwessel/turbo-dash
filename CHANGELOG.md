@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 — Jumps & Stunts
+
+- **Ramps!** Red-and-yellow striped ramps on every track launch your car into the air.
+- **Air coins**: a rainbow arc of coins floats after each ramp. Steer in the air to grab them.
+- **Stunt landings** give +3 coins, a speed boost and some Turbo, with "STUNT!", "AIR TIME!" popups.
+- Rivals jump the ramps too. Cars in the air fly over cars on the ground.
+- Jump and landing sounds.
+
 ## v0.2.0 — Garage & Tracks (MVP)
 
 - **Six tracks** to unlock: Sunny Hills, Desert Dash, Snowy Peaks, Candy Land, Lava Mountain, Space Road.
