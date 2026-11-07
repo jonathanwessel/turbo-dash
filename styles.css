@@ -680,3 +680,12 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .name-tip { margin: 10px 0 0; font-weight: 700; opacity: .8; }
 @media (max-height: 560px) and (orientation: landscape) { .name-card .trophy { font-size: 44px; } .name-card h1 { font-size: clamp(24px, 7vmin, 40px); } #name-in { margin: 4px 0 8px; } }
 .chest.open i, .chest.other i { font-size: 1.05em; margin-bottom: .3em; }
+/* 📲 the Install button (title screen only) */
+.install-btn { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); z-index: 5;
+  font-size: clamp(16px, 4.2vmin, 24px); font-weight: 900; padding: .45em 1em; border-radius: 999px; color: #fff;
+  background: linear-gradient(#3cb6ff, #1f6fff); border: 3px solid #fff; box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+.install-btn[hidden], .install-help[hidden] { display: none; }
+.install-help { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(10,4,30,.7); padding: 16px; }
+.install-help .card { max-width: 560px; }
+.install-help p { font-size: clamp(16px, 4vmin, 22px); font-weight: 700; line-height: 1.5; }
+.install-help .ih-ico { font-size: 1.3em; }

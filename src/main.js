@@ -808,6 +808,23 @@ $("btn-play").onclick = () => {
   cloudWake().then(r => { if (r === "loaded") location.reload(); });   // quietly reconnect Google Save (needs this tap)
 };
 whenSaved(cloudSaved);
+/* 📲 Install as an app: a button on the title screen only, shown only when this device can install the game
+   (Chrome/Edge/Android offer it through "beforeinstallprompt"; iPhone/iPad need Share → Add to Home Screen)
+   and it isn't already installed (running as an app). Never on the http:// home-network address (not installable). */
+let installEvt = null;
+const runningAsApp = () => ["standalone", "fullscreen", "minimal-ui"].some(m => matchMedia(`(display-mode: ${m})`).matches) || navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const iosSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+function paintInstall() { $("btn-install").hidden = runningAsApp() || !window.isSecureContext || !(installEvt || iosSafari); }
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; paintInstall(); });
+addEventListener("appinstalled", () => { installEvt = null; paintInstall(); toast("📲 Installed! Turbo Dash is on the home screen now."); });
+$("btn-install").onclick = async () => {
+  sfx("click");
+  if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); try { await e.userChoice; } catch (err) { /* closed */ } paintInstall(); }
+  else if (iosSafari) $("install-help").hidden = false;
+};
+$("install-ok").onclick = () => { sfx("click"); $("install-help").hidden = true; };
+paintInstall();
 /* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
 let nameBack = "s-hub";
 function askName(back = "s-hub") {

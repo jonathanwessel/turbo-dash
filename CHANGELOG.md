@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.22.1 — Install Button
+
+- **📲 Install** on the title screen (and only there): installs Turbo Dash as an app on the device, so it opens
+  full screen from the home screen and works offline. It only shows when the device can install it and it isn't
+  installed yet:
+  - Android tablets/phones and Chrome or Edge on a computer: tapping it opens the browser's own install prompt.
+  - iPhone/iPad (Safari): it shows how to do it (Share ⬆️ → Add to Home Screen ➕).
+  - Hidden when the game is already running as an installed app, and on the home-network (http) address, where
+    browsers don't allow installing.
+
 ## v0.22.0 — A Growing Town, Your Name & New Sounds
 
 - **Construction sites that grow.** The 🍦 Ice Cream Shop (Rank 12), 🚒 Fire Station (Rank 15) and 🧺 Park
