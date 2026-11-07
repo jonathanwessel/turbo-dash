@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.11.1 — Quiet Town (hotfix)
+
+- Fixed: the engine hum kept playing on the town screen and other menus. Menus now have only music; the engine
+  sound plays only during races.
+- The demo drive behind the menus pauses while the town is showing, which saves battery.
+
 ## v0.11.0 — Auto Steer
 
 - **Lab tier 3** (Rank 8): the **Robot Brain** chain. Robot Eyes → Robot Ears → Map Memory → Reflexes → Brain

@@ -22,7 +22,8 @@ const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "�
 const buzz = ms => { if (S.parent.buzz) navigator.vibrate?.(ms); };
 const race = new Race(canvas, {
   sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
-  engine,
+  // engine hum only during a real race (menus have the demo drive behind them, but only music)
+  engine: (r, b) => { if (mode === "race") engine(r, b); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
   onFinish: r => setTimeout(() => showResult(r), 1300),
 });
@@ -42,7 +43,7 @@ addEventListener("resize", () => resize());
 let mode = "menu", screen = "s-title", paused = false, last = performance.now(), acc = 0, goT = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!paused) { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } }
+  if (!paused && screen !== "s-hub") { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
