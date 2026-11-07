@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, WORLDS, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
@@ -76,7 +76,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -160,18 +160,19 @@ function startRace(track) {
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
-  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn ? autoLv : 0 });
+  const boss = bossRun && { ...bossRun, def: CARS.find(c => c.id === bossRun.car) };
+  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss ? autoLv : 0, boss });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   show(null); setRaceUi(true); setSong("race");
-  buildProgress(); lastCount = null; hudCache = {};
+  buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
 
 /* ---------- HUD ---------- */
 const suffix = n => n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
 let dots = [], lastCount = null, hudCache = {};
-function buildProgress() {
+function buildProgress(n = 6) {
   const box = $("h-track"); box.innerHTML = ""; dots = [];
-  for (let i = 0; i < 6; i++) { const d = document.createElement("i"); box.appendChild(d); dots.push(d); }
+  for (let i = 0; i < n; i++) { const d = document.createElement("i"); box.appendChild(d); dots.push(d); }
 }
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
 function updateHud(dt) {
@@ -219,11 +220,41 @@ function paintCups() {
 }
 function paintRaceTabs() {
   document.querySelectorAll("[data-rtab]").forEach(b => { b.classList.toggle("on", b.dataset.rtab === raceTab); if (b.dataset.rtab === "cups") b.classList.toggle("locked", S.rank < 5); });
-  $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups";
+  $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss";
   if (raceTab === "cups") paintCups();
+  if (raceTab === "boss") paintBosses();
+}
+/* ---------- 👑 bosses ---------- */
+let bossRun = null, lastBoss = null;
+const bossOpen = b => S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track));
+function paintBosses() {
+  $("boss-list").innerHTML = BOSSES.filter(b => b.world === S.world).map(b => {
+    const open = bossOpen(b), beat = S.bosses[b.id], car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
+    return `<button class="cup-card boss ${open ? "" : "locked"}" data-boss="${b.id}" style="border-color:#ffd400">
+      <div class="cc-cup">${b.icon}</div><div class="cc-name" style="color:#ffd400">${b.name}</div>
+      <div class="cc-tracks">${t.icon}</div><div class="cc-best">${beat ? "👑" : ""}</div>
+      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " : "Win: 🚗 "}${car.name}</div>
+      ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < b.rank ? "Rank " + b.rank : "Open " + t.name}</small></div>`}</button>`;
+  }).join("") || `<div class="boss-says">No boss here yet!</div>`;
+}
+$("boss-list").addEventListener("click", e => {
+  const c = e.target.closest("[data-boss]"); if (!c) return;
+  const b = BOSSES.find(x => x.id === c.dataset.boss);
+  if (!bossOpen(b)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
+  sfx("click"); openBossIntro(b);
+});
+function openBossIntro(b) {
+  const car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
+  $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
+  $("bi-info").textContent = `${t.icon} ${t.name} · one on one · win the ${car.name}!`;
+  const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
+  $("bi-go").onclick = () => { sfx("click"); cupRun = null; bossRun = b; startRace(t); };
+  $("bi-back").onclick = () => { sfx("click"); openTracks(); };
+  sfx("chest"); show("s-boss");
 }
 document.querySelectorAll("[data-rtab]").forEach(b => b.onclick = () => {
   if (b.dataset.rtab === "cups" && S.rank < 5) { sfx("nope"); toast("🔒 Cups open at Rank 5"); return; }
+  if (b.dataset.rtab === "boss" && S.rank < Math.min(...BOSSES.map(x => x.rank))) { sfx("nope"); toast(`🔒 Bosses appear at Rank ${Math.min(...BOSSES.map(x => x.rank))}`); return; }
   sfx("click"); raceTab = b.dataset.rtab; paintRaceTabs();
 });
 $("cup-list").addEventListener("click", e => {
@@ -266,12 +297,12 @@ $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
   const i = +c.dataset.i;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
-  sfx("click"); cupRun = null; startRace(TRACKS[i]);
+  sfx("click"); cupRun = null; bossRun = null; startRace(TRACKS[i]);
 });
 
 /* ---------- cups ---------- */
 let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
-function startCup(cup) { cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
+function startCup(cup) { bossRun = null; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
 const racerName = k => k === 0 ? PLAYER : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
 const cupOrder = () => [0, 1, 2, 3, 4, 5].sort((a, b) => cupRun.pts[b] - cupRun.pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));
 function paintCupResult() {
@@ -354,6 +385,18 @@ function showResult(r) {
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
   $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a treasure chest!";
   $("r-cup").hidden = true;
+  if (bossRun) {
+    const b = bossRun, car = CARS.find(c => c.id === b.car);
+    if (r.place === 1) {
+      const first = !S.bosses[b.id];
+      S.bosses[b.id] = true; S.coins += 5000; save();
+      if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); save(); }
+      awardChip("boss:" + b.id);
+      $("r-unlock").hidden = false; $("r-unlock").textContent = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙5000` : `👑 You beat ${b.name} again! +🪙5000`;
+      $("r-title").textContent = "BOSS BEATEN!";
+    } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + PLAYER + "!"; }
+    lastBoss = b; bossRun = null;
+  } else lastBoss = null;
   if (cupRun) { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = cupRun.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
   else { $("btn-next").hidden = !nowOpen; $("btn-again").hidden = false; $("btn-next").textContent = "Next ▶"; }
   show("s-result"); refreshCoins();
@@ -370,13 +413,13 @@ document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () 
   $("r-pick").textContent = `You got 🪙${chestValues[i]}!`;
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
-$("btn-again").onclick = () => { sfx("click"); startRace(currentTrack); };
+$("btn-again").onclick = () => { sfx("click"); if (lastBoss) bossRun = lastBoss; startRace(currentTrack); };
 $("btn-next").onclick = () => {
   sfx("click");
   if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
   if (nextTrack) startRace(nextTrack);
 };
-$("btn-home").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
+$("btn-home").onclick = () => { sfx("click"); cupRun = null; bossRun = null; menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -565,7 +608,12 @@ const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100) });
 let giftShownThisVisit = false;
 $("town-wrap").innerHTML = townSVG();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
+const today = () => dayKey(new Date());
 function refreshHub() {
+  for (const b of BUILDINGS) if ($("bld-" + b.id)) { const open = buildingOpen(S, b.id); $("bld-" + b.id).style.display = open ? "" : "none"; $("site-" + b.id).style.display = open ? "none" : ""; }
+  tb("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today());
+  tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
+  tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
   tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id]))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
@@ -575,7 +623,7 @@ function refreshHub() {
   tb("tb-lab", S.rank >= 2 && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
   // wide screens: fill and trim the sky; squarer or portrait screens: show the whole street
-  $("town").setAttribute("preserveAspectRatio", innerWidth / innerHeight < 1.55 ? "xMidYMid meet" : "xMidYMax slice");
+  paintTownArrows();
 }
 addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
 $("town-wrap").addEventListener("click", e => {
@@ -588,6 +636,24 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
+  else if (go === "library") { sfx("click"); toast("📚 Read a real book! A grown-up can log it at the Driver School."); setTimeout(openSchool, 600); }
+  else if (["icecream", "fire", "park"].includes(go)) {
+    if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
+    const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 3;
+    if (go === "icecream") {
+      if (S.daily.icecream === today()) { sfx("click"); toast("🍦 Come back tomorrow for more ice cream!"); return; }
+      S.daily.icecream = today(); earn(300 + 25 * S.rank, x, y); sfx("chest"); toast(`🍦 Yum! Free ice cream: +🪙${300 + 25 * S.rank}`);
+    } else if (go === "park") {
+      if (S.daily.park === today()) { sfx("click"); toast("🧺 The picnic is packed up. Come back tomorrow!"); return; }
+      S.daily.park = today(); earn(500 + 25 * S.rank, x, y); sfx("chest");
+      const dn = Math.floor(Date.now() / 86400000);
+      if (dn % 3 === 0 && awardChip("park:" + today())) toast("🧺 Picnic! +🪙 and a 🧠 Brain Chip!"); else toast(`🧺 Picnic in the park: +🪙${500 + 25 * S.rank}`);
+    } else if (go === "fire") {
+      if (S.owned.includes("firetruck")) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
+      S.owned.push("firetruck"); upsOf("firetruck"); save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
+    }
+    refreshHub();
+  }
   else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
   else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
 });
@@ -631,7 +697,7 @@ $("btn-auto").onclick = () => {
   $("btn-auto").classList.toggle("on", S.autoOn);
 };
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
-$("btn-quit").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
+$("btn-quit").onclick = () => { sfx("click"); cupRun = null; bossRun = null; menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
 
 /* ---------- parent corner: tap the version label 5 times ---------- */
@@ -750,3 +816,14 @@ refreshCoins(false); refreshChips();
 menuDemo();
 show("s-title");
 requestAnimationFrame(frame);
+
+/* Main Street scrolls sideways once it's full: arrows at the edges, with a "!" when something off screen is waiting. */
+function paintTownArrows() {
+  const w = $("town-wrap"), max = w.scrollWidth - w.clientWidth;
+  $("town-l").hidden = w.scrollLeft < 10; $("town-r").hidden = w.scrollLeft > max - 10 || max < 10;
+  const edge = innerWidth;
+  $("town-r-dot").hidden = ![...document.querySelectorAll("#town .tbadge")].some(b => b.style.display !== "none" && b.getBoundingClientRect().left > edge);
+}
+$("town-wrap").addEventListener("scroll", paintTownArrows, { passive: true });
+$("town-l").onclick = () => { sfx("click"); $("town-wrap").scrollBy({ left: -innerWidth * 0.7, behavior: "smooth" }); };
+$("town-r").onclick = () => { sfx("click"); $("town-wrap").scrollBy({ left: innerWidth * 0.7, behavior: "smooth" }); };

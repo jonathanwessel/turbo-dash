@@ -25,6 +25,8 @@ const FIXTURES = {
   "v0.11.0 (Auto Steer)": { v: 1, coins: 70000, owned: ["zippy", "galaxy"], car: "galaxy", ups: { galaxy: { engine: 5, turbo: 5, tires: 5, magnet: 5 } }, rank: 10, research: { rbEyes: 1, rbEars: 1, rbMap: 1, rbReflex: 1, rbSocket: 1, autoSteer: 1 }, autoOn: true, parent: { diffs: ["normal"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: false }, chips: 4, best: {}, bestD: {} },
   "v0.13 (settings, mastery, cloud)": { v: 12, savedAt: 1794000000000, coins: 4200, owned: ["zippy", "bolt"], car: "bolt", ups: { zippy: { engine: 1, turbo: 0, tires: 0, magnet: 0 }, bolt: { engine: 2, turbo: 1, tires: 1, magnet: 0 } }, best: { sunny: 1, beach: 2 }, bestD: { "sunny:normal": 1, "beach:normal": 2, "sunny:easy": 1 }, mastery: { "sunny:normal": 4, "sunny:easy": 1 }, rank: 3, cloud: { linked: true }, research: { coinBoost: 2 }, lab: { benches: [{ p: null, end: 0 }] }, stats: { roadCoins: 400, stunts: 30, turbos: 12, bams: 2, powers: 5 } },
   "v0.14 (Driver School)": { v: 12, coins: 900, owned: ["zippy", "patrol"], car: "patrol", ups: {}, school: { tickets: 7, earned: 31, skills: { focus: 3, reflex: 2, courage: 1, smarts: 0 }, log: [{ d: "2026-11-08", a: "read", m: 20, t: 4 }], readingDouble: false, capMin: 60 }, parent: { diffs: ["normal"], license: false } },
+  "v0.15 (moon, rings)": { v: 12, coins: 80000, owned: ["zippy", "galaxy", "rover"], car: "rover", ups: { rover: { engine: 2, turbo: 1, tires: 1, magnet: 0 } }, rank: 21, world: "moon", research: { moonTires: 1, thrusters: 2 }, best: { crater: 1 }, bestD: { "crater:normal": 1 }, stats: { roadCoins: 9000, stunts: 400, turbos: 300, bams: 50, powers: 80, rings: 12 } },
+  "v0.16 (bosses, daily treats)": { v: 12, coins: 5000, owned: ["zippy", "thunder", "firetruck"], car: "thunder", ups: {}, rank: 16, bosses: { bruno: true }, daily: { icecream: "2026-11-07" } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -59,6 +61,10 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.mastery) for (const [k, v] of Object.entries(raw.mastery)) check(name, S.mastery[k] === v, `mastery ${k} lost`);
   if (raw.school) { check(name, S.school.tickets === raw.school.tickets && S.school.earned === raw.school.earned, "tickets lost"); for (const [k, v] of Object.entries(raw.school.skills)) check(name, S.school.skills[k] === v, `skill ${k} lost`); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); check(name, S.school.readingDouble === raw.school.readingDouble, "reading setting lost"); }
   if (raw.parent && raw.parent.license === false) check(name, S.parent.license === false, "license gauge setting lost");
+  if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
+  if (raw.daily) check(name, Object.entries(raw.daily).every(([k, v]) => S.daily[k] === v), "daily treats lost");
+  if (raw.world) check(name, S.world === raw.world, "world choice lost");
+  if (raw.stats?.rings) check(name, S.stats.rings === raw.stats.rings, "ring count lost");
   check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object", "school data broken");
   check(name, Array.isArray(S.lab.benches) && S.lab.benches.every(b => b.p === null || typeof b.p === "string"), "bad lab benches");
   check(name, Array.isArray(S.parent.diffs) && S.parent.diffs.length > 0, "no allowed difficulty");

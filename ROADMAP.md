@@ -33,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -165,16 +165,16 @@ moon cars, a Moon boss rival. Rank cap 25.
 - **Graphics:** a full moon art set: grey crater roadsides, Earth in the sky, stars, little dust puffs.
 - **Interface:** the world picker becomes a world map.
 
-### v0.16.0 Main Street Grows & Bosses
-New Main Street buildings with rank (Ice Cream Shop, Fire Station, Library); a named boss rival per world (win
-their car and a Brain Chip); Time Trials with a see-through ghost of your best lap.
-- **Graphics:** new buildings, boss intro cards, ghost car effect.
+### v0.16.0 Main Street Grows & Bosses (shipped)
+New Main Street buildings with rank (Library, Ice Cream Shop, Fire Station, Park); a named boss rival per world (win
+their car and a Brain Chip). Time Trials moved to v0.17.
+- **Graphics:** new buildings, construction sites, boss intro cards, the Fire Dash truck.
 - **Interface:** Main Street scrolls sideways when it's full, with edge arrows that show a "!" for buildings off
   screen.
 
 ### v0.17.0 🌊 Deep Blue
 The underwater world: drag, currents, bubble vents, pearls, propellers and fins, Snorkel Seals research.
-Rank cap 30.
+Rank cap 30. Plus **Time Trials** with a see-through ghost of your best lap.
 - **Graphics:** blue-green palette, bubbles, fish, wavy seaweed, light ripples on the road; muffled sound.
 
 ### v0.18.0 Two Players

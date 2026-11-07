@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.16.0 — 👑 Main Street Grows & Bosses
+
+- **Bosses!** A new **👑 Boss** tab on the Race Track screen. A boss race is one-on-one against a named rival who
+  fires a Turbo burst every few seconds. Beat them to win **their car, a Brain Chip and 5,000 coins** (rematch any
+  time for fun).
+  - **🦏 Big Bruno** on Space Road (Rank 9): win the **Thunder King** monster truck.
+  - **👩‍🚀 Captain Luna** on Earthrise Run (Rank 23): win the **Starfire** moon car.
+  - Each boss shows an intro card with what they say and the car you can win.
+- **Main Street grows with your rank.** New buildings start as fenced construction sites showing the rank they
+  open at:
+  - **📚 Library** (open now).
+  - **🍦 Ice Cream Shop** (Rank 12): a free treat of coins once a day.
+  - **🚒 Fire Station** (Rank 15): the firefighters give you **Fire Dash**, a real fire truck with a ladder and
+    flashing lights.
+  - **🌳 Park** (Rank 20): a daily coin picnic, plus a Brain Chip every third day.
+- New goal: **Beat a boss**. Beaten bosses also count toward your trophy gauge.
+- Saves from every earlier version carry over (14 save checks).
+- Tuned with the career simulator: Bruno falls around day 40, Luna around month 6, and the whole game still runs
+  about 7½ months with no stuck gates.
+
+**Polish**
+- Main Street is wider and **scrolls sideways**, with big ◀ ▶ arrows at the edges. The ▶ arrow shows a red dot
+  when a building off screen has something waiting for you.
+- New building art: library columns and a book sign, a striped ice-cream awning with a giant cone, a fire house
+  with big garage doors.
+- The boss intro card draws the prize car big, in full detail.
+
 ## v0.15.0 — 🌙 Moon Base
 
 - **The first new world: the Moon.** It opens at **Rank 20** after researching **Moon Tires** in the Turbo Lab

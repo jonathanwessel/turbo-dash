@@ -140,6 +140,14 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillStyle = type === "sport" ? "#222" : def.accent;
     rr(ctx, -w * 0.53, top - w * 0.15, w * 1.06, w * 0.065, w * 0.02);
   }
+  if (type === "fire" && w > 20) {
+    ctx.fillStyle = "#c9ced8"; ctx.fillRect(-w * 0.36 + cx, top - ch - w * 0.06, w * 0.72, w * 0.035); ctx.fillRect(-w * 0.36 + cx, top - ch - w * 0.13, w * 0.72, w * 0.035);
+    for (let i = 0; i < 6; i++) ctx.fillRect(-w * 0.34 + cx + i * w * 0.13, top - ch - w * 0.13, w * 0.025, w * 0.105);
+    const on = Math.sin(t * 10) > 0;
+    ctx.fillStyle = on ? "#ff3d3d" : "#ffd400"; ell(ctx, -w * 0.42, top + bh * 0.1, w * 0.05, w * 0.04);
+    ctx.fillStyle = on ? "#ffd400" : "#ff3d3d"; ell(ctx, w * 0.42, top + bh * 0.1, w * 0.05, w * 0.04);
+    ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.62, w, bh * 0.1);
+  }
   if (type === "rover" && w > 20) {
     ctx.fillStyle = def.accent; ctx.fillRect(-w * 0.5, top + bh * 0.3, w, bh * 0.14);
     ctx.fillStyle = "#59606b"; ctx.fillRect(w * 0.3 + cx, top - ch - w * 0.22, w * 0.025, w * 0.22);

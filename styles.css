@@ -520,3 +520,23 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .share-box b { font-size: min(2.8vh, 2.1vw); }
 .share-box small { font-size: min(1.8vh, 1.4vw); max-width: none; }
 #s-title .play-btn { font-size: min(8vw, 11.5vh); padding: .22em 1.2em; }
+
+/* ---------- v0.16: Main Street scrolls sideways ---------- */
+#town-wrap { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; background: linear-gradient(#4fb6ff, #c9efff 70%, #5fd068 70%); }
+#town-wrap::-webkit-scrollbar { display: none; }
+#town { position: absolute; left: 0; bottom: 0; top: auto; width: calc(100vw * 2450 / 1600); height: auto; aspect-ratio: 2450 / 900; }
+.town-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 15; width: 64px; height: 90px; border-radius: 20px; font-size: 34px;
+  background: rgba(30,16,80,.75); border: 3px solid #ffd400; color: #fff; }
+.town-arrow.l { left: max(8px, env(safe-area-inset-left)); } .town-arrow.r { right: max(8px, env(safe-area-inset-right)); }
+.town-arrow i { position: absolute; top: -10px; right: -10px; width: 26px; height: 26px; border-radius: 50%; background: #ff2d2d; border: 3px solid #fff; font-style: normal; font-size: 16px; display: grid; place-items: center; }
+@keyframes drive1 { from { transform: translateX(-150px); } to { transform: translateX(2550px); } }
+@keyframes drive2 { from { transform: translateX(2550px) scaleX(-1); } to { transform: translateX(-150px) scaleX(-1); } }
+
+/* ---------- v0.16: bosses ---------- */
+.boss-card { border-color: #ffd400; background: linear-gradient(160deg, #3a0f5a, #12062e); max-width: 560px; }
+.boss-face { font-size: clamp(70px, 18vmin, 120px); line-height: 1; animation: bob .8s ease-in-out infinite alternate; filter: drop-shadow(0 6px 0 rgba(0,0,0,.4)); }
+.boss-says { font-size: clamp(16px, 4.4vmin, 22px); font-weight: 900; font-style: italic; color: #ff8ad8; margin-bottom: 4px; }
+#bi-car { width: min(60vw, 320px); height: auto; aspect-ratio: 320 / 170; }
+.cup-card.boss { background: linear-gradient(160deg, #3a0f5a, #12062e); }
+.cup-card.boss .cc-cup { font-size: clamp(60px, 15vmin, 96px); }
+#boss-list { justify-content: center; }

@@ -15,6 +15,10 @@ export const CARS = [
   // 🌙 Moon Base cars
   { id: "rover", name: "Lunar Rover", price: 60000, world: "moon", body: "#e9edf3", accent: "#ff8a00", type: "rover", speed: 0.36, accel: 0.32, grip: 0.32 },
   { id: "comet", name: "Comet", price: null, cup: "moon", body: "#9fe8ff", accent: "#ffffff", type: "rocket", speed: 0.42, accel: 0.36, grip: 0.35 },
+  // boss prize cars and the Fire Station's truck
+  { id: "thunder", name: "Thunder King", price: null, boss: "bruno", body: "#2a2a33", accent: "#ffd400", type: "monster", speed: 0.30, accel: 0.32, grip: 0.28 },
+  { id: "starfire", name: "Starfire", price: null, boss: "luna", world: "moon", body: "#ff3fe5", accent: "#3cf2ff", type: "galaxy", speed: 0.48, accel: 0.4, grip: 0.4 },
+  { id: "firetruck", name: "Fire Dash", price: null, building: "fire", body: "#e8262b", accent: "#ffd400", type: "fire", speed: 0.24, accel: 0.24, grip: 0.24 },
   { id: "patrol", name: "Piqua Patrol", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
 ];
 
@@ -35,6 +39,20 @@ export const CUPS = [
   { id: "moon", name: "Moon Cup", color: "#9fe8ff", tracks: ["crater", "moonbase", "asteroid"], car: "comet", bonus: 6000, rank: 21, world: "moon" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
+
+/* 👑 Bosses: a one-on-one race against a named rival on that world's hardest track. Beat them to win their car. */
+export const BOSSES = [
+  { id: "bruno", world: "earth", name: "Big Bruno", icon: "🦏", track: "space", rank: 9, car: "thunder", speed: 1.8, says: "Nobody beats Big Bruno on Space Road!" },
+  { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!" },
+];
+/* 🏙️ Main Street grows: new buildings open as you rank up. */
+export const BUILDINGS = [
+  { id: "library", name: "Library", rank: 1 },
+  { id: "icecream", name: "Ice Cream", rank: 12 },
+  { id: "fire", name: "Fire Station", rank: 15 },
+  { id: "park", name: "Park", rank: 20 },
+];
+export const buildingOpen = (S, id) => S.rank >= (BUILDINGS.find(b => b.id === id)?.rank || 99);
 
 export const UPGRADES = [
   { id: "engine", name: "Engine", icon: "🔥", desc: "Go faster" },
@@ -167,6 +185,7 @@ export const GOALS = [
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
   { id: "moon1", icon: "🌙", name: "Win a race on the Moon", goal: 1, reward: 5000, have: S => ["crater", "moonbase", "asteroid", "earthrise"].filter(id => S.best[id] === 1).length },
   { id: "rings25", icon: "⭕", name: "Fly through 25 boost rings", goal: 25, reward: 3000, have: S => S.stats.rings || 0 },
+  { id: "boss1", icon: "👑", name: "Beat a boss", goal: 1, reward: 4000, have: S => Object.keys(S.bosses || {}).length },
   { id: "school1", icon: "🚦", name: "Take a Driver School lesson", goal: 1, reward: 300, have: S => lessonsOf(S) },
   { id: "license3", icon: "🪪", name: "Earn a Gold license", goal: 3, reward: 2000, have: S => licenseLevel(S) },
   { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
@@ -196,8 +215,9 @@ export const RANK_UNLOCKS = {
   8: { icon: "🤖", text: "Robot Brain research" },
   9: { icon: "🧪", text: "3rd lab bench" },
   10: { icon: "🧠", text: "Auto Steer research" },
-  15: { icon: "🧪", text: "4th lab bench" },
-  20: { icon: "🌙", text: "Moon Base (research Moon Tires)" },
+  12: { icon: "🍦", text: "Ice Cream Shop" },
+  15: { icon: "🚒", text: "Fire Station (and a fire truck!)" },
+  20: { icon: "🌙", text: "Moon Base (research Moon Tires) + Park" },
   21: { icon: "🏆", text: "Moon Cup" },
 };
 const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
@@ -212,7 +232,7 @@ export const FRONTS = [
       const allowed = S.parent?.diffs?.length ? S.parent.diffs : ["easy", "normal", "hard"], ok = k => allowed.includes(k.split(":")[1]);
       const sum = (m, f) => Object.entries(m || {}).filter(([k]) => ok(k)).reduce((a, [, v]) => a + f(v), 0);
       const per = sum(S.bestD, p => MEDAL_PTS[p] || 0) + sum(S.cups, p => CUP_PTS[p] || 0) + sum(S.mastery, starsFor);
-      return Math.round(per * 3 / allowed.length) + S.claimed.length;
+      return Math.round(per * 3 / allowed.length) + S.claimed.length + 10 * Object.keys(S.bosses || {}).length;
     } },
   { id: "garage", icon: "🔧", name: "Garage", hint: "Buy cars and upgrades!",
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },

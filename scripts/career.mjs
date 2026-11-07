@@ -8,7 +8,7 @@ import { SKILLS, SKILL_MAX, skillCost, licenseLevel } from "../src/data.js";
 const REAL_MIN = +(process.argv[4] || 20);   // minutes of real-world time logged per day (reading/outside)
 import {
   CARS, TRACKS, CUPS, CUP_POINTS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
-  prizeFor, upgradeCost, trackOpen, worldOpen, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
+  prizeFor, upgradeCost, trackOpen, worldOpen, BOSSES, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
 } from "../src/data.js";
 
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
@@ -18,7 +18,7 @@ const NO_UPS = () => ({ engine: 0, turbo: 0, tires: 0, magnet: 0 });
 const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
   cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0 },
-  wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
+  bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
   school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 } }, parent: { license: true },
 };
 let day = 0, clock = 0, raceNo = 0, lastRankDay = 0;
@@ -51,6 +51,13 @@ function reward(track, r, diff) {
 
 const carOf = () => CARS.find(c => c.id === S.car);
 const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), S.school.skills);
+
+function playBoss(b) {
+  const car = carOf(), t = TRACKS.find(x => x.id === b.track);
+  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, { ...b, def: CARS.find(c => c.id === b.car) });
+  reward(t, r, "normal");
+  if (r.place === 1 && !S.bosses[b.id]) { S.bosses[b.id] = true; S.coins += 5000; chip("boss:" + b.id); if (!S.owned.includes(b.car)) { S.owned.push(b.car); S.ups[b.car] = NO_UPS(); } gate("boss:" + b.id, `Beat ${b.name}`); }
+}
 
 function playCup(cup, diff) {
   const pts = [0, 0, 0, 0, 0, 0];
@@ -124,6 +131,10 @@ function spend() {
 
 for (day = 1; day <= MAX_DAYS; day++) {
   clock = day * 86400;
+  // Main Street treats (the kid taps them every day once open)
+  if (S.rank >= 12) S.coins += 300 + 25 * S.rank;
+  if (S.rank >= 20) { S.coins += 500 + 25 * S.rank; if (day % 3 === 0) chip("park:" + day); }
+  if (S.rank >= 15 && !S.owned.includes("firetruck")) { S.owned.push("firetruck"); S.ups.firetruck = NO_UPS(); gate("car:firetruck", "Got Fire Dash from the Fire Station"); }
   if (day % 7 === 0) for (const k of Object.keys(fails)) if (k.startsWith("cup:")) fails[k] = 0;   // try cups again each week
   collectLab();
   S.giftStreak++; S.coins += 100 + 50 * Math.min(S.giftStreak, 7); if (S.giftStreak % 7 === 0) chip("gift7:" + day);
@@ -138,6 +149,8 @@ for (day = 1; day <= MAX_DAYS; day++) {
     if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); S.ups.patrol = NO_UPS(); gate("car:patrol", "Earned the Piqua Patrol"); }
   }
   for (let n = 0; n < RACES_PER_DAY; n++) {
+    const boss = BOSSES.find(b => !S.bosses[b.id] && S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track)));
+    if (boss && Math.random() < 0.15) { playBoss(boss); collectLab(); claimGoals(); rankUps(); spend(); continue; }
     const pick = pickRace();
     if (pick.cup) {
       const before = S.cups[pick.cup.id + ":" + pick.diff];

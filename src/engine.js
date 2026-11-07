@@ -148,6 +148,9 @@ export class Race {
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
       base: BASE_MAX * (1.06 + d * 0.12 + (4 - i) * 0.035) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
     }));
+    // 👑 boss race: just you and the boss (who fires Turbo every few seconds)
+    if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, finished: false, air: 0, vy: 0,
+      base: BASE_MAX * opts.boss.speed * this.diff.rival * this.phys.top, boss: true, btT: 5, bt: 0 }];
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
   }
@@ -276,7 +279,8 @@ export class Race {
     const d = this.track.diff;
     for (const c of this.rivals) {
       let target = c.base;
-      if (this.state === "demo") target = c.base * 0.95;
+      if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
+      else if (this.state === "demo") target = c.base * 0.95;
       else {
         const gap = c.dist - p.dist;
         const hard = this.diff.id === "hard", easy = this.diff.id === "easy";
