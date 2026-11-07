@@ -14,6 +14,7 @@
 </head>
 <body>
 <div id="app">
+  <canvas id="gl" hidden></canvas>
   <canvas id="game"></canvas>
 
   <!-- race HUD -->
@@ -326,6 +327,13 @@
   <div id="coinbar" class="coinbar" hidden>🪙 <span id="coin-n">0</span><span id="chip-wrap" hidden> · 🧠 <span id="chip-n">0</span></span></div>
   <div id="toast" class="toast" hidden></div>
   <div id="topright" class="topright" hidden><button id="btn-settings" class="icon-btn gear" aria-label="Settings">⚙️</button></div>
+  <div id="levelup" hidden><div class="lu-card">
+    <div class="lu-zap">🪄✨🧸</div>
+    <h1>THE GAME LEVELS UP!</h1>
+    <p>ZAP! The Shrink Ray made you <b>toy-sized</b>!<br>Race on giant plastic tracks with <b>loop-the-loops</b>, big jumps and <b>booster stations</b>.</p>
+    <p class="lu-tip">🎢 Go fast into loops, or you'll fall off! 🖐️</p>
+    <button id="lu-go" class="big-btn go">LET'S GO!</button>
+  </div></div>
   <canvas id="fx"></canvas>
   <button id="update" class="update" hidden>✨ New version! Tap to update <small id="upd-v"></small></button>
 </div>

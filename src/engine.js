@@ -1,5 +1,6 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
+import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
@@ -128,6 +129,9 @@ export function buildTrack(track) {
   trackCache.set(track.id, T);
   return T;
 }
+
+/* a lap's length in its own engine's units (Time Trial medal times use it) */
+export const trackLen = t => t.world === "toy" ? buildToyTrack(t).L : buildTrack(t).length;
 
 function project(pt, camX, camY, camZ, W, H, F) {
   pt.camera.x = -camX; pt.camera.y = pt.world.y - camY; pt.camera.z = pt.world.z - camZ;

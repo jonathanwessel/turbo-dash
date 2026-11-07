@@ -33,7 +33,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink · **v0.19.0** Toy Track World (Next Gen 3D engine)
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -83,7 +83,7 @@ Four gauges must all be full to RANK UP (the emptiest one glows with a picture h
   per track and difficulty) + claimed goals.
 - **Garage** = 5 per car owned + every upgrade level on every car. Each new world must add cars (the Garage
   gauge maxes at 225 with today's 9 cars).
-- **Rank cap** is 35 now (Glacier Rink) and rises with each world: 40, 45 … 60.
+- **Rank cap** is 40 now (Toy Track World) and rises with each world: 45, 50 … 60.
 - **🪪 License gauge (new, from Rank 10, parent can switch it off):** see Driver School.
 
 ## Turbo Lab
@@ -133,11 +133,8 @@ the shiny, futuristic Toy Track World at the end. Each step keeps everything tha
 | 2 | 🌙 Moon Base | soft gradients on cars and scenery, glowing lights, a starfield with depth |
 | 3 | 🌊 Deep Blue | light rays and caustic ripples, translucent bubbles, color fog in the distance |
 | 4 | ❄️ Glacier Rink | shiny ice reflections under cars, sparkle highlights, falling snow layers |
-| 5 | ☁️ Cloud Kingdom | sunbeams, soft cloud depth, rainbow glow trails |
-| 6 | 🦖 Dino Jungle | layered foliage, swaying plants, dappled light |
-| 7 | 🌃 Neon City | night lighting, neon glow and bloom, reflections on wet roads |
-| 8 | 🌀 Gravity Flip | everything combined, plus warping sky effects |
-| 9 | 🚀 Toy Track World | the leap: a new 3D engine, glossy plastic, real lighting |
+| 5 | 🧸 Toy Track World (shipped early, v0.19) | the leap: a new 3D engine, glossy plastic, real lighting and shadows |
+| 6+ | later worlds | built in the 3D engine, each a step more detailed |
 
 Earth tracks get touched up along the way too (each release's Polish section), but never lose their simple style.
 
@@ -150,6 +147,7 @@ supported by the engine) and its own cars, lab kit and boss:
 | 🌙 Moon Base | gravity 0.3: giant floaty jumps, gaps to jump, boost rings in the sky, thrusters | 20 |
 | 🌊 Deep Blue | heavy drag, slow acceleration, currents, bubble vents, pearls, propellers | 25 |
 | ❄️ Glacier Rink | low grip: sliding and drift turns | 30 |
+| 🧸 Toy Track World | Next Gen 3D: walls, loops (need speed), jumps over gaps, booster stations | 35 |
 | ☁️ Cloud Kingdom | bouncy clouds, wind gusts, rainbow bridges | 35 |
 | 🦖 Dino Jungle | mud, vine swings, friendly dino stampedes | 40 |
 | 🌃 Neon City | night driving, headlights, rooftop jumps | 50 |
@@ -183,9 +181,15 @@ Cup and the boss Fang the Ice Wolf. Rank cap 35. (Split-screen Two Players was d
 - **Graphics:** northern lights, falling snow, glossy ice with glints and reflections, penguins, igloos.
 - **Interface:** world buttons in the garage.
 
-### v0.19.0 🚀 Toy Track World: first look
-The first piece of the Next Gen leap (see below): one test track in the new 3D engine with plastic track pieces,
-a loop-the-loop and booster stations, playable as a "sneak peek" from the Race Track before it opens for real.
+### v0.19.0 🧸 Toy Track World (shipped)
+The Next Gen leap, built for real: a new 3D engine (three.js), a giant playroom, plastic track with walls,
+loop-the-loops, jumps over gaps, booster stations, the toy hand, Shrink Ray research, three toy cars, the Toy Cup
+and the boss Major Wind-Up. Rank cap 40.
+
+### Next: more worlds in the Next Gen engine
+The remaining worlds come after Toy Track World and are built in the new 3D engine, each with its own physics,
+cars, cup, boss and research (Rank 40, 45 … up to Turbo God at 60). A track builder fits naturally here
+(snapping plastic track pieces together).
 
 ### v1.0.0 Carter's 1.0
 A milestone release:

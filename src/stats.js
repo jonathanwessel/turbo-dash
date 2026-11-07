@@ -24,6 +24,10 @@ export function statsFor(car, u, lab = {}, skills = {}) {
     studs: 0.1 * L("snowChains"),          // ice: slide less
     driftPow: 1 + 0.12 * L("driftMaster"), // ice: bigger drift boosts
     plow: 0.06 * L("snowplow"),            // ice: snowbanks slow you less
-    warm: 1 + 0.08 * L("warmEngine"),      // ice: speed up faster   // underwater: grab pearls from farther away               // underwater: currents push less
+    warm: 1 + 0.08 * L("warmEngine"),      // ice: speed up faster
+    loopGrip: 0.06 * L("loopGrip"),        // toy: stay on loops at lower speed
+    boosterTune: 1 + 0.05 * L("boosterTune"), // toy: boosters fling you farther
+    wallBumper: 0.15 * L("wallBumpers"),   // toy: walls slow you less
+    windUp: 1 + 0.08 * L("windUp"),        // toy: speed up faster   // underwater: grab pearls from farther away               // underwater: currents push less
   };
 }

@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.19.0 — 🧸 Toy Track World (Next Gen)
+
+- **The game levels up!** Toy Track World is a whole new kind of racing with a **brand-new 3D engine**. It opens
+  at **Rank 35** after researching the **🪄 Shrink Ray** (new lab tier 7). The first visit shows a big "THE
+  GAME LEVELS UP!" card.
+  - **Real 3D:** a giant sunny playroom (wooden floor, a rainbow play rug, a big window, star wallpaper) with
+    giant toys all around: letter blocks, crayons, bouncy balls, brick towers and a teddy bear.
+  - **Plastic toy track** with side walls on little stilts, in a different color on every track, with joints
+    between the pieces. Bump the walls and you slow down a little.
+  - **Loop-the-loops!** The camera rides upside down with you. Go in fast: too slow at the top and you fall
+    off, and a friendly giant 🖐️ toy hand puts you back on the track.
+  - **Jumps over gaps** (too slow and you drop in, and the hand helps again), **banked curves**, hills, and
+    **booster stations** with big spinning tires that fling you forward.
+  - **Shiny toy cars** with glossy paint, spinning wheels, soft shadows and reflections. Every car in the
+    garage gets a 3D toy version.
+  - **Four toy tracks:** Bedroom Loop, Block Tower Run, Cookie Jar Dash and Playroom Grand Prix.
+  - **New cars:** the **Toy Racer** (400,000 coins), the **Loop Legend** (win the new **Toy Cup**) and the
+    **Wind-Up Rocket** (beat the new boss **🤖 Major Wind-Up**). Cars made for toy tracks are a little faster
+    there.
+  - **New research:** Loop Grip (stay on loops when slower), Booster Tune (boosters fling you farther), Wall
+    Bumpers (walls slow you less), Wind-Up Motor (speed up faster on toy tracks).
+  - Coins, ? boxes, Turbo, power-ups, cups, Time Trials with a ghost, bosses and Auto Steer all work in the new
+    engine.
+  - The 3D part loads only when Toy Track World is first needed, so the game still starts fast.
+- **Ranks go up to 40.** New goals: win in Toy Track World, drive through 25 loop-the-loops.
+- Saves from every earlier version carry over (17 save checks).
+- Tuned with the career simulator: Toy Track World opens after about 120 hours of racing, and Rank 40 takes
+  about 160 hours, with no stuck gates. The best ice car finishes mid-pack on plastic track, and Major Wind-Up
+  beats a fully upgraded Loop Legend about half the time.
+
 ## v0.18.0 — 🧊 Glacier Rink
 
 - **The third new world: Glacier Rink, on the ice.** It opens at **Rank 30** after researching **🧊 Ice

@@ -1,5 +1,6 @@
 import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, ticketsFor, lessonsOf, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
-import { Race, buildTrack } from "./engine.js";
+import { Race, trackLen } from "./engine.js";
+import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
 import { createLab } from "./lab.js";
@@ -22,13 +23,31 @@ setAudioOpts({ music: S.music, sfx: S.sfx, volume: S.parent.volume });
 
 const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "🚀" };
 const buzz = ms => { if (S.parent.buzz && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate?.(ms); } catch (e) { /* not allowed yet */ } };
-const race = new Race(canvas, {
+const hooks = {
   sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
   // engine hum only during a real race (menus have the demo drive behind them, but only music)
   engine: (r, b) => { if (mode === "race") engine(r, b); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
   onFinish: r => { clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
-});
+};
+/* Two engines: the classic pseudo-3D road, and (from Toy Track World on) the Next Gen 3D engine. The toy engine's
+   3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
+const classic = new Race(canvas, hooks);
+let race = classic, toyRace = null, ToyView = null, toyLoading = null, toyFailed = false;
+const glCanvas = $("gl");
+function loadToy() {
+  return toyLoading ||= import("./toy/view.js").then(m => { ToyView = m.ToyView; }).catch(e => { toyFailed = true; console.warn("Turbo Dash: Toy Track World couldn't load", e); });
+}
+function engineFor(track) {
+  const toy = track.world === "toy" && !!ToyView && !toyFailed;
+  if (toy) {
+    toyRace ||= new ToyRace(null, hooks);
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return engineFor(TRACKS[0]); }
+  }
+  race = toy ? toyRace : classic;
+  glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);
+  return race;
+}
 
 /* ---------- sizing: full screen in landscape, a wide band at the top in portrait ---------- */
 function resize() {
@@ -38,6 +57,7 @@ function resize() {
   const k = Math.min(window.devicePixelRatio || 1, 2, 720 / ch);
   canvas.width = Math.round(cw * k); canvas.height = Math.round(ch * k);
   Object.assign(canvas.style, { width: cw + "px", height: ch + "px", top: top + "px" });
+  Object.assign(glCanvas.style, { width: cw + "px", height: ch + "px", top: top + "px" });
 }
 addEventListener("resize", () => resize());
 
@@ -133,9 +153,10 @@ function carStats() {
 
 function menuDemo() {
   mode = "menu"; paused = false; setRaceUi(false); engineOff(); setSong("menu"); resize();
-  const track = TRACKS.find(t => t.id === S.lastTrack) || TRACKS[0];
+  let track = TRACKS.find(t => t.id === S.lastTrack) || TRACKS[0];
+  if (track.world === "toy" && !ToyView) { if (!toyFailed) loadToy().then(() => { if (mode === "menu" && ToyView) menuDemo(); }); track = TRACKS[0]; }
   const { car, stats } = carStats();
-  race.setup(track, "demo", car, stats);
+  engineFor(track).setup(track, "demo", car, stats);
 }
 
 let currentTrack = TRACKS[0];
@@ -155,7 +176,12 @@ function startRace(track) {
   const midCup = cupRun && cupRun.i > 0;   // never break a cup in the middle
   if (updateReady && !midCup) { updateGate(); return; }   // never start a race on an old version
   if (!midCup && restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
+  if (track.world === "toy" && !ToyView) {
+    if (toyFailed) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); return; }
+    toast("🧸 Shrinking down to toy size…"); loadToy().then(() => startRace(track)); return;
+  }
   currentTrack = track; S.lastTrack = track.id; save();
+  engineFor(track);
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
@@ -230,7 +256,7 @@ function paintRaceTabs() {
 }
 /* ---------- ⏱️ Time Trials: alone against the clock and your own ghost ---------- */
 let trialRun = false, lastTrial = false;
-const trialLen = t => buildTrack(t).length;
+const trialLen = t => trackLen(t);
 function paintTrials() {
   $("trial-list").innerHTML = TRACKS.map((t, i) => {
     if ((t.world || "earth") !== S.world) return "";
@@ -257,7 +283,7 @@ function showTrialResult(r) {
   if (medal > oldMedal) S.trialMedals[t.id] = medal;
   S.coins += pay + r.coins;
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
-  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0);
+  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0); S.stats.loops = (S.stats.loops || 0) + (r.stats.loops || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   const [b, s, g] = trialTimes(t, len);
@@ -328,7 +354,14 @@ $("world-bar").addEventListener("click", e => {
   if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); return; }
   if (!worldOpen(S, w.id)) { sfx("nope"); toast(S.rank < w.rank ? `${w.icon} ${w.name} opens at Rank ${w.rank}` : `🔬 Research ${RESEARCH.find(r => r.id === w.kit)?.name || "the World Kit"} in the Turbo Lab first!`); return; }
   sfx("click"); S.world = w.id; save(); openTracks();
+  if (w.nextGen) { loadToy(); if (!S.seen.toy) { S.seen.toy = true; save(); levelUpCard(); } }
 });
+/* 🧸 the first visit to Toy Track World: the game levels up! */
+function levelUpCard() {
+  const el = $("levelup"); el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  sfx("win"); confetti(160);
+  $("lu-go").onclick = () => { sfx("click"); el.hidden = true; };
+}
 function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   paintWorlds(); paintDiffBar(); paintRaceTabs();
@@ -421,7 +454,7 @@ function showResult(r) {
   countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
-  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0);
+  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0); S.stats.loops = (S.stats.loops || 0) + (r.stats.loops || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -867,7 +900,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
-if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

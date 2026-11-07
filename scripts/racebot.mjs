@@ -1,13 +1,17 @@
 // The race bot shared by sim.mjs and career.mjs: runs one whole race headless.
 import { Race } from "../src/engine.js";
 import { statsFor } from "../src/stats.js";
+import { ToyRace } from "../src/toy/race.js";
 
 const canvas = { getContext: () => null, width: 1, height: 1 };
 export const race = new Race(canvas, { sfx() {}, engine() {}, onFinish() {} });
+const classicRace = race;
+export const toyRace = new ToyRace(null, { sfx() {}, engine() {}, onFinish() {} });
 
 /* One race. bot: "kid" steers late and fires Turbo whenever; "good" holds the middle and saves nothing. */
 export function runRace(track, car, ups, diff = "normal", bot = "kid", lab = {}, autoSteer = 0, skills = {}, boss = null, trial = false) {
   let res = null, boosts = 0;
+  const race = track.world === "toy" ? toyRace : classicRace;
   race.hooks = { sfx(n) { if (n === "boost") boosts++; }, engine() {}, onFinish: r => { res = r; } };
   race.setup(track, "race", car, statsFor(car, ups, lab, skills), { diff, autoSteer, boss, trial });
   for (let t = 0; !res && t < 400; t += 1 / 60) {

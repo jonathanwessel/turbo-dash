@@ -15,8 +15,9 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
   trials: {},          // trackId -> best Time Trial time (seconds)
+  seen: {},            // one-time moments already shown (seen.toy: the "game levels up" card)
   trialMedals: {},     // trackId -> best medal (1 bronze, 2 silver, 3 gold)
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
@@ -63,6 +64,7 @@ export function port(d) {
   s.trials = Object.fromEntries(Object.entries(obj(d.trials)).filter(([, v]) => typeof v === "number" && v > 0 && v < 3600).map(([k, v]) => [k, Math.round(v * 100) / 100]));
   s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));
   s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));
+  s.seen = Object.fromEntries(Object.entries(obj(d.seen)).filter(([, v]) => v === true));
   s.daily = Object.fromEntries(Object.entries(obj(d.daily)).filter(([, v]) => typeof v === "string"));
 
   // cars: always own Zippy; keep unknown ids (they may belong to a newer version) but never drive one
