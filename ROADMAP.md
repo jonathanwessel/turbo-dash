@@ -18,6 +18,11 @@ Carter plays on an Android tablet, in landscape, full screen.
 4. Every release is tested at tablet size before it ships. The race simulator (`npm run sim`, from v0.5.0)
    is re-run whenever anything touches speed, physics, prizes or prices.
 5. Nothing is ever for sale for real money, and no timer can be skipped with anything but in-game coins.
+6. **Keep the look.** Carter likes how the game looks, so it stays the same style: the retro pseudo-3D road,
+   bright flat colors, simple chunky shapes drawn in code, cars seen from behind. No switch to a real 3D
+   engine, realistic textures, photo backgrounds or heavy effects. "Polish" means doing this style better
+   (cleaner shapes, a bit more animation, nicer colors, more things on the roadside), never a new style.
+   New worlds use the same style with their own colors and props.
 
 ## Shipped
 - **v0.1.0** Proof of Concept: one track, rivals, coins, boost pads, Turbo, sound.
@@ -242,7 +247,7 @@ Ships in v0.5.0 with Racer Rank.
 - **Economy balance pass** for per-car upgrades: upgrade prices scale gently with each car, prizes and goal
   rewards are re-tuned.
 - `npm run sim`: the race simulator as a script in the repo, runnable before every release.
-- **Polish:** a light haze where the road meets the sky so far scenery fades in; softer car shadows.
+- **Polish:** far scenery fades in gently instead of popping; rounder car shadows.
   Interface: a Rank badge on the hub, and a little bounce when screens open.
 
 ### v0.6.0 Turbo Lab
@@ -281,30 +286,30 @@ Ships in v0.5.0 with Racer Rank.
 ### v1.1.0 Physics Engine & More Earth
 - Physics profiles, road gaps, air control and currents (all set to Earth values, so nothing changes yet).
 - Two new Earth tracks (Beach Boardwalk, Autumn Forest).
-- **Polish:** a third background layer for depth; animated water and trees. Interface: a world picker
+- **Polish:** one more layer of hills in the background; trees that sway a little. Interface: a world picker
   (only Earth for now, with "coming soon" silhouettes).
 
 ### v1.2.0 Auto Steer
 - *Robot Brain* research chain, Auto Steer levels 1–100 with level bands, and the race-screen switch.
 - Rank cap 20.
-- **Polish:** a glowing "brain" effect and a guide line on the road while Auto Steer drives. Interface: an
+- **Polish:** a little blinking robot icon on the car and dotted arrows on the road while Auto Steer drives. Interface: an
   Auto Steer meter showing its level percent.
 
 ### v1.3.0 🌙 Moon Base
 - The low-gravity world: four tracks, mega ramps, gaps, floating boost rings, Thrusters, *Moon Tires*
   research.
-- **Polish:** an Earthrise backdrop, dusty moon tracks, slow-motion jump camera. Interface: a world map screen.
+- **Polish:** a big flat Earth in the sky, grey crater roadsides, little dust puffs on landing. Interface: a world map screen.
 
 ### v1.4.0 Boss Rivals & Time Trials
 - A named boss rival on every world (beat them to win their car and a Brain Chip).
 - Time Trials with see-through ghost cars of your best lap.
-- **Polish:** a boss intro card; a redesigned speedometer and lap timer. Interface: a "beat your record" banner.
+- **Polish:** a boss intro card with the rival's car; a chunkier lap timer. Interface: a "beat your record" banner.
 
 ### v1.5.0 🌊 Deep Blue
 - The underwater world: heavy drag, slow acceleration, floaty jumps, currents, bubble vents, pearls,
   Propeller and Fins parts, *Snorkel Seals* research.
 - Rank cap 30.
-- **Polish:** light ripples, bubbles, fish schools and muffled underwater sound. Interface: a depth gauge on
+- **Polish:** a blue-green color set, simple bubbles and fish shapes, wavy seaweed, muffled sound. Interface: a depth gauge on
   the HUD.
 
 ### v1.6.0 Two Players
@@ -314,12 +319,14 @@ Ships in v0.5.0 with Racer Rank.
 ## Phase 3: More Worlds (v1.7 – v2.4)
 
 - **v1.7.0 ❄️ Glacier Rink:** ice sliding and drift turns. *Polish:* sparkly ice and snowfall.
-- **v1.8.0 ☁️ Cloud Kingdom:** trampoline clouds, wind gusts, rainbow bridges. *Polish:* soft cloud
-  layers and sunbeams.
+- **v1.8.0 ☁️ Cloud Kingdom:** trampoline clouds, wind gusts, rainbow bridges. *Polish:* puffy flat clouds
+  and a rainbow road.
 - **v1.9.0 🦖 Dino Jungle:** mud, vine swings, friendly dino stampedes. Rank cap 40. *Polish:* swaying
   jungle and big dinos in the background.
-- **v2.0.0 🧸 Toy Room:** loop-the-loops, wall rides, giant toys. *Polish:* the camera rolls through loops.
-- **v2.1.0 🌃 Neon City:** night racing, headlights, rooftop jumps. *Polish:* neon glow and street lamps.
+- **v2.0.0 🧸 Toy Room:** loop-the-loops, wall rides, giant toys. *Polish:* loops drawn as big colorful
+  rings the road goes through, in the same flat style.
+- **v2.1.0 🌃 Neon City:** night racing, headlights, rooftop jumps. *Polish:* bright neon colors on a dark
+  sky, simple street lamps.
 - **v2.2.0 Mega Legend:** ranks 41–50, new lab tier 4 (World Kits mastery, legendary paints). Rank cap 50.
 - **v2.3.0 🌀 Gravity Flip:** gravity changes mid-track; driving on the ceiling.
 - **v2.4.0 Turbo God:** ranks 51–60. Rank 60 needs Auto Steer 100. A golden car, a gold trail, a hall of fame
