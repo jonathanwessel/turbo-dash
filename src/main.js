@@ -1,5 +1,7 @@
-import { CARS, TRACKS, THEMES, GOALS, PLAYER, prizeFor } from "./data.js";
-import { Race, BASE_MAX } from "./engine.js";
+import { CARS, TRACKS, THEMES, GOALS, PLAYER, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { Race } from "./engine.js";
+import { statsFor } from "./stats.js";
+import { townSVG } from "./town.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
@@ -34,7 +36,7 @@ let mode = "menu", screen = "s-title", paused = false, last = performance.now(),
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused) { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } }
-  race.render();
+  if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
   requestAnimationFrame(frame);
@@ -60,7 +62,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -105,19 +107,8 @@ function spend(n) {
 
 /* ---------- race setup ---------- */
 function carStats() {
-  const car = CARS.find(c => c.id === S.car) || CARS[0], u = upsOf(car.id);
-  return {
-    car: lookOf(car),
-    stats: {
-      maxSpeed: BASE_MAX * (1 + car.speed + 0.06 * u.engine),
-      accel: BASE_MAX / 4.5 * (1 + car.accel + 0.04 * u.engine),
-      handling: 1.15 + car.grip + 0.07 * u.tires,
-      grip: Math.min(0.6, car.grip + 0.06 * u.tires),
-      nitroFill: 0.05 + 0.01 * u.turbo,
-      nitroTime: 2 + 0.3 * u.turbo,
-      magnet: 0.12 * u.magnet,
-    },
-  };
+  const car = CARS.find(c => c.id === S.car) || CARS[0];
+  return { car: lookOf(car), stats: statsFor(car, upsOf(car.id), S.research) };
 }
 
 function menuDemo() {
@@ -133,7 +124,8 @@ function startRace(track) {
   currentTrack = track; S.lastTrack = track.id; save();
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
-  race.setup(track, "race", car, stats);
+  if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
+  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper });
   show(null); setRaceUi(true); setSong("race");
   buildProgress(); lastCount = null; hudCache = {};
 }
@@ -163,14 +155,29 @@ function updateHud(dt) {
 /* ---------- tracks ---------- */
 const unlocked = i => i === 0 || (S.best[TRACKS[i - 1].id] || 99) <= 3;
 const MEDAL = ["", "🏆", "🥈", "🥉"];
+const allowedDiffs = () => DIFFS.filter(d => S.parent.diffs.includes(d.id) && (!d.rank || S.rank >= d.rank)).map(d => d.id).concat(S.parent.diffs.length ? [] : ["normal"]);
+function paintDiffBar() {
+  $("diff-bar").innerHTML = DIFFS.filter(d => S.parent.diffs.includes(d.id)).map(d => {
+    const locked = d.rank && S.rank < d.rank;
+    return `<button data-diff="${d.id}" class="${S.diff === d.id ? "on" : ""} ${locked ? "locked" : ""}">${locked ? "🔒" : d.icon} ${d.name}<small>${locked ? "Rank " + d.rank : "🪙 ×" + d.pay}</small></button>`;
+  }).join("");
+}
+$("diff-bar").addEventListener("click", e => {
+  const b = e.target.closest("[data-diff]"); if (!b) return;
+  const d = diffOf(b.dataset.diff);
+  if (d.rank && S.rank < d.rank) { sfx("nope"); b.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "none" }], { duration: 300 }); return; }
+  sfx("click"); S.diff = d.id; save(); openTracks();
+});
 function openTracks() {
+  if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
+  paintDiffBar();
   const list = $("track-list");
   list.innerHTML = TRACKS.map((t, i) => {
-    const th = THEMES[t.theme], open = unlocked(i), best = S.best[t.id];
+    const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
-      <div class="tc-prize">🪙 ${prizeFor(t, 1)}</div>
+      <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>Get 🥉 on ${TRACKS[i - 1].name}</small></div>`}</button>`;
   }).join("");
   show("s-tracks");
@@ -188,9 +195,11 @@ $("track-list").addEventListener("click", e => {
 let chestValues = [], chestDone = false;
 function showResult(r) {
   const ti = TRACKS.indexOf(currentTrack), wasOpen = unlocked(ti + 1);
-  const prize = prizeFor(currentTrack, r.place);
+  const prize = prizeFor(currentTrack, r.place, S.diff);
   S.races++; if (r.place === 1) S.wins++;
   S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
+  const dk = currentTrack.id + ":" + S.diff;
+  S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
   S.coins += prize + r.coins;
   const goalsBefore = claimable().length;
   S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams;
@@ -206,7 +215,7 @@ function showResult(r) {
   const next = TRACKS[ti + 1], nowOpen = next && unlocked(ti + 1);
   $("r-unlock").hidden = !(nowOpen && !wasOpen);
   if (nowOpen && !wasOpen) $("r-unlock").textContent = `🔓 New track: ${next.icon} ${next.name}!`;
-  const base = 30 + 25 * currentTrack.diff;
+  const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay);
   chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
@@ -258,7 +267,7 @@ $("gift-take").onclick = () => {
 /* ---------- trophy room + goals ---------- */
 const claimable = () => GOALS.filter(g => !S.claimed.includes(g.id) && g.have(S) >= g.goal);
 function openTrophies() {
-  $("shelf").innerHTML = TRACKS.map(t => { const b = S.best[t.id]; return `<div class="${b ? "" : "none"}"><b>${b ? (MEDAL[b] || "🏁") : "🏆"}</b>${t.icon} ${t.name}</div>`; }).join("");
+  $("shelf").innerHTML = TRACKS.map(t => { const b = Math.min(...DIFFS.map(d => S.bestD[t.id + ":" + d.id] || 99)) < 99 ? Math.min(...DIFFS.map(d => S.bestD[t.id + ":" + d.id] || 99)) : 0; return `<div class="${b ? "" : "none"}"><b>${b ? (MEDAL[b] || "🏁") : "🏆"}</b>${t.icon} ${t.name}</div>`; }).join("");
   const rank = g => S.claimed.includes(g.id) ? 2 : g.have(S) >= g.goal ? 0 : 1;
   const list = [...GOALS].sort((a, b) => rank(a) - rank(b));
   $("goals").innerHTML = list.map(g => {
@@ -281,22 +290,66 @@ $("goals").addEventListener("click", e => {
   const top = $("goals").scrollTop; openTrophies(); $("goals").scrollTop = top;
 });
 
+/* ---------- racer rank: all four fronts must be full ---------- */
+const frontsNow = () => { const need = rankNeeds(S.rank); return FRONTS.map(f => ({ ...f, have: f.have(S), need: need[f.id] })); };
+const rankReady = () => S.rank < RANK_CAP && frontsNow().every(f => f.have >= f.need);
+function openRank() {
+  const fr = frontsNow(), ready = rankReady(), maxed = S.rank >= RANK_CAP;
+  $("rk-num").textContent = S.rank; $("rk-title").textContent = rankTitle(S.rank);
+  const un = RANK_UNLOCKS[S.rank + 1];
+  $("rk-next").textContent = maxed ? "Top rank for now! More ranks are coming in new versions." : un ? `Next rank opens: ${un.icon} ${un.text}` : `Next: Rank ${S.rank + 1}`;
+  const lowest = fr.reduce((a, f) => (f.have / Math.max(1, f.need) < a.have / Math.max(1, a.need) ? f : a), fr[0]);
+  $("fronts").innerHTML = fr.map(f => {
+    const full = f.have >= f.need, pct = f.need ? Math.min(100, Math.round(100 * f.have / f.need)) : 100;
+    return `<div class="front ${full ? "full" : f === lowest && !maxed ? "behind" : ""}"><div class="fi">${f.icon}</div><b>${f.name}</b>
+      <div class="gauge"><i style="width:${pct}%"></i></div><small>${full ? "✔ " : ""}${Math.min(f.have, f.need)} / ${f.need}</small></div>`;
+  }).join("");
+  $("rk-up").hidden = !ready;
+  $("rk-hint").textContent = ready || maxed ? "" : `${lowest.icon} ${lowest.hint}`;
+  show("s-rank");
+}
+$("rk-up").onclick = () => {
+  if (!rankReady()) return;
+  S.rank++;
+  const reward = 200 * S.rank; S.coins += reward; save();
+  $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank} · ${rankTitle(S.rank)}`;
+  const un = RANK_UNLOCKS[S.rank];
+  $("ru-unlock").textContent = un ? `${un.icon} ${un.text} unlocked!` : "";
+  $("ru-coins").textContent = reward;
+  show("s-rankup"); sfx("win"); confetti(180);
+};
+$("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
+$("rank-pill").onclick = () => { sfx("click"); openRank(); };
+
 /* ---------- hub, garage, settings ---------- */
 const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100) });
 let giftShownThisVisit = false;
+$("town-wrap").innerHTML = townSVG();
+const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
 function refreshHub() {
-  $("gift-badge").hidden = !giftReady();
-  $("garage-badge").hidden = !garage.affordable();
-  $("trophy-badge").hidden = !claimable().length;
+  tb("tb-gift", giftReady()); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
+  $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
+  $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
+  $("town").setAttribute("preserveAspectRatio", innerHeight > innerWidth ? "xMidYMid meet" : "xMidYMax slice");
 }
+addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
+$("town-wrap").addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  const go = b.dataset.go;
+  const nope = () => { sfx("nope"); b.classList.remove("shake"); void b.getBBox(); b.classList.add("shake"); };
+  if (go === "race") { sfx("click"); openTracks(); }
+  else if (go === "garage") { sfx("click"); garage.open(); show("s-garage"); }
+  else if (go === "gift") { sfx("click"); openGift(); }
+  else if (go === "trophy") { sfx("click"); openTrophies(); }
+  else if (go === "rank") { sfx("click"); openRank(); }
+  else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(openRank, 350); } else { sfx("click"); openLab(); } }
+});
+// The Turbo Lab arrives in the next release; until then it shows its sign and a "soon" note.
+function openLab() { $("rk-hint").textContent = ""; openRank(); $("rk-next").textContent = "🔬 The Turbo Lab opens in the next update!"; }
 function goHub() {
   show("s-hub");
   if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(openGift, 400); }
 }
-$("hub-race").onclick = () => { sfx("click"); openTracks(); };
-$("hub-garage").onclick = () => { sfx("click"); garage.open(); show("s-garage"); };
-$("hub-gift").onclick = () => { sfx("click"); openGift(); };
-$("hub-trophy").onclick = () => { sfx("click"); openTrophies(); };
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
 function paintToggles() { $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx); }
@@ -315,8 +368,17 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) pause
 let verTaps = [];
 $("ver").onclick = () => {
   const now = Date.now(); verTaps = verTaps.filter(t => now - t < 3000); verTaps.push(now);
-  if (verTaps.length >= 5) { verTaps = []; $("p-code").value = exportSave(); $("p-msg").textContent = ""; show("s-parent"); }
+  if (verTaps.length >= 5) { verTaps = []; $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }
 };
+function paintParent() {
+  $("p-diffs").innerHTML = DIFFS.map(d => `<button data-pd="${d.id}" class="${S.parent.diffs.includes(d.id) ? "on" : ""}">${d.icon} ${d.name}</button>`).join("");
+  $("p-helper").innerHTML = ["Off", "A little", "Lots"].map((n, i) => `<button data-ph="${i}" class="${S.parent.helper === i ? "on" : ""}">${n}</button>`).join("");
+}
+$("s-parent").addEventListener("click", e => {
+  const d = e.target.closest("[data-pd]"), h = e.target.closest("[data-ph]");
+  if (d) { const id = d.dataset.pd, L = S.parent.diffs; if (L.includes(id)) { if (L.length > 1) L.splice(L.indexOf(id), 1); } else L.push(id); save(); paintParent(); }
+  if (h) { S.parent.helper = +h.dataset.ph; save(); paintParent(); }
+});
 $("p-copy").onclick = async () => {
   const code = exportSave(); $("p-code").value = code;
   try { await navigator.clipboard.writeText(code); $("p-msg").textContent = "Copied! Paste it somewhere safe (a note or a text to yourself)."; }
@@ -361,7 +423,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
-if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, garage, goHub, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false);
 menuDemo();

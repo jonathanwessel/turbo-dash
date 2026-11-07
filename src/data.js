@@ -2,11 +2,11 @@
 
 export const CARS = [
   { id: "zippy",   name: "Zippy",        price: 0,    body: "#e8262b", accent: "#ffd400", type: "racer",   speed: 0.00, accel: 0.00, grip: 0.00 },
-  { id: "bolt",    name: "Blue Bolt",    price: 300,  body: "#1f6fff", accent: "#ffffff", type: "sport",   speed: 0.05, accel: 0.05, grip: 0.05 },
-  { id: "monster", name: "Mega Monster", price: 800,  body: "#2fbf3a", accent: "#ffe600", type: "monster", speed: 0.09, accel: 0.15, grip: 0.10 },
-  { id: "shark",   name: "Shark Fin",    price: 1500, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
-  { id: "rocket",  name: "Rocket Rex",   price: 2500, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
-  { id: "galaxy",  name: "Galaxy GT",    price: 4000, body: "#7a2cff", accent: "#3cf2ff", type: "galaxy",  speed: 0.27, accel: 0.25, grip: 0.25 },
+  { id: "bolt",    name: "Blue Bolt",    price: 700,  body: "#1f6fff", accent: "#ffffff", type: "sport",   speed: 0.05, accel: 0.05, grip: 0.05 },
+  { id: "monster", name: "Mega Monster", price: 1800, body: "#2fbf3a", accent: "#ffe600", type: "monster", speed: 0.09, accel: 0.15, grip: 0.10 },
+  { id: "shark",   name: "Shark Fin",    price: 3500, body: "#7d93ab", accent: "#ff4f6d", type: "shark",   speed: 0.14, accel: 0.10, grip: 0.15 },
+  { id: "rocket",  name: "Rocket Rex",   price: 6000, body: "#ff8a00", accent: "#ffe14d", type: "rocket",  speed: 0.20, accel: 0.20, grip: 0.15 },
+  { id: "galaxy",  name: "Galaxy GT",    price: 10000, body: "#7a2cff", accent: "#3cf2ff", type: "galaxy",  speed: 0.27, accel: 0.25, grip: 0.25 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
@@ -24,7 +24,7 @@ export const UPGRADES = [
   { id: "tires",  name: "Tires",  icon: "🛞", desc: "Turn better" },
   { id: "magnet", name: "Magnet", icon: "🧲", desc: "Grab coins" },
 ];
-export const UPGRADE_COST = [100, 200, 400, 700, 1100];
+export const UPGRADE_COST = [150, 300, 600, 1000, 1600];
 export const UPGRADE_MAX = UPGRADE_COST.length;
 
 // diff drives opponent speed. prize[i] = coins for finishing place i+1.
@@ -36,9 +36,21 @@ export const TRACKS = [
   { id: "lava",   name: "Lava Mountain", icon: "🌋", diff: 4, laps: 2, seed: 59, theme: "lava" },
   { id: "space",  name: "Space Road",    icon: "🪐", diff: 5, laps: 2, seed: 67, theme: "space" },
 ];
-export const prizeFor = (track, place) => {
-  const top = 150 + track.diff * 100;
-  return Math.round(top * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1]);
+// Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
+export const DIFFS = [
+  { id: "easy", name: "Easy", icon: "🐢", pay: 0.75, rival: 0.86, assist: 2 },
+  { id: "normal", name: "Normal", icon: "🚗", pay: 1, rival: 1, assist: 0 },
+  { id: "hard", name: "Hard", icon: "🔥", pay: 1.5, rival: 1.07, assist: 0, rank: 3 },
+];
+export const diffOf = id => DIFFS.find(d => d.id === id) || DIFFS[1];
+export const prizeFor = (track, place, diff = "normal") => {
+  const top = 150 + track.diff * 120;
+  return Math.round(top * diffOf(diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] / 5) * 5;
+};
+// Upgrades on fancier cars cost a little more.
+export const upgradeCost = (carId, lvl) => {
+  const i = Math.max(0, CARS.findIndex(c => c.id === carId));
+  return Math.round(UPGRADE_COST[lvl] * (1 + 0.2 * i) / 10) * 10;
 };
 
 export const THEMES = {
@@ -95,4 +107,35 @@ export const GOALS = [
   { id: "tracks", icon: "🗺️", name: "Open every track", goal: TRACKS.length, reward: 500, have: tracksOpen },
   { id: "golds", icon: "🥇", name: "Win on every track", goal: TRACKS.length, reward: 1500, have: S => TRACKS.filter(t => S.best[t.id] === 1).length },
   { id: "gift3", icon: "🎁", name: "Open gifts 3 days in a row", goal: 3, reward: 300, have: S => S.giftStreak },
+];
+
+/* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
+export const RANK_CAP = 10;   // raised by later releases
+export const rankNeeds = r => ({
+  wins: Math.round(3 * Math.pow(r, 1.35)),
+  trophies: Math.round(4 * Math.pow(r, 1.3)),
+  garage: Math.round(6 * Math.pow(r, 1.2)),
+  research: r < 2 ? 0 : Math.round(1.5 * Math.pow(r - 1, 1.25)),
+});
+export const rankTitle = r => r >= 60 ? "Turbo God" : r >= 50 ? "Mega Legend" : r >= 40 ? "Legend" : r >= 30 ? "Superstar" : r >= 20 ? "Champion" : r >= 10 ? "Pro" : r >= 5 ? "Racer" : "Rookie";
+export const RANK_UNLOCKS = {
+  2: { icon: "🔬", text: "Turbo Lab" },
+  3: { icon: "🔥", text: "Hard races" },
+  4: { icon: "🧪", text: "2nd lab bench" },
+  5: { icon: "🏆", text: "Cups" },
+  6: { icon: "⚗️", text: "Lab tier 2" },
+  7: { icon: "📋", text: "Daily missions" },
+  8: { icon: "🤖", text: "Robot Brain research" },
+  9: { icon: "🧪", text: "3rd lab bench" },
+  10: { icon: "🧠", text: "Auto Steer research" },
+};
+const MEDAL_PTS = [0, 3, 2, 1];
+export const FRONTS = [
+  { id: "wins", icon: "🏁", name: "Wins", hint: "Win races!", have: S => S.wins },
+  { id: "trophies", icon: "🏆", name: "Trophies", hint: "Get medals on every track and claim goals!",
+    have: S => Object.values(S.bestD).reduce((a, p) => a + (MEDAL_PTS[p] || 0), 0) + S.claimed.length },
+  { id: "garage", icon: "🔧", name: "Garage", hint: "Buy cars and upgrades!",
+    have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
+  { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
+    have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
 ];

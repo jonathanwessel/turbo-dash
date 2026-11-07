@@ -10,6 +10,10 @@ const DEFAULTS = () => ({
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
   stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0 }, claimed: [],
+  rank: 1, diff: "normal",
+  bestD: {},           // "trackId:difficulty" -> best place
+  research: {},        // projectId -> level (Turbo Lab)
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0 },   // helper: 0 off, 1 a little, 2 lots
 });
 
 export let S = DEFAULTS();
@@ -18,7 +22,11 @@ function merge(d) {
   if (!d || typeof d !== "object" || typeof d.coins !== "number") throw new Error("not a Turbo Dash save");
   const def = DEFAULTS();
   const s = { ...def, ...d, ups: { ...(d.ups || {}) }, best: { ...(d.best || {}) },
-    stats: { ...def.stats, ...(d.stats || {}) }, look: { ...(d.look || {}) } };
+    stats: { ...def.stats, ...(d.stats || {}) }, look: { ...(d.look || {}) },
+    bestD: { ...(d.bestD || {}) }, research: { ...(d.research || {}) }, parent: { ...def.parent, ...(d.parent || {}) } };
+  // v0.4 and older kept one best place per track: those were all Normal races.
+  if (!d.bestD && d.best) for (const [id, p] of Object.entries(d.best)) s.bestD[id + ":normal"] = p;
+  if (!(s.rank >= 1)) s.rank = 1;
   for (const k of ["owned", "paints", "stickers", "claimed"]) if (!Array.isArray(s[k]) || (k !== "claimed" && !s[k].length)) s[k] = def[k];
   // v0.4.1 and older had one set of upgrades for all cars: every car owned back then keeps those levels.
   if (d.up && !d.ups) for (const id of s.owned) s.ups[id] = { ...NO_UPS, ...d.up };

@@ -64,18 +64,33 @@
     </div>
   </section>
 
-  <section id="s-hub" class="screen" hidden>
-    <div class="logo small"><span>TURBO</span><span>DASH</span></div>
-    <div class="hub-btns">
-      <button id="hub-race" class="tile go"><span class="ti">🏁</span>RACE</button>
-      <button id="hub-garage" class="tile gold"><span class="ti">🔧</span>GARAGE<i class="badge" id="garage-badge" hidden>!</i></button>
-      <button id="hub-trophy" class="tile purple"><span class="ti">🏆</span>TROPHIES<i class="badge" id="trophy-badge" hidden>!</i></button>
-      <button id="hub-gift" class="tile pink"><span class="ti">🎁</span>GIFT<i class="badge" id="gift-badge" hidden>!</i></button>
+  <section id="s-hub" class="screen town-screen" hidden>
+    <div id="town-wrap"></div>
+    <button id="rank-pill" class="rank-pill"><span class="rp-star">⭐</span><b id="rp-rank">1</b><span id="rp-title">Rookie</span></button>
+  </section>
+
+  <section id="s-rank" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Racer Rank</h2></div>
+    <div class="rank-top"><div class="rank-star"><span id="rk-num">1</span></div><div><div class="rk-title" id="rk-title">Rookie</div><div class="rk-next" id="rk-next"></div></div></div>
+    <div class="fronts" id="fronts"></div>
+    <button id="rk-up" class="big-btn gold rank-up-btn" hidden>⭐ RANK UP! ⭐</button>
+    <div id="rk-hint" class="rk-hint"></div>
+  </section>
+
+  <section id="s-rankup" class="screen dim" hidden>
+    <div class="card gift">
+      <div class="rank-star big"><span id="ru-num">2</span></div>
+      <h1>RANK UP!</h1>
+      <div class="gift-day" id="ru-title">Rookie</div>
+      <div class="ru-unlock" id="ru-unlock"></div>
+      <div class="r-coins">🪙 <span id="ru-coins">400</span></div>
+      <button id="ru-take" class="big-btn gold">Yay!</button>
     </div>
   </section>
 
   <section id="s-tracks" class="screen panel" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Pick a track</h2></div>
+    <div class="diff-bar" id="diff-bar"></div>
     <div class="track-list" id="track-list"></div>
   </section>
 
@@ -109,6 +124,8 @@
       <h1>Parent Corner</h1>
       <p>Carter's progress saves on this tablet automatically. Copy this code to keep a backup, or paste a code to bring progress back.</p>
       <textarea id="p-code" rows="3" spellcheck="false"></textarea>
+      <div class="p-set"><b>Difficulties Carter can pick:</b> <span id="p-diffs"></span></div>
+      <div class="p-set"><b>Steering helper:</b> <span id="p-helper"></span></div>
       <div class="row">
         <button id="p-copy" class="big-btn small">📋 Copy code</button>
         <button id="p-load" class="big-btn small">📥 Load pasted code</button>

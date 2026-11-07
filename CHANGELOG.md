@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 — Turbo Town, Racer Rank & Difficulty
+
+- **Turbo Town**: the home screen is now a little town. Tap the **Race Track**, **Garage**, **Gifts**,
+  **Rank Tower**, **Trophies** hall or the **Turbo Lab** (boarded up until Rank 2). Cars drive down the street,
+  flags wave, and a red "!" pops up on any building with something waiting.
+- **Racer Rank**: four gauges (🏁 Wins, 🏆 Trophies, 🔧 Garage, 🔬 Research). Fill all four to press
+  **RANK UP!** for a new rank, a coin reward and a new unlock. The emptiest gauge glows with a hint. Ranks go
+  up to 10 for now.
+- **Difficulty**: pick 🐢 Easy, 🚗 Normal or 🔥 Hard (Hard opens at Rank 3) on the track screen. Easy helps steer
+  and pays ×0.75, Hard has faster rivals and pays ×1.5. Medals are kept per difficulty.
+- **Parent Corner**: choose which difficulties Carter can pick, and a steering helper (Off / A little / Lots).
+- **Balance**: cars cost more (Blue Bolt 700 up to Galaxy GT 10,000), upgrades cost a bit more on fancier cars,
+  and later tracks pay more. Cars and upgrades already bought are kept.
+- `npm run sim` runs the race simulator (difficulty table) and `npm run sim -- journey` plays a whole career.
+
+**Polish**
+- Far-away scenery fades in smoothly instead of popping onto the road.
+- Screens and cards bounce in when they open.
+
 ## v0.4.2 — Upgrades Belong to Each Car
 
 - **Every car has its own upgrades.** Engine, Turbo, Tires and Magnet levels now belong to the car you

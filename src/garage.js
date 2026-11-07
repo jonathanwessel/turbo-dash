@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, UPGRADES, UPGRADE_COST, UPGRADE_MAX, PAINTS, STICKERS } from "./data.js";
+import { CARS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost } from "./data.js";
 import { drawCar } from "./draw.js";
 import { S, save, upsOf } from "./save.js";
 
@@ -42,7 +42,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
   function renderUps(car, owned) {
     const ups = upsOf(car.id);
     $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : "Buy " + car.name + " to upgrade it!"}</div>` + UPGRADES.map(u => {
-      const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = UPGRADE_COST[lvl];
+      const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = max ? 0 : upgradeCost(car.id, lvl);
       return `<div class="up-card" data-up="${u.id}"><div class="up-icon">${u.icon}</div><b>${u.name}</b><small>${u.desc}</small>
         <div class="pips">${Array.from({ length: UPGRADE_MAX }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>
         <button class="up-buy ${max ? "max" : owned && S.coins >= cost ? "" : "poor"}" data-buy="${u.id}">${max ? "MAX!" : owned ? "🪙 " + cost : "🔒 " + cost}</button></div>`;
@@ -83,7 +83,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { sfx("nope"); return; }
     const ups = upsOf(car.id), id = b.dataset.buy, lvl = ups[id];
     if (lvl >= UPGRADE_MAX) { sfx("click"); return; }
-    if (!spend(UPGRADE_COST[lvl])) return;
+    if (!spend(upgradeCost(car.id, lvl))) return;
     ups[id]++; save(); sfx("buy");
     render();
     $("g-ups").querySelector(`[data-up="${id}"]`)?.classList.add("flash");
@@ -114,6 +114,6 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (!S.owned.includes(car.id)) { ctx.font = `${Math.round(H * 0.16)}px system-ui`; ctx.textAlign = "right"; ctx.fillText("🔒", W - 8, H * 0.2); }
   }
 
-  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= UPGRADE_COST[upsOf(id)[u.id]]));
+  const affordable = () => CARS.some(c => !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id])));
   return { open, render, draw, affordable };
 }

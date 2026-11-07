@@ -33,6 +33,8 @@ Carter plays on an Android tablet, in landscape, full screen.
   safer saves and save codes.
 - **v0.4.1** Update Before You Race: a waiting update stops the next race and installs itself.
 - **v0.4.2** Upgrades Belong to Each Car: per-car upgrade levels; old saves keep what was bought.
+- **v0.5.0** Turbo Town, Racer Rank & Difficulty: the town hub, four-front ranks (cap 10), Easy/Normal/Hard,
+  parent limits, economy pass, race simulator.
 
 ## What we learned from Carter playing
 - **He doesn't stop to read.** He saw the update notice and started a race anyway. Anything important

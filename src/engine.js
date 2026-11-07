@@ -1,5 +1,5 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
-import { THEMES, RIVALS } from "./data.js";
+import { THEMES, RIVALS, diffOf } from "./data.js";
 import { drawCar, drawSprite, drawCoin, drawBackground, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
@@ -104,22 +104,25 @@ export class Race {
     this.input = { left: false, right: false }; this.t = 0; this.popups = []; this.shake = 0;
   }
 
-  setup(track, mode, car, stats) {
+  /* opts: { diff: "easy" | "normal" | "hard", helper: 0-2 steering help from Parent Corner } */
+  setup(track, mode, car, stats, opts = {}) {
     this.T = buildTrack(track);
+    this.diff = diffOf(opts.diff);
+    this.assist = Math.max(this.diff.assist, opts.helper || 0);
     for (const s of this.T.segs) for (const c of s.coins) c.taken = false;
     this.track = track; this.mode = mode; this.stats = stats;
     this.state = mode === "demo" ? "demo" : "countdown";
     this.count = 3.6; this.raceTime = 0;
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
-    this.nitro = 0.35; this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
+    this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
     this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
-      base: BASE_MAX * (0.62 + d * 0.16 + (4 - i) * 0.04),
+      base: BASE_MAX * (0.62 + d * 0.16 + (4 - i) * 0.04) * (mode === "demo" ? 1 : this.diff.rival),
     }));
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
@@ -166,8 +169,10 @@ export class Race {
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
     p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? 0.6 : 1);
-    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip);
-    if (!auto && steer === 0 && Math.abs(p.offset) > 0.8) p.offset -= Math.sign(p.offset) * dt * 0.45; // gentle pull back toward the road
+    const help = this.assist;   // 0 none, 1 a little, 2 lots
+    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help);
+    // gentle pull back toward the road (stronger with steering help)
+    if (!auto && steer === 0 && Math.abs(p.offset) > 0.8 - 0.15 * help) p.offset -= Math.sign(p.offset) * dt * (0.45 + 0.45 * help);
     p.offset = clamp(p.offset, -2.6, 2.6);
     p.dist += p.speed * dt;
     if (flying) {
@@ -195,8 +200,9 @@ export class Race {
       if (this.state === "demo") target = c.base * 0.95;
       else {
         const gap = c.dist - p.dist;
-        if (gap > 45 * SEG) target *= d <= 1 ? 0.84 : 0.98;
-        else if (gap < -45 * SEG) target *= 1.07;
+        const hard = this.diff.id === "hard", easy = this.diff.id === "easy";
+        if (gap > 45 * SEG) target *= easy ? 0.8 : hard ? 1 : d <= 1 ? 0.84 : 0.98;
+        else if (gap < -45 * SEG) target *= hard ? 1.04 : 1.07;
       }
       c.knockT -= dt;
       if (c.knockT > 0) target *= 0.75;
@@ -257,7 +263,7 @@ export class Race {
       for (const spr of s.sprites) {
         const info = SPRITES[spr.type];
         if (info.collide && overlap(p.offset, CAR_W, spr.offset, info.w / ROAD_W * 0.6)) {
-          p.speed = Math.min(p.speed, BASE_MAX * 0.15);
+          p.speed = Math.min(p.speed, BASE_MAX * (0.15 + 0.1 * this.assist + (this.stats.bumper || 0)));
           p.offset += spr.offset > p.offset ? -0.25 : 0.25;
           this.shake = 0.35; this.bonkCD = 0.6; this.hooks.sfx("bonk"); this.popup("BONK!", "#ffffff");
           break;
@@ -326,6 +332,7 @@ export class Race {
       const s = segs[(base.index + n) % N];
       if (s.p1.camera.z <= CAM_DEPTH) continue;
       const sc = s.p1.screen.scale, sy = s.p1.screen.y;
+      ctx.globalAlpha = n > DRAW_DIST * 0.65 ? Math.max(0, (DRAW_DIST - n) / (DRAW_DIST * 0.35)) : 1;
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
       for (const spr of s.sprites) {
         const sw = sc * SPRITES[spr.type].w * F, sx = s.p1.screen.x + s.p1.screen.w * spr.offset;
@@ -341,6 +348,7 @@ export class Race {
       if (list) for (const it of list) this.drawRival(ctx, it, F);
     }
 
+    ctx.globalAlpha = 1;
     const pw = CAR_W * ROAD_W * F / CAM_H;
     const bounce = Math.abs(p.offset) > 1 && p.speed > 100 ? (Math.random() - 0.5) * H * 0.012 : Math.sin(t * 20) * H * 0.002 * Math.min(1, p.speed / BASE_MAX);
     const lift = p.air * 0.45 / CAM_H * F;
