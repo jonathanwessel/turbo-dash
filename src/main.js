@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, WORLDS, trackOpen, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor } from "./data.js";
 import { Race } from "./engine.js";
 import { statsFor } from "./stats.js";
 import { townSVG } from "./town.js";
@@ -183,7 +183,7 @@ function updateHud(dt) {
 }
 
 /* ---------- tracks ---------- */
-const unlocked = i => i === 0 || (S.best[TRACKS[i - 1].id] || 99) <= 3;
+const unlocked = i => !!TRACKS[i] && trackOpen(S, TRACKS[i]);
 const MEDAL = ["", "🏆", "🥈", "🥉"];
 const allowedDiffs = () => DIFFS.filter(d => S.parent.diffs.includes(d.id) && (!d.rank || S.rank >= d.rank)).map(d => d.id).concat(S.parent.diffs.length ? [] : ["normal"]);
 function paintDiffBar() {
@@ -226,9 +226,13 @@ $("cup-list").addEventListener("click", e => {
   if (!cupOpen(cup)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
   sfx("click"); startCup(cup);
 });
+function paintWorlds() {
+  $("world-bar").innerHTML = WORLDS.map(w => `<button data-world="${w.id}" class="${w.soon ? "soon" : "on"}">${w.icon} ${w.name}${w.soon ? " 🔒" : ""}</button>`).join("");
+}
+$("world-bar").addEventListener("click", e => { const b = e.target.closest("[data-world]"); if (!b) return; const w = WORLDS.find(x => x.id === b.dataset.world); if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); } else sfx("click"); });
 function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
-  paintDiffBar(); paintRaceTabs();
+  paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   list.innerHTML = TRACKS.map((t, i) => {
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
@@ -236,7 +240,7 @@ function openTracks() {
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>Get 🥉 on ${TRACKS[i - 1].name}</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>Get 🥉 on ${TRACKS.find(x => x.id === t.after).name}</small></div>`}</button>`;
   }).join("");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);
@@ -294,9 +298,9 @@ function drawPodium(order) {
 $("ce-ok").onclick = () => { sfx("click"); menuDemo(); openTracks(); };
 
 /* ---------- results + treasure chests ---------- */
-let chestValues = [], chestDone = false;
+let chestValues = [], chestDone = false, nextTrack = null;
 function showResult(r) {
-  const ti = TRACKS.indexOf(currentTrack), wasOpen = unlocked(ti + 1);
+  const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
   S.races++; if (r.place === 1) S.wins++;
   S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
@@ -318,9 +322,11 @@ function showResult(r) {
     : r.place <= 3 ? ["Great driving, " + PLAYER + "!", "So close, " + PLAYER + "!"] : ["Upgrade your car and try again, " + PLAYER + "!", "Keep going, " + PLAYER + "!"];
   $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
   $("r-goal").hidden = claimable().length <= goalsBefore;
-  const next = TRACKS[ti + 1], nowOpen = next && unlocked(ti + 1);
-  $("r-unlock").hidden = !(nowOpen && !wasOpen);
-  if (nowOpen && !wasOpen) $("r-unlock").textContent = `🔓 New track: ${next.icon} ${next.name}!`;
+  const fresh = TRACKS.filter(t => trackOpen(S, t) && !openBefore.includes(t));
+  const next = fresh[0] || TRACKS.slice(ti + 1).find(t => trackOpen(S, t)), nowOpen = !!next;
+  nextTrack = next;
+  $("r-unlock").hidden = !fresh.length;
+  if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
   const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay * (1 + 0.15 * (S.research.luckyChests || 0)));
   chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
   chestDone = false;
@@ -347,7 +353,7 @@ $("btn-again").onclick = () => { sfx("click"); startRace(currentTrack); };
 $("btn-next").onclick = () => {
   sfx("click");
   if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
-  startRace(TRACKS[TRACKS.indexOf(currentTrack) + 1]);
+  if (nextTrack) startRace(nextTrack);
 };
 $("btn-home").onclick = () => { sfx("click"); cupRun = null; menuDemo(); show("s-hub"); };
 

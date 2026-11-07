@@ -190,6 +190,8 @@ export const SPRITES = {
   volcanorock: { w: 1100, collide: true }, lavaflame: { w: 700, collide: false },
   planet: { w: 1700, collide: false }, crystal: { w: 950, collide: true }, ufo: { w: 1300, collide: false },
   sign: { w: 2200, collide: true },
+  autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
+  pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
 };
 
 export function drawSprite(ctx, type, x, yb, w, t) {
@@ -197,10 +199,44 @@ export function drawSprite(ctx, type, x, yb, w, t) {
   const h = w;
   switch (type) {
     case "tree":
+    case "autumnTree": {
+      const sway = Math.sin(t * 1.6 + x * 0.013) * w * 0.035, fall = type === "autumnTree";
       ctx.fillStyle = "#7a4a22"; ctx.fillRect(x - w * 0.08, yb - h * 0.55, w * 0.16, h * 0.55);
-      ctx.fillStyle = "#2f9a3d"; ell(ctx, x, yb - h * 0.85, w * 0.45, h * 0.38);
-      ctx.fillStyle = "#3fb84e"; ell(ctx, x - w * 0.12, yb - h * 0.95, w * 0.28, h * 0.24);
-      ctx.fillStyle = "#ff4d4d"; ell(ctx, x + w * 0.18, yb - h * 0.8, w * 0.05, w * 0.05); ell(ctx, x - w * 0.2, yb - h * 0.7, w * 0.05, w * 0.05);
+      ctx.fillStyle = fall ? "#d9481f" : "#2f9a3d"; ell(ctx, x + sway, yb - h * 0.85, w * 0.45, h * 0.38);
+      ctx.fillStyle = fall ? "#ff9d1c" : "#3fb84e"; ell(ctx, x - w * 0.12 + sway * 1.3, yb - h * 0.95, w * 0.28, h * 0.24);
+      ctx.fillStyle = fall ? "#ffd23f" : "#ff4d4d"; ell(ctx, x + w * 0.18 + sway, yb - h * 0.8, w * 0.05, w * 0.05); ell(ctx, x - w * 0.2 + sway, yb - h * 0.7, w * 0.05, w * 0.05);
+      break;
+    }
+    case "umbrella": {
+      ctx.fillStyle = "#eee"; ctx.fillRect(x - w * 0.03, yb - h * 0.9, w * 0.06, h * 0.9);
+      const cols = ["#ff3d3d", "#ffffff"];
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = cols[i % 2]; ctx.beginPath(); ctx.moveTo(x, yb - h * 1.1); ctx.arc(x, yb - h * 0.85, w * 0.55, Math.PI + i * Math.PI / 6, Math.PI + (i + 1) * Math.PI / 6); ctx.closePath(); ctx.fill(); }
+      break;
+    }
+    case "sandcastle":
+      ctx.fillStyle = "#e8c66a"; ctx.fillRect(x - w * 0.45, yb - h * 0.35, w * 0.9, h * 0.35);
+      for (const dx of [-0.38, 0, 0.38]) { ctx.fillRect(x + dx * w - w * 0.11, yb - h * (dx ? 0.6 : 0.75), w * 0.22, h * (dx ? 0.6 : 0.75)); }
+      ctx.fillStyle = "#c9a54d"; ctx.fillRect(x - w * 0.08, yb - h * 0.2, w * 0.16, h * 0.2);
+      ctx.fillStyle = "#ff3fa4"; poly(ctx, [x, yb - h * 0.75, x, yb - h * 0.95, x + w * 0.18, yb - h * 0.87]);
+      break;
+    case "surfboard":
+      ctx.fillStyle = "#2fa8ff"; rr(ctx, x - w * 0.16, yb - h * 1.3, w * 0.32, h * 1.3, w * 0.16);
+      ctx.fillStyle = "#ffd400"; ctx.fillRect(x - w * 0.16, yb - h * 0.8, w * 0.32, h * 0.08);
+      break;
+    case "pumpkin":
+      ctx.fillStyle = "#ff7a00"; ell(ctx, x - w * 0.18, yb - h * 0.32, w * 0.24, h * 0.3); ell(ctx, x + w * 0.18, yb - h * 0.32, w * 0.24, h * 0.3);
+      ctx.fillStyle = "#ff9a1f"; ell(ctx, x, yb - h * 0.33, w * 0.26, h * 0.32);
+      ctx.fillStyle = "#3a7a2a"; ctx.fillRect(x - w * 0.04, yb - h * 0.75, w * 0.08, h * 0.14);
+      break;
+    case "hay":
+      ctx.fillStyle = "#e8c34a"; rr(ctx, x - w * 0.5, yb - h * 0.55, w, h * 0.55, w * 0.12);
+      ctx.strokeStyle = "#c79d2a"; ctx.lineWidth = Math.max(1, w * 0.03);
+      for (const k of [0.2, 0.4]) { ctx.beginPath(); ctx.moveTo(x - w * 0.45, yb - h * k); ctx.lineTo(x + w * 0.45, yb - h * k); ctx.stroke(); }
+      break;
+    case "mushroom":
+      ctx.fillStyle = "#fff4e0"; rr(ctx, x - w * 0.12, yb - h * 0.5, w * 0.24, h * 0.5, w * 0.06);
+      ctx.fillStyle = "#e8262b"; ctx.beginPath(); ctx.ellipse(x, yb - h * 0.5, w * 0.45, h * 0.32, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#fff"; ell(ctx, x - w * 0.18, yb - h * 0.62, w * 0.07, w * 0.06); ell(ctx, x + w * 0.12, yb - h * 0.7, w * 0.08, w * 0.07); ell(ctx, x + w * 0.28, yb - h * 0.56, w * 0.05, w * 0.05);
       break;
     case "bush":
       ctx.fillStyle = "#2f9a3d"; ell(ctx, x, yb - h * 0.2, w * 0.5, h * 0.22);
@@ -224,7 +260,7 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       break;
     case "palm":
       ctx.strokeStyle = "#9b6a3a"; ctx.lineWidth = w * 0.08; ctx.beginPath(); ctx.moveTo(x, yb); ctx.quadraticCurveTo(x + w * 0.15, yb - h * 0.6, x + w * 0.05, yb - h * 1.1); ctx.stroke();
-      ctx.fillStyle = "#2fa84a"; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.7; ctx.save(); ctx.translate(x + w * 0.05, yb - h * 1.1); ctx.rotate(a); ell(ctx, w * 0.3, 0, w * 0.32, w * 0.08); ctx.restore(); }
+      ctx.fillStyle = "#2fa84a"; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.7 + Math.sin(t * 1.4 + x * 0.01) * 0.08; ctx.save(); ctx.translate(x + w * 0.05, yb - h * 1.1); ctx.rotate(a); ell(ctx, w * 0.3, 0, w * 0.32, w * 0.08); ctx.restore(); }
       break;
     case "pine":
       ctx.fillStyle = "#6b4423"; ctx.fillRect(x - w * 0.07, yb - h * 0.3, w * 0.14, h * 0.3);
@@ -336,6 +372,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
       ell(ctx, cx, cy, cw * 0.5, cw * 0.16); ell(ctx, cx - cw * 0.2, cy + cw * 0.03, cw * 0.28, cw * 0.13); ell(ctx, cx + cw * 0.15, cy - cw * 0.06, cw * 0.25, cw * 0.15);
     }
   }
+  ctx.globalAlpha = 0.55; hills(ctx, W, H, hz, th.hills[1], hillX * 0.3, H * 0.23, 0.45, 11); ctx.globalAlpha = 1;
   hills(ctx, W, H, hz, th.hills[1], hillX * 0.6, H * 0.16, 0.7, 3);
   hills(ctx, W, H, hz, th.hills[0], hillX, H * 0.09, 1.3, 7);
 }

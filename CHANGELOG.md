@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.10.0 — More Earth & Physics Engine
+
+- **Two new Earth tracks**:
+  - 🏖️ **Beach Boardwalk**: a wooden boardwalk past sandcastles, beach umbrellas and surfboards. Opens after
+    a 🥉 on Sunny Hills.
+  - 🍂 **Autumn Forest**: orange trees, pumpkins, hay bales and mushrooms. Opens after a 🥉 on Snowy Peaks.
+- Each track now opens from one specific track, so new tracks can be added anywhere without re-locking old
+  ones. Winning a race can open more than one track at once, and the results screen lists them all.
+- **World picker** on the track screen: 🌍 Earth now, with 🌙 Moon Base and 🌊 Deep Blue shown as coming soon.
+- Physics engine: every world gets its own gravity, speed, grip and air steering. Earth keeps today's feel;
+  this is the groundwork for the Moon (low gravity) and Deep Blue (heavy water drag).
+
+**Polish**
+- A third, faraway layer of hills behind every track.
+- Trees and palm leaves sway a little in the wind.
+- The track screen's world, race/cup and difficulty buttons share rows, so the track cards are bigger.
+
 ## v0.9.0 — Parent Corner+ & Daily Missions
 
 - **Daily Missions** (the 📋 board in town, Rank 7): three picture missions a day, like "BAM 3 cars", "Do 8

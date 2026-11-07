@@ -1,5 +1,5 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
-import { THEMES, RIVALS, diffOf } from "./data.js";
+import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
 import { drawCar, drawSprite, drawCoin, drawBackground, drawBox, SPRITES } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
@@ -116,6 +116,7 @@ export class Race {
   setup(track, mode, car, stats, opts = {}) {
     this.T = buildTrack(track);
     this.diff = diffOf(opts.diff);
+    this.phys = PHYSICS[track.world] || PHYSICS.earth;
     this.assist = Math.max(this.diff.assist, opts.helper || 0);
     for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
@@ -132,7 +133,7 @@ export class Race {
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, finished: false, air: 0, vy: 0,
-      base: BASE_MAX * (0.62 + d * 0.16 + (4 - i) * 0.04) * (mode === "demo" ? 1 : this.diff.rival),
+      base: BASE_MAX * (0.62 + d * 0.16 + (4 - i) * 0.04) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
     }));
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
@@ -184,21 +185,22 @@ export class Race {
     else steer = (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
     this.steerVis += (steer - this.steerVis) * Math.min(1, dt * 10);
     const fast = this.nitroT > 0 || this.boostT > 0;
-    const top = auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1);
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * (fast ? 3 : 1) * dt);
+    const ph = this.phys;
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1)) * ph.top;
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (fast ? 3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
-    p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? 0.6 : 1);
+    p.offset += steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air : 1);
     const help = this.assist;   // 0 none, 1 a little, 2 lots
-    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help);
+    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && Math.abs(p.offset) > 0.8 - 0.15 * help) p.offset -= Math.sign(p.offset) * dt * (0.45 + 0.45 * help);
     p.offset = clamp(p.offset, -2.6, 2.6);
     p.dist += p.speed * dt;
     if (flying) {
-      p.vy -= GRAVITY * dt; p.air += p.vy * dt; p.airT += dt;
+      p.vy -= GRAVITY * ph.gravity * dt; p.air += p.vy * dt; p.airT += dt;
       if (p.air <= 0) this.land();
     }
     const moved = p.speed * dt / SEG;
@@ -242,7 +244,7 @@ export class Race {
       }
       c.offset += clamp(c.lane - c.offset, -1, 1) * dt * 1.6;
       c.dist += c.speed * dt;
-      if (c.air > 0) { c.vy -= GRAVITY * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
+      if (c.air > 0) { c.vy -= GRAVITY * this.phys.gravity * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY; }
       if (this.state !== "demo" && !c.finished && c.dist >= this.finishDist) { c.finished = true; this.order.push(c); }
 

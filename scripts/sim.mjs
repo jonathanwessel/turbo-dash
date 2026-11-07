@@ -2,7 +2,7 @@
 //   npm run sim             -> finishing places per car tier, track and difficulty
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
 import { Race } from "../src/engine.js";
-import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, prizeFor, upgradeCost } from "../src/data.js";
+import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { statsFor } from "../src/stats.js";
 
 const canvas = { getContext: () => null, width: 1, height: 1 };
@@ -40,7 +40,7 @@ function table() {
 
 function journey(diff = "normal", maxRaces = 500) {
   const st = { coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: lvl(0) }, best: {} };
-  const unlocked = i => i === 0 || (st.best[TRACKS[i - 1].id] || 99) <= 3;
+  const unlocked = i => trackOpen(st, TRACKS[i]);
   const log = [];
   const note = (n, msg) => { log.push(`  race ${String(n).padStart(3)}: ${msg}`); };
   for (let n = 1; n <= maxRaces; n++) {
@@ -51,7 +51,7 @@ function journey(diff = "normal", maxRaces = 500) {
     st.coins += prizeFor(track, r.place, diff) + r.coins + chest;
     const before = st.best[track.id] || 99;
     st.best[track.id] = Math.min(before, r.place);
-    if (r.place <= 3 && before > 3 && TRACKS[ti + 1]) note(n, `opened ${TRACKS[ti + 1].name}`);
+    if (r.place <= 3 && before > 3) for (const t of TRACKS.filter(x => x.after === track.id)) note(n, `opened ${t.name}`);
     if (r.place === 1 && before !== 1) note(n, `first win on ${track.name}`);
     // spend: next car first, otherwise the cheapest upgrade on the current car
     for (let bought = true; bought;) {

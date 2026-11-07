@@ -39,6 +39,8 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.7.0** Cups & Brain Chips: three cups with prize cars, points and podium, Brain Chips, named rivals.
 - **v0.8.0** Power-Up Boxes: shield, coin shower, mega magnet, super turbo; dust and sparks.
 - **v0.9.0** Parent Corner+ & Daily Missions: break reminder, volume, buzz, history, reset; missions board.
+- **v0.10.0** More Earth & Physics Engine: Beach Boardwalk, Autumn Forest, world picker, physics profiles
+  (the v1.1.0 item, shipped early while v1.0 waits for the hosting decision).
 
 ## What we learned from Carter playing
 - **He doesn't stop to read.** He saw the update notice and started a race anyway. Anything important
@@ -289,7 +291,7 @@ Ships in v0.5.0 with Racer Rank.
 
 ## Phase 2: Physics & Big Goals (v1.1 – v1.6)
 
-### v1.1.0 Physics Engine & More Earth
+### v1.1.0 Physics Engine & More Earth (shipped early as v0.10.0)
 - Physics profiles, road gaps, air control and currents (all set to Earth values, so nothing changes yet).
 - Two new Earth tracks (Beach Boardwalk, Autumn Forest).
 - **Polish:** one more layer of hills in the background; trees that sway a little. Interface: a world picker

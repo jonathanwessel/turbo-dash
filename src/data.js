@@ -40,14 +40,29 @@ export const UPGRADE_COST = [150, 300, 600, 1000, 1600];
 export const UPGRADE_MAX = UPGRADE_COST.length;
 
 // diff drives opponent speed. prize[i] = coins for finishing place i+1.
+// after: the track you need 3rd place or better on to open this one (unlocks never depend on list order).
 export const TRACKS = [
-  { id: "sunny",  name: "Sunny Hills",   icon: "🌳", diff: 0, laps: 2, seed: 11, theme: "sunny" },
-  { id: "desert", name: "Desert Dash",   icon: "🌵", diff: 1, laps: 2, seed: 23, theme: "desert" },
-  { id: "snow",   name: "Snowy Peaks",   icon: "⛄", diff: 2, laps: 2, seed: 37, theme: "snow" },
-  { id: "candy",  name: "Candy Land",    icon: "🍭", diff: 3, laps: 2, seed: 41, theme: "candy" },
-  { id: "lava",   name: "Lava Mountain", icon: "🌋", diff: 4, laps: 2, seed: 59, theme: "lava" },
-  { id: "space",  name: "Space Road",    icon: "🪐", diff: 5, laps: 2, seed: 67, theme: "space" },
+  { id: "sunny",  name: "Sunny Hills",    icon: "🌳", diff: 0,   laps: 2, seed: 11, theme: "sunny",  world: "earth" },
+  { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
+  { id: "desert", name: "Desert Dash",    icon: "🌵", diff: 1,   laps: 2, seed: 23, theme: "desert", world: "earth", after: "sunny" },
+  { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
+  { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
+  { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
+  { id: "lava",   name: "Lava Mountain",  icon: "🌋", diff: 4,   laps: 2, seed: 59, theme: "lava",   world: "earth", after: "candy" },
+  { id: "space",  name: "Space Road",     icon: "🪐", diff: 5,   laps: 2, seed: 67, theme: "space",  world: "earth", after: "lava" },
 ];
+export const trackOpen = (S, t) => !t.after || (S.best[t.after] || 99) <= 3;
+
+/* Worlds and their physics. Earth is today's game; other worlds change how cars move. */
+export const WORLDS = [
+  { id: "earth", name: "Earth", icon: "🌍" },
+  { id: "moon", name: "Moon Base", icon: "🌙", soon: true },
+  { id: "ocean", name: "Deep Blue", icon: "🌊", soon: true },
+];
+// gravity: jump arc, top/accel: speed through the medium, grip: how well cars hold curves, air: steering in the air
+export const PHYSICS = {
+  earth: { gravity: 1, top: 1, accel: 1, grip: 1, air: 0.6 },
+};
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
 export const DIFFS = [
   { id: "easy", name: "Easy", icon: "🐢", pay: 0.75, rival: 0.86, assist: 2 },
@@ -71,6 +86,8 @@ export const THEMES = {
   snow:   { sky: ["#7fb2e6", "#e6f3ff"], hills: ["#ffffff", "#d6e6f5"], grass: ["#f4f9ff", "#e3eef9"], rumble: ["#1f6fff", "#ffffff"], road: ["#5d6a7a", "#576474"], lane: "#ffffff", sun: "#ffffff", sprites: ["pine", "pine", "snowman"], clouds: true },
   candy:  { sky: ["#ff8ad8", "#ffd6f3"], hills: ["#b46cff", "#9a4cf2"], grass: ["#7ef2c8", "#6ee3b8"], rumble: ["#ffffff", "#ff3fa4"], road: ["#c18bd6", "#b882cc"], lane: "#ffffff", sun: "#fffbe0", sprites: ["lollipop", "lollipop", "candycane", "cupcake"], clouds: true },
   lava:   { sky: ["#3a0b0b", "#ff6a2a"], hills: ["#5a1d12", "#3e130c"], grass: ["#4a2a22", "#402219"], rumble: ["#ffd400", "#222222"], road: ["#2c2c30", "#28282c"], lane: "#ffb000", sun: "#ffcf4d", sprites: ["volcanorock", "lavaflame", "volcanorock"], clouds: false },
+  beach:  { sky: ["#38b6ff", "#c9f1ff"], hills: ["#2fa8ff", "#1f8ad6"], grass: ["#f7e08a", "#efd57a"], rumble: ["#ffffff", "#2fa8ff"], road: ["#a87a4f", "#9c7046"], lane: "#fff4d6", sun: "#fff7b0", sprites: ["palm", "umbrella", "sandcastle", "surfboard"], clouds: true },
+  autumn: { sky: ["#ff9e5e", "#ffe0b8"], hills: ["#c9572b", "#a8431f"], grass: ["#d98c3a", "#cf8233"], rumble: ["#ffffff", "#b3261e"], road: ["#6b5a50", "#655448"], lane: "#ffe9c0", sun: "#fff0c8", sprites: ["autumnTree", "autumnTree", "pumpkin", "hay", "mushroom"], clouds: true },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
@@ -104,7 +121,7 @@ export const STICKERS = [
   { id: "one", name: "Number 1", icon: "1️⃣", price: 300 },
 ];
 
-const tracksOpen = S => TRACKS.filter((t, i) => i === 0 || (S.best[TRACKS[i - 1].id] || 99) <= 3).length;
+const tracksOpen = S => TRACKS.filter(t => trackOpen(S, t)).length;
 export const GOALS = [
   { id: "win1", icon: "🏆", name: "Win a race", goal: 1, reward: 100, have: S => S.wins },
   { id: "win5", icon: "🏆", name: "Win 5 races", goal: 5, reward: 250, have: S => S.wins },
