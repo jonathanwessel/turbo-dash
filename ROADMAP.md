@@ -30,7 +30,8 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.8.0** Power-Up Boxes · **v0.9.0** Parent Corner+ & Daily Missions · **v0.10.0** More Earth & Physics Engine
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
-  race graphics pass, Driver School placeholder)
+  race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
+  tougher early rivals, win to unlock)
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -41,6 +42,8 @@ Carter plays on an Android tablet, in landscape, full screen.
   rank cap is only raised when the new content can fill all gauges (the career sim proves it).
 - **A fresh code review finds real bugs.** v0.12 fixed 12 found by an independent review; do one every few releases.
 - **Old versions can't be patched**, so the update path and save porting are sacred.
+- **Winning must be earned.** Hands-off driving once won; the starter car now loses until it is upgraded, a
+  track opens only after a Normal/Hard win, and `npm run sim -- start` checks that hands-off finishes last.
 - **Grown-up controls must be kid-proof.** Reset and Parent Corner sit behind a sum, a 3-second hold and a last
   "are you sure"; a 6-year-old taps everything.
 - **Keep the art simple and recognizable.** The Piqua sign works best as plain, clear lettering.
