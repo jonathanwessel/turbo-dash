@@ -64,10 +64,22 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     }
   }
 
-  const g = ctx.createLinearGradient(0, top, 0, by);
-  g.addColorStop(0, shade(def.body, 0.3)); g.addColorStop(0.5, def.body); g.addColorStop(1, shade(def.body, -0.35));
+  let g;
+  if (def.rainbow) {
+    g = ctx.createLinearGradient(-w * 0.5, 0, w * 0.5, 0);
+    ["#ff3d3d", "#ff9d00", "#ffe600", "#3ddc5a", "#2fa8ff", "#8a3cff"].forEach((c, i) => g.addColorStop(i / 5, c));
+  } else {
+    g = ctx.createLinearGradient(0, top, 0, by);
+    g.addColorStop(0, shade(def.body, 0.3)); g.addColorStop(0.5, def.body); g.addColorStop(1, shade(def.body, -0.35));
+  }
   ctx.fillStyle = g;
   rr(ctx, -w * 0.5, top, w, bh, w * 0.09);
+  if (def.shiny && w > 20) {
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    const sx = ((t * 0.4) % 1.6 - 0.8) * w;
+    poly(ctx, [sx - w * 0.06, top + 2, sx + w * 0.02, top + 2, sx - w * 0.06, by - 2, sx - w * 0.14, by - 2]);
+  }
+  if (def.sticker && def.sticker !== "none" && w > 16) sticker(ctx, def.sticker, w, top, bh);
 
   // cabin
   const ch = w * 0.22;
@@ -123,6 +135,43 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
 
   if (o.nitro) for (const s of [-1, 1]) flame(ctx, s * w * 0.2, by - w * 0.02, w * 0.075, t, 2.5);
   ctx.restore();
+}
+
+function star(ctx, x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); }
+  ctx.closePath(); ctx.fill();
+}
+function sticker(ctx, id, w, top, bh) {
+  const y0 = top + bh * 0.62;
+  switch (id) {
+    case "flames":
+      for (const s of [-1, 1]) {
+        ctx.fillStyle = "#ff7a00"; poly(ctx, [s * w * 0.48, top + bh * 0.95, s * w * 0.48, top + bh * 0.45, s * w * 0.4, top + bh * 0.6, s * w * 0.36, top + bh * 0.35, s * w * 0.3, top + bh * 0.62, s * w * 0.24, top + bh * 0.5, s * w * 0.18, top + bh * 0.95]);
+        ctx.fillStyle = "#ffe14d"; poly(ctx, [s * w * 0.46, top + bh * 0.95, s * w * 0.44, top + bh * 0.65, s * w * 0.38, top + bh * 0.75, s * w * 0.34, top + bh * 0.58, s * w * 0.28, top + bh * 0.78, s * w * 0.22, top + bh * 0.95]);
+      }
+      break;
+    case "stars":
+      ctx.fillStyle = "#fff6a8";
+      for (const [x, y, r] of [[-0.33, 0.68, 0.06], [-0.22, 0.82, 0.04], [0.33, 0.68, 0.06], [0.22, 0.82, 0.04]]) star(ctx, x * w, top + y * bh, r * w);
+      break;
+    case "bolt":
+      ctx.fillStyle = "#ffe600";
+      for (const s of [-1, 1]) poly(ctx, [s * w * 0.42, top + bh * 0.5, s * w * 0.3, top + bh * 0.72, s * w * 0.36, top + bh * 0.72, s * w * 0.24, top + bh * 0.96, s * w * 0.4, top + bh * 0.66, s * w * 0.34, top + bh * 0.66]);
+      break;
+    case "checker": {
+      const n = 12, cw = w * 0.9 / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < 2; j++) { ctx.fillStyle = (i + j) % 2 ? "#111" : "#fff"; ctx.fillRect(-w * 0.45 + i * cw, top + bh * 0.04 + j * cw * 0.6, cw, cw * 0.6); }
+      break;
+    }
+    case "one":
+      for (const s of [-1, 1]) {
+        ctx.fillStyle = "#ffffff"; ell(ctx, s * w * 0.32, y0 + bh * 0.08, w * 0.075, w * 0.075);
+        ctx.fillStyle = "#e8262b"; ctx.font = `900 ${Math.round(w * 0.11)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("1", s * w * 0.32, y0 + bh * 0.09);
+      }
+      break;
+  }
 }
 
 function flame(ctx, x, y, r, t, power) {

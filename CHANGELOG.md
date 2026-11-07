@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.4.0 — Paint Shop & Trophy Room
+
+- **Made for Carter**: the title screen now says "Made for Carter, by Carter's Dad", and the results screen
+  cheers him on by name.
+- **Paint Shop** (Garage → 🎨 Paint): 12 paints, including Chrome, Gold and Rainbow, plus 5 stickers
+  (Flames, Stars, Lightning, Checkers, Number 1). Buy once, use on any car you own.
+- **Trophy Room** (new 🏆 tile): a shelf with your best medal on every track, and 16 goals ("Win 5 races",
+  "Do 10 big jumps", "BAM 10 cars"…) that pay coins when you claim them. A red "!" shows when one is ready.
+- **New version button**: when a new release is out, a big green "✨ New version! Tap to update" button
+  appears on the menus (never during a race). Tap it to get the new version; progress is kept.
+- **Safer saves**: progress is also saved when the game is closed or hidden, and a backup copy of the
+  last good save is kept in case the main one is ever damaged.
+- **Parent Corner**: tap the version number on the title screen 5 times to copy a save code (a backup of
+  Carter's progress) or paste one in to restore it.
+
 ## v0.3.0 — Jumps & Stunts
 
 - **Ramps!** Red-and-yellow striped ramps on every track launch your car into the air.

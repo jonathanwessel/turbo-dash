@@ -1,9 +1,9 @@
-import { CARS, TRACKS, THEMES, prizeFor } from "./data.js";
+import { CARS, TRACKS, THEMES, GOALS, PLAYER, prizeFor } from "./data.js";
 import { Race, BASE_MAX } from "./engine.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong } from "./audio.js";
-import { S, load, save } from "./save.js";
+import { S, load, save, exportSave, importSave } from "./save.js";
 import { confetti, coinBurst } from "./fx.js";
-import { createGarage } from "./garage.js";
+import { createGarage, lookOf } from "./garage.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const $ = id => document.getElementById(id);
@@ -60,13 +60,14 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift"];
+const SCREENS = ["s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && id !== "s-title" && id !== "s-pause";
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
+  paintUpdate();
 }
 function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) $("countdown").hidden = true; }
 
@@ -106,7 +107,7 @@ function spend(n) {
 function carStats() {
   const car = CARS.find(c => c.id === S.car) || CARS[0], u = S.up;
   return {
-    car,
+    car: lookOf(car),
     stats: {
       maxSpeed: BASE_MAX * (1 + car.speed + 0.06 * u.engine),
       accel: BASE_MAX / 4.5 * (1 + car.accel + 0.04 * u.engine),
@@ -189,11 +190,18 @@ function showResult(r) {
   const prize = prizeFor(currentTrack, r.place);
   S.races++; if (r.place === 1) S.wins++;
   S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
-  S.coins += prize + r.coins; save();
+  S.coins += prize + r.coins;
+  const goalsBefore = claimable().length;
+  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams;
+  save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
   $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} PLACE!` : `${r.place}${suffix(r.place)} — Good try!`;
   $("r-prize").textContent = prize; $("r-road").textContent = r.coins;
+  const cheers = r.place === 1 ? ["Way to go, " + PLAYER + "!", "You're the champ, " + PLAYER + "!", "Super fast, " + PLAYER + "!"]
+    : r.place <= 3 ? ["Great driving, " + PLAYER + "!", "So close, " + PLAYER + "!"] : ["Upgrade your car and try again, " + PLAYER + "!", "Keep going, " + PLAYER + "!"];
+  $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
+  $("r-goal").hidden = claimable().length <= goalsBefore;
   const next = TRACKS[ti + 1], nowOpen = next && unlocked(ti + 1);
   $("r-unlock").hidden = !(nowOpen && !wasOpen);
   if (nowOpen && !wasOpen) $("r-unlock").textContent = `🔓 New track: ${next.icon} ${next.name}!`;
@@ -246,12 +254,39 @@ $("gift-take").onclick = () => {
   show("s-hub");
 };
 
+/* ---------- trophy room + goals ---------- */
+const claimable = () => GOALS.filter(g => !S.claimed.includes(g.id) && g.have(S) >= g.goal);
+function openTrophies() {
+  $("shelf").innerHTML = TRACKS.map(t => { const b = S.best[t.id]; return `<div class="${b ? "" : "none"}"><b>${b ? (MEDAL[b] || "🏁") : "🏆"}</b>${t.icon} ${t.name}</div>`; }).join("");
+  const rank = g => S.claimed.includes(g.id) ? 2 : g.have(S) >= g.goal ? 0 : 1;
+  const list = [...GOALS].sort((a, b) => rank(a) - rank(b));
+  $("goals").innerHTML = list.map(g => {
+    const have = Math.min(g.goal, g.have(S)), done = S.claimed.includes(g.id), ready = !done && have >= g.goal;
+    return `<div class="goal ${ready ? "ready" : done ? "done" : ""}"><span class="gi">${g.icon}</span>
+      <div class="gm"><b>${g.name}</b><div class="bar"><i style="width:${Math.round(100 * have / g.goal)}%"></i></div><small>${have} / ${g.goal}</small></div>
+      <button data-goal="${g.id}">${done ? "✔ Got it" : "🪙 " + g.reward}</button></div>`;
+  }).join("");
+  show("s-trophies");
+}
+$("goals").addEventListener("click", e => {
+  const b = e.target.closest("[data-goal]"); if (!b) return;
+  const g = GOALS.find(x => x.id === b.dataset.goal);
+  if (S.claimed.includes(g.id)) { sfx("click"); return; }
+  if (g.have(S) < g.goal) { sfx("nope"); return; }
+  S.claimed.push(g.id);
+  const r = b.getBoundingClientRect();
+  earn(g.reward, r.left + r.width / 2, r.top + r.height / 2);
+  sfx("chest"); confetti(70);
+  const top = $("goals").scrollTop; openTrophies(); $("goals").scrollTop = top;
+});
+
 /* ---------- hub, garage, settings ---------- */
 const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100) });
 let giftShownThisVisit = false;
 function refreshHub() {
   $("gift-badge").hidden = !giftReady();
   $("garage-badge").hidden = !garage.affordable();
+  $("trophy-badge").hidden = !claimable().length;
 }
 function goHub() {
   show("s-hub");
@@ -260,6 +295,7 @@ function goHub() {
 $("hub-race").onclick = () => { sfx("click"); openTracks(); };
 $("hub-garage").onclick = () => { sfx("click"); garage.open(); show("s-garage"); };
 $("hub-gift").onclick = () => { sfx("click"); openGift(); };
+$("hub-trophy").onclick = () => { sfx("click"); openTrophies(); };
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
 function paintToggles() { $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx); }
@@ -274,24 +310,46 @@ $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
 $("btn-quit").onclick = () => { sfx("click"); menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
 
+/* ---------- parent corner: tap the version label 5 times ---------- */
+let verTaps = [];
+$("ver").onclick = () => {
+  const now = Date.now(); verTaps = verTaps.filter(t => now - t < 3000); verTaps.push(now);
+  if (verTaps.length >= 5) { verTaps = []; $("p-code").value = exportSave(); $("p-msg").textContent = ""; show("s-parent"); }
+};
+$("p-copy").onclick = async () => {
+  const code = exportSave(); $("p-code").value = code;
+  try { await navigator.clipboard.writeText(code); $("p-msg").textContent = "Copied! Paste it somewhere safe (a note or a text to yourself)."; }
+  catch (e) { $("p-code").select(); $("p-msg").textContent = "Select the code above and copy it."; }
+};
+$("p-load").onclick = () => {
+  const code = $("p-code").value;
+  if (code.trim() === exportSave()) { $("p-msg").textContent = "That's the save already on this tablet."; return; }
+  if (!confirm("Replace the progress on this tablet with the pasted code?")) return;
+  try { importSave(code); location.reload(); }
+  catch (e) { $("p-msg").textContent = "That code didn't work. Check that the whole code was pasted."; }
+};
+$("p-close").onclick = () => show("s-title");
+
 /* ---------- versions & offline ---------- */
+let updateReady = false;
+function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent"); }
 $("ver").textContent = VERSION === "dev" ? "dev build" : "v" + VERSION;
 if (VERSION !== "dev") {
   const check = async () => {
     try {
       const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
       const { version } = await r.json();
-      if (version && version !== VERSION && mode !== "race") { $("upd-v").textContent = version; $("update").hidden = false; }
+      if (version && version !== VERSION) { $("upd-v").textContent = "v" + version; updateReady = true; paintUpdate(); }
     } catch (e) { /* offline */ }
   };
   setInterval(check, 60000); setTimeout(check, 5000);
-  $("upd-go").onclick = () => { save(); location.reload(); };
+  $("update").onclick = () => { save(); location.reload(); };
 }
 if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureContext) {
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("Turbo Dash: offline cache unavailable", e)));
 }
 
-if (import.meta.env.DEV) window.__td = { race, S, startRace, TRACKS, showResult, show, openTracks, garage, goHub };
+if (import.meta.env.DEV) window.__td = { race, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, garage, goHub, importSave, exportSave };
 
 refreshCoins(false);
 menuDemo();

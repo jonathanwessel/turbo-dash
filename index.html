@@ -36,19 +36,22 @@
   <!-- screens -->
   <section id="s-title" class="screen">
     <div class="logo"><span>TURBO</span><span>DASH</span></div>
+    <div class="credits"><div class="made">Made for <b>Carter</b></div><div class="by">by Carter's Dad</div></div>
     <button id="btn-play" class="big-btn go">▶ PLAY</button>
-    <div class="ver" id="ver"></div>
+    <button class="ver" id="ver" aria-label="Version"></button>
   </section>
 
   <section id="s-result" class="screen dim" hidden>
     <div class="card result">
       <div class="trophy" id="r-trophy">🏆</div>
       <h1 id="r-title">1st PLACE!</h1>
+      <div class="r-sub" id="r-sub"></div>
       <div class="r-lines">
         <div>Prize <b>🪙 <span id="r-prize">0</span></b></div>
         <div>Road coins <b>🪙 <span id="r-road">0</span></b></div>
       </div>
       <div id="r-unlock" class="r-unlock" hidden></div>
+      <div id="r-goal" class="r-goal" hidden>⭐ Goal done! Get your prize in Trophies!</div>
       <div id="r-chests" class="r-chests">
         <div class="r-pick" id="r-pick">Pick a treasure chest!</div>
         <div class="row"><button class="chest" data-i="0">🎁</button><button class="chest" data-i="1">🎁</button><button class="chest" data-i="2">🎁</button></div>
@@ -66,6 +69,7 @@
     <div class="hub-btns">
       <button id="hub-race" class="tile go"><span class="ti">🏁</span>RACE</button>
       <button id="hub-garage" class="tile gold"><span class="ti">🔧</span>GARAGE<i class="badge" id="garage-badge" hidden>!</i></button>
+      <button id="hub-trophy" class="tile purple"><span class="ti">🏆</span>TROPHIES<i class="badge" id="trophy-badge" hidden>!</i></button>
       <button id="hub-gift" class="tile pink"><span class="ti">🎁</span>GIFT<i class="badge" id="gift-badge" hidden>!</i></button>
     </div>
   </section>
@@ -84,7 +88,33 @@
         <div class="g-stats" id="g-stats"></div>
         <button id="g-action" class="big-btn go">✔ Driving</button>
       </div>
-      <div class="g-right" id="g-ups"></div>
+      <div class="g-right">
+        <div class="g-tabs"><button data-gtab="up" class="on">🔧 Upgrades</button><button data-gtab="paint">🎨 Paint</button></div>
+        <div class="g-ups" id="g-ups"></div>
+        <div class="g-paint" id="g-paint" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-trophies" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Trophy Room</h2></div>
+    <div class="trophies">
+      <div class="shelf" id="shelf"></div>
+      <div class="goals" id="goals"></div>
+    </div>
+  </section>
+
+  <section id="s-parent" class="screen dim" hidden>
+    <div class="card parent">
+      <h1>Parent Corner</h1>
+      <p>Carter's progress saves on this tablet automatically. Copy this code to keep a backup, or paste a code to bring progress back.</p>
+      <textarea id="p-code" rows="3" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="p-copy" class="big-btn small">📋 Copy code</button>
+        <button id="p-load" class="big-btn small">📥 Load pasted code</button>
+        <button id="p-close" class="big-btn small go">Done</button>
+      </div>
+      <div class="p-msg" id="p-msg"></div>
     </div>
   </section>
 
@@ -111,7 +141,7 @@
   <div id="coinbar" class="coinbar" hidden>🪙 <span id="coin-n">0</span></div>
   <div id="topright" class="topright" hidden><button id="btn-music" class="icon-btn" aria-label="Music">🎵</button><button id="btn-sfx" class="icon-btn" aria-label="Sound">🔊</button><button id="btn-full" class="icon-btn" aria-label="Full screen">⛶</button></div>
   <canvas id="fx"></canvas>
-  <div id="update" class="update" hidden>New version <b id="upd-v"></b> is ready! <button id="upd-go">Update</button></div>
+  <button id="update" class="update" hidden>✨ New version! Tap to update <small id="upd-v"></small></button>
 </div>
 <script type="module" src="src/main.js"></script>
 </body>

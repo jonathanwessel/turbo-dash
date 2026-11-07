@@ -10,17 +10,17 @@ Releases go to the play server (`npm run play`, port 5183, on the LAN at http://
 - **v0.2.0** Garage & Tracks (MVP): six tracks, six cars, four upgrades, prizes, treasure chests,
   daily gift, full screen on tablets.
 - **v0.3.0** Jumps & Stunts: ramps, air coins, stunt landings.
+- **v0.4.0** Paint Shop & Trophy Room: paints, stickers, goals, Carter credits, big update button,
+  safer saves and save codes.
 
 ## Next
-- **v0.4.0 Paint Shop & Trophy Room**: buy paint colors and stickers for each car; a shelf showing
-  every trophy won; goals ("Win 5 races", "Collect 500 coins") that pay coin rewards.
 - **v0.5.0 Cups**: three-race championships with points, a big cup trophy, and a special car for winning
   each cup.
 - **v0.6.0 Power-Up Boxes**: drive through ? boxes for a shield, a coin shower, a mega magnet or a
   super turbo. No weapons, nothing mean.
 - **v0.7.0 More Worlds**: Jungle Jam, Ocean Bridge, Night City; rain and snow; tunnels.
-- **v0.8.0 Parent Corner**: a hidden settings screen (hold the version label) with an easy-steering
-  assist, difficulty, volume, play-time reminders, and save backup/reset.
+- **v0.8.0 Parent Corner+**: the hidden screen (tap the version label 5 times; save codes shipped in
+  v0.4.0) gains an easy-steering assist, difficulty, volume, play-time reminders and a reset.
 - **v0.9.0 Time Trials & Ghosts**: race your own best lap as a see-through ghost car.
 - **v1.0.0 Take It With You**: host a release on HTTPS (GitHub Pages or similar, needs your OK because it
   publishes the game) so it installs as a real app icon on the tablet, runs fully offline and full screen,

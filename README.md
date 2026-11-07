@@ -30,6 +30,16 @@ Play (5183), dev (5184) and stage (5185) are different origins, so each keeps it
 - **🚀 button** fires Turbo when the meter is full. Drive over yellow/orange **boost pads** for a free boost.
 - Keyboard: arrows or A/D to steer, Space or ↑ for Turbo, Esc to pause.
 
+## Saves and updates
+
+- Progress is saved in the browser on the device (localStorage) after every race and purchase, and when
+  the game is closed. A backup of the last good save is kept too.
+- The save belongs to the exact address, e.g. `http://192.168.1.162:5183`. If the PC gets a different IP,
+  the game opens with an empty save. Reserve the IP in your router (DHCP reservation) to keep it stable.
+- **Parent Corner**: tap the version label on the title screen 5 times to copy a save code or paste one back.
+- When a new release is published, the game shows a big **New version! Tap to update** button on the menus
+  (never during races). Tapping it reloads into the new version; progress is kept.
+
 ## Releasing
 
 1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry.

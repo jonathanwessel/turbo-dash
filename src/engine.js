@@ -113,7 +113,7 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = 0.35; this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.order = []; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
+    this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, ...slot(5) };
     const d = track.diff;
@@ -129,7 +129,7 @@ export class Race {
   popup(text, color = "#fff") { this.popups.push({ text, color, age: 0, x: (Math.random() - 0.5) * 0.2 }); }
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
-    this.nitro = 0; this.nitroT = this.stats.nitroTime; this.hooks.sfx("nitro"); this.popup("TURBO!", "#ffd400"); return true;
+    this.nitro = 0; this.nitroT = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
   }
 
   update(dt) {
@@ -220,7 +220,7 @@ export class Race {
         if (fast) {
           if (c.knockT <= 0) {
             c.offset += (c.offset >= p.offset ? 1 : -1) * 0.7; c.lane = clamp(c.offset, -0.8, 0.8); c.knockT = 1;
-            this.popup("BAM!", "#ff6b3d"); h.sfx("bam"); this.shake = 0.2;
+            this.popup("BAM!", "#ff6b3d"); h.sfx("bam"); this.shake = 0.2; this.runStats.bams++;
           }
         } else if (g > 0 && p.speed > c.speed) {
           p.speed = c.speed * 0.9; p.dist = c.dist - SEG * 0.9;
@@ -231,7 +231,7 @@ export class Race {
 
     if (racing && p.dist >= this.finishDist) {
       p.finished = true; this.state = "done"; this.order.push(p);
-      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime });
+      h.onFinish({ place: this.order.length, coins: this.coins, time: this.raceTime, stats: this.runStats });
     }
     h.engine(p.speed / BASE_MAX, fast);
   }
@@ -272,7 +272,7 @@ export class Race {
     if (this.state === "demo") return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
-      this.coins += 3; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);
+      this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);
       this.popup(["STUNT!", "AIR TIME!", "WHOOSH!", "AWESOME!"][Math.floor(Math.random() * 4)], "#5be36a");
     }
   }
