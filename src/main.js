@@ -713,7 +713,8 @@ function openRank() {
       <div class="gauge"><i style="width:${pct}%"></i></div><small>${full ? "✔ " : ""}${Math.min(f.have, f.need)} / ${f.need}</small></div>`;
   }).join("");
   $("rk-up").hidden = !ready;
-  $("rk-hint").textContent = ready || maxed || !lowest ? "" : `${lowest.icon} ${lowest.hint}`;
+  const left = lowest ? lowest.need - lowest.have : 0;
+  $("rk-hint").textContent = ready || maxed || !lowest ? "" : lowest.id === "wins" ? `🏁 Win ${left} more race${left === 1 ? "" : "s"}!` : `${lowest.icon} ${lowest.hint}`;
   show("s-rank");
 }
 $("rk-up").onclick = () => {

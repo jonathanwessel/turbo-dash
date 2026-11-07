@@ -105,7 +105,7 @@ Super Paint. Tier 3 (Rank 8+): the Robot Brain chain → **Auto Steer**. Future 
 (46+), boost pads and dodging (66+), smart Turbo (86+), perfect line with gold trail (100). Hand steering always
 wins, it's off in time trials and boss races, and Parent Corner can disable it.
 
-## 🚦 Driver School & real-world rewards (shipped in v0.14.0)
+## 🚦 Driver School & real-world rewards (shipped in v0.14.0; becomes Math School in v1.1)
 **Goal: the game gives Carter a reason to put the tablet down.** A grown-up logs what he did away from the screen,
 and that becomes driver training in the game.
 - **Parent log (Parent Corner → Driver School, behind the grown-up check):** big buttons for 📚 Reading,
@@ -208,7 +208,22 @@ plan for it was:
 - **A parent's guide page.**
 - **A review of every screen:** a full code review, the career sim, and a save test from every version.
 
-### v1.1 – v1.5 More worlds
+### Next: v1.1 🧮 Math School (Driver School becomes a math game)
+The grown-up check was a math question, and Carter learned to answer it and log reading time he never did. So the
+Driver School stops depending on a parent's log and earns its tickets from a math game he plays himself:
+- **Coach Cone's Math Lap:** simple addition and subtraction (sums to 10 at first, then to 20; no negative
+  answers), shown as big numbers with pictures (cars, cones, coins) to count. Three or four big answer buttons.
+- **Tickets for right answers:** a lap of 5 questions earns a ticket, with a small streak bonus. A wrong answer just
+  tries again (no lost tickets, no timer). The questions get harder slowly as he gets them right.
+- **The same rewards:** tickets still train Focus, Reflexes, Courage and Smarts and still earn license levels, so
+  the Rank 10+ License gauge stays, now fed by math.
+- **Parent Corner:** pick the level (to 10 / to 20 / adding only) and a daily cap; Progress shows questions answered
+  and how many were right. The reading/outside log goes away, so there's nothing to fake. Saves keep the tickets,
+  skills and history they already have.
+- **A harder grown-up check** for Parent Corner (one a 6-year-old can't answer, such as a two-digit multiplication
+  or a long press), since the old one was easy for him.
+
+### v1.2 – v1.6 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.1 — Faster early ranks 🏁
+
+- **Ranking up is much quicker at the start.** Rank 3 now needs 10 wins in total (was 36), Rank 4 needs 23 (was 70)
+  and Rank 5 needs 40 (was 111). In the career sim a kid reaches Rank 3 after about 25 races (was 80) and Rank 5
+  after about 90 (was 260). From about Rank 20 the climb is the same as before, so the long game is unchanged.
+- **The Rank screen says how many wins are left** ("🏁 Win 4 more races!") when wins are what's holding him back.
+- Saves carry over as usual; a save that already has enough wins can rank up straight away.
+- Roadmap: next is **Math School** (the Driver School becomes an addition and subtraction game).
+
 ## v1.0.0 — Carter's 1.0 🏁
 
 The 1.0 milestone: everything from the roadmap's 1.0 plan in one big release, then a full review.

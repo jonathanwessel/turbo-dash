@@ -263,7 +263,7 @@ export const RANK_CAP = 40;   // raised by later releases (each new world adds 5
 export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
 export const rankNeeds = (r, S) => ({
   license: licenseNeed(r, S),
-  wins: Math.round(12 * Math.pow(r, 1.6)),
+  wins: Math.round(Math.min(2.5 * r * r, 12 * Math.pow(r, 1.6))),   // gentle early ranks (Rank 3 at 10 wins), the same long climb later
   trophies: Math.round(4.5 * Math.pow(r, 1.35)),
   garage: Math.round(6 * Math.pow(r, 1.2)),
   research: r < 2 ? 0 : Math.round(2 * Math.pow(r - 1, 1.25)),
