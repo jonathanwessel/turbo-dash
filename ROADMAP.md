@@ -123,6 +123,24 @@ and a fire-truck car), 📚 Library (with Driver School: reading tickets), 🏞�
 gifts), 🚗 Car Wash (repaint for free), 🏛️ Museum (a history of every trophy). Buildings stay simple and separate,
 one word on each sign.
 
+## 🎨 The graphics ladder
+The art gets a little richer with every world, so the whole game slowly climbs from today's flat retro look to
+the shiny, futuristic Toy Track World at the end. Each step keeps everything that came before:
+
+| Step | Arrives with | New detail |
+|---|---|---|
+| 1 | Earth (now) | flat colors, simple shadows, guardrails, lamp posts, birds |
+| 2 | 🌙 Moon Base | soft gradients on cars and scenery, glowing lights, a starfield with depth |
+| 3 | 🌊 Deep Blue | light rays and caustic ripples, translucent bubbles, color fog in the distance |
+| 4 | ❄️ Glacier Rink | shiny ice reflections under cars, sparkle highlights, falling snow layers |
+| 5 | ☁️ Cloud Kingdom | sunbeams, soft cloud depth, rainbow glow trails |
+| 6 | 🦖 Dino Jungle | layered foliage, swaying plants, dappled light |
+| 7 | 🌃 Neon City | night lighting, neon glow and bloom, reflections on wet roads |
+| 8 | 🌀 Gravity Flip | everything combined, plus warping sky effects |
+| 9 | 🚀 Toy Track World | the leap: a new 3D engine, glossy plastic, real lighting |
+
+Earth tracks get touched up along the way too (each release's Polish section), but never lose their simple style.
+
 ## Worlds and physics
 Earth (8 tracks today, more over time) keeps today's feel. Every other world has its own physics profile (already
 supported by the engine) and its own cars, lab kit and boss:

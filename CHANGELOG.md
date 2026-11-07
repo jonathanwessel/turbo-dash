@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.14.1 — Scan to Share
+
+- **Scan to share!** The title screen has a QR code card: friends point a phone camera at it to open Turbo Dash
+  (https://jonathanwessel.github.io/turbo-dash/). It's drawn into the game, so it works offline too.
+- **Title screen spread out**: the logo sits at the top, "Made for Carter" in the middle, and PLAY at the bottom.
+
 ## v0.14.0 — Driver School
 
 - **🚦 The Driver School opens** on Main Street. It turns time away from the screen into driver training:

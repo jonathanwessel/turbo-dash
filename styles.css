@@ -502,3 +502,21 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .log-hist { font-size: 13px; display: grid; grid-template-columns: auto auto auto auto; gap: 2px 12px; justify-content: center; opacity: .9; }
 .rest-tip { margin-top: 6px; color: #ffd400; }
 @media (orientation: portrait) { .school { flex-direction: column; overflow-y: auto; } .classroom { width: 100%; } .acts { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- v0.14.1: title spread out + scan to share ---------- */
+#s-title { justify-content: space-between; padding-top: max(3vh, env(safe-area-inset-top)); padding-bottom: max(4vh, env(safe-area-inset-bottom)); }
+#s-title .title-hero { margin-top: 1vh; }
+#s-title .credits { display: flex; flex-direction: column; gap: 1.2vh; }
+#s-title .credits .made { letter-spacing: .04em; }
+#s-title .credits .by { letter-spacing: .08em; }
+.share-box { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px;
+  background: #fff; color: #1a0b3d; border: 4px solid #ffd400; border-radius: 20px; padding: 10px 14px 10px 10px; box-shadow: 0 6px 0 rgba(0,0,0,.3); max-width: 42vw; }
+.share-box img { width: min(19vh, 15vw); height: min(19vh, 15vw); display: block; image-rendering: pixelated; }
+.share-box b { display: block; font-size: min(3.4vh, 2.6vw); color: #e8262b; }
+.share-box small { display: block; font-size: min(2.2vh, 1.7vw); font-weight: 700; max-width: 12em; }
+@media (orientation: portrait) { .share-box { left: 50%; transform: translateX(-50%); bottom: auto; top: 62%; max-width: 90vw; } .share-box b { font-size: 4vw; } .share-box small { font-size: 3vw; } .share-box img { width: 28vw; height: 28vw; } }
+.share-box { flex-direction: column; gap: 4px; padding: 8px; max-width: 18vw; text-align: center; }
+.share-box img { width: min(17vh, 13vw); height: min(17vh, 13vw); }
+.share-box b { font-size: min(2.8vh, 2.1vw); }
+.share-box small { font-size: min(1.8vh, 1.4vw); max-width: none; }
+#s-title .play-btn { font-size: min(8vw, 11.5vh); padding: .22em 1.2em; }
