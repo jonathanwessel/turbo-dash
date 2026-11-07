@@ -33,7 +33,9 @@ window.__audit = (rootSel) => {
   const issues = [];
   const BAD = /\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n; (n = walker.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
+  for (let n; (n = walker.nextNode());) if (n.textContent.includes("🪙") && n.parentElement && vis(n.parentElement)) issues.push("EMOJI COIN (device-drawn, not our gold coin) in " + name(n.parentElement));
+  const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n; (n = walker2.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
   for (const el of root.querySelectorAll("[title],[aria-label]")) for (const a of ["title", "aria-label"]) if (BAD.test(el.getAttribute(a) || "")) issues.push("BAD TEXT in " + a + " of " + name(el));
   // 🖼️ pictures drawn as SVG (Main Street): every label must fit on its sign board, and no button may sit on a label
   const svgVis = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const st = getComputedStyle(e); if (st.display === "none" || st.visibility === "hidden" || e.getAttribute?.("style")?.includes("display:none")) return false; } return true; };

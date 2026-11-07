@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.3 — Gold coins on every tablet 🟡
+
+- **Fixed: coins looked silver on some tablets.** The coin picture came from each device's own emoji font (gold on
+  Samsung, a silver coin with a bird on others). The game now draws its own gold coin everywhere a coin appears.
+
 ## v1.2.2 — Toy Track World on tablets, for real 🧸
 
 - **Fixed: Toy Track World turned white a few seconds into a race on tablets.** The tablet's graphics chip gave up

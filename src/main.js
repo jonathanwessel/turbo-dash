@@ -1,5 +1,6 @@
 import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
+import "./coins.js";
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
 import { townSVG, SITE_PIPS } from "./town.js";

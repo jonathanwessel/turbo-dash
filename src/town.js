@@ -55,7 +55,7 @@ const missions = () => { const { x, w } = B.missions, top = BASE - 250; return `
 <g class="bld" data-go="missions">${hit(x, w, top - 70)}${lot(x, w)}
   <rect x="${x + 22}" y="${top + 120}" width="14" height="${BASE - top - 120}" fill="#6b4423"/><rect x="${x + w - 36}" y="${top + 120}" width="14" height="${BASE - top - 120}" fill="#6b4423"/>
   <rect x="${x}" y="${top}" width="${w}" height="140" rx="14" fill="#8a5a2b" stroke="#5a3416" stroke-width="6"/>
-  ${[[14, 14], [80, 18], [26, 72], [88, 76]].map(([dx, dy], i) => `<rect x="${x + dx}" y="${top + dy}" width="50" height="46" rx="4" fill="#fff" transform="rotate(${[-6, 5, 4, -5][i]} ${x + dx + 25} ${top + dy + 23})"/><text x="${x + dx + 25}" y="${top + dy + 34}" font-size="26" text-anchor="middle">${["✔", "⭐", "🏁", "🪙"][i]}</text>`).join("")}
+  ${[[14, 14], [80, 18], [26, 72], [88, 76]].map(([dx, dy], i) => `<rect x="${x + dx}" y="${top + dy}" width="50" height="46" rx="4" fill="#fff" transform="rotate(${[-6, 5, 4, -5][i]} ${x + dx + 25} ${top + dy + 23})"/><text x="${x + dx + 25}" y="${top + dy + 34}" font-size="26" text-anchor="middle">${["✔", "⭐", "🏁", ""][i]}</text>${i === 3 ? `<circle cx="${x + dx + 25}" cy="${top + dy + 25}" r="12" fill="#c98a00"/><circle cx="${x + dx + 25}" cy="${top + dy + 25}" r="9.5" fill="#ffd400"/><circle cx="${x + dx + 21}" cy="${top + dy + 21}" r="3" fill="#fff6b0"/>` : ""}`).join("")}
   ${roofIcon(cx("missions"), top - 14, "📋", 58)}
   ${label(cx("missions"), top + 150, w, "MISSIONS", 26)}
   ${lock("mis-lock", x, w, top, 140, "RANK 7")}
