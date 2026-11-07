@@ -3,7 +3,7 @@
 // from every past release (it runs before every `npm run release`).
 // A second copy (the last save that loaded fine) protects against a bad write; a save code lets a parent copy
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
-import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES } from "./data.js";
+import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
 export const SAVE_VERSION = 17;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
@@ -62,7 +62,7 @@ export function port(d) {
   s.music = d.music !== false; s.sfx = d.sfx !== false;
   s.lastGift = typeof d.lastGift === "string" ? d.lastGift : "";
   s.giftStreak = num(d.giftStreak, 0, 0);
-  s.lastTrack = TRACKS.some(t => t.id === d.lastTrack) ? d.lastTrack : "sunny";
+  s.lastTrack = TRACKS.some(t => t.id === d.lastTrack) || BONUS_TRACKS.some(t => t.id === d.lastTrack) ? d.lastTrack : "sunny";
   s.name = typeof d.name === "string" ? d.name.replace(/[<>&"]/g, "").trim().slice(0, 14) : "";
   s.diff = DIFFS.some(x => x.id === d.diff) ? d.diff : "normal";
   s.chips = Math.round(num(d.chips, 0, 0));

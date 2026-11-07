@@ -88,6 +88,12 @@ export const UPGRADE_MAX = UPGRADE_COST.length;
 
 // diff drives opponent speed. prize[i] = coins for finishing place i+1.
 // after: the track you need to WIN to open this one (unlocks never depend on list order).
+/* 🏙️ Bonus courses: always open, pay like any race, but live outside the progression (not in TRACKS, so no
+   goal, cup, mission, Time Trial, trophy point or unlock ever depends on them). */
+export const BONUS_TRACKS = [
+  { id: "downtown", name: "Downtown Piqua", icon: "🏙️", diff: 2, laps: 2, seed: 515, theme: "downtown", world: "earth", bonus: true, layout: "blocks" },
+];
+export const BONUS_IDS = new Set(BONUS_TRACKS.map(t => t.id));
 export const TRACKS = [
   { id: "sunny",  name: "Sunny Hills",    icon: "🌳", diff: 0,   laps: 2, seed: 11, theme: "sunny",  world: "earth" },
   { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
@@ -179,6 +185,7 @@ export const THEMES = {
   farm:   { sky: ["#5ec2ff", "#d6f0ff"], hills: ["#7bc95a", "#5aa846"], grass: ["#8fd35f", "#80c552"], rumble: ["#ffffff", "#c0392b"], road: ["#727680", "#6b6f78"], lane: "#ffffff", sun: "#fff59a", sprites: ["barn", "hay", "cow", "windmill", "corn", "corn", "cow", "tree"], clouds: true },
   pirate: { sky: ["#ff9a5a", "#ffe0a8"], hills: ["#2f9fd8", "#1f7fb8"], grass: ["#f2d98a", "#e8cd7a"], rumble: ["#ffffff", "#2b2b33"], road: ["#9c7a55", "#92704b"], lane: "#fff4d6", sun: "#fff1b0", sprites: ["palm", "pirateship", "barrel", "parrot", "cannon", "treasure", "palm", "barrel"], clouds: true },
   river:  { sky: ["#6fc0ff", "#d8f2ff"], hills: ["#4fae5a", "#3d9a4a"], grass: ["#6cc970", "#60bd64"], rumble: ["#ffffff", "#1d6fb8"], road: ["#6b6f78", "#656972"], lane: "#ffffff", sun: "#fff59a", sprites: ["tree", "cattail", "duck", "canoe", "coveredbridge", "bush", "cattail", "tree"], clouds: true, river: true },
+  downtown: { sky: ["#7fb6e6", "#d8ecff"], hills: ["#9aa6b8", "#8794a8"], grass: ["#b9bcc4", "#adb1ba"], rumble: ["#ffffff", "#8f96a3"], road: ["#4a4e57", "#464a53"], lane: "#ffffff", sun: "#fff7c0", sprites: ["building", "shop", "shop", "building", "house", "trafficlight"], clouds: true, city: "#8592ab" },
   night:  { sky: ["#05081f", "#25306a"], hills: ["#1b2344", "#141a36"], grass: ["#1d3328", "#182b22"], rumble: ["#ffd400", "#2c2f3a"], road: ["#3a3e4c", "#363a47"], lane: "#ffe680", sun: "#f3f0d2", sprites: ["shop", "lamp", "tree", "shop", "house"], clouds: false, stars: true, city: "#121733", night: true, tunnels: "brick" },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
@@ -305,7 +312,7 @@ export const FRONTS = [
   { id: "trophies", icon: "🏆", name: "Trophies", hint: "Get medals on every track and claim goals!",
     have: S => {
       // only difficulties the parent allows count, scaled so a 1- or 2-difficulty game can still fill the gauge
-      const allowed = S.parent?.diffs?.length ? S.parent.diffs : ["easy", "normal", "hard"], ok = k => allowed.includes(k.split(":")[1]);
+      const allowed = S.parent?.diffs?.length ? S.parent.diffs : ["easy", "normal", "hard"], ok = k => allowed.includes(k.split(":")[1]) && !BONUS_IDS.has(k.split(":")[0]);
       const sum = (m, f) => Object.entries(m || {}).filter(([k]) => ok(k)).reduce((a, [, v]) => a + f(v), 0);
       const per = sum(S.bestD, p => MEDAL_PTS[p] || 0) + sum(S.cups, p => CUP_PTS[p] || 0) + sum(S.mastery, starsFor);
       return Math.round(per * 3 / allowed.length) + S.claimed.length + 10 * Object.keys(S.bosses || {}).length;

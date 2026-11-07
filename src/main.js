@@ -1,4 +1,4 @@
-import { CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
@@ -203,7 +203,7 @@ function carStats() {
 
 function menuDemo() {
   mode = "menu"; paused = false; setRaceUi(false); engineOff(); setSong("menu"); resize();
-  let track = TRACKS.find(t => t.id === S.lastTrack) || TRACKS[0];
+  let track = TRACKS.find(t => t.id === S.lastTrack) || BONUS_TRACKS.find(t => t.id === S.lastTrack) || TRACKS[0];
   if (track.world === "toy" && !ToyView) { if (!toyFailed) loadToy().then(() => { if (mode === "menu" && ToyView) menuDemo(); }); track = TRACKS[0]; }
   const { car, stats } = carStats();
   (engineFor(track) || engineFor(track = TRACKS[0])).setup(track, "demo", car, stats);
@@ -478,13 +478,18 @@ function openTracks() {
       <div class="tc-stars">${MASTERY.map((n, k) => k < starsFor(S.mastery[t.id + ":" + S.diff] || 0) ? "★" : "☆").join("")}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
-  }).join("");
+  }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
+    return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
+      <div class="tc-ribbon">BONUS</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div><div class="tc-hard">🔥 Tricky corners!</div>
+      <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);
   cur?.scrollIntoView({ inline: "center", block: "center" });
 }
 $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
+  if (c.dataset.bonus) { sfx("click"); cupRun = null; bossRun = null; trialRun = false; startRace(BONUS_TRACKS.find(t => t.id === c.dataset.bonus)); return; }
   const i = +c.dataset.i;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
   sfx("click"); cupRun = null; bossRun = null; trialRun = false; startRace(TRACKS[i]);
@@ -633,7 +638,7 @@ function showResult(r) {
   $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
   $("r-goal").hidden = claimable().length <= goalsBefore;
   const fresh = TRACKS.filter(t => trackOpen(S, t) && !openBefore.includes(t));
-  const next = fresh[0] || TRACKS.slice(ti + 1).find(t => trackOpen(S, t)), nowOpen = !!next;
+  const next = fresh[0] || (currentTrack.bonus ? null : TRACKS.slice(ti + 1).find(t => trackOpen(S, t))), nowOpen = !!next;
   nextTrack = next;
   $("r-unlock").hidden = !fresh.length;
   if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " · " + sparkleMsg; u.hidden = false; }, 0);
@@ -1083,7 +1088,7 @@ function paintParent() {
   $("p-buzz").innerHTML = [true, false].map(v => `<button data-pz="${v}" class="${S.parent.buzz === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");
   $("p-vol").value = Math.round(S.parent.volume * 100);
   $("p-rest-row").hidden = !(S.restUntil > Date.now());
-  const nm = id => TRACKS.find(t => t.id === id)?.icon || "", df = id => diffOf(id).icon;
+  const nm = id => (TRACKS.find(t => t.id === id) || BONUS_TRACKS.find(t => t.id === id))?.icon || "", df = id => diffOf(id).icon;
   $("p-hist").innerHTML = S.history.length ? S.history.slice(0, 20).map(h => `<span>${h.d.slice(5)}</span><span>${nm(h.t)}</span><span>${df(h.df)}</span><span>${h.p}${suffix(h.p)}</span><span>🪙${h.c}</span>`).join("") : "<span>No races yet.</span>";
   $("p-diffs").innerHTML = DIFFS.map(d => `<button data-pd="${d.id}" class="${S.parent.diffs.includes(d.id) ? "on" : ""}">${d.icon} ${d.name}</button>`).join("");
   $("p-helper").innerHTML = ["Off", "A little", "Lots"].map((n, i) => `<button data-ph="${i}" class="${S.parent.helper === i ? "on" : ""}">${n}</button>`).join("");
@@ -1223,7 +1228,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

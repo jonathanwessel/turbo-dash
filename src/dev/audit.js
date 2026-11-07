@@ -100,6 +100,7 @@ window.__sweep = async (only) => {
   await go("s-garage:grid-end", async () => { const g = document.getElementById("g-grid"); g.scrollTop = g.scrollHeight; await wait(100); }, "#s-garage");
   document.getElementById("g-gridbtn").click();
   await go("s-tracks", hub("race"));
+  await go("s-tracks:bonus", async () => { const b = document.querySelector("[data-bonus]"); b?.scrollIntoView({ inline: "center" }); await wait(100); }, "#s-tracks");
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");
   document.querySelector('[data-rtab="races"]').click();
   await go("s-trophies", hub("trophy"));

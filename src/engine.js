@@ -13,6 +13,8 @@ export const CAR_W = 0.36;         // car width in road half-widths
 const COIN_W = 280;
 const START = 15;                  // segment of the start/finish line
 const GRAVITY = 9000, JUMP_VY = 2700, RAMP_H = 380, RAMP_LEN = 4;
+export const BLOCK_CURVE = 16;      // 🏙️ Downtown's squared-off corners (normal tracks curve up to about 4)
+export const BARRIER = 1.0;         // the corner barriers hold the car at the road's edge
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const HILL = BASE_MAX * 0.12;                                       // how much hills speed you up / slow you down
@@ -48,7 +50,18 @@ export function buildTrack(track) {
   const d = track.diff, cMax = 2.2 + d * 0.45, hMax = 18 + d * 7;
   road(30, 30, 10, 0, 0);
   const target = 1250 + d * 60;
-  while (segs.length < target) {
+  if (track.layout === "blocks") {
+    const corner = dir => road(2, 10, 2, dir * BLOCK_CURVE, 0);
+    let turn = 0;
+    while (segs.length < target) {
+      const k = r(), dir = r() < 0.5 ? -1 : 1;
+      road(10, 26 + Math.floor(r() * 26), 6, 0, 0);
+      if (k < 0.55) corner(dir);
+      else if (k < 0.8) { corner(dir); road(4, 14, 4, 0, 0); corner(-dir); }   // a jog around a block
+      else { corner(dir); road(4, 8, 4, 0, 0); corner(dir); }                  // a hairpin around a block
+      turn++;
+    }
+  } else while (segs.length < target) {
     const k = r(), len = 15 + Math.floor(r() * 30), dir = r() < 0.5 ? -1 : 1;
     const c = dir * cMax * (0.5 + r() * 0.5);
     const yNow = lastY() / SEG, hDir = yNow > 50 ? -1 : yNow < -30 ? 1 : (r() < 0.5 ? -1 : 1);
@@ -68,7 +81,17 @@ export function buildTrack(track) {
   }
   for (const s of [-1, 1]) segs[START + 8].sprites = [{ type: "sign", offset: s * 1.75 }];
   for (const s of segs) if (Math.abs(s.curve) > 1.5) s.rail = true;
-  for (let i = START + 20; i < segs.length; i += 24) if (!segs[i].rail) segs[i].sprites.push({ type: "lamp", offset: (i / 24) % 2 ? 1.25 : -1.25 });
+  if (track.layout === "blocks") {
+    // 🚧 the outside of every corner is closed off: dump trucks and ROAD CLOSED barriers where the road would go straight on
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i]; if (Math.abs(s.curve) < BLOCK_CURVE * 0.5) continue;
+      s.rail = false; s.barrier = -Math.sign(s.curve);
+      s.sprites = s.sprites.filter(q => Math.sign(q.offset) !== s.barrier);
+      if (i % 2 === 0) s.sprites.push({ type: (i >> 1) % 3 === 0 ? "dumptruck" : "roadclosed", offset: s.barrier * 1.6 });
+      if (Math.abs(segs[i - 1]?.curve || 0) < BLOCK_CURVE * 0.5) for (let j = 1; j <= 4; j++) if (segs[i - j]) segs[i - j].crosswalk = true;
+    }
+  }
+  for (let i = START + 20; i < segs.length; i += 24) if (!segs[i].rail && !segs[i].barrier) segs[i].sprites.push({ type: "lamp", offset: (i / 24) % 2 ? 1.25 : -1.25 });
   segs[START].finish = segs[START + 1].finish = true;
 
   for (let i = START + 40; i < segs.length - 25; i += 50 + Math.floor(r() * 45)) {
@@ -185,7 +208,7 @@ export class Race {
     this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
-    this.drafting = false; this.draftShown = false; this.scrapeCD = 0;
+    this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false;
     this.driftT = 0;
     const d = track.diff;
@@ -357,6 +380,15 @@ export class Race {
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
     p.offset = clamp(p.offset, -2.6, 2.6);
     this.scrapeCD -= dt; p.landT -= dt;
+    if (seg.barrier && !flying && p.offset * seg.barrier > BARRIER) {
+      const a = Math.abs(p.offset);
+      p.offset = seg.barrier * (a - BARRIER < 0.1 ? BARRIER : Math.max(BARRIER, a - dt * 4));
+      if (this.bonkCD <= 0 && !auto) {
+        this.bonkCD = 0.6; p.speed *= 0.75; this.shake = Math.max(this.shake, 0.3); h.sfx("bonk"); this.popup("BONK!", "#ffffff");
+        this.sparks(0.5 + seg.barrier * 0.1, 0.88, 10, "#ffb020");
+        if (!this.cornerTip) { this.cornerTip = true; setTimeout(() => this.popup("Steer early into the corners!", "#ffd400"), 500); }
+      }
+    }
     if (seg.rail && !flying) {
       const a = Math.abs(p.offset), side = Math.sign(p.offset) || 1;
       // right at the rail: held there. Wide out on the grass when the rail starts: slid back onto the road quickly.
@@ -424,6 +456,7 @@ export class Race {
         else if (gap < -45 * SEG) target *= hard ? 1.04 : 1.07;
       }
       c.knockT -= dt; c.wobT -= dt;
+      if (this.track.layout === "blocks" && this.state !== "demo") { const cs = this.segAt(c.dist + 6 * SEG); if (Math.abs(cs.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(c.dist).curve) > BLOCK_CURVE * 0.5) target *= 0.92; }
       if (c.knockT > 0) target *= 0.75;
       c.speed += clamp(target - c.speed, -BASE_MAX * dt / 2, BASE_MAX * dt / 4);
       if (c.air <= 0 && this.state !== "demo") { const hill = slopeOf(this.segAt(c.dist)) * HILL * dt; if (hill) c.speed = Math.max(Math.min(c.speed, BASE_MAX * 0.2), c.speed - hill); }
@@ -981,6 +1014,10 @@ export class Race {
           ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
         }
       }
+    }
+    if (s.crosswalk && w1 > 3) {
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      for (let k = -4; k < 4; k++) { const u1 = (k + 0.15) / 4, u2 = (k + 0.65) / 4; quad(ctx, x1 + w1 * u1, y1, x1 + w1 * u2, y1, x2 + w2 * u2, y2, x2 + w2 * u1, y2); }
     }
     const sk = this.skids?.get(s.index);
     if (sk && w1 > 3) {

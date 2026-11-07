@@ -182,6 +182,47 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("toy landings recorded", landings > 0 && maxV > 0, `landings ${landings}, hardest ${maxV}`);
 }
 
+/* ---------- 🏙️ Downtown: squared corners, closed off on the outside, hard but always finishable ---------- */
+{
+  const { BONUS_TRACKS, BONUS_IDS, FRONTS, GOALS } = await import("../src/data.js");
+  const { BLOCK_CURVE, BARRIER, clearTrackCache } = await import("../src/engine.js");
+  const dt = BONUS_TRACKS.find(t => t.id === "downtown"), segs = buildTrack(dt).segs;
+  const corners = segs.filter((s, i) => Math.abs(s.curve) >= BLOCK_CURVE * 0.5 && Math.abs(segs[i - 1]?.curve || 0) < BLOCK_CURVE * 0.5);
+  check("downtown has city-block corners", corners.length >= 10 && segs.some(s => Math.abs(s.curve) >= BLOCK_CURVE * 0.99), `${corners.length} corners`);
+  const sharp = segs.filter(s => Math.abs(s.curve) >= BLOCK_CURVE * 0.5);
+  check("every corner is closed off outside", sharp.every(s => s.barrier === -Math.sign(s.curve) && !s.rail), "a corner without a barrier on its outside");
+  check("trucks and ROAD CLOSED signs", sharp.some(s => s.sprites.some(q => q.type === "dumptruck")) && sharp.some(s => s.sprites.some(q => q.type === "roadclosed")) && sharp.every(s => s.sprites.every(q => Math.sign(q.offset) === s.barrier ? ["dumptruck", "roadclosed"].includes(q.type) : true)), "missing barrier sprites");
+  const a = JSON.stringify(segs.map(s => [s.curve, s.barrier, s.sprites.length])); clearTrackCache();
+  check("downtown builds the same every time", a === JSON.stringify(buildTrack(dt).segs.map(s => [s.curve, s.barrier, s.sprites.length])), "different on a second build");
+  // outside the progression: not in TRACKS, never trophy points
+  check("downtown is outside the progression", !TRACKS.some(t => BONUS_IDS.has(t.id)), "a bonus track is in TRACKS");
+  const st = { wins: 0, bestD: { "downtown:normal": 1 }, cups: {}, mastery: { "downtown:normal": 50 }, claimed: [], bosses: {}, parent: {}, owned: ["zippy"], ups: {}, research: {}, school: { skills: {} } };
+  check("no trophy points from downtown", FRONTS.find(f => f.id === "trophies").have(st) === 0, "downtown medals counted as trophies");
+  // races: the barrier always holds; kids finish; a good driver is faster; hands-off is last
+  let held = true, times = { kid: [], good: [] }, places = [];
+  for (let n = 0; n < 10; n++) for (const bot of ["kid", "good"]) {
+    const r = botRace; let res = null;
+    r.hooks = { sfx() {}, engine() {}, onFinish: x => { res = x; } };
+    r.setup(dt, "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+    for (let k = 0; !res && k < 400 * 60; k++) {
+      const p = r.player, edge = bot === "good" ? 0.25 : 0.7;
+      r.input.left = p.offset > edge; r.input.right = p.offset < -edge;
+      if (bot === "good" || Math.random() < 0.01) r.useNitro();
+      r.update(STEP);
+      const s = r.segAt(p.dist);
+      if (r.state === "race" && s.barrier && p.air <= 0 && p.offset * s.barrier > BARRIER + 0.35) held = false;
+    }
+    times[bot].push(res ? res.time : 999); if (res) places.push(res.place);
+  }
+  const avg = l => l.reduce((x, y) => x + y, 0) / l.length;
+  check("downtown barriers hold", held, "a car got past a corner barrier");
+  check("downtown races finish", [...times.kid, ...times.good].every(t => t < 400), `times ${times.kid.map(Math.round)} / ${times.good.map(Math.round)}`);
+  check("downtown rewards good driving", avg(times.good) < avg(times.kid), `good ${avg(times.good).toFixed(1)} s vs kid ${avg(times.kid).toFixed(1)} s`);
+  const hands = [0, 1].map(() => runRace(dt, zippy, NO_UPS, "normal", "none"));
+  check("downtown hands-off loses", hands.every(h => h.place === 6), `hands-off places ${hands.map(h => h.place)}`);
+  console.log(`  (downtown: kid ${avg(times.kid).toFixed(1)} s, good ${avg(times.good).toFixed(1)} s, places ${places.join(" ")})`);
+}
+
 /* ---------- whole races: rails always hold, cars rarely overlap, sims sane ---------- */
 {
   let frames = 0, overlaps = 0, railBad = 0, finished = 0, races = 0;
