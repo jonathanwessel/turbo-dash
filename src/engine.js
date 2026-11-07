@@ -346,7 +346,7 @@ export class Race {
     // skid marks and tire smoke: turning hard into a sharp curve at speed, sliding on ice, or drifting
     const skid = !flying && !auto && racing && p.speed > BASE_MAX * 0.5 && ((Math.abs(steer) > 0.6 && Math.abs(seg.curve) > 1.2 && Math.sign(steer) === Math.sign(seg.curve)) || Math.abs(p.slideV) > 1.7 || this.driftT > 0.2);
     if (skid) {
-      if (!this.skids.has(seg.index)) { this.skids.set(seg.index, { x: p.offset, t: this.t }); if (this.skids.size > 400) this.skids.delete(this.skids.keys().next().value); }
+      if (!this.skids.has(seg.index)) { this.skids.set(seg.index, { x: p.offset, t: this.t }); if (this.skids.size > (this.lite ? 150 : 400)) this.skids.delete(this.skids.keys().next().value); }
       if (!this.lite && Math.random() < 0.5) for (const side of [-1, 1]) this.parts.push({ x: 0.5 + side * 0.09, y: 0.97, vx: side * 0.05 + (Math.random() - 0.5) * 0.1, vy: -0.12 - Math.random() * 0.1, life: 0.7, c: "smoke", r: 0.012 + Math.random() * 0.01 });
     }
     // 🚀 Turbo zoom: the camera pulls in and widens a little while boosting (view only)
@@ -399,6 +399,7 @@ export class Race {
     if (ph.water && p.speed > BASE_MAX * 0.2 && Math.random() < 0.45) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.14, y: 0.93, vx: (Math.random() - 0.5) * 0.08, vy: -0.15 - Math.random() * 0.2, life: 0.9, c: "bubble", r: 0.005 + Math.random() * 0.009 });
     for (const q of this.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.c === "bubble" || q.c === "smoke" ? (q.c === "smoke" ? -0.1 : -0.4) : 0.8) * dt; }
     this.parts = this.parts.filter(q => q.life > 0);
+    if (this.lite && this.parts.length > 60) this.parts.splice(0, this.parts.length - 60);   // ✨ Simple effects: fewer bits flying
 
     // rivals
     const d = this.track.diff;

@@ -34,6 +34,7 @@ const FIXTURES = {
   "v1.0 (progress, car wash, museum)": { v: 15, name: "Carter", coins: 2500, owned: ["zippy"], rank: 4, best: { sunny: 1 }, bestD: { "sunny:normal": 1 }, stats: { roadCoins: 500, stunts: 10, turbos: 10, bams: 0, powers: 2, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 3600000, coinsEarned: 9000 }, days: { "2026-11-07": 12, "2026-11-06": 8 }, dirt: { zippy: 3 }, sparkle: "2026-11-07", museum: [{ d: "2026-11-07", icon: "🏆", text: "First win on Sunny Hills" }], opts: { tilt: true }, parent: { diffs: ["easy", "normal"], weather: false } },
   "damaged missions (null entry, unknown kind, no reward)": { v: 14, coins: 777, owned: ["zippy"], rank: 8, missions: { day: "2026-11-07", list: [null, { kind: "fly", goal: 3, have: 0, reward: 100 }, { kind: "wins", goal: 2, have: 1 }] } },
   "v1.1 (math school)": { v: 16, name: "Carter", coins: 800, owned: ["zippy"], rank: 3, school: { tickets: 4, earned: 9, skills: { focus: 2, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "math", m: 15, t: 4 }, { d: "2026-11-01", a: "read", m: 20, t: 4 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 6, laps: 9, lv: 3, p: 1 }, mathMax: "20", capT: 10 } },
+  "v1.2 (effects setting)": { v: 17, name: "Carter", coins: 500, owned: ["zippy"], rank: 3, opts: { tilt: false, flip: false, fx: "simple" } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -99,6 +100,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   check(name, JSON.stringify({ ...saveMod.S, savedAt: 0 }) === before, "save code round trip changed the save");
   // porting twice changes nothing
   check(name, JSON.stringify({ ...port(saveMod.S), savedAt: 0 }) === JSON.stringify({ ...saveMod.S, savedAt: 0 }), "porting a current save changed it");
+  check(name, ["auto", "full", "simple"].includes(S.opts.fx) && (raw.opts?.fx ? S.opts.fx === raw.opts.fx : S.opts.fx === "auto"), "effects setting lost or bad");
   console.log(`  ${failed ? "…" : "✔"} ${name}`);
 }
 

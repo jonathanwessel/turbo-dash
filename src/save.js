@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES } from "./data.js";
 
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -23,7 +23,7 @@ const DEFAULTS = () => ({
   dirt: {},            // carId -> 0-5 mud splats (washed off at the Car Wash)
   sparkle: "",         // the day the Car Wash last gave a "sparkly" bonus ("" = none waiting)
   museum: [],          // [{ d: "YYYY-MM-DD" or "", icon, text }] firsts for the Museum, newest first
-  opts: { tilt: false, flip: false }, // tilt to steer (flip = the tablet reports tilt the other way round)
+  opts: { tilt: false, flip: false, fx: "auto" }, // tilt to steer (flip = the tablet reports tilt the other way round); fx: effects
   trialMedals: {},     // trackId -> best medal (1 bronze, 2 silver, 3 gold)
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
@@ -118,7 +118,7 @@ export function port(d) {
   s.days = Object.fromEntries(Object.entries(obj(d.days)).filter(([k, v]) => isDay(k) && typeof v === "number" && v >= 0).sort(([a], [b]) => a < b ? 1 : -1).slice(0, 30).map(([k, v]) => [k, Math.round(v)]));
   s.dirt = Object.fromEntries(Object.entries(obj(d.dirt)).filter(([k]) => carIds.has(k)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 5))]).filter(([, v]) => v > 0));
   s.sparkle = typeof d.sparkle === "string" && isDay(d.sparkle) ? d.sparkle : "";
-  s.opts = { tilt: obj(d.opts).tilt === true, flip: obj(d.opts).flip === true };
+  s.opts = { tilt: obj(d.opts).tilt === true, flip: obj(d.opts).flip === true, fx: ["auto", "full", "simple"].includes(obj(d.opts).fx) ? d.opts.fx : "auto" };
   const mus = arr(d.museum).filter(e => e && typeof e === "object" && typeof e.text === "string" && typeof e.icon === "string").slice(0, 200)
     .map(e => ({ d: typeof e.d === "string" && isDay(e.d) ? e.d : "", icon: e.icon.slice(0, 8), text: e.text.slice(0, 80) }));
   if (!Array.isArray(d.museum)) {

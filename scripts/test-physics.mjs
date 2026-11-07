@@ -124,6 +124,21 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("skid ring buffer", big.skids.size === 400, `${big.skids.size}`);
 }
 
+/* ---------- ✨ Simple effects: fewer particles and skid marks, same physics ---------- */
+{
+  const T = buildTrack(track("autumn")), i = T.segs.findIndex((s, k) => k > 40 && Math.abs(s.curve) > 1.5 && Math.abs(T.segs[k + 25]?.curve) > 1.5);
+  const runIt = lite => {
+    seed = 999;   // the same random numbers for both runs
+    const r = scene("autumn", { from: (i + 1) * SEG - (15 * SEG + SEG * 0.5) }); r.lite = lite;
+    r.prevIdx = r.segAt(r.player.dist).index; r.input[T.segs[i].curve > 0 ? "right" : "left"] = true;
+    let most = 0; run(r, 1, q => { most = Math.max(most, q.parts.length); for (let k = 0; k < 30; k++) q.parts.push({ x: 0.5, y: 0.5, vx: 0, vy: 0, life: 1, c: "#fff", r: 0.01 }); });
+    return { most, skids: r.skids.size, dist: r.player.dist, off: r.player.offset };
+  };
+  const full = runIt(false), simple = runIt(true);
+  check("simple effects cap particles", simple.most <= 90 && full.most > 90, `simple ${simple.most}, full ${full.most}`);
+  check("simple effects keep physics", Math.abs(full.dist - simple.dist) < 1e-6 && Math.abs(full.off - simple.off) < 1e-9, "the car drove differently with Simple effects");
+}
+
 /* ---------- 🚀 Turbo zoom (view only) ---------- */
 {
   const r = scene("sunny", { from: quietStretch("sunny") }), base = r.camDepth;

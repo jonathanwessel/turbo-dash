@@ -65,8 +65,18 @@ addEventListener("resize", () => resize());
 /* ---------- game loop ---------- */
 let mode = "menu", screen = "s-title", paused = false, last = performance.now(), acc = 0, goT = 0, lastReal = performance.now();
 const NOT_PLAYING = ["s-rest", "s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-grownup", "s-reset", "s-update"];
+let frameMs = 16.7, slowT = 0, autoLite = false;
+function setLite() {
+  const lite = S.opts.fx === "simple" || (S.opts.fx === "auto" && autoLite);
+  classic.lite = lite; toyRace?.view?.setLite?.(lite);
+}
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
+  if (mode === "race" && !paused && !document.hidden && raw < 120) {
+    frameMs += (raw - frameMs) * 0.05;
+    slowT = frameMs > 24 ? slowT + raw / 1000 : 0;
+    if (slowT > 3 && !autoLite) { autoLite = true; setLite(); }
+  }
   if (!paused && screen !== "s-hub") { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
@@ -940,7 +950,10 @@ function goHub() {
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
+const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
+$("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); paintToggles(); sfx("click"); };
 function paintToggles() {
+  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? (autoLite ? " · simple now" : " · full now") : "");
   $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
   $("set-tilt").classList.toggle("off", !S.opts.tilt); paintTiltLive();
   $("set-name-now").textContent = S.name || "Tap to add";
@@ -949,7 +962,7 @@ function paintToggles() {
 }
 $("btn-music").onclick = () => { S.music = !S.music; save(); setAudioOpts({ music: S.music }); paintToggles(); sfx("click"); };
 $("btn-sfx").onclick = () => { S.sfx = !S.sfx; save(); setAudioOpts({ sfx: S.sfx }); paintToggles(); sfx("click"); };
-paintToggles();
+paintToggles(); setLite();
 
 function pause() { if (mode !== "race" || race.state === "done") return; paused = true; engineOff(); show("s-pause"); }
 $("btn-play").onclick = () => {
@@ -1172,7 +1185,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();
