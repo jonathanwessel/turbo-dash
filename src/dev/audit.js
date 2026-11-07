@@ -42,7 +42,7 @@ window.__audit = (rootSel) => {
     const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
     const board = [...t.parentElement.children].filter(c => c.tagName === "rect" && svgVis(c)).map(c => c.getBoundingClientRect())
       .filter(b => cx > b.left && cx < b.right && cy > b.top && cy < b.bottom).sort((a, b) => a.width * a.height - b.width * b.height)[0];
-    if (board && (r.left < board.left - 1 || r.right > board.right + 1)) issues.push(`SVG LABEL SPILLS "${t.textContent.trim().slice(0, 24)}" (${Math.round(r.width)}px on a ${Math.round(board.width)}px sign)`);
+    if (board && board.width >= 24 && (r.left < board.left - 1 || r.right > board.right + 1)) issues.push(`SVG LABEL SPILLS "${t.textContent.trim().slice(0, 24)}" (${Math.round(r.width)}px on a ${Math.round(board.width)}px sign)`);
     if (r.right > 0 && r.left < W) for (const it of items) if (it.e.tagName === "BUTTON" && getComputedStyle(it.e).position !== "static") {
       const b = it.r, ix = Math.min(b.right, r.right) - Math.max(b.left, r.left), iy = Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top);
       if (ix > 4 && iy > 4) issues.push(`BUTTON COVERS LABEL ${name(it.e)} over "${t.textContent.trim().slice(0, 20)}"`);
@@ -105,6 +105,10 @@ window.__sweep = async (only) => {
   await go("s-missions", hub("missions"));
   await go("s-lab", hub("lab"));
   await go("s-gift", hub("gift"));
+  await go("s-wash", hub("carwash"));
+  await go("s-museum", hub("museum"));
+  await go("s-progress", () => { td.show("s-title"); for (let i = 0; i < 5; i++) document.getElementById("ver").click(); document.getElementById("p-progress").click(); });
+  await go("s-guide", () => { td.show("s-parent"); document.getElementById("p-guide").click(); });
   await go("s-settings", () => { td.show("s-title"); document.getElementById("btn-settings").click(); });
   await go("s-parent", () => { td.show("s-title"); for (let i = 0; i < 5; i++) document.getElementById("ver").click(); });
   for (const s of ["s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));

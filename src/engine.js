@@ -62,7 +62,7 @@ export function buildTrack(track) {
 
   const types = th.sprites;
   for (let i = 6; i < segs.length; i += 3 + Math.floor(r() * 4)) {
-    for (const side of [-1, 1]) if (r() < 0.75) segs[i].sprites.push({ type: types[Math.floor(r() * types.length)], offset: side * (1.4 + r() * 2.2) });
+    for (const side of [-1, 1]) if (r() < 0.75) { const type = types[Math.floor(r() * types.length)], away = 1.4 + r() * 2.2; segs[i].sprites.push({ type, offset: side * Math.max(away, 1.12 + 0.56 * SPRITES[type].w / ROAD_W) }); }
   }
   for (const s of [-1, 1]) segs[START + 8].sprites = [{ type: "sign", offset: s * 1.75 }];
   for (const s of segs) if (Math.abs(s.curve) > 1.5) s.rail = true;
@@ -184,11 +184,21 @@ export class Race {
       base: BASE_MAX * opts.boss.speed * this.diff.rival * this.phys.top, boss: true, btT: 5, bt: 0 }];
     // ⏱️ Time Trial: alone on the road (plus your best run as a see-through ghost); the run is recorded for the next ghost
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
-    this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none" };
+    this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none", dirt: 0 };
     if (this.trial) this.rivals = [];
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
     this.lastPad = null; this.beamT = 0; this.snowHit = null; this.driftT = 0;
+    // 🌧️ weather (Earth only, picked by the game): rain brings puddles that splash and nudge you sideways
+    this.weather = opts.weather || null; this.puddles = new Map(); this.puddleHit = null;
+    if (this.weather === "rain") {
+      const segs = this.T.segs;
+      for (let i = START + 40; i < segs.length - 20; i += 80 + Math.floor(Math.random() * 60)) {
+        const s = segs[i]; if (s.ramp || s.boost !== null || s.boxes || s.gap) continue;
+        this.puddles.set(i, [-0.55, 0, 0.55][Math.floor(Math.random() * 3)] + (Math.random() - 0.5) * 0.2);
+      }
+    }
+    if (this.weather && mode !== "demo") this.popup(this.weather === "rain" ? "🌧️ RAINY RACE!" : "🌨️ SNOWY RACE!", "#bfe9ff");
   }
 
   /* where the ghost was at this moment of its run (samples every 0.1 s), or null once it has finished */
@@ -268,7 +278,7 @@ export class Race {
     const seg = this.segAt(p.dist);
     let steer;
     if (auto) steer = clamp((-seg.curve * 0.06 - p.offset) * 2, -1, 1);
-    else steer = (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
+    else steer = !this.input.left && !this.input.right && Number.isFinite(this.input.axis) ? this.input.axis : (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
     // Auto Steer: only when Carter isn't steering. Its strength grows with its level; at 100 it's perfect.
     this.autoTarget = null;
     if (!auto && steer === 0 && this.autoLvl > 0 && this.state === "race") steer = this.autoSteer(seg) * (0.15 + 0.85 * this.autoLvl / 100);
@@ -307,7 +317,7 @@ export class Race {
         this.driftT = 0;
       }
     }
-    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip;
+    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
@@ -425,6 +435,13 @@ export class Race {
   touch(s) {
     const p = this.player, S = this.stats;
     if (this.state === "demo" || p.finished) return;
+    const pud = this.puddles.get(s.index);
+    if (pud !== undefined && p.air <= 0 && this.puddleHit !== s.index && Math.abs(p.offset - pud) < 0.36) {
+      // SPLASH: a little slide sideways and a spray of water (a small slowdown, never a crash)
+      this.puddleHit = s.index; p.offset += (Math.random() < 0.5 ? -1 : 1) * 0.14; p.speed *= 0.97;
+      for (let k = 0; k < 14; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.25, y: 0.95, vx: (Math.random() - 0.5) * 0.7, vy: -0.4 - Math.random() * 0.3, life: 0.6, c: "#cdeeff", r: 0.006 + Math.random() * 0.008 });
+      this.hooks.sfx("bump"); this.popup("SPLASH!", "#9fe8ff");
+    }
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
       p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1) * jumpFor(p.speed); p.airT = 0; this.hooks.sfx("jump");
     }
@@ -636,7 +653,18 @@ export class Race {
       ctx.stroke();
     }
 
-    if (th.snow) {
+    if (this.weather === "rain") {
+      // rain: a grey tint and streaks falling at a slant that follows the curves
+      ctx.fillStyle = "rgba(40,60,90,0.18)"; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "rgba(220,235,255,0.55)"; ctx.lineWidth = Math.max(1, H * 0.003); ctx.beginPath();
+      const slant = 0.25;
+      for (let i = 0; i < 90; i++) {
+        const fx = (((i * 0.6180339 + this.skyX * 2) % 1) + 1) % 1 * W, fy = (((i * 0.37 + t * (1.6 + (i % 3) * 0.3)) % 1) + 1) % 1 * H, len = H * (0.04 + (i % 3) * 0.02);
+        ctx.moveTo(fx, fy); ctx.lineTo(fx - len * slant, fy + len);
+      }
+      ctx.stroke();
+    }
+    if (th.snow || this.weather === "snow") {
       // falling snow in two layers: near flakes are bigger and faster, and everything drifts with the curves
       ctx.fillStyle = "#ffffff";
       for (let i = 0; i < 80; i++) {
@@ -844,6 +872,13 @@ export class Race {
           ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
         }
       }
+    }
+    const pud = this.puddles?.get(s.index);
+    if (pud !== undefined && w1 > 4) {
+      // a puddle: a shiny blue patch on the road
+      const px1 = x1 + w1 * pud, px2 = x2 + w2 * pud, pw1 = w1 * 0.22, pw2 = w2 * 0.22;
+      ctx.fillStyle = "rgba(90,150,210,0.75)"; quad(ctx, px1 - pw1, y1, px1 + pw1, y1, px2 + pw2, y2, px2 - pw2, y2);
+      ctx.fillStyle = "rgba(255,255,255,0.35)"; quad(ctx, px1 - pw1 * 0.5, y1, px1 - pw1 * 0.1, y1, px2 - pw2 * 0.1, y2, px2 - pw2 * 0.5, y2);
     }
     if (s.boost !== null) {
       const bx1 = x1 + w1 * s.boost, bx2 = x2 + w2 * s.boost, bw1 = w1 * 0.3, bw2 = w2 * 0.3;

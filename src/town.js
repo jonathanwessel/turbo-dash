@@ -21,9 +21,10 @@ const B = {
   garage: { x: 95, w: 150 }, gifts: { x: 270, w: 120 }, missions: { x: 415, w: 150 }, race: { x: 590, w: 230 },
   rank: { x: 845, w: 100 }, lab: { x: 970, w: 160 }, trophy: { x: 1155, w: 150 }, school: { x: 1330, w: 150 },
   // the street keeps going (scroll right): new buildings open with rank
-  library: { x: 1560, w: 140 }, icecream: { x: 1730, w: 140 }, fire: { x: 1900, w: 190 }, park: { x: 2120, w: 230 },
+  library: { x: 1560, w: 140 }, carwash: { x: 1730, w: 190 }, museum: { x: 1950, w: 200 },
+  icecream: { x: 2180, w: 140 }, fire: { x: 2350, w: 190 }, park: { x: 2570, w: 230 },
 };
-export const TOWN_W = 2450;
+export const TOWN_W = 2900;
 const cx = k => B[k].x + B[k].w / 2;
 
 const garage = () => { const { x, w } = B.garage, top = BASE - 230; return `
@@ -132,6 +133,30 @@ const library = () => { const { x, w } = B.library, top = BASE - 210; return `
   ${label(cx("library"), top + 12, w - 6, "LIBRARY", 24)}
 </g>`; };
 
+const carwash = () => { const { x, w } = B.carwash, top = BASE - 170; return `
+<g class="bld" data-go="carwash"><g id="bld-carwash">${hit(x, w, top - 110)}${lot(x, w)}
+  <rect x="${x}" y="${top}" width="${w}" height="170" rx="10" fill="#7fd8ff"/>
+  <rect x="${x - 8}" y="${top - 16}" width="${w + 16}" height="26" rx="8" fill="#1f6fff"/>
+  <path d="M${x + 22} ${BASE} V${BASE - 90} a${(w - 44) / 2} 40 0 0 1 ${w - 44} 0 V${BASE}Z" fill="#1d3a66"/>
+  ${[0, 1, 2].map(i => `<rect class="brush b${i}" x="${x + 34 + i * (w - 68) / 2 - 10}" y="${BASE - 84}" width="20" height="70" rx="10" fill="${["#ff3fa4", "#ffd400", "#5be36a"][i]}"/>`).join("")}
+  ${[[0.2, 0.3, 12], [0.75, 0.22, 9], [0.5, 0.12, 14], [0.9, 0.4, 8], [0.08, 0.5, 10]].map(([fx, fy, r]) => `<circle cx="${x + w * fx}" cy="${top - 30 - fy * 100}" r="${r}" fill="#ffffff" opacity=".8" stroke="#bfe9ff" stroke-width="3"/>`).join("")}
+  ${roofIcon(cx("carwash"), top - 22, "🧼", 58)}
+  ${label(cx("carwash"), top + 14, w - 20, "CAR WASH", 24)}
+  ${badge("tb-carwash", x + w, top - 40)}</g>
+  ${site("carwash", x, w, 4)}
+</g>`; };
+
+const museum = () => { const { x, w } = B.museum, top = BASE - 200; return `
+<g class="bld" data-go="museum"><g id="bld-museum">${hit(x, w, top - 120)}${lot(x, w)}
+  <rect x="${x}" y="${top + 30}" width="${w}" height="170" fill="#e9e4d8"/>
+  <path d="M${x - 14} ${top + 30} L${cx("museum")} ${top - 40} L${x + w + 14} ${top + 30}Z" fill="#d1c9b4" stroke="#fff" stroke-width="5"/>
+  ${[0, 1, 2, 3, 4].map(i => `<rect x="${x + 12 + i * (w - 44) / 4}" y="${top + 70}" width="20" height="${BASE - top - 76}" fill="#fff"/>`).join("")}
+  <rect x="${x - 8}" y="${BASE - 10}" width="${w + 16}" height="10" fill="#c9c2ad"/>
+  ${roofIcon(cx("museum"), top - 42, "🏛️", 62)}
+  ${label(cx("museum"), top + 36, w - 20, "MUSEUM", 26)}</g>
+  ${site("museum", x, w, 8)}
+</g>`; };
+
 const icecream = () => { const { x, w } = B.icecream, top = BASE - 180; return `
 <g class="bld" data-go="icecream"><g id="bld-icecream">${hit(x, w, top - 120)}${lot(x, w)}
   <rect x="${x}" y="${top}" width="${w}" height="180" rx="10" fill="#bff4ff"/>
@@ -173,6 +198,8 @@ const park = () => { const { x, w } = B.park, top = BASE - 150; return `
    main.js): dirt and a digger → foundation, low walls and a crane → tall walls with scaffolding → the finished building.
    The sign says what it will be, and one pip per rank to go fills up. */
 const SITE_INFO = {
+  carwash: { icon: "🧼", name: "CAR WASH", color: "#7fd8ff", roof: "#1f6fff", h: 170 },
+  museum: { icon: "🏛️", name: "MUSEUM", color: "#e9e4d8", roof: "#9aa0aa", h: 200 },
   icecream: { icon: "🍦", name: "ICE CREAM", color: "#bff4ff", roof: "#ff8ad8", h: 180 },
   fire: { icon: "🚒", name: "FIRE STATION", color: "#c0392b", roof: "#8a1f16", h: 220 },
   park: { icon: "🧺", name: "PARK", color: "#3fb84e", roof: "#2f9a3d", h: 150 },
@@ -207,7 +234,7 @@ function site(id, x, w, rank) {
 const tree = x => `<g class="deco"><rect x="${x - 5}" y="${BASE - 60}" width="10" height="62" fill="#7a4a22"/><circle cx="${x}" cy="${BASE - 78}" r="26" fill="#2f9a3d"/><circle cx="${x - 9}" cy="${BASE - 90}" r="15" fill="#3fb84e"/></g>`;
 const lamp = x => `<g class="deco"><rect x="${x - 3}" y="${BASE - 120}" width="6" height="122" fill="#555"/><rect x="${x - 14}" y="${BASE - 128}" width="28" height="12" rx="6" fill="#555"/><circle cx="${x}" cy="${BASE - 114}" r="7" fill="#fff59a"/></g>`;
 const gaps = () => {
-  const order = ["garage", "gifts", "missions", "race", "rank", "lab", "trophy", "school", "library", "icecream", "fire", "park"];
+  const order = ["garage", "gifts", "missions", "race", "rank", "lab", "trophy", "school", "library", "carwash", "museum", "icecream", "fire", "park"];
   return order.slice(0, -1).map((k, i) => { const gx = B[k].x + B[k].w + (B[order[i + 1]].x - B[k].x - B[k].w) / 2; return i % 2 ? lamp(gx) : tree(gx); }).join("");
 };
 
@@ -240,7 +267,7 @@ export function townSVG() {
   ${welcome()}
   <rect y="600" width="${TOWN_W}" height="300" fill="#5fd068"/>
   ${gaps()}
-  ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${library()}${icecream()}${fire()}${park()}
+  ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${library()}${carwash()}${museum()}${icecream()}${fire()}${park()}
   <rect y="${BASE + 10}" width="${TOWN_W}" height="16" fill="#e9e9ef"/>
   <rect y="${BASE + 26}" width="${TOWN_W}" height="100" fill="#6b6f78"/>
   <line x1="0" y1="${BASE + 76}" x2="${TOWN_W}" y2="${BASE + 76}" stroke="#fff" stroke-width="8" stroke-dasharray="50 40"/>

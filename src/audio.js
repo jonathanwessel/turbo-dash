@@ -111,6 +111,17 @@ export function engine(ratio, boosting) {
   engFilter.frequency.setTargetAtTime(V.f + ratio * V.fs, t, 0.1);
   engGain.gain.setTargetAtTime(ratio > 0.01 ? (0.05 + ratio * 0.03) * V.v : 0, t, 0.1);
 }
+/* 🌧️ rain: a soft, looping hiss while it rains */
+let rainSrc = null;
+export function setRain(on) {
+  if (!ac) return;
+  if (on && !rainSrc) {
+    rainSrc = ac.createBufferSource(); rainSrc.buffer = noiseBuf; rainSrc.loop = true;
+    const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 1800;
+    const g = ac.createGain(); g.gain.value = 0.06;
+    rainSrc.connect(f); f.connect(g); g.connect(sfxBus); rainSrc.start();
+  } else if (!on && rainSrc) { try { rainSrc.stop(); } catch (e) { /* already stopped */ } rainSrc = null; }
+}
 export function engineOff() { if (ac) engGain.gain.setTargetAtTime(0, ac.currentTime, 0.1); }
 
 // Music: 16-step patterns of bass + melody. The menu has its own tune, and every race theme (each Earth track,

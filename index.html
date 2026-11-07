@@ -14,6 +14,13 @@
 </head>
 <body>
 <div id="app">
+  <script>setTimeout(function () { var s = document.getElementById("splash"); if (s) s.remove(); }, 5000);</script>
+  <div id="splash" aria-hidden="true"><div class="sp-in">
+    <div class="sp-car">🏎️</div>
+    <div class="logo"><span>TURBO</span><span>DASH</span></div>
+    <div class="sp-bar"><i></i></div>
+    <div class="sp-made">Made for <b>Carter</b> · by Carter's Dad</div>
+  </div></div>
   <canvas id="gl" hidden></canvas>
   <canvas id="game"></canvas>
 
@@ -179,6 +186,7 @@
         <div class="p-box"><h3>🔊 Sound & feel</h3>
           <div class="p-set"><b>Volume</b><input type="range" id="p-vol" min="0" max="100" step="5"></div>
           <div class="p-set"><b>Buzz on taps</b><span id="p-buzz"></span></div>
+          <div class="p-set"><b>Rain and snow on Earth tracks</b><span id="p-weather"></span></div>
         </div>
         <div class="p-box"><h3>📜 Recent races</h3><div class="p-hist" id="p-hist"></div></div>
         <div class="p-box"><h3>☁️ Google Save</h3>
@@ -193,7 +201,7 @@
           <div class="p-msg" id="p-msg"></div>
         </div>
       </div>
-      <div class="row"><button id="p-close" class="big-btn small go">Done</button></div>
+      <div class="row"><button id="p-progress" class="big-btn small gold">📊 Progress</button><button id="p-guide" class="big-btn small">📖 How it works</button><button id="p-close" class="big-btn small go">Done</button></div>
     </div>
   </section>
 
@@ -254,6 +262,8 @@
       <button id="btn-music" class="set-tile"><span>🎵</span><b>Music</b><small id="set-music">On</small></button>
       <button id="btn-sfx" class="set-tile"><span>🔊</span><b>Sounds</b><small id="set-sfx">On</small></button>
       <button id="btn-full" class="set-tile"><span>⛶</span><b>Full screen</b><small>Fill the screen</small></button>
+      <button id="set-tilt" class="set-tile" hidden><span>📱</span><b>Tilt to steer</b><small id="set-tilt-now">Off</small></button>
+      <button id="set-flip" class="set-tile" hidden><span>↔️</span><b>Flip tilt</b><small>If it turns the wrong way</small></button>
       <button id="set-name" class="set-tile"><span>✏️</span><b>My name</b><small id="set-name-now"></small></button>
       <button id="set-parent" class="set-tile"><span>👪</span><b>Parent Corner</b><small>Grown-ups</small></button>
       <button id="set-reset" class="set-tile danger"><span>🗑️</span><b>Reset progress</b><small>Grown-ups</small></button>
@@ -341,12 +351,51 @@
     <p class="lu-tip">🎢 Go fast into loops, or you'll fall off! 🖐️</p>
     <button id="lu-go" class="big-btn go">LET'S GO!</button>
   </div></div>
+  <section id="s-wash" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>🧼 Car Wash</h2></div>
+    <div class="wash">
+      <canvas id="wash-car" width="640" height="380"></canvas>
+      <div class="wash-say" id="wash-say"></div>
+      <small class="wash-tip">Rub the car with your finger! A clean car earns a ✨ bonus on its next race (once a day).</small>
+    </div>
+  </section>
+  <section id="s-museum" class="screen panel" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>🏛️ Museum</h2></div>
+    <div class="mu-sum" id="mu-sum"></div>
+    <div class="mu-list" id="mu-list"></div>
+  </section>
+  <section id="s-progress" class="screen dim" hidden>
+    <div class="card parent progress">
+      <h1>📊 Progress</h1>
+      <div class="pg-tiles" id="pg-tiles"></div>
+      <div class="p-box"><h3>🏁 Races per day (last 2 weeks)</h3><div class="pg-days" id="pg-days"></div></div>
+      <div class="p-box pg-next" id="pg-next"></div>
+      <div class="p-grid">
+        <div class="p-box"><h3>⭐ Best tracks</h3><div class="pg-list" id="pg-best"></div></div>
+        <div class="p-box"><h3>🚦 Away from the screen</h3><div class="pg-list" id="pg-school"></div></div>
+      </div>
+      <p class="pg-note">Everything here stays on this tablet. Nothing is sent anywhere.</p>
+      <div class="row"><button class="big-btn small go" data-backto="s-parent">◀ Back</button></div>
+    </div>
+  </section>
+  <section id="s-guide" class="screen dim" hidden>
+    <div class="card parent guide" id="guide-body">
+      <h1>📖 How Turbo Dash works</h1>
+      <div class="g-sec"><h3>🏁 Racing</h3><p>Steer with the ◀ ▶ buttons (or tilt the tablet, in Settings). 🚀 fires Turbo when it's full; ❓ boxes give a power-up. Every race pays coins, plus a treasure chest. A new track opens when the one before it is <b>won</b> on Normal or Hard (or on Easy, if Easy is the only difficulty you allow).</p></div>
+      <div class="g-sec"><h3>⭐ Racer Rank</h3><p>Ranking up needs every gauge full: 🏁 wins, 🏆 trophies (medals, cups, goals, mastery stars), 🔧 garage (cars and upgrades) and 🔬 research. From Rank 10 a 🪪 Driver License gauge joins (you can turn it off below). New ranks open buildings, cups, bosses and new worlds.</p></div>
+      <div class="g-sec"><h3>🔬 Turbo Lab</h3><p>Research takes real time (minutes to hours) and coins. It keeps going while the tablet is off, so there's a reason to come back tomorrow. The big one, 🧠 Auto Steer, has 100 levels and takes years. It's off in boss races and Time Trials, and you can switch it off.</p></div>
+      <div class="g-sec"><h3>🚦 Driver School (real life → game)</h3><p>In Parent Corner, log time he spent 📚 reading, 🌳 playing outside, 🧹 helping, 🎨 making or 🚲 moving. Every 10 minutes is a 🎟️ ticket (reading counts double if you like). Tickets buy lessons that make him a better driver in every car.</p></div>
+      <div class="g-sec"><h3>👪 Your controls (Parent Corner)</h3><p>Which difficulties he may pick · a steering helper for young drivers · a break reminder (a 10-minute rest screen after the time you choose) · volume and vibration · Auto Steer on/off · the License gauge · weather. Parent Corner opens by tapping the version number 5 times on the title screen, behind a grown-up sum.</p></div>
+      <div class="g-sec"><h3>💾 Saving</h3><p>Progress saves on this tablet by itself. A <b>save code</b> in Parent Corner copies it to another device. Installed from the website (📲 Install on the title screen), the game opens full screen and works offline. There are no purchases, no ads and no accounts, ever.</p></div>
+      <div class="row"><button class="big-btn small go" data-backto="s-parent">◀ Back</button></div>
+    </div>
+  </section>
   <section id="s-name" class="screen dim" hidden>
     <div class="card name-card">
       <div class="trophy">👋</div>
       <h1>What's your name?</h1>
       <input id="name-in" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type your name" aria-label="Your name">
-      <div class="row"><button id="name-ok" class="big-btn go">OK! ▶</button></div>
+      <div class="row"><button id="name-back" class="big-btn" hidden>◀ Back</button><button id="name-ok" class="big-btn go">OK! ▶</button></div>
       <p class="name-tip">A grown-up can help type it.</p>
     </div>
   </section>

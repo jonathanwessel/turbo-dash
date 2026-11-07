@@ -3,9 +3,9 @@
 // from every past release (it runs before every `npm run release`).
 // A second copy (the last save that loaded fine) protects against a bad write; a save code lets a parent copy
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
-import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS } from "./data.js";
+import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES } from "./data.js";
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -16,9 +16,14 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 0, coinsEarned: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
   trials: {},          // trackId -> best Time Trial time (seconds)
   seen: {},            // one-time moments already shown (seen.toy: the "game levels up" card)
+  days: {},            // "YYYY-MM-DD" -> races that day (last 30 days, for the Progress page)
+  dirt: {},            // carId -> 0-5 mud splats (washed off at the Car Wash)
+  sparkle: "",         // the day the Car Wash last gave a "sparkly" bonus ("" = none waiting)
+  museum: [],          // [{ d: "YYYY-MM-DD" or "", icon, text }] firsts for the Museum, newest first
+  opts: { tilt: false, flip: false }, // tilt to steer (flip = the tablet reports tilt the other way round)
   trialMedals: {},     // trackId -> best medal (1 bronze, 2 silver, 3 gold)
   rank: 1, diff: "normal",
   bestD: {},           // "trackId:difficulty" -> best place
@@ -27,7 +32,7 @@ const DEFAULTS = () => ({
   lab: { benches: [] }, // [{ p: projectId | null, end: ms timestamp }]
   cups: {},            // "cupId:difficulty" -> best place
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
-  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, license: true },  // helper: 0 off, 1 a little, 2 lots
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, license: true, weather: true },  // helper: 0 off, 1 a little, 2 lots
   autoOn: false,
   missions: null, history: [], restUntil: 0,
   cloud: { linked: false },   // Google Save
@@ -105,8 +110,29 @@ export function port(d) {
   s.parent = {
     diffs: pd.length ? pd : def.parent.diffs,
     helper: Math.round(num(p.helper, 0, 0, 2)), breakMin: num(p.breakMin, 0, 0, 240), volume: num(p.volume, 0.8, 0, 1),
-    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, license: p.license !== false,
+    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, license: p.license !== false, weather: p.weather !== false,
   };
+  // v15 (1.0): Progress page, Car Wash, Museum, tilt steering
+  const isDay = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
+  s.days = Object.fromEntries(Object.entries(obj(d.days)).filter(([k, v]) => isDay(k) && typeof v === "number" && v >= 0).sort(([a], [b]) => a < b ? 1 : -1).slice(0, 30).map(([k, v]) => [k, Math.round(v)]));
+  s.dirt = Object.fromEntries(Object.entries(obj(d.dirt)).filter(([k]) => carIds.has(k)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 5))]).filter(([, v]) => v > 0));
+  s.sparkle = typeof d.sparkle === "string" && isDay(d.sparkle) ? d.sparkle : "";
+  s.opts = { tilt: obj(d.opts).tilt === true, flip: obj(d.opts).flip === true };
+  const mus = arr(d.museum).filter(e => e && typeof e === "object" && typeof e.text === "string" && typeof e.icon === "string").slice(0, 200)
+    .map(e => ({ d: typeof e.d === "string" && isDay(e.d) ? e.d : "", icon: e.icon.slice(0, 8), text: e.text.slice(0, 80) }));
+  if (!Array.isArray(d.museum)) {
+    // an older save: start the Museum from what was already won (no dates for those)
+    for (const t of TRACKS) if (s.best?.[t.id] === 1) mus.push({ d: "", icon: t.icon, text: `First win on ${t.name}` });
+    for (const c of CUPS) if (["easy", "normal", "hard"].some(df => s.cups?.[c.id + ":" + df] === 1)) mus.push({ d: "", icon: "🏆", text: `Won the ${c.name}` });
+    for (const b of BOSSES) if (s.bosses?.[b.id]) mus.push({ d: "", icon: b.icon, text: `Beat ${b.name}` });
+  }
+  s.museum = mus;
+  if (!Array.isArray(d.museum)) {
+    for (const t of TRACKS) if (t.world !== "earth" && s.best?.[t.id]) s.seen["w:" + t.world] = true;
+    const ds = obj(d.stats);
+    if (typeof ds.playMs !== "number") s.stats.playMs = Math.round((s.races || 0) * 75000);   // about 75 s a race
+    if (typeof ds.coinsEarned !== "number") s.stats.coinsEarned = Math.max(s.coins || 0, s.stats.roadCoins || 0);
+  }
   const M = obj(d.missions);
   const KINDS = ["races", "wins", "podium", "coins", "jumps", "powers", "bams", "track"], fin = v => typeof v === "number" && Number.isFinite(v);
   const okM = m => m && typeof m === "object" && KINDS.includes(m.kind) && fin(m.goal) && m.goal > 0 && fin(m.have) && fin(m.reward) && m.reward >= 0 && (m.kind !== "track" || TRACKS.some(t => t.id === m.track));

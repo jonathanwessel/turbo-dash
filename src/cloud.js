@@ -75,7 +75,7 @@ async function upload() {
 const BOOK = "turbodash.cloudsync";
 const book = () => { try { return JSON.parse(localStorage.getItem(BOOK)) || {}; } catch (e) { return {}; } };
 export const fingerprint = s => {
-  const c = { ...s }; delete c.savedAt; delete c.cloud;
+  const c = { ...s, stats: { ...(s.stats || {}) } }; delete c.savedAt; delete c.cloud; delete c.stats.playMs; delete c.stats.coinsEarned;
   const j = JSON.stringify(c); let h = 0;
   for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0;
   return h;
@@ -91,7 +91,7 @@ export function decide(local, remote, book) {
   const remoteChanged = remote.mt !== book.mt, localChanged = fingerprint(local) !== book.print;
   if (!remoteChanged) return localChanged ? "upload" : "nothing";
   if (!localChanged && book.mt) return "load";
-  return progress(remote.save) >= progress(local) ? "load" : "upload";   // both changed (or first sync on this device)
+  return progress(remote.save) > progress(local) ? "load" : "upload";   // both changed (or first sync): the further one wins; a tie keeps this device's copy
 }
 
 /* Sign in from Parent Corner, then sync. */

@@ -32,6 +32,8 @@ export const CARS = [
   { id: "loopLegend", name: "Loop Legend", price: null, cup: "toy", toy: true, body: "#14e1ff", accent: "#ff2bd6", type: "galaxy", speed: 0.96, accel: 0.84, grip: 0.7 },
   { id: "windup", name: "Wind-Up Rocket", price: null, boss: "windup", world: "toy", toy: true, body: "#ffd400", accent: "#e8262b", type: "rocket", speed: 1.02, accel: 0.9, grip: 0.7 },
   { id: "blizzard", name: "Blizzard Wolf", price: null, boss: "fang", world: "glacier", ice: true, body: "#5a6b8a", accent: "#bff6ff", type: "skis", speed: 0.84, accel: 0.72, grip: 0.7 },
+  // 🌾 Country Cup prize (v1.0; at the end so every older car keeps its upgrade prices)
+  { id: "barnstormer", name: "Barnstormer", price: null, cup: "country", tier: 4, body: "#2fbf3a", accent: "#ffd400", type: "monster", speed: 0.18, accel: 0.22, grip: 0.18 },
 ];
 
 // Opponent looks (they race with their own speeds, set by the track).
@@ -51,6 +53,7 @@ export const CUPS = [
   { id: "moon", name: "Moon Cup", color: "#9fe8ff", tracks: ["crater", "moonbase", "asteroid"], car: "comet", bonus: 6000, rank: 21, world: "moon" },
   { id: "ocean", name: "Ocean Cup", color: "#14c8c8", tracks: ["kelp", "reef", "wreck"], car: "manta", bonus: 10000, rank: 26, world: "ocean" },
   { id: "toy", name: "Toy Cup", color: "#ff8a00", tracks: ["bedroom", "blocks", "kitchen"], car: "loopLegend", bonus: 25000, rank: 36, world: "toy" },
+  { id: "country", name: "Country Cup", color: "#8fd35f", tracks: ["farm", "pirate", "river"], car: "barnstormer", bonus: 1000 },
   { id: "glacier", name: "Glacier Cup", color: "#bfefff", tracks: ["icecave", "frozenlake", "aurora"], car: "polar", bonus: 16000, rank: 31, world: "glacier" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
@@ -69,6 +72,8 @@ export const BUILDINGS = [
   { id: "icecream", name: "Ice Cream", rank: 12 },
   { id: "fire", name: "Fire Station", rank: 15 },
   { id: "park", name: "Park", rank: 20 },
+  { id: "carwash", name: "Car Wash", rank: 4 },
+  { id: "museum", name: "Museum", rank: 8 },
 ];
 export const buildingOpen = (S, id) => S.rank >= (BUILDINGS.find(b => b.id === id)?.rank || 99);
 
@@ -86,9 +91,12 @@ export const UPGRADE_MAX = UPGRADE_COST.length;
 export const TRACKS = [
   { id: "sunny",  name: "Sunny Hills",    icon: "🌳", diff: 0,   laps: 2, seed: 11, theme: "sunny",  world: "earth" },
   { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
+  { id: "farm",   name: "Farm Fields",    icon: "🚜", diff: 0.8, laps: 2, seed: 241, theme: "farm",   world: "earth", after: "beach" },
   { id: "desert", name: "Desert Dash",    icon: "🌵", diff: 1,   laps: 2, seed: 23, theme: "desert", world: "earth", after: "beach" },
+  { id: "pirate", name: "Pirate Port",    icon: "🏴‍☠️", diff: 1.5, laps: 2, seed: 251, theme: "pirate", world: "earth", after: "desert" },
   { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
   { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
+  { id: "river",  name: "Piqua River Run", icon: "🛶", diff: 2.8, laps: 2, seed: 263, theme: "river",  world: "earth", after: "autumn" },
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
   { id: "lava",   name: "Lava Mountain",  icon: "🌋", diff: 4,   laps: 2, seed: 59, theme: "lava",   world: "earth", after: "candy" },
   { id: "space",  name: "Space Road",     icon: "🪐", diff: 5,   laps: 2, seed: 67, theme: "space",  world: "earth", after: "lava" },
@@ -151,7 +159,7 @@ export const prizeFor = (track, place, diff = "normal") => {
 };
 // Upgrades on fancier cars cost a little more.
 export const upgradeCost = (carId, lvl, pitCrew = 0) => {
-  const i = Math.max(0, CARS.findIndex(c => c.id === carId));
+  const car = CARS.find(c => c.id === carId), i = car?.tier ?? Math.max(0, CARS.indexOf(car));
   return Math.round(UPGRADE_COST[lvl] * (1 + 0.4 * i) * (1 - 0.03 * pitCrew) / 10) * 10;
 };
 
@@ -167,6 +175,9 @@ export const THEMES = {
   ocean:  { sky: ["#062a4f", "#1b8fb8"], hills: ["#0f5d6e", "#0b4656"], grass: ["#d8c08a", "#cdb47c"], rumble: ["#ffffff", "#ff7a59"], road: ["#3a5566", "#36505f"], lane: "#bff6ff", sun: "#d9fbff", sprites: ["kelp", "coral", "kelp", "shellrock", "coral", "jelly", "treasure", "anemone"], clouds: false, water: true, detail: 3 },
   glacier: { sky: ["#0a1a4a", "#6aa8e8"], hills: ["#eef8ff", "#a9cdec"], grass: ["#f4faff", "#eaf4fc"], rumble: ["#2fa8ff", "#ffffff"], road: ["#a6d8f2", "#a0d2ec"], lane: "#3b7fc4", sun: "#e8fbff", sprites: ["icepine", "icecrystal", "igloo", "icepine", "penguin", "snowfort", "icecrystal", "icepine"], clouds: false, aurora: true, ice: true, snow: true, detail: 4 },
   toy:    { sky: ["#bfe4ff", "#e8f6ff"], hills: ["#ffffff", "#ffffff"], grass: ["#d9a066", "#cf9459"], rumble: ["#ff7a1a", "#ffffff"], road: ["#ff7a1a", "#ff7a1a"], lane: "#ffffff", sun: "#fffbe6", sprites: ["bush"], clouds: false },
+  farm:   { sky: ["#5ec2ff", "#d6f0ff"], hills: ["#7bc95a", "#5aa846"], grass: ["#8fd35f", "#80c552"], rumble: ["#ffffff", "#c0392b"], road: ["#727680", "#6b6f78"], lane: "#ffffff", sun: "#fff59a", sprites: ["barn", "hay", "cow", "windmill", "corn", "corn", "cow", "tree"], clouds: true },
+  pirate: { sky: ["#ff9a5a", "#ffe0a8"], hills: ["#2f9fd8", "#1f7fb8"], grass: ["#f2d98a", "#e8cd7a"], rumble: ["#ffffff", "#2b2b33"], road: ["#9c7a55", "#92704b"], lane: "#fff4d6", sun: "#fff1b0", sprites: ["palm", "pirateship", "barrel", "parrot", "cannon", "treasure", "palm", "barrel"], clouds: true },
+  river:  { sky: ["#6fc0ff", "#d8f2ff"], hills: ["#4fae5a", "#3d9a4a"], grass: ["#6cc970", "#60bd64"], rumble: ["#ffffff", "#1d6fb8"], road: ["#6b6f78", "#656972"], lane: "#ffffff", sun: "#fff59a", sprites: ["tree", "cattail", "duck", "canoe", "coveredbridge", "bush", "cattail", "tree"], clouds: true, river: true },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 

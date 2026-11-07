@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Turbo Dash · Play Store feature graphic</title>
+<style>
+  body { margin: 20px; background: #222; color: #fff; font: 16px system-ui, sans-serif; }
+  canvas { display: block; max-width: 100%; border: 2px solid #555; margin-bottom: 12px; }
+  button { font: 700 18px system-ui; padding: 10px 18px; border-radius: 12px; border: 0; background: #ffd400; cursor: pointer; }
+</style>
+</head>
+<body>
+<p>The Play Store feature graphic (1024 × 500). Press the button to save it as a PNG.</p>
+<canvas id="c" width="1024" height="500"></canvas>
+<button id="dl">⬇ Download feature-graphic.png</button>
+<script>
+const c = document.getElementById("c"), x = c.getContext("2d");
+const sky = x.createLinearGradient(0, 0, 0, 500); sky.addColorStop(0, "#3a1a7a"); sky.addColorStop(1, "#ff6aa8");
+x.fillStyle = sky; x.fillRect(0, 0, 1024, 500);
+x.fillStyle = "rgba(255,255,255,.12)"; for (let i = 0; i < 6; i++) { x.beginPath(); x.ellipse(120 + i * 170, 120 + (i % 2) * 40, 70, 22, 0, 0, 7); x.fill(); }
+x.fillStyle = "#2f9a3d"; x.beginPath(); x.moveTo(0, 360); x.quadraticCurveTo(260, 290, 520, 350); x.quadraticCurveTo(780, 410, 1024, 330); x.lineTo(1024, 500); x.lineTo(0, 500); x.fill();
+x.fillStyle = "#6b6f78"; x.beginPath(); x.moveTo(380, 500); x.lineTo(500, 330); x.lineTo(524, 330); x.lineTo(644, 500); x.fill();
+x.fillStyle = "#fff"; for (let i = 0; i < 5; i++) { const t = i / 5, w = 4 + t * 10; x.fillRect(512 - w / 2, 340 + t * 150, w, 18 + t * 10); }
+x.save(); x.translate(512, 170); x.rotate(-0.07);
+x.font = "italic 900 150px system-ui, sans-serif"; x.textAlign = "center"; x.lineJoin = "round";
+x.lineWidth = 16; x.strokeStyle = "#b3261e"; x.strokeText("TURBO", -60, -10); x.fillStyle = "#ffd400"; x.fillText("TURBO", -60, -10);
+x.strokeText("DASH", 90, 120); x.fillStyle = "#ffffff"; x.fillText("DASH", 90, 120);
+x.restore();
+x.font = "120px system-ui"; x.textAlign = "center"; x.fillText("🏎️", 160, 430); x.fillText("🏁", 880, 430);
+x.font = "900 34px system-ui"; x.fillStyle = "#fff"; x.fillText("Free · No ads · No purchases", 512, 470);
+document.getElementById("dl").onclick = () => c.toBlob(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "feature-graphic.png"; a.click(); });
+</script>
+</body>
+</html>

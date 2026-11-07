@@ -6,7 +6,7 @@ import { townSVG, SITE_PIPS } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
-import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice } from "./audio.js";
+import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
@@ -63,14 +63,17 @@ function resize() {
 addEventListener("resize", () => resize());
 
 /* ---------- game loop ---------- */
-let mode = "menu", screen = "s-title", paused = false, last = performance.now(), acc = 0, goT = 0;
+let mode = "menu", screen = "s-title", paused = false, last = performance.now(), acc = 0, goT = 0, lastReal = performance.now();
+const NOT_PLAYING = ["s-rest", "s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-grownup", "s-reset", "s-update"];
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused && screen !== "s-hub") { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
   if (screen !== "s-hub") race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
-  if (!document.hidden && screen !== "s-rest") playMs += dt * 1000;
+  if (screen === "s-wash") drawWash(dt);
+  if (!document.hidden && !NOT_PLAYING.includes(screen)) { const real = Math.min(1000, now - lastReal); playMs += real; S.stats.playMs += real; }
+  lastReal = now;
   if (screen === "s-rest") paintRest();
   lab.tick(dt, screen === "s-lab");
   requestAnimationFrame(frame);
@@ -97,16 +100,17 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = ["s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
-  const bars = id && id !== "s-title" && id !== "s-pause";
+  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
   paintUpdate();
 }
-function setRaceUi(on) { $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
+function setRaceUi(on) {
+  if (!on) { classic.input.axis = null; if (toyRace) toyRace.input.axis = null; setRain(false); classic.weather = null; classic.puddles = new Map(); } $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
 
 function goFullscreen() {
   if (matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || document.fullscreenElement) return;
@@ -118,6 +122,41 @@ function goFullscreen() {
 // Touch devices: any tap goes back to full screen (kids swipe out of it by accident).
 const isTouch = navigator.maxTouchPoints > 0;
 for (const ev of ["click", "pointerup"]) document.addEventListener(ev, () => { if (isTouch) goFullscreen(); }, true);
+/* 📱 Tilt to steer: the tablet's gravity sensor, sideways in the screen's own direction. It zeroes itself during the
+   countdown (however he holds it), has a small dead zone, and reaches full lock at about 20°. Buttons still work.
+   Tablets report the sensor differently, so Settings shows a live arrow and a Flip option. */
+const tiltSupported = typeof DeviceMotionEvent !== "undefined" && "ontouchstart" in window && window.isSecureContext;
+const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let tiltZero = null, tiltNow = 0;
+function tiltSide(e) {
+  const g = e.accelerationIncludingGravity; if (!g || !Number.isFinite(g.x) || !Number.isFinite(g.y)) return null;
+  const a = ((window.screen.orientation?.angle ?? window.orientation ?? 0) + 360) % 360;
+  let sx = a === 90 ? -g.y : a === 270 ? g.y : a === 180 ? -g.x : g.x;   // gravity along the screen's left-right
+  if (isiOS) sx = -sx;                                                  // iOS reports the opposite sign
+  return S.opts.flip ? sx : -sx;                                        // + = tilted right
+}
+addEventListener("devicemotion", e => {
+  if (!S.opts.tilt) return;
+  const v = tiltSide(e); if (v == null) return;
+  tiltNow = v;
+  if (mode !== "race") { if (screen === "s-settings") paintTiltLive(); return; }
+  if (race.state === "countdown" || tiltZero == null) tiltZero = v;
+  let d = v - tiltZero; d = Math.abs(d) < 0.6 ? 0 : d - Math.sign(d) * 0.6;
+  race.input.axis = Math.max(-1, Math.min(1, d / 2.8));
+});
+function paintTiltLive() {
+  const d = tiltNow - (tiltZero ?? 0);
+  $("set-tilt-now").textContent = !S.opts.tilt ? "Off" : Math.abs(d) < 0.8 ? "On · tilt me!" : d > 0 ? "On · ➡️ right" : "⬅️ left · On";
+}
+$("set-tilt").onclick = async () => {
+  sfx("click");
+  if (!S.opts.tilt && typeof DeviceMotionEvent?.requestPermission === "function") {   // iPhone/iPad ask first
+    try { if (await DeviceMotionEvent.requestPermission() !== "granted") { toast("📱 Tilt needs motion access"); return; } } catch (e) { return; }
+  }
+  S.opts.tilt = !S.opts.tilt; tiltZero = null; save(); paintToggles();
+  if (S.opts.tilt) toast("📱 Tilt the tablet like a steering wheel! (Buttons still work.)");
+};
+$("set-flip").onclick = () => { sfx("click"); S.opts.flip = !S.opts.flip; tiltZero = null; save(); paintToggles(); toast("↔️ Tilt direction flipped"); };
 $("btn-full").onclick = () => { if (document.fullscreenElement) document.exitFullscreen?.(); else goFullscreen(); };
 
 /* ---------- coins ---------- */
@@ -184,7 +223,8 @@ function startRace(track) {
     loadToy().then(() => { toyWaiting = false; if (screen === "s-tracks" || screen === "s-boss" || screen === "s-result") startRace(track); }); return;
   }
   if (!engineFor(track)) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); engineFor(TRACKS[0]); return; }
-  clearTimeout(resultT);
+  clearTimeout(resultT); tiltZero = null;
+  if (track.world !== "earth" && !S.seen["w:" + track.world]) { const w = WORLDS.find(x => x.id === track.world); S.seen["w:" + track.world] = true; if (w) museumAdd(w.icon, `First race in ${w.name}`); }
   currentTrack = track; S.lastTrack = track.id; save();
   const { car, stats } = carStats();
   mode = "race"; paused = false; resize();
@@ -192,9 +232,13 @@ function startRace(track) {
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
   const boss = bossRun && { ...bossRun, def: CARS.find(c => c.id === bossRun.car) };
   const trial = trialRun && !boss;
-  race.setup(track, "race", car, stats, { diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
+  // 🌧️ about one Earth race in four has weather (never in the very first races, never in Time Trials or boss races)
+  const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"];
+  const weather = track.world === "earth" && S.parent.weather && S.rank >= 2 && !trial && !boss && Math.random() < 0.25
+    ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
+  race.setup(track, "race", car, stats, { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  show(null); setRaceUi(true); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
+  show(null); setRaceUi(true); setRain(weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
@@ -414,11 +458,13 @@ function paintCupResult() {
 function showCupEnd() {
   const c = cupRun, order = cupOrder(), place = order.indexOf(0) + 1, key = c.cup.id + ":" + c.diff;
   const coins = Math.round(c.cup.bonus * diffOf(c.diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] * (1 + 0.05 * (S.research.coinBoost || 0)));
+  const wonBefore = ["easy", "normal", "hard"].some(df => S.cups[c.cup.id + ":" + df] === 1);
   S.cups[key] = Math.min(S.cups[key] || 99, place); S.coins += coins;
+  if (place === 1 && !wonBefore) museumAdd("🏆", `Won the ${c.cup.name}`);
   const prizes = [`🪙 ${coins}`];
   if (place === 1) {
     const car = CARS.find(x => x.id === c.cup.car);
-    if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); prizes.push(`🚗 ${car.name}!`); }
+    if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); prizes.push(`🚗 ${car.name}!`); museumAdd("🚗", `Won the ${car.name}`); }
     if (awardChip("cup:" + key)) prizes.push("🧠 Brain Chip");
   }
   save(); cupRun = null;
@@ -443,6 +489,61 @@ function drawPodium(order) {
 }
 $("ce-ok").onclick = () => { sfx("click"); menuDemo(); openTracks(); };
 
+/* ---------- 🧼 Car Wash: scrub the mud off; a clean car's next race pays a little more (once a day) ---------- */
+let washRub = 0, washBubbles = [], washLast = null, washT = 0;
+function openWash() { washRub = 0; washBubbles = []; paintWashSay(); show("s-wash"); }
+function paintWashSay() {
+  const d = S.dirt[S.car] || 0;
+  $("wash-say").textContent = d ? `Scrub the mud off! (${d} splat${d > 1 ? "s" : ""} left) 🫧` : S.sparkle ? "✨ Sparkly! Your next race pays a bonus!" : "✨ Already clean! Race to get it muddy.";
+}
+function scrub(e) {
+  const r = $("wash-car").getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+  if (washLast) washRub += Math.hypot(x - washLast.x, y - washLast.y);
+  washLast = { x, y };
+  for (let k = 0; k < 2; k++) washBubbles.push({ x: x + (Math.random() - 0.5) * 0.06, y: y + (Math.random() - 0.5) * 0.06, r: 0.012 + Math.random() * 0.025, life: 1 });
+  const d = S.dirt[S.car] || 0;
+  if (d && washRub > 0.6) {
+    washRub = 0; S.dirt[S.car] = d - 1; sfx("coin"); buzz(15);
+    if (d - 1 === 0) {
+      delete S.dirt[S.car];
+      if (S.daily.wash !== today()) { S.daily.wash = today(); S.sparkle = today(); }
+      sfx("win"); confetti(90);
+    }
+    save(); paintWashSay();
+  }
+}
+$("wash-car").addEventListener("pointerdown", e => { e.preventDefault(); $("wash-car").setPointerCapture?.(e.pointerId); washLast = null; scrub(e); });
+$("wash-car").addEventListener("pointermove", e => { if (e.buttons || e.pointerType === "touch") scrub(e); });
+$("wash-car").addEventListener("pointerup", () => { washLast = null; });
+function drawWash(dt) {
+  const cv = $("wash-car"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height; washT += dt;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(127,216,255,0.25)"; ctx.fillRect(0, H * 0.86, W, H * 0.14);
+  const car = CARS.find(c => c.id === S.car) || CARS[0];
+  drawCar(ctx, W / 2, H * 0.9, W * 0.62, lookOf(car), { t: washT });
+  if (!(S.dirt[S.car] || 0)) for (let k = 0; k < 4; k++) { const a = washT * 2 + k * 1.6; ctx.fillStyle = "#fff"; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(a * 2); ctx.font = `${Math.round(H * 0.08)}px system-ui`; ctx.fillText("✨", W * (0.25 + 0.5 * ((k * 0.37) % 1)), H * (0.25 + 0.15 * (k % 2))); }
+  ctx.globalAlpha = 1;
+  for (const b of washBubbles) { b.life -= dt * 0.8; b.y -= dt * 0.08; ctx.strokeStyle = `rgba(255,255,255,${Math.max(0, b.life)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x * W, b.y * H, b.r * W, 0, 7); ctx.stroke(); }
+  washBubbles = washBubbles.filter(b => b.life > 0).slice(-120);
+}
+/* ---------- 🏛️ Museum: a timeline of his firsts ---------- */
+function openMuseum() {
+  const M = S.museum || [];
+  $("mu-sum").textContent = M.length ? `${M.length} moments · ${M.filter(e => e.icon === "🏆").length} cups · ${M.filter(e => e.text.startsWith("First win")).length} first wins · ${M.filter(e => e.text.startsWith("Beat")).length} bosses` : "";
+  const nice = d => d ? new Date(d + "T12:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "Before 1.0";
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  $("mu-list").innerHTML = M.length ? M.map(e => `<div class="mu-item"><span class="mu-ico">${esc(e.icon)}</span><b>${esc(e.text)}</b><small>${nice(e.d)}</small></div>`).join("")
+    : `<div class="mu-empty">🏛️ The museum is waiting for your first trophy, ${who()}! Win races to fill it.</div>`;
+  show("s-museum");
+}
+
+/* ---------- 🏛️ Museum log and races per day ---------- */
+function museumAdd(icon, text) { S.museum.unshift({ d: dayKey(new Date()), icon, text }); S.museum.length = Math.min(S.museum.length, 200); }
+function countDay() {
+  const k = dayKey(new Date()); S.days[k] = (S.days[k] || 0) + 1;
+  for (const old of Object.keys(S.days).sort().reverse().slice(30)) delete S.days[old];
+}
+
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false, nextTrack = null;
 function showResult(r) {
@@ -453,6 +554,8 @@ function showResult(r) {
   const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
   S.races++; if (r.place === 1) S.wins++;
   const dk = currentTrack.id + ":" + S.diff, bossRace = !!bossRun;
+  countDay();
+  if (r.place === 1 && !bossRace && S.best[currentTrack.id] !== 1) museumAdd(currentTrack.icon, `First win on ${currentTrack.name}`);
   if (!bossRace) {
     S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
     S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
@@ -463,6 +566,9 @@ function showResult(r) {
     if (starsFor(S.mastery[dk]) > before) setTimeout(() => toast(`⭐ Mastery star ${starsFor(S.mastery[dk])} on ${currentTrack.name}!`), 1800);
   }
   S.coins += prize + r.coins;
+  let sparkleMsg = "";
+  if (S.sparkle && !bossRace) { const bonus = Math.max(5, Math.round(prize * 0.1)); S.coins += bonus; S.sparkle = ""; sparkleMsg = `✨ Sparkly car bonus +🪙${bonus}`; }
+  S.dirt[S.car] = Math.min(5, (S.dirt[S.car] || 0) + 1);
   if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
   if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
@@ -482,6 +588,7 @@ function showResult(r) {
   const next = fresh[0] || TRACKS.slice(ti + 1).find(t => trackOpen(S, t)), nowOpen = !!next;
   nextTrack = next;
   $("r-unlock").hidden = !fresh.length;
+  if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " · " + sparkleMsg; u.hidden = false; }, 0);
   if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
   const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay * (1 + 0.15 * (S.research.luckyChests || 0)));
   chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
@@ -495,7 +602,8 @@ function showResult(r) {
       const first = !S.bosses[b.id];
       const bonus = first ? 5000 : 1000;
       S.bosses[b.id] = true; S.coins += bonus; save();
-      if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); save(); }
+      if (first) museumAdd(b.icon, `Beat ${b.name}`);
+      if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); museumAdd("🚗", `Won the ${car.name}`); save(); }
       awardChip("boss:" + b.id);
       const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
       $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
@@ -611,6 +719,7 @@ function openRank() {
 $("rk-up").onclick = () => {
   if (!rankReady()) return;
   S.rank++;
+  museumAdd("⭐", `Reached Rank ${S.rank} · ${rankTitle(S.rank)}`);
   const reward = 200 * S.rank; S.coins += reward; save();
   if (S.rank >= 5) awardChip("rank:" + S.rank);
   $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank} · ${rankTitle(S.rank)}`;
@@ -721,7 +830,7 @@ $("mis-list").addEventListener("click", e => {
 });
 
 /* ---------- hub, garage, settings ---------- */
-const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100) });
+const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onCar: car => museumAdd("🚗", `Got the ${car.name}`) });
 let giftShownThisVisit = false;
 $("town-wrap").innerHTML = townSVG();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
@@ -738,6 +847,7 @@ function refreshHub() {
   }
   tb("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today());
   tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
+  tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
   tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
   tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id]))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
@@ -762,6 +872,10 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
   else if (go === "library") { sfx("click"); toast("📚 Read a real book! A grown-up can log it at the Driver School."); setTimeout(() => { if (screen === "s-hub") openSchool(); }, 600); }
+  else if (go === "carwash" || go === "museum") {
+    if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
+    sfx("click"); if (go === "carwash") openWash(); else openMuseum();
+  }
   else if (["icecream", "fire", "park"].includes(go)) {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 3;
@@ -776,7 +890,7 @@ $("town-wrap").addEventListener("click", e => {
       if (dn % 3 === 0) awardChip("park:" + today());
     } else if (go === "fire") {
       if (S.owned.includes("firetruck")) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
-      S.owned.push("firetruck"); upsOf("firetruck"); save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
+      S.owned.push("firetruck"); upsOf("firetruck"); museumAdd("🚒", "Got Fire Dash from the firefighters"); save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
     }
     refreshHub();
   }
@@ -793,6 +907,8 @@ function goHub() {
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
 
 function paintToggles() {
+  $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
+  $("set-tilt").classList.toggle("off", !S.opts.tilt); paintTiltLive();
   $("set-name-now").textContent = S.name || "Tap to add";
   $("btn-music").classList.toggle("off", !S.music); $("btn-sfx").classList.toggle("off", !S.sfx);
   $("set-music").textContent = S.music ? "On" : "Off"; $("set-sfx").textContent = S.sfx ? "On" : "Off";
@@ -804,10 +920,16 @@ paintToggles();
 function pause() { if (mode !== "race" || race.state === "done") return; paused = true; engineOff(); show("s-pause"); }
 $("btn-play").onclick = () => {
   initAudio(); goFullscreen(); sfx("click");
+  if (S.opts.tilt && typeof DeviceMotionEvent?.requestPermission === "function") DeviceMotionEvent.requestPermission().catch(() => {});
   if (!S.name) askName(); else goHub();
   cloudWake().then(r => { if (r === "loaded") location.reload(); });   // quietly reconnect Google Save (needs this tap)
 };
-whenSaved(cloudSaved);
+let coinsSeen = S.coins, coinsSave = S;
+whenSaved(() => {
+  if (coinsSave !== S) { coinsSave = S; coinsSeen = S.coins; }          // a different save was loaded
+  if (S.coins > coinsSeen) S.stats.coinsEarned += S.coins - coinsSeen;
+  coinsSeen = S.coins; cloudSaved();
+});
 /* 📲 Install as an app: a button on the title screen only, shown only when this device can install the game
    (Chrome/Edge/Android offer it through "beforeinstallprompt"; iPhone/iPad need Share → Add to Home Screen)
    and it isn't already installed (running as an app). Never on the http:// home-network address (not installable). */
@@ -828,7 +950,7 @@ paintInstall();
 /* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
 let nameBack = "s-hub";
 function askName(back = "s-hub") {
-  nameBack = back; $("name-in").value = S.name || ""; paintNameOk(); show("s-name");
+  nameBack = back; $("name-in").value = S.name || ""; paintNameOk(); $("name-back").hidden = back === "s-hub"; show("s-name");
   setTimeout(() => $("name-in").focus(), 250);
 }
 const paintNameOk = () => { $("name-ok").disabled = !$("name-in").value.trim(); };
@@ -840,6 +962,7 @@ $("name-ok").onclick = () => {
   toast(`👋 Hi ${S.name}! Let's race!`); confetti(60);
   if (nameBack === "s-hub") goHub(); else { show(nameBack); paintToggles(); }
 };
+$("name-back").onclick = () => { sfx("click"); show(nameBack); };
 $("set-name").onclick = () => { sfx("click"); askName("s-settings"); };
 function paintCloud() {
   const ok = cloudReady(), linked = cloudLinked();
@@ -871,6 +994,7 @@ function paintParent() {
   paintCloud(); $("p-undo").hidden = !hasBefore();
   $("p-break").innerHTML = [0, 20, 30, 45, 60].map(m => `<button data-pb="${m}" class="${S.parent.breakMin === m ? "on" : ""}">${m ? m + " min" : "Off"}</button>`).join("");
   $("p-auto").innerHTML = [true, false].map(v => `<button data-pa="${v}" class="${S.parent.autoSteer === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
+  $("p-weather").innerHTML = [true, false].map(v => `<button data-pw="${v}" class="${S.parent.weather === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");
   $("p-buzz").innerHTML = [true, false].map(v => `<button data-pz="${v}" class="${S.parent.buzz === v ? "on" : ""}">${v ? "On" : "Off"}</button>`).join("");
   $("p-vol").value = Math.round(S.parent.volume * 100);
   $("p-rest-row").hidden = !(S.restUntil > Date.now());
@@ -886,6 +1010,8 @@ $("s-parent").addEventListener("click", e => {
   const pb = e.target.closest("[data-pb]"), pz = e.target.closest("[data-pz]");
   if (pb) { S.parent.breakMin = +pb.dataset.pb; playMs = 0; save(); paintParent(); }
   if (pz) { S.parent.buzz = pz.dataset.pz === "true"; save(); paintParent(); }
+  const pw = e.target.closest("[data-pw]");
+  if (pw) { S.parent.weather = pw.dataset.pw === "true"; save(); paintParent(); }
   const pa = e.target.closest("[data-pa]");
   if (pa) { S.parent.autoSteer = pa.dataset.pa === "true"; save(); paintParent(); }
 });
@@ -896,12 +1022,37 @@ $("p-copy").onclick = async () => {
 };
 $("p-load").onclick = () => {
   const code = $("p-code").value;
-  if (code.trim() === exportSave()) { $("p-msg").textContent = "That's the save already on this tablet."; return; }
+  const same = (() => { try { const a = JSON.parse(decodeURIComponent(escape(atob(code.trim().replace(/^TD1-/, ""))))), b = JSON.parse(JSON.stringify(S)); for (const o of [a, b]) { delete o.savedAt; if (o.stats) { delete o.stats.playMs; delete o.stats.coinsEarned; } } return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return false; } })();
+  if (same) { $("p-msg").textContent = "That's the save already on this tablet."; return; }
   if (!confirm("Replace the progress on this tablet with the pasted code?")) return;
   try { importSave(code); location.reload(); }
   catch (e) { $("p-msg").textContent = "That code didn't work. Check that the whole code was pasted."; }
 };
 $("p-close").onclick = () => show("s-title");
+$("p-progress").onclick = () => { sfx("click"); openProgress(); };
+$("p-guide").onclick = () => { sfx("click"); show("s-guide"); $("guide-body").scrollTop = 0; };
+document.querySelectorAll("[data-backto]").forEach(b => b.addEventListener("click", () => { sfx("click"); show(b.dataset.backto); }));
+/* 📊 Progress: everything stays on this tablet */
+function openProgress() {
+  const st = S.stats, hrs = st.playMs / 3600000, rate = S.races ? Math.round(100 * S.wins / S.races) : 0;
+  const time = hrs < 1 ? Math.round(hrs * 60) + " min" : hrs.toFixed(1) + " h";
+  const tiles = [["⏱️", time, "played"], ["🏁", S.races, "races"], ["🏆", S.wins, `wins · ${rate}%`], ["🪙", Math.round(st.coinsEarned).toLocaleString(), "coins earned"], ["⭐", "Rank " + S.rank, rankTitle(S.rank)], ["🚗", S.owned.filter(id => CARS.some(c => c.id === id)).length + " / " + CARS.length, "cars"]];
+  $("pg-tiles").innerHTML = tiles.map(([i, v, l]) => `<div class="pg-tile"><span>${i}</span><b>${v}</b><small>${l}</small></div>`).join("");
+  const days = [...Array(14)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); const k = dayKey(d); return { n: S.days[k] || 0, l: d.toLocaleDateString([], { weekday: "narrow" }), today: i === 13 }; });
+  const max = Math.max(1, ...days.map(d => d.n));
+  $("pg-days").innerHTML = days.map(d => `<div class="pg-day ${d.today ? "today" : ""}"><i style="height:${Math.round(100 * d.n / max)}%"></i><b>${d.n || ""}</b><small>${d.l}</small></div>`).join("");
+  // the next rank: each gauge, and a rough "hours of play" from his own pace so far
+  const fr = frontsNow().filter(f => f.need > 0), maxed = S.rank >= RANK_CAP;
+  let est = 0;
+  for (const f of fr) if (f.have < f.need && f.id !== "license") { const perHour = hrs > 0.2 ? f.have / hrs : 0; est = Math.max(est, perHour > 0 ? (f.need - f.have) / perHour : Infinity); }
+  $("pg-next").innerHTML = maxed ? "Top rank for now! 🎉" : `<b>Next: Rank ${S.rank + 1}</b> ${fr.map(f => `<span class="${f.have >= f.need ? "ok" : ""}">${f.icon} ${Math.min(f.have, f.need)}/${f.need}</span>`).join(" ")}
+    <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace${fr.some(f => f.id === "license" && f.have < f.need) ? ", plus a Driver School lesson" : ""}.`}</small>`;
+  const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
+  $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
+  const mins = Object.fromEntries(ACTIVITIES.map(a => [a.id, 0])); for (const e of S.school.log || []) if (mins[e.a] != null) mins[e.a] += e.m || 0;
+  $("pg-school").innerHTML = ACTIVITIES.map(a => `<span>${a.icon} ${a.name} <b>${mins[a.id]} min</b></span>`).join("") + `<small>Driver School: ${lessonsOf(S)} lessons · ${S.school.tickets} 🎟️ waiting · license ${LICENSES[licenseLevel(S)].name}</small>`;
+  show("s-progress");
+}
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
 $("p-endrest").onclick = () => { S.restUntil = 0; playMs = 0; save(); paintParent(); };
 /* ---------- settings ---------- */
@@ -990,3 +1141,14 @@ function paintTownArrows() {
 $("town-wrap").addEventListener("scroll", paintTownArrows, { passive: true });
 $("town-l").onclick = () => { sfx("click"); $("town-wrap").scrollBy({ left: -innerWidth * 0.7, behavior: "smooth" }); };
 $("town-r").onclick = () => { sfx("click"); $("town-wrap").scrollBy({ left: innerWidth * 0.7, behavior: "smooth" }); };
+
+/* 🏁 the launch splash: about a second and a half, and a tap skips it */
+{
+  const sp = $("splash"), done = () => { if (!sp.isConnected) return; sp.classList.add("out"); setTimeout(() => sp.remove(), 450); };
+  sp.addEventListener("pointerdown", e => {
+    e.preventDefault(); e.stopPropagation(); done();
+    const swallow = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    document.addEventListener("click", swallow, true); setTimeout(() => document.removeEventListener("click", swallow, true), 500);
+  });
+  setTimeout(done, 1500);
+}

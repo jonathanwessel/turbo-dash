@@ -51,7 +51,9 @@ function reward(track, r, diff) {
 }
 
 const carOf = () => CARS.find(c => c.id === S.car);
-const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), S.school.skills);
+// weather like the game: about a quarter of Earth races (from Rank 2) have rain or snow
+const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"].includes(t.theme) ? "rain" : null) : null;
+const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), S.school.skills, null, false, weatherFor(track));
 
 function playBoss(b) {
   const car = carOf(), t = TRACKS.find(x => x.id === b.track);

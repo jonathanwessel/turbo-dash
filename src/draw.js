@@ -194,6 +194,12 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     for (let i = 0; i < 4; i++) poly(ctx, [-w * 0.22 + i * w * 0.12, top + bh * 0.7, -w * 0.16 + i * w * 0.12, top + bh * 0.95, -w * 0.1 + i * w * 0.12, top + bh * 0.7]);
   }
 
+  if (def.dirt > 0 && w > 16) {
+    // mud splats (one per race since the last wash, up to five): the Car Wash scrubs them off
+    ctx.fillStyle = "rgba(112,74,38,0.88)";
+    const P = [[-0.3, 0.55], [0.26, 0.38], [0.04, 0.78], [-0.14, 0.24], [0.36, 0.72]];
+    for (let k = 0; k < Math.min(5, def.dirt); k++) { const [px, py] = P[k], mx = px * w, my = top + py * bh; ell(ctx, mx, my, w * 0.07, w * 0.042); ell(ctx, mx + w * 0.055, my + w * 0.028, w * 0.032, w * 0.022); ell(ctx, mx - w * 0.05, my - w * 0.02, w * 0.022, w * 0.016); }
+  }
   if (o.nitro) for (const s of [-1, 1]) flame(ctx, s * w * 0.2, by - w * 0.02, w * 0.075, t, 2.5);
   ctx.restore();
 }
@@ -256,6 +262,9 @@ export const SPRITES = {
   pumpkin: { w: 800, collide: true }, hay: { w: 1000, collide: true }, mushroom: { w: 700, collide: false },
   kelp: { w: 800, collide: true }, coral: { w: 1100, collide: true }, shellrock: { w: 1000, collide: true }, jelly: { w: 700, collide: false },
   treasure: { w: 900, collide: true }, anemone: { w: 800, collide: false },
+  barn: { w: 1900, collide: true }, cow: { w: 900, collide: true }, windmill: { w: 1300, collide: true }, corn: { w: 700, collide: false },
+  pirateship: { w: 2200, collide: true }, barrel: { w: 650, collide: true }, parrot: { w: 500, collide: false }, cannon: { w: 900, collide: true },
+  cattail: { w: 500, collide: false }, duck: { w: 450, collide: false }, canoe: { w: 1100, collide: true }, coveredbridge: { w: 2400, collide: true },
   icepine: { w: 1300, collide: true }, icecrystal: { w: 1000, collide: true }, igloo: { w: 1600, collide: true }, penguin: { w: 600, collide: true }, snowfort: { w: 1500, collide: true },
 };
 
@@ -544,6 +553,101 @@ export function drawSprite(ctx, type, x, yb, w, t) {
       ctx.fillStyle = "#ffffff"; ell(ctx, x - w * 0.15, yb - h * 0.05, w * 0.12, h * 0.1); ell(ctx, x - w * 0.02, yb - h * 0.04, w * 0.09, h * 0.08);
       break;
     }
+    case "barn": {
+      // a red barn with a white X door and a hay loft
+      ctx.fillStyle = "#c0392b"; ctx.fillRect(x - w * 0.42, yb - h * 0.55, w * 0.84, h * 0.55);
+      ctx.fillStyle = "#8a1f16"; poly(ctx, [x - w * 0.5, yb - h * 0.55, x, yb - h * 0.9, x + w * 0.5, yb - h * 0.55]);
+      ctx.fillStyle = "#fff"; ctx.fillRect(x - w * 0.16, yb - h * 0.36, w * 0.32, h * 0.36);
+      ctx.strokeStyle = "#c0392b"; ctx.lineWidth = Math.max(1, w * 0.025); ctx.beginPath(); ctx.moveTo(x - w * 0.16, yb - h * 0.36); ctx.lineTo(x + w * 0.16, yb); ctx.moveTo(x + w * 0.16, yb - h * 0.36); ctx.lineTo(x - w * 0.16, yb); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.fillRect(x - w * 0.08, yb - h * 0.7, w * 0.16, h * 0.1);
+      break;
+    }
+    case "cow": {
+      const bob = Math.sin(t * 2 + x * 0.03) * h * 0.02;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x - w * 0.4, yb - h * 0.58 + bob, w * 0.7, h * 0.32);
+      ctx.fillStyle = "#222"; ell(ctx, x - w * 0.15, yb - h * 0.48 + bob, w * 0.12, h * 0.08); ell(ctx, x + w * 0.12, yb - h * 0.42 + bob, w * 0.08, h * 0.06);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x + w * 0.24, yb - h * 0.7 + bob, w * 0.22, h * 0.22);
+      ctx.fillStyle = "#ffb3c1"; ctx.fillRect(x + w * 0.3, yb - h * 0.54 + bob, w * 0.16, h * 0.07);
+      ctx.fillStyle = "#222"; for (const lx of [-0.34, -0.18, 0.08, 0.2]) ctx.fillRect(x + w * lx, yb - h * 0.26, w * 0.07, h * 0.26);
+      ell(ctx, x + w * 0.31, yb - h * 0.64 + bob, w * 0.02, w * 0.02);
+      break;
+    }
+    case "windmill": {
+      ctx.fillStyle = "#e9e0c8"; poly(ctx, [x - w * 0.16, yb, x - w * 0.08, yb - h * 0.8, x + w * 0.08, yb - h * 0.8, x + w * 0.16, yb]);
+      ctx.fillStyle = "#8a5a2b"; poly(ctx, [x - w * 0.11, yb - h * 0.8, x, yb - h * 0.95, x + w * 0.11, yb - h * 0.8]);
+      ctx.save(); ctx.translate(x, yb - h * 0.82); ctx.rotate(t * 1.5 + x * 0.01);
+      ctx.fillStyle = "#ffffff"; for (let k = 0; k < 4; k++) { ctx.rotate(Math.PI / 2); ctx.fillRect(-w * 0.04, 0, w * 0.08, h * 0.42); }
+      ctx.restore(); ctx.fillStyle = "#555"; ell(ctx, x, yb - h * 0.82, w * 0.03, w * 0.03);
+      break;
+    }
+    case "corn":
+      for (let k = -1; k <= 1; k++) {
+        const cx2 = x + k * w * 0.3, sway = Math.sin(t * 2 + x * 0.02 + k) * w * 0.04;
+        ctx.fillStyle = "#3f9a3a"; poly(ctx, [cx2 - w * 0.05, yb, cx2 + sway, yb - h * 1.1, cx2 + w * 0.05, yb]);
+        ctx.fillStyle = "#ffd400"; ell(ctx, cx2 + sway * 0.6, yb - h * 0.62, w * 0.05, h * 0.12);
+      }
+      break;
+    case "pirateship": {
+      const rock = Math.sin(t * 1.2 + x * 0.01) * 0.05;
+      ctx.save(); ctx.translate(x, yb); ctx.rotate(rock);
+      ctx.fillStyle = "#7a4a22"; poly(ctx, [-w * 0.48, -h * 0.28, w * 0.48, -h * 0.28, w * 0.36, 0, -w * 0.36, 0]);
+      ctx.fillStyle = "#ffd400"; ctx.fillRect(-w * 0.4, -h * 0.2, w * 0.8, h * 0.03);
+      ctx.fillStyle = "#5a3416"; ctx.fillRect(-w * 0.02, -h * 0.95, w * 0.04, h * 0.67);
+      ctx.fillStyle = "#f4ecd8"; poly(ctx, [-w * 0.3, -h * 0.88, w * 0.3, -h * 0.88, w * 0.26, -h * 0.4, -w * 0.26, -h * 0.4]);
+      ctx.fillStyle = "#222"; ctx.fillRect(w * 0.02, -h * 1.05, w * 0.16, h * 0.1);
+      ctx.fillStyle = "#fff"; ell(ctx, w * 0.1, -h * 1.0, w * 0.025, w * 0.025);
+      ctx.restore();
+      break;
+    }
+    case "barrel":
+      ctx.fillStyle = "#9a6232"; ctx.fillRect(x - w * 0.32, yb - h * 0.8, w * 0.64, h * 0.8);
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.34, yb - h * 0.66, w * 0.68, h * 0.06); ctx.fillRect(x - w * 0.34, yb - h * 0.2, w * 0.68, h * 0.06);
+      ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fillRect(x - w * 0.2, yb - h * 0.78, w * 0.08, h * 0.76);
+      break;
+    case "parrot": {
+      const flap = Math.sin(t * 9 + x * 0.05) * h * 0.06;
+      ctx.fillStyle = "#5a3416"; ctx.fillRect(x - w * 0.03, yb - h * 1.4, w * 0.06, h * 1.4);
+      ctx.fillStyle = "#e8262b"; ell(ctx, x, yb - h * 1.6, w * 0.22, h * 0.3);
+      ctx.fillStyle = "#1f6fff"; poly(ctx, [x - w * 0.1, yb - h * 1.6, x - w * 0.45, yb - h * 1.5 + flap, x - w * 0.12, yb - h * 1.4]);
+      ctx.fillStyle = "#ffd400"; poly(ctx, [x + w * 0.15, yb - h * 1.8, x + w * 0.32, yb - h * 1.74, x + w * 0.15, yb - h * 1.68]);
+      ctx.fillStyle = "#fff"; ell(ctx, x + w * 0.08, yb - h * 1.8, w * 0.05, w * 0.05); ctx.fillStyle = "#111"; ell(ctx, x + w * 0.09, yb - h * 1.8, w * 0.025, w * 0.025);
+      break;
+    }
+    case "cannon":
+      ctx.fillStyle = "#2b2b33"; ctx.save(); ctx.translate(x, yb - h * 0.32); ctx.rotate(-0.35); ctx.fillRect(-w * 0.1, -h * 0.12, w * 0.6, h * 0.24); ctx.restore();
+      ctx.fillStyle = "#7a4a22"; ell(ctx, x - w * 0.12, yb - h * 0.16, w * 0.18, w * 0.18); ell(ctx, x + w * 0.2, yb - h * 0.16, w * 0.18, w * 0.18);
+      ctx.fillStyle = "#3d3d45"; ell(ctx, x - w * 0.4, yb - h * 0.08, w * 0.08, w * 0.08); ell(ctx, x - w * 0.28, yb - h * 0.08, w * 0.08, w * 0.08);
+      break;
+    case "cattail":
+      for (let k = -1; k <= 1; k++) {
+        const cx2 = x + k * w * 0.25, sway = Math.sin(t * 1.8 + x * 0.03 + k * 2) * w * 0.05;
+        ctx.strokeStyle = "#3d8a3a"; ctx.lineWidth = Math.max(1, w * 0.05); ctx.beginPath(); ctx.moveTo(cx2, yb); ctx.lineTo(cx2 + sway, yb - h * (1 + 0.15 * k)); ctx.stroke();
+        ctx.fillStyle = "#7a4a22"; ell(ctx, cx2 + sway, yb - h * (0.85 + 0.15 * k), w * 0.06, h * 0.13);
+      }
+      break;
+    case "duck": {
+      const bob = Math.sin(t * 3 + x * 0.04) * h * 0.04;
+      ctx.fillStyle = "#4fb6ff"; ell(ctx, x, yb - h * 0.04, w * 0.6, h * 0.08);
+      ctx.fillStyle = "#ffffff"; ell(ctx, x, yb - h * 0.25 + bob, w * 0.38, h * 0.2); ell(ctx, x + w * 0.25, yb - h * 0.55 + bob, w * 0.17, h * 0.17);
+      ctx.fillStyle = "#ff9d00"; poly(ctx, [x + w * 0.38, yb - h * 0.58 + bob, x + w * 0.58, yb - h * 0.53 + bob, x + w * 0.38, yb - h * 0.48 + bob]);
+      ctx.fillStyle = "#111"; ell(ctx, x + w * 0.29, yb - h * 0.6 + bob, w * 0.03, w * 0.03);
+      break;
+    }
+    case "canoe":
+      ctx.fillStyle = "#8a5a2b"; ctx.fillRect(x - w * 0.5, yb - h * 0.12, w, h * 0.05);
+      for (const px of [-0.4, 0, 0.4]) ctx.fillRect(x + w * px - w * 0.02, yb - h * 0.12, w * 0.04, h * 0.12);
+      ctx.fillStyle = "#e8262b"; ctx.beginPath(); ctx.moveTo(x - w * 0.46, yb - h * 0.26); ctx.quadraticCurveTo(x, yb - h * 0.08, x + w * 0.46, yb - h * 0.26); ctx.lineTo(x + w * 0.4, yb - h * 0.16); ctx.quadraticCurveTo(x, yb - h * 0.02, x - w * 0.4, yb - h * 0.16); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffd400"; ctx.fillRect(x - w * 0.06, yb - h * 0.4, w * 0.02, h * 0.24);
+      break;
+    case "coveredbridge": {
+      // a red covered bridge like the ones around Piqua: a long barn-like house over the creek
+      ctx.fillStyle = "#4fb6ff"; ell(ctx, x, yb - h * 0.02, w * 0.55, h * 0.06);
+      ctx.fillStyle = "#b3261e"; ctx.fillRect(x - w * 0.48, yb - h * 0.42, w * 0.96, h * 0.32);
+      ctx.fillStyle = "#5a2a1a"; poly(ctx, [x - w * 0.52, yb - h * 0.42, x - w * 0.4, yb - h * 0.62, x + w * 0.4, yb - h * 0.62, x + w * 0.52, yb - h * 0.42]);
+      ctx.fillStyle = "#2a1a10"; ctx.fillRect(x - w * 0.12, yb - h * 0.36, w * 0.24, h * 0.26);
+      ctx.fillStyle = "#fff"; ctx.fillRect(x - w * 0.4, yb - h * 0.12, w * 0.8, h * 0.03);
+      break;
+    }
     case "lamp":
       ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.12, h * 2.4);
       ctx.fillRect(x - w * 0.06, yb - h * 2.4, w * 0.6, w * 0.1);
@@ -645,6 +749,11 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t) {
     }
   }
   ctx.globalAlpha = 0.55; hills(ctx, W, H, hz, th.hills[1], hillX * 0.3, H * 0.23, 0.45, 11); ctx.globalAlpha = 1;
+  if (th.river) {
+    ctx.strokeStyle = "#4fb6ff"; ctx.lineWidth = H * 0.025; ctx.lineCap = "round"; ctx.beginPath();
+    for (let i = 0; i <= 40; i++) { const u = i / 40, px = u * W, py = hz - H * 0.06 + Math.sin((u + hillX * 0.6) * Math.PI * 4) * H * 0.012; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = H * 0.005; ctx.setLineDash([H * 0.04, H * 0.06]); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = "butt";
+  }
   hills(ctx, W, H, hz, th.hills[1], hillX * 0.6, H * 0.16, 0.7, 3);
   hills(ctx, W, H, hz, th.hills[0], hillX, H * 0.09, 1.3, 7);
 }

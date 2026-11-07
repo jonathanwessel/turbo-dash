@@ -6,12 +6,12 @@ import { S, save, upsOf } from "./save.js";
 /* A car with its paint and sticker applied. */
 export function lookOf(car) {
   const look = S.look[car.id] || {}, paint = PAINTS.find(p => p.id === look.paint);
-  const out = { ...car, sticker: look.sticker || "none" };
+  const out = { ...car, sticker: look.sticker || "none", dirt: S.dirt?.[car.id] || 0 };
   if (paint && paint.color) Object.assign(out, { body: paint.color, rainbow: !!paint.rainbow, shiny: !!paint.shiny });
   return out;
 }
 
-export function createGarage({ $, sfx, spend, celebrate }) {
+export function createGarage({ $, sfx, spend, celebrate, onCar }) {
   const cvs = $("g-car"), ctx = cvs.getContext("2d");
   let idx = 0, t = 0, zoom = 0, tab = "up";
 
@@ -96,7 +96,7 @@ export function createGarage({ $, sfx, spend, celebrate }) {
     if (S.owned.includes(car.id)) { S.car = car.id; save(); sfx("click"); zoom = 1; render(); return; }
     if (car.price == null || (car.world && !worldOpen(S, car.world))) { sfx("nope"); return; }
     if (!spend(car.price)) return;
-    S.owned.push(car.id); S.car = car.id; save();
+    S.owned.push(car.id); S.car = car.id; onCar?.(car); save();
     sfx("buy"); celebrate(); zoom = 1; render();
   };
   $("g-ups").addEventListener("click", e => {

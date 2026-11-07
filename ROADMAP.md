@@ -37,7 +37,7 @@ Carter plays on an Android tablet, in landscape, full screen.
 - **v0.11.0** Auto Steer · **v0.11.1** Quiet Town · **v0.12.0** The Long Game (career sim, Mastery, Google Save,
   save tests, 12 fixes) · **v0.13.0** Piqua Main Street (town redraw, Settings + safe reset, title screen,
   race graphics pass, Driver School placeholder) · **v0.13.1** Earn Your Wins (no hidden steering,
-  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink · **v0.19.0** Toy Track World (Next Gen 3D engine) · **v0.20.0** Smoother Racing & a Simpler Race Screen
+  tougher early rivals, win to unlock) · **v0.13.2** Smooth Roads · **v0.14.0** Driver School · **v0.14.1** Scan to Share · **v0.15.0** Moon Base · **v0.16.0** Main Street Grows & Bosses · **v0.17.0** Deep Blue & Time Trials · **v0.18.0** Glacier Rink · **v0.19.0** Toy Track World (Next Gen 3D engine) · **v0.20.0** Smoother Racing & a Simpler Race Screen · **v0.20.1** Every Screen Fits · **v0.20.2** No More "null" · **v0.21.0** Bug Hunt · **v0.22.0** A Growing Town, Your Name & New Sounds · **v0.22.1** Install Button · **v1.0.0** Carter's 1.0
 
 ## What we learned
 - **Carter doesn't stop to read.** Anything important must block the way and work with pictures (the update gate,
@@ -197,8 +197,10 @@ The remaining worlds come after Toy Track World and are built in the new 3D engi
 cars, cup, boss and research (Rank 40, 45 … up to Turbo God at 60). A track builder fits naturally here
 (snapping plastic track pieces together).
 
-### v1.0.0 Carter's 1.0
-A milestone release:
+### v1.0.0 Carter's 1.0 (shipped)
+Tilt to steer, a launch splash, the Parent Progress page and guide, three new Earth tracks and the Country Cup,
+weather, the Car Wash and Museum, and the Play Store package prepared (publishing is up to the parent). The original
+plan for it was:
 - **Optional Play Store package:** a Trusted Web Activity built from the existing site. You do the Play
   Console account, testers and listing.
 - **Tilt-to-steer option.**

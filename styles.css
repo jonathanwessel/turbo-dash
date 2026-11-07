@@ -689,3 +689,61 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .install-help .card { max-width: 560px; }
 .install-help p { font-size: clamp(16px, 4vmin, 22px); font-weight: 700; line-height: 1.5; }
 .install-help .ih-ico { font-size: 1.3em; }
+
+.set-tile[hidden] { display: none; }
+/* 🏁 launch splash */
+#splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, #3a1a7a, #1a0b3d 70%); transition: opacity .4s; }
+#splash.out { opacity: 0; pointer-events: none; }
+#splash .sp-in { display: flex; flex-direction: column; align-items: center; gap: 2vh; }
+#splash .logo { font-size: min(13vw, 19vh); }
+#splash .sp-car { font-size: min(14vw, 18vh); animation: sp-drive 1.5s cubic-bezier(.3,.1,.3,1) both; }
+#splash .sp-bar { width: min(60vw, 420px); height: 16px; border-radius: 999px; background: rgba(255,255,255,.15); overflow: hidden; border: 3px solid rgba(255,255,255,.5); }
+#splash .sp-bar i { display: block; height: 100%; background: repeating-linear-gradient(45deg, #ffd400 0 14px, #ff8a00 14px 28px); animation: sp-fill 1.3s ease-out both; }
+#splash .sp-made { font-weight: 900; font-size: min(5vw, 6vh); color: #fff; }
+#splash .sp-made b { color: #ffd400; }
+@keyframes sp-drive { from { transform: translateX(-60vw) scale(.6); } 60% { transform: translateX(4vw) scale(1.05); } to { transform: none; } }
+@keyframes sp-fill { from { width: 0; } to { width: 100%; } }
+
+/* 📊 Progress and 📖 guide (Parent Corner) */
+.card.parent.progress, .card.parent.guide { max-width: 860px; width: min(96vw, 860px); }
+.pg-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.pg-tile { background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.25); border-radius: 16px; padding: 6px; display: flex; flex-direction: column; align-items: center; }
+.pg-tile span { font-size: 28px; line-height: 1.25; } .pg-tile b { font-size: 20px; } .pg-tile small { font-size: 12px; opacity: .8; }
+.pg-days { display: flex; gap: 4px; align-items: flex-end; height: 110px; padding-top: 4px; }
+.pg-day { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; min-width: 0; }
+.pg-day i { width: 70%; min-height: 3px; background: linear-gradient(#ffd400, #ff8a00); border-radius: 6px 6px 2px 2px; }
+.pg-day.today i { background: linear-gradient(#5be36a, #23a33a); }
+.pg-day b { font-size: 11px; } .pg-day small { font-size: 11px; opacity: .8; }
+.pg-next { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 8px 0; }
+.pg-next span { background: rgba(0,0,0,.25); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+.pg-next span.ok { background: rgba(91,227,106,.3); }
+.pg-next small { flex-basis: 100%; font-size: 14px; opacity: .9; }
+.pg-list { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.pg-list small { opacity: .75; margin-left: 4px; } .pg-list b { float: right; }
+.pg-note { font-size: 13px; opacity: .75; }
+.guide .g-sec { text-align: left; background: rgba(255,255,255,.07); border-radius: 14px; padding: 6px 12px; margin-bottom: 8px; }
+.guide .g-sec h3 { margin: 4px 0; color: #ffd400; } .guide .g-sec p { margin: 0 0 6px; font-size: 15px; line-height: 1.45; }
+
+#town .brush { transform-box: fill-box; transform-origin: 50% 0; animation: brush 1.2s ease-in-out infinite alternate; }
+#town .brush.b1 { animation-delay: .4s; } #town .brush.b2 { animation-delay: .8s; }
+@keyframes brush { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+
+/* 🧼 Car Wash */
+.wash { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+#wash-car { width: min(92vw, 120vh, 640px); max-height: 62vh; aspect-ratio: 640 / 380; height: auto; touch-action: none; border-radius: 24px; background: linear-gradient(#bfe9ff, #7fd8ff); border: 5px solid #fff; cursor: grab; }
+.wash-say { font-size: clamp(18px, 5vmin, 28px); font-weight: 900; text-align: center; }
+.wash-tip { opacity: .85; font-weight: 700; text-align: center; }
+/* 🏛️ Museum */
+.mu-sum { font-weight: 900; color: #ffd400; text-align: center; }
+.mu-list { flex: 1; min-height: 0; width: min(100%, 900px); overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; align-content: start; padding: 4px; touch-action: pan-y; }
+.mu-item { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; background: linear-gradient(#f4e7c8, #e0c88f); color: #4a2600; border-radius: 16px; padding: 8px 12px; border: 3px solid #fff; }
+.mu-item .mu-ico { grid-row: span 2; font-size: 34px; line-height: 1.25; }
+.mu-item b { font-size: 15px; } .mu-item small { font-size: 12px; opacity: .75; }
+.mu-empty { grid-column: 1 / -1; text-align: center; font-size: clamp(18px, 4.6vmin, 26px); font-weight: 900; padding: 30px; }
+/* the Main Street arrows fit inside the road band at any screen height */
+.town-arrow { height: min(70px, 10.5vh); width: min(64px, 12vh); bottom: max(4px, 1.2vh); font-size: min(34px, 6vh); border-radius: min(20px, 3vh); }
+.cup-card .cc-cup { margin-bottom: 6px; }
+.up-card .up-icon, .set-tile > span, .goal .gi, .shelf div b, .tc-icon, .cc-cup { line-height: 1.3; }
+
+@media (orientation: portrait) { .track-card .tc-lock { align-content: center; padding-bottom: 0; grid-auto-flow: column; gap: 12px; } }
+@media (max-height: 560px) and (orientation: landscape) { .cup-card .cc-cup { line-height: 1.35; margin-bottom: 10px; } }

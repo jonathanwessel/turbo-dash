@@ -1,5 +1,57 @@
 # Changelog
 
+## v1.0.0 — Carter's 1.0 🏁
+
+The 1.0 milestone: everything from the roadmap's 1.0 plan in one big release, then a full review.
+
+**New things to do**
+- **🚜 Farm Fields, 🏴‍☠️ Pirate Port and 🛶 Piqua River Run**: three new Earth tracks for early in the game (cows,
+  barns and a windmill; a pirate ship, parrots and cannons; covered bridges, ducks and the Great Miami River).
+  They branch off Beach Boardwalk, Desert Dash and Autumn Forest, so no track an older save had open closes.
+- **🌾 Country Cup** (Farm, Pirate, River) with a new prize car, the 🚜 **Barnstormer**.
+- **🌧️ Weather:** about one Earth race in four is rainy (grey sky, rain streaks, puddles that splash and nudge
+  you sideways, a soft rain sound) or snowy on Snowy Peaks. Parent Corner can switch it off.
+- **🧼 Car Wash** (Rank 4): cars get a little muddier every race (you can see the splats). Rub the car clean with
+  your finger; a freshly washed car earns a ✨ sparkly bonus on its next race (once a day).
+- **🏛️ Museum** (Rank 8): a timeline of his firsts — first wins on each track, cups, bosses, new cars, new worlds and
+  every rank. Older saves start it from the trophies they already have.
+- **📱 Tilt to steer** (Settings): tilt the tablet like a steering wheel. It zeroes itself at every countdown, and
+  the buttons still work. Settings shows a live ⬅️ ➡️ arrow and a Flip option in case a tablet reports tilt the
+  other way round. (Works on the website and the installed app.)
+- **🏁 A launch splash** when the game opens (a tap skips it).
+
+**For grown-ups (Parent Corner)**
+- **📊 Progress:** time played, races, wins and win rate, coins earned, races per day for the last two weeks, his
+  best tracks, the next rank's gauges with an estimate of how much play it will take, and the reading/outdoor
+  minutes logged. Everything stays on the tablet.
+- **📖 How it works:** a short guide to ranks, the Turbo Lab, Driver School, the grown-up settings and saving.
+- **Play Store package prepared** (not published): `android/ANDROID.md` walks through making the Android app with
+  PWABuilder, the store listing text, a feature graphic, the Play Console steps (12 testers × 14 days) and a privacy
+  page at https://jonathanwessel.github.io/turbo-dash/privacy.html.
+
+**Review fixes** (three independent reviews of everything new, plus layout checks at 7 screen sizes)
+- Google Save: the play-time counter no longer makes every sync look like "this device changed" (that could have
+  uploaded over another device's newer copy); a tie keeps this device's copy.
+- The Barnstormer's upgrades were priced like an end-game car (a car's price tier no longer depends only on its
+  place in the list).
+- Covered bridges, pirate ships, barns and palms stood partly on the road (and you could drive through them); they
+  now stand fully beside it.
+- Rain puddles splashed every two seconds; now every few seconds. The rain picture no longer lingers behind the
+  results. The Time Trial ghost is never muddy.
+- Tilt: only offered where the sensor can work (not on the home-network address), asks iPhone/iPad again after a
+  restart, and a bad sensor reading can never break steering.
+- Play time counts real time, and only while playing (not on the title, pause or grown-up screens).
+- The Progress page says "ready to rank up" only when it really is; older saves get an estimated play time and coins
+  earned instead of zero.
+- Museum text from a save code is always shown as text; worlds an older save already raced don't get a new "first
+  race" entry; the Fire Station's truck goes in the Museum.
+- The sparkle bonus shows on the result card instead of a toast that another toast could replace.
+- The name screen has a Back button when opened from Settings; re-pasting this tablet's own save code is recognised.
+- The splash can never block the game (a fail-safe removes it), and a tap that skips it doesn't press PLAY.
+- Emoji icons get room on the garage, Settings, trophy and cup cards at large sizes; Main Street's arrows fit inside
+  the road at any height; locked track cards in portrait.
+- Saves from every earlier version carry over (20 save checks, new fixtures for v0.22 and v1.0).
+
 ## v0.22.1 — Install Button
 
 - **📲 Install** on the title screen (and only there): installs Turbo Dash as an app on the device, so it opens

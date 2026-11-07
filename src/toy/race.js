@@ -46,7 +46,7 @@ export class ToyRace {
     if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).x, laneT: 2, knockT: 0, finished: false, air: 0,
       base: V0 * opts.boss.speed * this.diff.rival * this.phys.rival, boss: true, btT: 5, bt: 0 }];
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
-    this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none" };
+    this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none", dirt: 0 };
     if (this.trial) this.rivals = [];
     if (mode === "demo") this.player.dist = 2;
     this.prevIdx = sampleAt(T, this.player.dist);
@@ -114,7 +114,7 @@ export class ToyRace {
     }
 
     // steering
-    let steer = auto ? clamp(-p.x * 0.6 + T.k[i] * p.speed * 0.25, -1, 1) : (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
+    let steer = auto ? clamp(-p.x * 0.6 + T.k[i] * p.speed * 0.25, -1, 1) : !this.input.left && !this.input.right && Number.isFinite(this.input.axis) ? this.input.axis : (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0);
     this.autoTarget = null;
     if (!auto && steer === 0 && this.autoLvl > 0 && racing) steer = this.autoSteer(i) * (0.15 + 0.85 * this.autoLvl / 100);
     this.steerVis = lerp(this.steerVis || 0, steer, Math.min(1, dt * 10));
