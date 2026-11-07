@@ -559,13 +559,16 @@ export class Race {
 
   drawSegment(ctx, s, th, W) {
     const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, a = s.alt;
-    ctx.fillStyle = th.grass[a]; ctx.fillRect(0, y2, W, y1 - y2 + 1);
+    // one shade for grass and road (alternating shades read as stripes racing at you); each piece overlaps the
+    // nearer one by a pixel so no seam line shows between them. Curbs and lane dashes still alternate for speed.
+    const yb = y1 + 1;
+    ctx.fillStyle = th.grass[0]; ctx.fillRect(0, y2, W, yb - y2);
     const r1 = w1 / 6, r2 = w2 / 6;
     ctx.fillStyle = th.rumble[a];
-    quad(ctx, x1 - w1 - r1, y1, x1 - w1, y1, x2 - w2, y2, x2 - w2 - r2, y2);
-    quad(ctx, x1 + w1 + r1, y1, x1 + w1, y1, x2 + w2, y2, x2 + w2 + r2, y2);
-    ctx.fillStyle = th.road[a];
-    quad(ctx, x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2);
+    quad(ctx, x1 - w1 - r1, yb, x1 - w1 + 1, yb, x2 - w2 + 1, y2, x2 - w2 - r2, y2);
+    quad(ctx, x1 + w1 + r1, yb, x1 + w1 - 1, yb, x2 + w2 - 1, y2, x2 + w2 + r2, y2);
+    ctx.fillStyle = th.road[0];
+    quad(ctx, x1 - w1, yb, x1 + w1, yb, x2 + w2, y2, x2 - w2, y2);
     if (s.finish) {
       const cols = 10;
       for (let c = 0; c < cols; c++) {

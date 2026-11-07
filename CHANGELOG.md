@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.2 — Smooth Roads
+
+- **No more horizontal lines on the road.** The road and grass used two alternating shades that raced toward
+  you as stripes, and thin seams could show between road pieces. They now use one shade each and every piece
+  overlaps the next, so the road looks smooth. The red-and-white curbs and lane dashes still show your speed.
+- **The big RACE! button is on the Race Track building** itself now, right over the grandstand.
+
 ## v0.13.1 — Earn Your Wins
 
 - **No more steering for you.** The car used to drift back onto the road on its own when no button was held,
