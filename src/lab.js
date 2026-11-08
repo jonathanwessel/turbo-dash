@@ -1,6 +1,6 @@
 // Turbo Lab: Professor Bolt researches permanent boosts for every car. Real-time timers that keep going while
 // the tablet is off. Paid with coins only; a running project can be rushed for extra coins.
-import { RESEARCH, researchCost, researchTime, researchChips, researchRank, benchesFor } from "./data.js";
+import { RESEARCH, researchCost, researchTime, researchChips, researchRank, benchesFor, BENCH_RANKS } from "./data.js";
 import { S, save } from "./save.js";
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
@@ -52,7 +52,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
       return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name} ${levelOf(r.id) + 1}</b>
         <div class="bar"><i style="width:${Math.round(100 * (1 - t / total))}%"></i></div><span class="timer" data-timer="${i}">⏱ ${fmt(t)}</span>
         <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
-    }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${[2, 4, 9, 15][bs.length]}</small></div>` : "");
+    }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${BENCH_RANKS[bs.length]}</small></div>` : "");
 
     const tiers = [...new Set(RESEARCH.map(r => r.tier))].sort((a, b) => a - b);   // every tier, so new worlds' kits always show
     $("lab-list").innerHTML = tiers.map(tier => {

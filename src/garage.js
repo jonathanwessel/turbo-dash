@@ -197,5 +197,5 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
   }
 
   const affordable = () => CARS.some(c => c.price != null && !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
-  return { open, render, draw, affordable, setGrid: on => { grid = on; showGrid(); if (!on) render(); } };
+  return { open, render, draw, affordable };
 }

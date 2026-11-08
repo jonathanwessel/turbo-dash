@@ -66,6 +66,8 @@ export const BOSSES = [
   { id: "fang", world: "glacier", name: "Fang the Ice Wolf", icon: "🐺", track: "summit", rank: 33, car: "blizzard", speed: 2.9, says: "Ice is slippery... for YOU! Awooo!" },
   { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!" },
 ];
+/* One place for "opens at Rank N" (keep in step with RANK_UNLOCKS) */
+export const OPEN_RANK = { lab: 2, weather: 2, trial: 4, cups: 5, missions: 7, boss: 9 };
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
 export const BUILDINGS = [
   { id: "library", name: "Library", rank: 1 },
@@ -191,7 +193,6 @@ export const THEMES = {
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
-export const PLAYER = "Carter";
 
 // Paint is bought once and can go on any car. color null = the car's own color.
 export const PAINTS = [
@@ -431,7 +432,6 @@ export function wordQuestion(lv, rnd = Math.random, seen = new Set()) {
   const words = [ans.w, ...others].sort(() => rnd() - 0.5);
   return { w: ans.w, pic: ans.pic, mode, choices: words.map(w => ({ w, pic: WORDS.find(x => x.w === w)?.pic || null })) };
 }
-export const ticketsFor =(activity, minutes, readingDouble) => Math.floor(minutes / 10) * (activity === "read" && readingDouble ? 2 : 1);
 export const SKILLS = [
   { id: "focus", icon: "🎯", name: "Focus", desc: "Curves pull you less" },
   { id: "reflex", icon: "⚡", name: "Reflexes", desc: "Turbo fills faster" },
@@ -501,7 +501,8 @@ export const researchCost = (r, lvl) => r.cost ? r.cost(lvl) : Math.round(r.c0 *
 export const researchTime = (r, lvl) => r.time ? r.time(lvl) : Math.round(r.t0 * Math.pow(1.4, lvl));              // seconds
 export const researchChips = (r, lvl) => r.chips ? r.chips(lvl) : 0;
 export const researchRank = (r, lvl) => r.rankAt ? r.rankAt(lvl) : r.rank;
-export const benchesFor = rank => rank >= 15 ? 4 : rank >= 9 ? 3 : rank >= 4 ? 2 : rank >= 2 ? 1 : 0;
+export const BENCH_RANKS = [2, 4, 9, 15];   // Turbo Lab benches open at these ranks
+export const benchesFor = rank => BENCH_RANKS.filter(r => rank >= r).length;
 
 /* ⏱️ Time Trials: race alone against the clock (and your own ghost). Medal times come from the track's length:
    gold needs a fast, well-upgraded car driven well; bronze is reachable mid-game. Each medal pays once. */

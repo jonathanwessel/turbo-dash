@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_RATE, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay, OPEN_RANK } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance } from "./pace.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
@@ -13,7 +13,7 @@ import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, set
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
-import { carKnown, carName, drawCarOrMystery, createGarage, lookOf } from "./garage.js";
+import { carKnown, drawCarOrMystery, createGarage, lookOf } from "./garage.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
@@ -272,7 +272,7 @@ function startRace(track) {
   const trial = trialRun && !boss;
   // 🌧️ about one Earth race in four has weather (never in the very first races, never in Time Trials or boss races)
   const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"];
-  const weather = track.world === "earth" && S.parent.weather && S.rank >= 2 && !trial && !boss && Math.random() < 0.25
+  const weather = track.world === "earth" && S.parent.weather && S.rank >= OPEN_RANK.weather && !trial && !boss && Math.random() < 0.25
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, previewRun ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
@@ -334,7 +334,7 @@ function paintCups() {
   }).join("");
 }
 /* Keep the race screen simple for a 6-year-old: a mode tab only shows once it's open. */
-const TAB_RANK = { races: 0, trial: 4, cups: 5, boss: 9 };
+const TAB_RANK = { races: 0, trial: OPEN_RANK.trial, cups: OPEN_RANK.cups, boss: OPEN_RANK.boss };
 function paintRaceTabs() {
   if (S.rank < (TAB_RANK[raceTab] || 0)) raceTab = "races";
   let shown = 0;
@@ -425,8 +425,7 @@ function openBossIntro(b) {
   sfx("chest"); show("s-boss");
 }
 document.querySelectorAll("[data-rtab]").forEach(b => b.onclick = () => {
-  if (b.dataset.rtab === "cups" && S.rank < 5) { sfx("nope"); toast("🔒 Cups open at Rank 5"); return; }
-  if (b.dataset.rtab === "boss" && S.rank < Math.min(...BOSSES.map(x => x.rank))) { sfx("nope"); toast(`🔒 Bosses appear at Rank ${Math.min(...BOSSES.map(x => x.rank))}`); return; }
+  if (S.rank < (TAB_RANK[b.dataset.rtab] || 0)) { sfx("nope"); toast(`🔒 Opens at Rank ${TAB_RANK[b.dataset.rtab]}`); return; }
   sfx("click"); raceTab = b.dataset.rtab; paintRaceTabs();
 });
 $("cup-list").addEventListener("click", e => {
@@ -1055,12 +1054,12 @@ function refreshHub() {
   tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
   tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
   tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!lapsToday().length && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
-  $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
+  $("lab-lock").style.display = S.rank >= OPEN_RANK.lab ? "none" : "";
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
   if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
   tb("tb-missions", S.rank >= MISSIONS_RANK && missionsReady());
   const ls = lab.status();
-  tb("tb-lab", S.rank >= 2 && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
+  tb("tb-lab", S.rank >= OPEN_RANK.lab && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
   // wide screens: fill and trim the sky; squarer or portrait screens: show the whole street
   paintTownArrows();
@@ -1101,7 +1100,7 @@ $("town-wrap").addEventListener("click", e => {
     refreshHub();
   }
   else if (go === "missions") { if (S.rank < MISSIONS_RANK) { nope(); toast("🔒 Missions open at Rank " + MISSIONS_RANK); } else { sfx("click"); openMissions(); } }
-  else if (go === "lab") { if (S.rank < 2) { nope(); setTimeout(() => { if (screen === "s-hub") openRank(); }, 350); } else { sfx("click"); openLab(); } }
+  else if (go === "lab") { if (S.rank < OPEN_RANK.lab) { nope(); setTimeout(() => { if (screen === "s-hub") openRank(); }, 350); } else { sfx("click"); openLab(); } }
 });
 const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { refreshChips(); if (screen === "s-hub") refreshHub(); } });
 const PROF = () => ["Hi " + who() + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + who() + "!"];

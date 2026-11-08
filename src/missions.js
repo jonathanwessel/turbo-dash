@@ -1,12 +1,12 @@
 // Daily missions: three small picture tasks a day (same three all day). Finishing all three pays a Brain Chip.
-import { TRACKS } from "./data.js";
+import { TRACKS, OPEN_RANK } from "./data.js";
 import { S, save } from "./save.js";
 
-export const MISSIONS_RANK = 7;
+export const MISSIONS_RANK = OPEN_RANK.missions;
 const KINDS = [
   { id: "races", icon: "🏁", text: n => `Finish ${n} races`, goal: () => 3 },
   { id: "wins", icon: "🏆", text: n => `Win ${n} races`, goal: () => 2 },
-  { id: "podium", icon: "🥉", text: n => `Finish top 3 ${n} times`, goal: () => 3 },
+  { id: "podium", icon: "🥉", text: n => n === 1 ? "Finish in the top 3" : `Finish in the top 3, ${n} times`, goal: () => 3 },
   { id: "coins", icon: "🪙", text: n => `Grab ${n} road coins`, goal: () => 80 },
   { id: "jumps", icon: "🦘", text: n => `Do ${n} big jumps`, goal: () => 8 },
   { id: "powers", icon: "❓", text: n => `Use ${n} power-ups`, goal: () => 4 },
