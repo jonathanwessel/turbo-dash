@@ -86,7 +86,7 @@ window.__sweep = async (only) => {
   const td = window.__td, wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
   const go = async (k, fn, sel) => {
     if (only && !only.includes(k)) return;
-    try { await fn(); await wait(500); const iss = window.__audit(sel || ("#" + k.split(":")[0])); if (iss.length) out[k] = iss; } catch (e) { out[k] = ["ERR " + e.message]; }
+    try { await fn(); await wait(500); const root = sel || ("#" + k.split(":")[0]); const iss = window.__audit(root); if (iss.length) out[k] = iss; window.__collect?.(k, root); } catch (e) { out[k] = ["ERR " + e.message]; }
   };
   const hub = g => async () => { td.goHub(); await wait(60); document.querySelector(`[data-go="${g}"]`).dispatchEvent(new MouseEvent("click", { bubbles: true })); };
   await go("s-title", () => td.show("s-title"));
@@ -142,4 +142,40 @@ window.__sweep = async (only) => {
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
   td.show("s-title");
   return out;
+};
+
+/* Layout snapshot for refactoring the stylesheet: every visible element's box and key styles on every screen the
+   sweep visits. await __snap() returns it; __snapDiff(a, b) lists what moved or changed. */
+const SNAP_STYLES = ["fontSize", "fontFamily", "fontWeight", "color", "backgroundColor", "backgroundImage", "borderTopWidth", "borderTopColor", "borderRadius", "boxShadow", "opacity", "textAlign", "lineHeight", "letterSpacing", "textTransform", "transform"];
+window.__snap = async (only) => {
+  const snap = {};
+  window.__collect = (k, rootSel) => {
+    const root = document.querySelector(rootSel), seen = new Map(), out = {};
+    if (!root) return;
+    for (const e of root.querySelectorAll("*")) {
+      if (e.closest("svg") && e.tagName !== "svg") continue;
+      const r = e.getBoundingClientRect(); if (r.width < 1 || r.height < 1) continue;
+      const cs = getComputedStyle(e); if (cs.visibility === "hidden" || cs.display === "none") continue;
+      const base = (e.id ? "#" + e.id : e.tagName.toLowerCase() + (typeof e.className === "string" && e.className ? "." + e.className.trim().split(/\s+/).join(".") : "")) + "|" + (e.textContent || "").trim().slice(0, 12);
+      const n = (seen.get(base) || 0) + 1; seen.set(base, n);
+      out[base + "#" + n] = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), s: SNAP_STYLES.map(p => String(cs[p]).slice(0, 80)).join(";") };
+    }
+    snap[k] = out;
+  };
+  try { await window.__sweep(only); } finally { window.__collect = null; }
+  return snap;
+};
+window.__snapDiff = (a, b, px = 2) => {
+  const res = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const A = a[k] || {}, B = b[k] || {}, d = [];
+    for (const id of new Set([...Object.keys(A), ...Object.keys(B)])) {
+      const x = A[id], y = B[id];
+      if (!x || !y) { d.push((x ? "gone " : "new ") + id); continue; }
+      if (Math.abs(x.x - y.x) > px || Math.abs(x.y - y.y) > px || Math.abs(x.w - y.w) > px || Math.abs(x.h - y.h) > px) d.push(`moved ${id} [${x.x},${x.y},${x.w}x${x.h}] -> [${y.x},${y.y},${y.w}x${y.h}]`);
+      if (x.s !== y.s) { const xs = x.s.split(";"), ys = y.s.split(";"); d.push("style " + id + " " + SNAP_STYLES.filter((p, i) => xs[i] !== ys[i]).map(p => p + ":" + xs[SNAP_STYLES.indexOf(p)] + "->" + ys[SNAP_STYLES.indexOf(p)]).join(", ")); }
+    }
+    if (d.length) res[k] = d;
+  }
+  return res;
 };

@@ -1,7 +1,4 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #1a0b3d; color: #fff;
-  font-family: "Arial Rounded MT Bold", "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
 button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: manipulation; }
 [hidden] { display: none !important; }
 
@@ -113,7 +110,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .track-card { position: relative; flex: 0 0 auto; width: clamp(150px, 34vmin, 240px); height: min(100%, clamp(200px, 62vmin, 330px)); border-radius: 26px; scroll-snap-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 14px 10px; border: 4px solid rgba(255,255,255,.75); box-shadow: 0 8px 0 rgba(0,0,0,.35); overflow: hidden; }
 .track-card .tc-icon { font-size: clamp(54px, 15vmin, 96px); line-height: 1; filter: drop-shadow(0 4px 0 rgba(0,0,0,.25)); }
-.track-card .tc-name { font-size: clamp(18px, 4.8vmin, 28px); font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.45); text-align: center; }
+.track-card .tc-name { font-size: clamp(18px, 4.8vmin, 28px); font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.45); text-align: center; -webkit-text-stroke: 1.5px rgba(0,0,0,.55); paint-order: stroke fill; }
 .track-card .tc-best { font-size: clamp(26px, 7vmin, 40px); min-height: 1.2em; }
 .track-card .tc-prize { font-weight: 900; background: rgba(0,0,0,.4); border-radius: 999px; padding: 2px 12px; font-size: clamp(16px, 4.2vmin, 22px); }
 .track-card.locked { filter: saturate(.25) brightness(.75); }
@@ -156,8 +153,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .tile.purple { background: linear-gradient(#b67cff, #6a2bd6); }
 
 .trophies { flex: 1; width: 100%; min-height: 0; display: flex; gap: 16px; }
-.shelf { flex: 0 0 auto; width: min(38%, 360px); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: center;
-  background: linear-gradient(#7a4a22, #5a3416); border: 4px solid #a8743f; border-radius: 22px; padding: 10px; }
+.shelf { flex: 0 0 auto; width: min(38%, 360px); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: linear-gradient(#7a4a22, #5a3416); border: 4px solid #a8743f; border-radius: 22px; padding: 10px; align-content: start; overflow-y: auto; touch-action: pan-y; }
 .shelf div { background: rgba(0,0,0,.25); border-radius: 14px; padding: 6px 4px; text-align: center; font-size: 13px; font-weight: 700; }
 .shelf div b { display: block; font-size: clamp(28px, 7vmin, 44px); line-height: 1.1; }
 .shelf div.none b { opacity: .3; filter: grayscale(1); }
@@ -172,8 +168,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .goal .gm small { font-size: 12px; opacity: .8; }
 .goal button { font-weight: 900; font-size: 16px; padding: 6px 12px; border-radius: 12px; background: #5a4a7a; color: #cfc6e6; min-width: 86px; }
 .goal.ready button { background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; animation: pulse .6s ease-in-out infinite alternate; }
-
-.card.parent { max-width: 560px; }
 .card.parent p { margin: 0 0 8px; font-size: 15px; }
 .card.parent textarea { width: 100%; font: 12px monospace; border-radius: 10px; padding: 6px; user-select: text; -webkit-user-select: text; }
 .big-btn.small { font-size: 16px; padding: 8px 14px; border-radius: 14px; }
@@ -202,7 +196,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .chest { font-size: clamp(42px, 12vmin, 76px); width: 1.6em; height: 1.6em; border-radius: 22px; background: rgba(255,255,255,.12); border: 3px solid rgba(255,255,255,.4); animation: wiggle 1.2s ease-in-out infinite; line-height: 1; }
 .chest:nth-child(2) { animation-delay: .2s; } .chest:nth-child(3) { animation-delay: .4s; }
 .chest.open { animation: cbump .4s; font-size: clamp(20px, 6vmin, 32px); font-weight: 900; color: #ffd400; background: rgba(255,212,0,.2); border-color: #ffd400; }
-.chest.other { animation: none; font-size: clamp(16px, 4.5vmin, 22px); font-weight: 700; opacity: .5; }
+.chest.other { animation: none; font-size: clamp(16px, 4.5vmin, 22px); font-weight: 700; opacity: .5; transform: scale(.82); }
 @keyframes wiggle { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-8deg); } 90% { transform: rotate(8deg); } }
 .gift-day { font-size: 20px; font-weight: 700; opacity: .85; }
 #upd-now { margin-top: 12px; animation: pulse .6s ease-in-out infinite alternate; }
@@ -258,9 +252,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .rank-star span { margin-top: 10px; }
 .rank-star.big { width: 140px; height: 140px; font-size: 56px; margin: 0 auto; animation: spinin .8s ease-out; }
 @keyframes spinin { from { transform: rotate(-200deg) scale(.2); } to { transform: none; } }
-.rk-title { font-size: clamp(26px, 7vmin, 42px); font-weight: 900; color: #ffd400; text-shadow: 0 3px 0 rgba(0,0,0,.4); }
 .rk-next { font-size: clamp(15px, 4vmin, 20px); font-weight: 700; }
-.fronts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; width: 100%; }
 .front { width: clamp(130px, 22vw, 210px); background: rgba(255,255,255,.1); border: 4px solid rgba(255,255,255,.3); border-radius: 22px; padding: 10px; text-align: center; }
 .front .fi { font-size: clamp(34px, 9vmin, 54px); line-height: 1.1; }
 .front b { display: block; font-size: clamp(16px, 4.4vmin, 22px); }
@@ -268,11 +260,10 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .front .gauge i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, #ff8a00, #ffd400); }
 .front.full { border-color: #5be36a; background: rgba(91,227,106,.15); }
 .front.full .gauge i { background: linear-gradient(90deg, #23a33a, #5be36a); }
-.front.behind { border-color: #ffd400; animation: glow .8s ease-in-out infinite alternate; }
+.front.behind { border-color: #ffd400; animation: none; }
 @keyframes glow { to { box-shadow: 0 0 22px 4px rgba(255,212,0,.6); } }
 .front small { font-size: 15px; font-weight: 900; }
 .rank-up-btn { font-size: clamp(26px, 7vmin, 42px); animation: pulse .6s ease-in-out infinite alternate; }
-.rk-hint { font-size: clamp(15px, 4vmin, 20px); font-weight: 700; text-align: center; min-height: 1.2em; }
 .ru-unlock { font-size: clamp(20px, 5.5vmin, 30px); font-weight: 900; color: #5be36a; margin: 6px 0; }
 
 .diff-bar { display: flex; gap: 10px; justify-content: center; }
@@ -280,7 +271,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .diff-bar button small { display: block; font-size: .7em; opacity: .85; }
 .diff-bar button.on { background: #ffd400; color: #4a2600; border-color: #fff3b0; }
 .diff-bar button.locked { opacity: .45; }
-.p-set { margin: 6px 0; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+.p-set { margin: 6px 0; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-start; }
 .p-set button { padding: 4px 10px; border-radius: 10px; background: rgba(255,255,255,.15); border: 2px solid rgba(255,255,255,.35); font-weight: 700; }
 .p-set button.on { background: #5be36a; color: #08300f; border-color: #c9ffd0; }
 
@@ -344,7 +335,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .race-tabs button.locked { opacity: .5; }
 .cup-card { position: relative; flex: 0 0 auto; width: clamp(180px, 40vmin, 280px); height: min(100%, clamp(200px, 56vmin, 320px)); border-radius: 26px; scroll-snap-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px; border: 4px solid rgba(255,255,255,.75); box-shadow: 0 8px 0 rgba(0,0,0,.35); background: #2a1460; overflow: hidden; }
-.cup-card .cc-cup { font-size: clamp(54px, 14vmin, 90px); line-height: 1; }
+.cup-card .cc-cup { font-size: clamp(54px, 14vmin, 90px); line-height: 1.25; margin-bottom: 6px; }
 .cup-card .cc-name { font-size: clamp(18px, 5vmin, 28px); font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.45); }
 .cup-card .cc-tracks { font-size: clamp(22px, 6vmin, 34px); letter-spacing: 6px; }
 .cup-card .cc-car { font-size: 14px; font-weight: 700; background: rgba(0,0,0,.35); border-radius: 999px; padding: 2px 10px; }
@@ -363,8 +354,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .ce-place { font-size: clamp(22px, 6vmin, 34px); font-weight: 900; color: #ffd400; }
 .ce-prizes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; font-size: clamp(18px, 5vmin, 26px); font-weight: 900; margin: 6px 0 10px; }
 .ce-prizes span { background: rgba(255,255,255,.12); border-radius: 14px; padding: 4px 12px; }
-.toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); z-index: 60; background: #ff3fe5; color: #fff; border: 4px solid #fff;
-  border-radius: 999px; padding: 8px 22px; font-size: clamp(20px, 5.5vmin, 30px); font-weight: 900; box-shadow: 0 6px 0 rgba(0,0,0,.35); animation: popin .3s ease-out; white-space: nowrap; }
 
 /* ---------- v0.8: power-ups ---------- */
 .power { position: absolute; pointer-events: auto; border-radius: 50%; display: grid; place-items: center;
@@ -392,7 +381,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .p-box { background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2); border-radius: 16px; padding: 8px 12px; }
 .p-box h3 { margin: 0 0 6px; color: #ffd400; font-size: 17px; }
 .p-box p { font-size: 13px; margin: 0 0 6px; }
-.p-set { justify-content: flex-start; }
 .p-set b { flex: 1 0 100%; font-size: 14px; }
 .p-set input[type=range] { width: 100%; }
 .p-hist { font-size: 13px; max-height: 150px; overflow-y: auto; display: grid; grid-template-columns: auto auto auto auto auto; gap: 2px 10px; }
@@ -423,7 +411,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 /* ---------- v0.13: settings, grown-up check, reset ---------- */
 .icon-btn.gear { width: 64px; height: 64px; font-size: 36px; border-radius: 20px; }
-.set-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; width: min(100%, 900px); align-content: center; }
 .set-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 10px; border-radius: 24px; background: rgba(255,255,255,.12);
   border: 4px solid rgba(255,255,255,.4); box-shadow: 0 6px 0 rgba(0,0,0,.3); }
 .set-tile span { font-size: clamp(40px, 10vmin, 60px); line-height: 1; }
@@ -432,7 +419,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .set-tile.off { opacity: .55; }
 .set-tile.danger { border-color: #ff9db0; background: rgba(163,32,58,.45); }
 .set-tile:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
-.set-foot { font-size: 14px; opacity: .75; }
 .gq { font-size: clamp(28px, 8vmin, 46px); font-weight: 900; margin: 6px 0 14px; }
 .ga button { font-size: clamp(26px, 7vmin, 40px); font-weight: 900; width: 2.6em; height: 2em; border-radius: 18px; background: #3a2a7a; border: 3px solid rgba(255,255,255,.5); }
 .ga.shake { animation: shake .4s; }
@@ -456,7 +442,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #s-title .streaks i:nth-child(3) { top: 66%; width: 35%; animation-delay: .9s; }
 #s-title .streaks i:nth-child(4) { top: 86%; width: 48%; animation-delay: 1.25s; }
 @keyframes streak { from { transform: translateX(-60%); opacity: 0; } 20% { opacity: 1; } to { transform: translateX(260%); opacity: 0; } }
-#s-title .credits .made { font-size: min(6.5vw, 8vh); }
+#s-title .credits .made { font-size: min(6.5vw, 8vh); letter-spacing: .04em; }
 #s-title .credits .by { font-size: min(3.6vw, 4.6vh); }
 #s-title .play-btn { font-size: min(9vw, 13vh); padding: .25em 1.5em; border-radius: .5em; border-width: max(4px, .06em); box-shadow: 0 .1em 0 rgba(0,0,0,.35), 0 0 .5em rgba(91,227,106,.6); animation: pulse .7s ease-in-out infinite alternate; }
 
@@ -512,16 +498,14 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #s-title { justify-content: space-between; padding-top: max(3vh, env(safe-area-inset-top)); padding-bottom: max(4vh, env(safe-area-inset-bottom)); }
 #s-title .title-hero { margin-top: 1vh; }
 #s-title .credits { display: flex; flex-direction: column; gap: 1.2vh; }
-#s-title .credits .made { letter-spacing: .04em; }
 #s-title .credits .by { letter-spacing: .08em; }
 .share-box { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px;
   background: #fff; color: #1a0b3d; border: 4px solid #ffd400; border-radius: 20px; padding: 10px 14px 10px 10px; box-shadow: 0 6px 0 rgba(0,0,0,.3); max-width: 42vw; }
-.share-box img { width: min(19vh, 15vw); height: min(19vh, 15vw); display: block; image-rendering: pixelated; }
+.share-box img { display: block; image-rendering: pixelated; width: min(17vh, 13vw); height: min(17vh, 13vw); }
 .share-box b { display: block; font-size: min(3.4vh, 2.6vw); color: #e8262b; }
 .share-box small { display: block; font-size: min(2.2vh, 1.7vw); font-weight: 700; max-width: 12em; }
 @media (orientation: portrait) { .share-box { left: 50%; transform: translateX(-50%); bottom: auto; top: 62%; max-width: 90vw; } .share-box b { font-size: 4vw; } .share-box small { font-size: 3vw; } .share-box img { width: 28vw; height: 28vw; } }
 .share-box { flex-direction: column; gap: 4px; padding: 8px; max-width: 18vw; text-align: center; }
-.share-box img { width: min(17vh, 13vw); height: min(17vh, 13vw); }
 .share-box b { font-size: min(2.8vh, 2.1vw); }
 .share-box small { font-size: min(1.8vh, 1.4vw); max-width: none; }
 #s-title .play-btn { font-size: min(8vw, 11.5vh); padding: .22em 1.2em; }
@@ -538,9 +522,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 @keyframes drive2 { from { transform: translateX(2550px) scaleX(-1); } to { transform: translateX(-150px) scaleX(-1); } }
 
 /* ---------- v0.16: bosses ---------- */
-.boss-card { border-color: #ffd400; background: linear-gradient(160deg, #3a0f5a, #12062e); max-width: 560px; }
 .boss-face { font-size: clamp(70px, 18vmin, 120px); line-height: 1; animation: bob .8s ease-in-out infinite alternate; filter: drop-shadow(0 6px 0 rgba(0,0,0,.4)); }
-.boss-says { font-size: clamp(16px, 4.4vmin, 22px); font-weight: 900; font-style: italic; color: #ff8ad8; margin-bottom: 4px; }
 #bi-car { width: min(60vw, 320px); height: auto; aspect-ratio: 320 / 170; }
 .cup-card.boss { background: linear-gradient(160deg, #3a0f5a, #12062e); }
 .cup-card.boss .cc-cup { font-size: clamp(60px, 15vmin, 96px); }
@@ -578,16 +560,14 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .world-bar button { font-size: clamp(16px, 4.2vmin, 22px); padding: 5px 16px; border-width: 3px; }
 .race-tabs button { padding: 7px 22px; }
 .diff-bar button small { font-size: .8em; letter-spacing: -2px; }
-.track-card .tc-name { -webkit-text-stroke: 1.5px rgba(0,0,0,.55); paint-order: stroke fill; }
 .track-card .tc-lock small { font-size: clamp(18px, 4.4vmin, 24px); font-weight: 900; }
 
 /* 🎁 treasure chests keep one size; an opened chest shows its coin and number stacked inside (no spilling) */
 .r-chests { --cs: clamp(64px, 17vmin, 118px); }
 .chest { width: var(--cs); height: var(--cs); font-size: calc(var(--cs) * 0.62); line-height: 1; padding: 0; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-.chest.open, .chest.other { font-size: calc(var(--cs) * 0.26); }
-.chest i { font-style: normal; font-size: 1.25em; }
+.chest.open, .chest.other { font-size: calc(var(--cs) * 0.26); gap: 0; }
+.chest i { font-style: normal; font-size: 1.25em; line-height: 1.15; display: block; }
 .chest b { font-weight: 900; }
-.chest.other { transform: scale(.82); }
 /* short landscape screens (phones, wide tablets): a more compact result card */
 @media (max-height: 560px) and (orientation: landscape) {
   .result .trophy { font-size: clamp(44px, 13vmin, 80px); }
@@ -603,7 +583,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 /* 📐 v0.20.1 layout pass: nothing may overlap or fall off the screen, even on short, wide tablets */
 .screen.panel { overflow-y: auto; overscroll-behavior: contain; }
-.shelf { align-content: start; overflow-y: auto; touch-action: pan-y; }
 .track-card > *, .cup-card > * { flex-shrink: 1; min-height: 0; }
 .track-card .tc-best:empty { display: none; }
 @media (max-height: 560px) and (orientation: landscape) {
@@ -660,7 +639,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #s-title .logo { font-size: min(14vw, 20vh); }
 #s-title .title-hero { padding-top: 2vh; }
 /* centered content that's taller than the screen must not slide up under the header */
-.set-grid { align-content: safe center; }
+.set-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; width: min(100%, 900px); align-content: safe center; }
 .screen { justify-content: safe center; }
 .screen.panel { justify-content: flex-start; }
 @media (max-height: 420px) and (orientation: landscape) {
@@ -671,10 +650,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .track-card.locked > :not(.tc-lock):not(.tc-icon) { visibility: hidden; }
 .track-card .tc-lock { background: rgba(0,0,0,.5); align-content: end; padding-bottom: 14%; }
 .g-worlds[hidden] { display: none; }
-.chest i { line-height: 1.15; display: block; }
 .chest b { line-height: 1.1; display: block; }
-.chest.open, .chest.other { gap: 0; }
-.cup-card .cc-cup { line-height: 1.25; margin-bottom: 2px; }
 /* Main Street scroll arrows sit down on the road, so they never cover a building's sign */
 .town-arrow { top: auto; bottom: max(14px, 5vh); transform: none; height: 70px; }
 
@@ -747,7 +723,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .mu-empty { grid-column: 1 / -1; text-align: center; font-size: clamp(18px, 4.6vmin, 26px); font-weight: 900; padding: 30px; }
 /* the Main Street arrows fit inside the road band at any screen height */
 .town-arrow { height: min(70px, 10.5vh); width: min(64px, 12vh); bottom: max(4px, 1.2vh); font-size: min(34px, 6vh); border-radius: min(20px, 3vh); }
-.cup-card .cc-cup { margin-bottom: 6px; }
 .up-card .up-icon, .set-tile > span, .goal .gi, .shelf div b, .tc-icon, .cc-cup { line-height: 1.3; }
 
 @media (orientation: portrait) { .track-card.locked { justify-content: flex-start; padding-left: 18px; } .track-card .tc-lock { left: 42%; border-radius: 0 26px 26px 0; align-content: center; padding-bottom: 0; grid-auto-flow: row; gap: 4px; } .track-card .tc-icon { font-size: clamp(54px, 9vmin, 80px); margin-bottom: 6px; } }
@@ -843,7 +818,7 @@ img.emo { display: inline-block; width: 1.12em; height: 1.12em; vertical-align: 
   --race: "TD Race", "TD Round", system-ui, sans-serif; --round: "TD Round", "Nunito", system-ui, sans-serif;
   --checker: conic-gradient(var(--ink) 25%, var(--lane) 0 50%, var(--ink) 0 75%, var(--lane) 0) 0 0 / 22px 22px;
 }
-html, body { font-family: var(--round); background: var(--asphalt); }
+html, body { margin: 0; height: 100%; overflow: hidden; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; font-family: var(--round); background: var(--asphalt); }
 #town .lbl { font-family: var(--round); }
 
 /* screens: a neutral asphalt dim over the demo race (not purple glass) */
@@ -862,8 +837,8 @@ html, body { font-family: var(--round); background: var(--asphalt); }
 .card { background: var(--asphalt); border: 6px solid var(--lane); border-radius: 22px; box-shadow: 0 0 0 3px var(--ink), 0 9px 0 3px var(--ink); padding: 0 24px 18px; }
 .card::before { content: ""; display: block; height: 22px; margin: 0 -24px 12px; background: var(--checker); border-bottom: 4px solid var(--ink); }
 @media (max-height: 430px) and (orientation: landscape) { .card { padding: 0 18px 10px; } .card::before { height: 16px; margin: 0 -18px 8px; background-size: 16px 16px; } }
-.boss-card { background: var(--asphalt); border-color: var(--lane); }
-.boss-says { font-style: normal; color: var(--lane); font-weight: 800; }
+.boss-card { max-width: 560px; background: var(--asphalt); border-color: var(--lane); }
+.boss-says { font-size: clamp(16px, 4.4vmin, 22px); margin-bottom: 4px; font-style: normal; color: var(--lane); font-weight: 800; }
 .gift-day { opacity: 1; font-weight: 800; }
 
 /* road-sign buttons: flat color, a solid lip underneath, an ink outline; pressing pushes the sign down */
@@ -899,7 +874,6 @@ html, body { font-family: var(--round); background: var(--asphalt); }
 .goal.ready, .mis.ready, .front.behind, .bench.done, .gc.driving { border-color: var(--sign); background: var(--asphalt-2); }
 .gc.mine { border-color: var(--lane); }
 .front.full { border-color: var(--go); background: var(--asphalt-2); }
-.front.behind { animation: none; }
 .set-tile { border-radius: 16px; }
 .set-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 
@@ -919,19 +893,19 @@ html, body { font-family: var(--round); background: var(--asphalt); }
 /* speech bubbles and toasts: lane-white cards with ink text */
 .speech, .classroom .speech { background: var(--lane); color: var(--ink); border: 3px solid var(--ink); }
 .speech::before { border-right-color: var(--ink); }
-.toast { background: var(--lane); color: var(--ink); border: 4px solid var(--ink); box-shadow: 0 6px 0 var(--ink); text-shadow: none; font-weight: 900; }
+.toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); z-index: 60; border-radius: 999px; padding: 8px 22px; font-size: clamp(20px, 5.5vmin, 30px); animation: popin .3s ease-out; white-space: nowrap; background: var(--lane); color: var(--ink); border: 4px solid var(--ink); box-shadow: 0 6px 0 var(--ink); text-shadow: none; font-weight: 900; }
 
 /* rank: a race-number roundel and a pit board of gauges (rows, not a card grid) */
 .rank-star, .rank-star.big { clip-path: none; border-radius: 50%; background: var(--lane); color: var(--ink); border: 6px solid var(--flag); box-shadow: 0 6px 0 var(--ink); font-family: var(--race); font-weight: 400; }
 .rank-star span { margin-top: 0; }
-.rk-title { font-family: var(--race); font-weight: 400; color: var(--sign); text-shadow: 3px 3px 0 var(--ink); }
-.fronts { flex-direction: column; flex-wrap: nowrap; gap: 8px; width: min(100%, 620px); }
+.rk-title { font-size: clamp(26px, 7vmin, 42px); font-family: var(--race); font-weight: 400; color: var(--sign); text-shadow: 3px 3px 0 var(--ink); }
+.fronts { display: flex; justify-content: center; flex-direction: column; flex-wrap: nowrap; gap: 8px; width: min(100%, 620px); }
 .front { width: 100%; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "fi b small" "fi gauge gauge"; align-items: center; column-gap: 12px; row-gap: 2px; padding: 6px 14px; text-align: left; }
 .front .fi { grid-area: fi; font-size: clamp(26px, 6vmin, 38px); }
 .front b { grid-area: b; font-size: clamp(15px, 3.8vmin, 19px); }
 .front small { grid-area: small; }
 .front .gauge { grid-area: gauge; margin: 0; height: 16px; }
-.rk-hint { background: var(--sign); color: var(--ink); border-radius: 12px; padding: 6px 14px; font-weight: 900; }
+.rk-hint { font-size: clamp(15px, 4vmin, 20px); text-align: center; min-height: 1.2em; background: var(--sign); color: var(--ink); border-radius: 12px; padding: 6px 14px; font-weight: 900; }
 .rk-hint:empty { display: none; }
 
 /* track and cup cards keep their scenery, framed like stickers */
@@ -950,7 +924,7 @@ html, body { font-family: var(--round); background: var(--asphalt); }
 .card.result .trophy { font-size: clamp(40px, 11vmin, 84px); margin-bottom: 0; }
 .card.result h1 { font-size: clamp(30px, 8.5vmin, 54px); margin: 2px 0 4px; }
 .card.result::before { margin-bottom: 8px; }
-.set-foot { opacity: .8; line-height: 1.5; text-align: center; }
+.set-foot { font-size: 14px; opacity: .8; line-height: 1.5; text-align: center; }
 .card h1 { line-height: 1.12; margin-bottom: 8px; }
 .g-gridbtn, .g-worlds button { background: var(--asphalt-3); color: var(--lane); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 12px; }
 .g-gridbtn.on, .g-worlds button.on { background: var(--sign); color: var(--ink); border-color: var(--ink); }
