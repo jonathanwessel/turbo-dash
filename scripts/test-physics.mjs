@@ -324,5 +324,18 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   check("camera starts on the car", r.camOff == null || Math.abs(r.camOff - r.player.offset) < 1e-9, `camera at ${r.camOff}, car at ${r.player.offset}`);
 }
 
+/* ---------- 🏙️ Downtown is fair: a driver who steers back once pushed rarely hits the corner barriers (v1.7.1: it was ~27 a race) ---------- */
+{
+  const { BONUS_TRACKS } = await import("../src/data.js");
+  let bonks = 0, races = 0;
+  for (const lvl of [0, 3]) for (let k = 0; k < 2; k++) {
+    let done = null; races++;
+    const r = new Race({ getContext: () => null, width: 1, height: 1 }, { sfx: n => { if (n === "bonk") bonks++; }, engine() {}, onFinish: x => { done = x; } });
+    r.setup(BONUS_TRACKS[0], "race", zippy, statsFor(zippy, { engine: lvl, turbo: lvl, tires: lvl, magnet: 0 }, {}, {}), { diff: "normal" });
+    for (let i = 0; i < 60 * 300 && !done; i++) { const p = r.player; r.input.left = p.offset > 0.35; r.input.right = p.offset < -0.35; r.update(STEP); }
+  }
+  check("Downtown corners are fair", bonks / races <= 3, `${(bonks / races).toFixed(1)} barrier hits a race`);
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

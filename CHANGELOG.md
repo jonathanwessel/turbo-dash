@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.2 — Fair Downtown corners
+
+- **Fixed: Downtown kept throwing the car into the trucks.** Its city-block corners pushed the car outward about
+  twice as hard as full steering could push back, so a driver who steered back once pushed hit the barriers about
+  27 times a race. Now the corners push only a little harder than a sharp curve elsewhere, the car eases off a
+  little for each corner (rivals already did; there is no brake), and touching a barrier costs less speed. The
+  same driver now hits none, with about the same race times. Other tracks are unchanged. `npm test` checks it.
+
 ## v1.7.1 — Learn to steer
 
 - **The first race teaches the controls.** On a new player's first race, bouncing hands point at ◀ and ▶ with

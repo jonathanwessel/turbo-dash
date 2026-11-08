@@ -343,7 +343,9 @@ export class Race {
     const ph = this.phys;
     // ❄️ cars that aren't made for ice (no ❄️ in the garage) spin their wheels a little on the Glacier Rink
     const draft = this.drafting && !auto && !fast;
-    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1) * (draft ? 1.06 : 1)) * ph.top;
+    // Downtown: like the rivals, the car eases off for a city-block corner (there's no brake pedal)
+    const corner = this.track.layout === "blocks" && !auto && (Math.abs(seg.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(p.dist + 5 * SEG).curve) > BLOCK_CURVE * 0.5);
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (corner ? 0.86 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1) * (draft ? 1.06 : 1)) * ph.top;
     if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : draft ? 1.3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
@@ -378,7 +380,10 @@ export class Race {
         this.driftT = 0;
       }
     }
-    if (!flying) p.offset -= dx * sp * seg.curve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);
+    // the curve pushes the car outward. Downtown's squared-off corners look far sharper than any normal curve but
+    // push only a little harder than a sharp one, so steering into them can always hold the line (other tracks unchanged)
+    const ac = Math.abs(seg.curve), pushCurve = this.track.layout === "blocks" && ac > 4 ? Math.sign(seg.curve) * (4 + (ac - 4) * 0.25) : seg.curve;   // Downtown only
+    if (!flying) p.offset -= dx * sp * pushCurve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);
     // skid marks and tire smoke: turning hard into a sharp curve at speed, sliding on ice, or drifting
     const skid = !flying && !auto && racing && p.speed > BASE_MAX * 0.5 && ((Math.abs(steer) > 0.6 && Math.abs(seg.curve) > 1.2 && Math.sign(steer) === Math.sign(seg.curve)) || Math.abs(p.slideV) > 1.7 || this.driftT > 0.2);
     if (skid) {
@@ -399,7 +404,7 @@ export class Race {
       const a = Math.abs(p.offset);
       p.offset = seg.barrier * (a - BARRIER < 0.1 ? BARRIER : Math.max(BARRIER, a - dt * 4));
       if (this.bonkCD <= 0 && !auto) {
-        this.bonkCD = 0.6; p.speed *= 0.75; this.shake = Math.max(this.shake, 0.3); h.sfx("bonk"); this.popup("BONK!", "#ffffff");
+        this.bonkCD = 0.6; p.speed *= 0.88; this.shake = Math.max(this.shake, 0.25); h.sfx("bonk"); this.popup("BONK!", "#ffffff");
         this.sparks(0.5 + seg.barrier * 0.1, 0.88, 10, "#ffb020");
         if (!this.cornerTip) { this.cornerTip = true; setTimeout(() => this.popup("Steer early into the corners!", "#ffd400"), 500); }
       }
