@@ -57,7 +57,7 @@ function recoverToy() {
   saveDiag();
   const fresh = glCanvas.cloneNode(false); glCanvas.replaceWith(fresh); glCanvas = fresh;   // a lost canvas can't draw again
   try { toyRace.view.renderer.dispose(); } catch (e) { /* already gone */ }
-  toyRace.view = null; cupRun = null; bossRun = null; trialRun = false; previewRun = null;
+  toyRace.view = null; run = RACE();
   const wasRace = mode === "race";
   S.lastTrack = "sunny"; menuDemo(); resize();
   if (wasRace) openTracks();
@@ -137,15 +137,30 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-preview", "s-pvend", "s-math", "s-word", "s-bank", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
+/* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
+   One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
+const NO_RETURN = new Set(["s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+let nav = [], navBack = false;
 function show(id) {
+  if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
   screen = id; inRoom = !!$(id)?.dataset.room;
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
   paintUpdate();
+}
+const REOPEN = {
+  "s-tracks": () => openTracks(), "s-school": () => { paintSchool(); show("s-school"); }, "s-garage": () => { garage.open(); show("s-garage"); },
+  "s-settings": () => { paintToggles(); show("s-settings"); }, "s-parent": () => { paintParent(); show("s-parent"); }, "s-rank": () => openRank(),
+  "s-lab": () => openLab(), "s-trophies": () => openTrophies(), "s-bank": () => openBank(),
+};
+function back() {
+  let id; do id = nav.pop(); while (id && (id === screen || NO_RETURN.has(id)));
+  navBack = true;
+  try { if (!id) show("s-hub"); else (REOPEN[id] || (() => show(id)))(); } finally { navBack = false; }
 }
 function setRaceUi(on) {
   if (!on) { classic.input.axis = null; if (toyRace) toyRace.input.axis = null; setRain(false); classic.weather = null; classic.puddles = new Map(); } $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
@@ -250,10 +265,16 @@ function paintRest() {
   $("rest-left").textContent = `${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, "0")}`;
   if (left <= 0) { S.restUntil = 0; save(); show("s-title"); }
 }
+/* ---------- the race being played: one object instead of separate cup/boss/trial/preview flags ----------
+   run.kind: "race" | "cup" (run.cup, run.i: race 0-2, run.pts, run.diff) | "boss" (run.boss) | "trial" | "preview" (run.world).
+   lastRun is what "Again" replays. */
+const RACE = () => ({ kind: "race" });
+let run = RACE(), lastRun = null;
+const isPreview = () => run.kind === "preview";
 function startRace(track) {
-  const midCup = cupRun && cupRun.i > 0;   // never break a cup in the middle
+  const midCup = run.kind === "cup" && run.i > 0;   // never break a cup in the middle
   if (updateReady && !midCup) { updateGate(); return; }   // never start a race on an old version
-  if (!midCup && restDue()) { cupRun = null; menuDemo(); show("s-rest"); return; }
+  if (!midCup && restDue()) { run = RACE(); menuDemo(); show("s-rest"); return; }
   if (track.world === "toy" && !ToyView) {
     if (toyFailed) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); return; }
     if (toyWaiting) return;   // a second tap while it loads
@@ -262,23 +283,23 @@ function startRace(track) {
   }
   if (!engineFor(track)) { sfx("nope"); toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!"); engineFor(TRACKS[0]); return; }
   clearTimeout(resultT); tiltZero = null;
-  if (!previewRun && track.world !== "earth" && !S.seen["w:" + track.world]) { const w = WORLDS.find(x => x.id === track.world); S.seen["w:" + track.world] = true; if (w) museumAdd(w.icon, `First race in ${w.name}`); }
-  currentTrack = track; if (!previewRun) { S.lastTrack = track.id; save(); }
-  const pw = previewRun && WORLDS.find(x => x.id === previewRun.world), pcar = pw && worldCar(pw);
+  if (!isPreview() && track.world !== "earth" && !S.seen["w:" + track.world]) { const w = WORLDS.find(x => x.id === track.world); S.seen["w:" + track.world] = true; if (w) museumAdd(w.icon, `First race in ${w.name}`); }
+  currentTrack = track; if (!isPreview()) { S.lastTrack = track.id; save(); }
+  const pw = isPreview() && WORLDS.find(x => x.id === run.world), pcar = pw && worldCar(pw);
   const { car, stats } = pw ? { car: pcar, stats: statsFor(pcar, UPS3, { ...S.research, ...(pw.kit ? { [pw.kit]: Math.max(1, S.research[pw.kit] || 0) } : {}) }, S.school.skills) } : carStats();
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
-  const boss = bossRun && { ...bossRun, def: CARS.find(c => c.id === bossRun.car) };
-  const trial = trialRun && !boss;
+  const boss = run.kind === "boss" && { ...run.boss, def: CARS.find(c => c.id === run.boss.car) };
+  const trial = run.kind === "trial";
   // 🌧️ about one Earth race in four has weather (never in the very first races, never in Time Trials or boss races)
   const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"];
   const weather = track.world === "earth" && S.parent.weather && S.rank >= OPEN_RANK.weather && !trial && !boss && Math.random() < 0.25
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
-  race.setup(track, "race", car, stats, previewRun ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
+  race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  show(null); setRaceUi(true); setRain(!previewRun && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
-  if (trial || boss || previewRun) $("btn-auto").hidden = true;
+  show(null); setRaceUi(true); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
+  if (trial || boss || isPreview()) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
 
@@ -348,7 +369,6 @@ function paintRaceTabs() {
   if (raceTab === "boss") paintBosses();
 }
 /* ---------- ⏱️ Time Trials: alone against the clock and your own ghost ---------- */
-let trialRun = false, lastTrial = false;
 const trialLen = t => trackLen(t);
 function paintTrials() {
   $("trial-list").innerHTML = TRACKS.map((t, i) => {
@@ -366,7 +386,7 @@ $("trial-list").addEventListener("click", e => {
   const c = e.target.closest("[data-trial]"); if (!c) return;
   const i = +c.dataset.trial;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
-  sfx("click"); cupRun = null; bossRun = null; trialRun = true; startRace(TRACKS[i]);
+  sfx("click"); run = { kind: "trial" }; startRace(TRACKS[i]);
 });
 function showTrialResult(r) {
   const t = currentTrack, len = trialLen(t), goalsBefore = claimable().length;
@@ -386,14 +406,13 @@ function showTrialResult(r) {
   $("r-cup").innerHTML = `<div class="rc-head">⏱️ Time Trial — ${t.icon} ${t.name}</div>
     <div class="standings">${[[b, 1], [s, 2], [g, 3]].map(([x, m]) => `<span class="${medal >= m ? "me" : ""}">${TRIAL_MEDALS[m]} ${x.toFixed(1)}s</span>`).join("")}</div>`;
   $("r-chests").hidden = true; $("r-btns").hidden = false; $("btn-next").hidden = true; $("btn-again").hidden = false;
-  lastTrial = true; lastBoss = null; trialRun = false;
+  lastRun = { kind: "trial" }; run = RACE();
   show("s-result"); refreshCoins();
   sfx(medal > oldMedal || record ? "win" : "lose");
   if (medal > oldMedal) confetti(140); else if (record) confetti(60);
 }
 
 /* ---------- 👑 bosses ---------- */
-let bossRun = null, lastBoss = null;
 const bossOpen = b => S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track));
 function paintBosses() {
   $("boss-list").innerHTML = BOSSES.filter(b => b.world === S.world).map(b => {
@@ -416,7 +435,7 @@ function openBossIntro(b) {
   $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
   $("bi-info").textContent = `One on one on ${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`;
   const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
-  $("bi-go").onclick = () => { sfx("click"); cupRun = null; trialRun = false; bossRun = b; startRace(t); };
+  $("bi-go").onclick = () => { sfx("click"); run = { kind: "boss", boss: b }; startRace(t); };
   $("bi-back").onclick = () => { sfx("click"); openTracks(); };
   sfx("chest"); show("s-boss");
 }
@@ -439,25 +458,23 @@ function paintWorlds() {
     + (later.length ? `<button data-peek class="peek">Preview worlds</button>` : "");
 }
 $("world-bar").addEventListener("click", e => {
-  if (e.target.closest("[data-peek]")) { sfx("click"); openPreview(lockedWorlds()[0].id, "s-tracks"); return; }
+  if (e.target.closest("[data-peek]")) { sfx("click"); openPreview(lockedWorlds()[0].id); return; }
   const b = e.target.closest("[data-world]"); if (!b) return;
   const w = WORLDS.find(x => x.id === b.dataset.world);
   if (w.soon) { sfx("nope"); toast(`${w.icon} ${w.name} is coming soon!`); return; }
-  if (!worldOpen(S, w.id)) { sfx("click"); openPreview(w.id, "s-tracks"); return; }
+  if (!worldOpen(S, w.id)) { sfx("click"); openPreview(w.id); return; }
   sfx("click"); S.world = w.id; save(); openTracks();
   if (w.nextGen) { loadToy(); if (!S.seen.toy) { S.seen.toy = true; save(); levelUpCard(); } }
 });
 /* ---------- 👀 world previews: one lap of a world that isn't open yet, in that world's own car. No prizes,
    nothing saved: the result card says how to open the world for real. ---------- */
-let previewRun = null, previewBack = "s-tracks";
 const UPS3 = { engine: 3, turbo: 3, tires: 3, magnet: 0 };
 const worldCar = w => CARS.find(c => c.world === w.id && c.price != null) || CARS.find(c => c.world === w.id) || CARS[0];
 const lockedWorlds = () => WORLDS.filter(w => !w.soon && !worldOpen(S, w.id));
 const howToOpen = w => [S.rank < w.rank ? `Rank ${w.rank}` : "", w.kit && !S.research[w.kit] ? `the ${RESEARCH.find(r => r.id === w.kit)?.name || "World Kit"} research` : ""].filter(Boolean).join(" and ");
-function openPreview(worldId, back = "s-tracks") {
+function openPreview(worldId) {
   const w = WORLDS.find(x => x.id === worldId); if (!w || w.soon) return;
-  if (cupRun && cupRun.i > 0) { sfx("nope"); return; }   // never in the middle of a cup
-  previewBack = back;
+  if (run.kind === "cup" && run.i > 0) { sfx("nope"); return; }   // never in the middle of a cup
   const car = worldCar(w), track = TRACKS.find(t => t.world === w.id);
   $("pv-name").textContent = w.name;
   $("pv-says").textContent = `Take a peek! One lap of ${track.name} in ${carKnown(car) ? "the " + car.name : "a mystery car"}. No coins or prizes in a preview.`;
@@ -465,26 +482,25 @@ function openPreview(worldId, back = "s-tracks") {
   const cv = $("pv-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("pv-go").onclick = () => { sfx("click"); startPreview(w); };
   // ◀ ▶ flip through every world still to come
-  const L = lockedWorlds(), k = L.indexOf(w), step = d => () => { sfx("click"); openPreview(L[(k + d + L.length) % L.length].id, previewBack); };
+  const L = lockedWorlds(), k = L.indexOf(w), step = d => () => { sfx("click"); openPreview(L[(k + d + L.length) % L.length].id); };
   $("pv-prev").hidden = $("pv-next").hidden = L.length < 2; $("pv-prev").onclick = step(-1); $("pv-next").onclick = step(1);
   show("s-preview");
 }
 function startPreview(w) {
-  previewRun = { world: w.id };
-  cupRun = null; bossRun = null; trialRun = false;
+  run = { kind: "preview", world: w.id };
   startRace({ ...TRACKS.find(t => t.world === w.id), laps: 1 });
 }
 function showPreviewResult(r) {
-  const w = WORLDS.find(x => x.id === previewRun.world);
+  const w = WORLDS.find(x => x.id === run.world);
   mode = "menu"; setRaceUi(false); engineOff(); setRain(false);
   $("pe-title").textContent = r.place === 1 ? "You won the preview!" : "Preview done!";
   $("pe-place").textContent = `You came ${r.place}${suffix(r.place)} in ${w.name}, ${who()}!`;
   $("pe-info").textContent = `${w.name} opens with ${howToOpen(w)}.`;
   show("s-pvend"); sfx(r.place <= 3 ? "win" : "lose"); if (r.place === 1) confetti(80);
 }
-$("pv-back").onclick = () => { sfx("click"); show(previewBack); };
-$("pe-again").onclick = () => { sfx("click"); startPreview(WORLDS.find(x => x.id === previewRun.world)); };
-$("pe-back").onclick = () => { sfx("click"); previewRun = null; menuDemo(); openTracks(); };
+$("pv-back").onclick = () => { sfx("click"); back(); };
+$("pe-again").onclick = () => { sfx("click"); startPreview(WORLDS.find(x => x.id === run.world)); };
+$("pe-back").onclick = () => { sfx("click"); run = RACE(); menuDemo(); openTracks(); };
 /* 🧸 the first visit to Toy Track World: the game levels up! */
 function levelUpCard() {
   const el = $("levelup"); el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
@@ -518,30 +534,29 @@ function openTracks() {
 }
 $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
-  if (c.dataset.bonus) { sfx("click"); cupRun = null; bossRun = null; trialRun = false; startRace(BONUS_TRACKS.find(t => t.id === c.dataset.bonus)); return; }
+  if (c.dataset.bonus) { sfx("click"); run = RACE(); startRace(BONUS_TRACKS.find(t => t.id === c.dataset.bonus)); return; }
   const i = +c.dataset.i;
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
-  sfx("click"); cupRun = null; bossRun = null; trialRun = false; startRace(TRACKS[i]);
+  sfx("click"); run = RACE(); startRace(TRACKS[i]);
 });
 
 /* ---------- cups ---------- */
-let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
-function startCup(cup) { bossRun = null; trialRun = false; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
+function startCup(cup) { run = { kind: "cup", cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
 const racerName = k => k === 0 ? who() : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
-const cupOrder = () => standings(cupRun.pts);
+const cupOrder = () => standings(run.pts);
 function paintCupResult() {
-  const c = cupRun, order = cupOrder();
+  const c = run, order = cupOrder();
   $("r-cup").hidden = false;
   $("r-cup").innerHTML = `<div class="rc-head">🏆 ${c.cup.name} — race ${c.i + 1} of 3</div>
     <div class="rc-map">${c.cup.tracks.map((id, j) => `<span class="${j < c.i ? "done" : j === c.i ? "done now" : ""}">${TRACKS.find(t => t.id === id).icon}</span>`).join("")}</div>
     <div class="standings">${order.map((k, n) => `<span class="${k === 0 ? "me" : ""}" style="border-color:${racerColor(k)}">${n + 1}. ${racerName(k)} ${c.pts[k]}</span>`).join("")}</div>`;
 }
 function showCupEnd() {
-  const c = cupRun, res = cupEndReward(S, c.cup, c.diff, c.pts, dayKey(new Date())), { order, place, coins } = res;
+  const c = run, res = cupEndReward(S, c.cup, c.diff, c.pts, dayKey(new Date())), { order, place, coins } = res;
   const prizes = [`🪙 ${coins}`];
   if (res.car) { const car = CARS.find(x => x.id === c.cup.car); prizes.push(`🚗 ${car.name}!`); museumAdd("🚗", `Won the ${car.name}`); }
   if (res.chip) { prizes.push("🧠 Brain Chip"); chipToast(true); }
-  save(); cupRun = null;
+  save(); run = RACE();
   $("ce-title").textContent = c.cup.name + "!";
   $("ce-place").textContent = place <= 3 ? `${place}${suffix(place)} place, ${who()}!` : `${place}${suffix(place)} — try again!`;
   $("ce-prizes").innerHTML = prizes.map(p => `<span>${p}</span>`).join("");
@@ -620,13 +635,12 @@ function chipToast(got) { if (!got) return; save(); refreshChips(); setTimeout((
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false, nextTrack = null;
 function showResult(r) {
-  if (previewRun) { showPreviewResult(r); return; }
-  if (trialRun) { showTrialResult(r); return; }
-  lastTrial = false;
+  if (isPreview()) { showPreviewResult(r); return; }
+  if (run.kind === "trial") { showTrialResult(r); return; }
   const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
-  const bossRace = !!bossRun, chipsBefore = S.chips;
-  const { prize, sparkle, starUp } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: cupRun, day: dayKey(new Date()) });
+  const bossRace = run.kind === "boss", chipsBefore = S.chips;
+  const { prize, sparkle, starUp } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()) });
   if (starUp) setTimeout(() => toast(`⭐ Mastery star ${starUp} on ${currentTrack.name}!`), 1800);
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
   chipToast(S.chips > chipsBefore);
@@ -651,8 +665,8 @@ function showResult(r) {
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
   $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a treasure chest!";
   $("r-cup").hidden = true;
-  if (bossRun) {
-    const b = bossRun, car = CARS.find(c => c.id === b.car);
+  if (bossRace) {
+    const b = run.boss, car = CARS.find(c => c.id === b.car);
     if (r.place === 1) {
       const { first, bonus, car: gotCar, chip: gotChip } = bossReward(S, b, dayKey(new Date()));
       if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
@@ -661,9 +675,9 @@ function showResult(r) {
       $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
     } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }
-    lastBoss = b; bossRun = null;
-  } else lastBoss = null;
-  if (cupRun) { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = cupRun.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
+    lastRun = { kind: "boss", boss: b }; run = RACE();
+  } else lastRun = run.kind === "cup" ? null : RACE();
+  if (run.kind === "cup") { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = run.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
   else { $("btn-next").hidden = !nowOpen; $("btn-again").hidden = false; $("btn-next").textContent = "Next ▶"; }
   show("s-result"); refreshCoins();
   sfx(r.place <= 3 ? "win" : "lose");
@@ -679,13 +693,13 @@ document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () 
   $("r-pick").textContent = `🎁 Treasure: 🪙${chestValues[i]}!`;
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
-$("btn-again").onclick = () => { sfx("click"); if (lastBoss) bossRun = lastBoss; trialRun = lastTrial; startRace(currentTrack); };
+$("btn-again").onclick = () => { sfx("click"); run = lastRun ? { ...lastRun } : RACE(); startRace(currentTrack); };
 $("btn-next").onclick = () => {
   sfx("click");
-  if (cupRun) { if (cupRun.i < 2) { cupRun.i++; startRace(TRACKS.find(t => t.id === cupRun.cup.tracks[cupRun.i])); } else showCupEnd(); return; }
+  if (run.kind === "cup") { if (run.i < 2) { run.i++; startRace(TRACKS.find(t => t.id === run.cup.tracks[run.i])); } else showCupEnd(); return; }
   if (nextTrack) startRace(nextTrack);
 };
-$("btn-home").onclick = () => { sfx("click"); if (cupRun && cupRun.i >= 2) { showCupEnd(); return; } cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
+$("btn-home").onclick = () => { sfx("click"); if (run.kind === "cup" && run.i >= 2) { showCupEnd(); return; } run = RACE(); menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
 const giftReady = () => S.lastGift !== dayKey(new Date());
@@ -831,7 +845,7 @@ $("s-log").addEventListener("click", e => {
   if (l) { S.parent.license = l.dataset.lic === "true"; save(); }
   if (v || c || l || wv) { sfx("click"); paintLog(); }
 });
-$("log-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+$("log-back").onclick = () => { sfx("click"); back(); };
 
 /* ---------- 🧮 Math Lap: 5 questions with pictures to count; every lap earns a ticket ---------- */
 const MATH_PICS = ["🚗", "🚙", "🪙", "⭐", "🍎", "🦆", "🎈", "🍪"];
@@ -875,13 +889,14 @@ function finishLap() {
 }
 $("sch-math").onclick = () => { sfx("click"); openMath(); };
 $("math-again").onclick = () => { sfx("click"); openMath(); };
-$("math-school").onclick = $("math-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+$("math-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+$("math-back").onclick = () => { sfx("click"); back(); };
 
 /* ---------- 📚 Word Lap at the Library: match words and pictures; every lap earns a ticket ----------
    Half the questions show a picture (tap its word), half show a word (tap its picture). Same tickets and daily
    limit as a Math Lap; two perfect laps move up a level (3-letter words, then look-alike words, 4 letters, longer). */
-let wqSeen = new Set(), wq = null, wqN = 0, wqMiss = 0, wqLock = false, wordFrom = "s-hub";
-function openWord(from) { if (from) wordFrom = from; wqSeen = new Set(); wqN = 0; wqMiss = 0; $("s-word").classList.remove("finished"); $("word-done").hidden = true; nextWord(); show("s-word"); }
+let wqSeen = new Set(), wq = null, wqN = 0, wqMiss = 0, wqLock = false;
+function openWord() { wqSeen = new Set(); wqN = 0; wqMiss = 0; $("s-word").classList.remove("finished"); $("word-done").hidden = true; nextWord(); show("s-word"); }
 function nextWord(force) {
   const w = S.school.word, top = WORD_LEVELS[S.school.wordMax] || 4;
   const q = force || wordQuestion(Math.min(w.lv, top), Math.random, wqSeen);
@@ -915,10 +930,10 @@ function finishWord() {
     : `🏁 Lap done!<small>That's all the tickets for today. Great reading, ${who()}!</small>`;
   sfx(got ? "win" : "buy"); confetti(got ? 120 : 50);
 }
-$("sch-word").onclick = () => { sfx("click"); openWord("s-school"); };
+$("sch-word").onclick = () => { sfx("click"); openWord(); };
 $("word-again").onclick = () => { sfx("click"); openWord(); };
 $("word-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
-$("word-back").onclick = () => { sfx("click"); if (wordFrom === "s-school") { paintSchool(); show("s-school"); } else show("s-hub"); };
+$("word-back").onclick = () => { sfx("click"); back(); };
 
 /* ---------- 🏦 Piqua National Bank ---------- */
 function bankTick() { const paid = bankSettle(S.bank, S.rank); if (paid) { S.bank.news += paid; save(); } }
@@ -976,7 +991,7 @@ $("mis-list").addEventListener("click", e => {
 });
 
 /* ---------- hub, garage, settings ---------- */
-const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onCar: car => museumAdd("🚗", `Got the ${car.name}`), onPreview: w => openPreview(w, "s-garage") });
+const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onCar: car => museumAdd("🚗", `Got the ${car.name}`), onPreview: w => openPreview(w) });
 let giftShownThisVisit = false;
 $("town-wrap").innerHTML = townSVG();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
@@ -1018,7 +1033,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
-  else if (go === "library") { sfx("click"); openWord("s-hub"); }
+  else if (go === "library") { sfx("click"); openWord(); }
   else if (go === "bank") { sfx("click"); openBank(); }
   else if (go === "carwash" || go === "museum") {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
@@ -1052,7 +1067,7 @@ function goHub() {
   show("s-hub");
   if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(() => { if (screen === "s-hub") openGift(); }, 400); }
 }
-document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); show("s-hub"); });
+document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); back(); });
 
 const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
 $("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); toyDiag.floor = 0; saveDiag(); paintToggles(); sfx("click"); };
@@ -1099,9 +1114,8 @@ $("btn-install").onclick = async () => {
 $("install-ok").onclick = () => { sfx("click"); $("install-help").hidden = true; };
 paintInstall();
 /* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
-let nameBack = "s-hub";
-function askName(back = "s-hub") {
-  nameBack = back; $("name-in").value = S.name || ""; paintNameOk(); $("name-back").hidden = back === "s-hub"; show("s-name");
+function askName(from = "s-hub") {
+  $("name-in").value = S.name || ""; paintNameOk(); $("name-back").hidden = from === "s-hub"; show("s-name");
   setTimeout(() => $("name-in").focus(), 250);
 }
 const paintNameOk = () => { $("name-ok").disabled = !$("name-in").value.trim(); };
@@ -1111,9 +1125,9 @@ $("name-ok").onclick = () => {
   const n = $("name-in").value.replace(/[<>&"]/g, "").trim().slice(0, 14); if (!n) { sfx("nope"); return; }
   S.name = n.charAt(0).toUpperCase() + n.slice(1); save(); sfx("buy"); $("name-in").blur();
   toast(`👋 Hi ${S.name}! Let's race!`); confetti(60);
-  if (nameBack === "s-hub") goHub(); else { show(nameBack); paintToggles(); }
+  if (nav.length) back(); else goHub();
 };
-$("name-back").onclick = () => { sfx("click"); show(nameBack); };
+$("name-back").onclick = () => { sfx("click"); back(); };
 $("set-name").onclick = () => { sfx("click"); askName("s-settings"); };
 function paintCloud() {
   const ok = cloudReady(), linked = cloudLinked();
@@ -1132,7 +1146,7 @@ $("btn-auto").onclick = () => {
   $("btn-auto").classList.toggle("on", S.autoOn);
 };
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
-$("btn-quit").onclick = () => { sfx("click"); cupRun = null; bossRun = null; trialRun = false; previewRun = null; menuDemo(); show("s-hub"); };
+$("btn-quit").onclick = () => { sfx("click"); run = RACE(); menuDemo(); show("s-hub"); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
 
 /* ---------- parent corner: tap the version label 5 times ---------- */
@@ -1179,10 +1193,10 @@ $("p-load").onclick = () => {
   try { importSave(code); location.reload(); }
   catch (e) { $("p-msg").textContent = "That code didn't work. Check that the whole code was pasted."; }
 };
-$("p-close").onclick = () => show("s-title");
+$("p-close").onclick = () => { if (nav.length) back(); else show("s-title"); };
 $("p-progress").onclick = () => { sfx("click"); openProgress(); };
 $("p-guide").onclick = () => { sfx("click"); show("s-guide"); $("guide-body").scrollTop = 0; };
-document.querySelectorAll("[data-backto]").forEach(b => b.addEventListener("click", () => { sfx("click"); show(b.dataset.backto); }));
+document.querySelectorAll("[data-backto]").forEach(b => b.addEventListener("click", () => { sfx("click"); back(); }));
 /* 📊 Progress: everything stays on this tablet */
 function openProgress() {
   const st = S.stats, hrs = st.playMs / 3600000, rate = S.races ? Math.round(100 * S.wins / S.races) : 0;
@@ -1216,9 +1230,9 @@ $("btn-settings").onclick = () => {
 };
 /* Grown-up check: a two-digit multiplication typed on a number pad (no answers to pick from), and a
    30-second wait after two wrong answers, so guessing doesn't get a child in. */
-let guPass = null, guBack = "s-settings", guAns = 0, guTyped = "", guMiss = 0, guLockUntil = 0, guTimer = 0;
-function grownUp(back, onPass) {
-  guPass = onPass; guBack = back;
+let guPass = null, guAns = 0, guTyped = "", guMiss = 0, guLockUntil = 0, guTimer = 0;
+function grownUp(_from, onPass) {
+  guPass = onPass;
   const a = 12 + Math.floor(Math.random() * 17), b = 3 + Math.floor(Math.random() * 7);
   guAns = a * b; guTyped = "";
   $("gq").textContent = `What is ${a} × ${b}?`;
@@ -1241,21 +1255,21 @@ $("ga").addEventListener("click", e => {
   else {
     sfx("nope"); guMiss++; const g = $("ga"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake");
     if (guMiss % 2 === 0) guLockUntil = Date.now() + 30000;
-    const back = guBack, pass = guPass; grownUp(back, pass); return;
+    grownUp(null, guPass); return;
   }
   sfx("click"); paintGu();
 });
-$("gu-cancel").onclick = () => { sfx("click"); clearTimeout(guTimer); guPass = null; show(guBack); };
+$("gu-cancel").onclick = () => { sfx("click"); clearTimeout(guTimer); guPass = null; back(); };
 $("set-parent").onclick = () => { sfx("click"); grownUp("s-settings", () => { $("p-code").value = exportSave(); $("p-msg").textContent = ""; paintParent(); show("s-parent"); }); };
 $("set-reset").onclick = () => { sfx("click"); grownUp("s-settings", openReset); };
 /* Reset: grown-up check, then hold for 3 seconds, then a last "are you sure". */
-let holdT = 0, holdStart = 0, resetBack = "s-settings";
-function openReset(back = "s-settings") { resetBack = back; $("rs-step1").hidden = false; $("rs-step2").hidden = true; $("rs-fill").style.width = "0"; show("s-reset"); }
+let holdT = 0, holdStart = 0;
+function openReset() { $("rs-step1").hidden = false; $("rs-step2").hidden = true; $("rs-fill").style.width = "0"; show("s-reset"); }
 const holdDone = () => { cancelAnimationFrame(holdT); holdT = 0; sfx("nope"); $("rs-step1").hidden = true; $("rs-step2").hidden = false; };
 const holdTick = () => { const p = Math.min(1, (performance.now() - holdStart) / 3000); $("rs-fill").style.width = (p * 100) + "%"; if (p >= 1) holdDone(); else holdT = requestAnimationFrame(holdTick); };
 $("rs-hold").addEventListener("pointerdown", e => { e.preventDefault(); try { $("rs-hold").setPointerCapture(e.pointerId); } catch (err) { /* fine without capture */ } holdStart = performance.now(); cancelAnimationFrame(holdT); holdT = requestAnimationFrame(holdTick); });
 for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) $("rs-hold").addEventListener(ev, () => { if (holdT) { cancelAnimationFrame(holdT); holdT = 0; $("rs-fill").style.width = "0"; } });
-$("rs-no").onclick = $("rs-no2").onclick = () => { sfx("click"); show(resetBack); };
+$("rs-no").onclick = $("rs-no2").onclick = () => { sfx("click"); back(); };
 $("rs-yes").onclick = () => { if (cloudLinked()) cloudSignOut(); resetSave(); location.reload(); };
 $("p-reset").onclick = () => { sfx("click"); openReset("s-parent"); };
 // tap the moon 5 times on the break screen to reach Parent Corner
@@ -1266,7 +1280,7 @@ document.addEventListener("pointerdown", e => { if (e.target.closest("button, .b
 
 /* ---------- versions & offline ---------- */
 let updateReady = false;
-function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent" && screen !== "s-update" && !cupRun); }
+function paintUpdate() { $("update").hidden = !(updateReady && screen && screen !== "s-parent" && screen !== "s-update" && run.kind !== "cup"); }
 function doUpdate() { save(); location.reload(); }
 // A new version is waiting and Carter tried to race: stop, show a big notice, and update by itself in a few seconds.
 let gateTimer = 0;
@@ -1295,7 +1309,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();
