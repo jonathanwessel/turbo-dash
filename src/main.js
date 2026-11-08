@@ -1,6 +1,7 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay, OPEN_RANK } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance } from "./pace.js";
+import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapTickets } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -214,7 +215,7 @@ function refreshChips() { $("chip-wrap").hidden = !S.chips; $("chip-n").textCont
 let toastT = 0;
 function toast(text) { const t = $("toast"); t.textContent = text; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
 /* One-time Brain Chip rewards (each key pays once). */
-function awardChip(key) { if (S.chipLog[key]) return false; S.chipLog[key] = 1; S.chips++; save(); refreshChips(); setTimeout(() => { toast("+1 🧠 Brain Chip!"); sfx("chest"); }, 900); return true; }
+function awardChip(key) { if (!chip(S, key)) return false; save(); refreshChips(); setTimeout(() => { toast("+1 🧠 Brain Chip!"); sfx("chest"); }, 900); return true; }
 function countUp(el, to, ms = 800) { const t0 = performance.now(); const step = now => { const p = Math.min(1, (now - t0) / ms); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
 function earn(n, x, y) { if (!Number.isFinite(n)) return; S.coins += n; save(); refreshCoins(); if (x != null) coinBurst(x, y); }
 function spend(n) {
@@ -368,14 +369,9 @@ $("trial-list").addEventListener("click", e => {
   sfx("click"); cupRun = null; bossRun = null; trialRun = true; startRace(TRACKS[i]);
 });
 function showTrialResult(r) {
-  const t = currentTrack, len = trialLen(t), time = Math.round(r.time * 100) / 100, before = S.trials[t.id], oldMedal = S.trialMedals[t.id] || 0;
-  const medal = trialMedal(t, len, time), record = !before || time < before, goalsBefore = claimable().length;
-  let pay = 0; for (let m = oldMedal + 1; m <= medal; m++) pay += trialPay(t, m);
-  if (record) { S.trials[t.id] = time; if (r.rec) saveGhost(t.id, { t: time, ...r.rec }); }
-  if (medal > oldMedal) S.trialMedals[t.id] = medal;
-  S.coins += pay + r.coins;
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.powers = (S.stats.powers || 0) + r.stats.powers;
-  S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0); S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0); S.stats.loops = (S.stats.loops || 0) + (r.stats.loops || 0);
+  const t = currentTrack, len = trialLen(t), goalsBefore = claimable().length;
+  const { time, before, oldMedal, medal, record, pay } = trialReward(S, t, r, len);
+  if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
   save();
   mode = "result"; setRaceUi(false); engineOff();
   const [b, s, g] = trialTimes(t, len);
@@ -532,7 +528,7 @@ $("track-list").addEventListener("click", e => {
 let cupRun = null;   // { cup, i: race index 0-2, pts: [player, rival1..5] }
 function startCup(cup) { bossRun = null; trialRun = false; cupRun = { cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
 const racerName = k => k === 0 ? who() : RIVALS[k - 1].name, racerColor = k => k === 0 ? (CARS.find(c => c.id === S.car) || CARS[0]).body : RIVALS[k - 1].body;
-const cupOrder = () => [0, 1, 2, 3, 4, 5].sort((a, b) => cupRun.pts[b] - cupRun.pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));
+const cupOrder = () => standings(cupRun.pts);
 function paintCupResult() {
   const c = cupRun, order = cupOrder();
   $("r-cup").hidden = false;
@@ -541,17 +537,10 @@ function paintCupResult() {
     <div class="standings">${order.map((k, n) => `<span class="${k === 0 ? "me" : ""}" style="border-color:${racerColor(k)}">${n + 1}. ${racerName(k)} ${c.pts[k]}</span>`).join("")}</div>`;
 }
 function showCupEnd() {
-  const c = cupRun, order = cupOrder(), place = order.indexOf(0) + 1, key = c.cup.id + ":" + c.diff;
-  const coins = Math.round(c.cup.bonus * diffOf(c.diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] * (1 + 0.05 * (S.research.coinBoost || 0)));
-  const wonBefore = ["easy", "normal", "hard"].some(df => S.cups[c.cup.id + ":" + df] === 1);
-  S.cups[key] = Math.min(S.cups[key] || 99, place); S.coins += coins;
-  if (place === 1 && !wonBefore) museumAdd("🏆", `Won the ${c.cup.name}`);
+  const c = cupRun, res = cupEndReward(S, c.cup, c.diff, c.pts, dayKey(new Date())), { order, place, coins } = res;
   const prizes = [`🪙 ${coins}`];
-  if (place === 1) {
-    const car = CARS.find(x => x.id === c.cup.car);
-    if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); prizes.push(`🚗 ${car.name}!`); museumAdd("🚗", `Won the ${car.name}`); }
-    if (awardChip("cup:" + key)) prizes.push("🧠 Brain Chip");
-  }
+  if (res.car) { const car = CARS.find(x => x.id === c.cup.car); prizes.push(`🚗 ${car.name}!`); museumAdd("🚗", `Won the ${car.name}`); }
+  if (res.chip) { prizes.push("🧠 Brain Chip"); chipToast(true); }
   save(); cupRun = null;
   $("ce-title").textContent = c.cup.name + "!";
   $("ce-place").textContent = place <= 3 ? `${place}${suffix(place)} place, ${who()}!` : `${place}${suffix(place)} — try again!`;
@@ -623,11 +612,10 @@ function openMuseum() {
 }
 
 /* ---------- 🏛️ Museum log and races per day ---------- */
-function museumAdd(icon, text) { S.museum.unshift({ d: dayKey(new Date()), icon, text }); S.museum.length = Math.min(S.museum.length, 200); }
-function countDay() {
-  const k = dayKey(new Date()); S.days[k] = (S.days[k] || 0) + 1;
-  for (const old of Object.keys(S.days).sort().reverse().slice(30)) delete S.days[old];
-}
+function museumAdd(icon, text) { logMuseum(S, icon, text, dayKey(new Date())); }
+const yesterdayKey = () => { const y = new Date(); y.setDate(y.getDate() - 1); return dayKey(y); };
+/* chips a rule just paid: the same toast awardChip shows */
+function chipToast(got) { if (!got) return; save(); refreshChips(); setTimeout(() => { toast("+1 🧠 Brain Chip!"); sfx("chest"); }, 900); }
 
 /* ---------- results + treasure chests ---------- */
 let chestValues = [], chestDone = false, nextTrack = null;
@@ -637,30 +625,12 @@ function showResult(r) {
   lastTrial = false;
   const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
-  const prize = Math.round(prizeFor(currentTrack, r.place, S.diff) * (1 + 0.05 * (S.research.coinBoost || 0)));
-  S.races++; if (r.place === 1) S.wins++;
-  const dk = currentTrack.id + ":" + S.diff, bossRace = !!bossRun;
-  countDay();
-  if (r.place === 1 && !bossRace && S.best[currentTrack.id] !== 1) museumAdd(currentTrack.icon, `First win on ${currentTrack.name}`);
-  if (!bossRace) {
-    S.best[currentTrack.id] = Math.min(S.best[currentTrack.id] || 99, r.place);
-    S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
-  }
-  if (r.place === 1 && !bossRace) {
-    const before = starsFor(S.mastery[dk] || 0);
-    S.mastery[dk] = (S.mastery[dk] || 0) + 1;
-    if (starsFor(S.mastery[dk]) > before) setTimeout(() => toast(`⭐ Mastery star ${starsFor(S.mastery[dk])} on ${currentTrack.name}!`), 1800);
-  }
-  S.coins += prize + r.coins;
-  let sparkleMsg = "";
-  if (S.sparkle && !bossRace) { const bonus = Math.max(5, Math.round(prize * 0.1)); S.coins += bonus; S.sparkle = ""; sparkleMsg = `✨ Sparkly car bonus +🪙${bonus}`; }
-  S.dirt[S.car] = Math.min(5, (S.dirt[S.car] || 0) + 1);
-  if (S.diff === "hard" && r.place === 1) awardChip("hard:" + currentTrack.id);
-  if (cupRun) r.standings.forEach((k, n) => { cupRun.pts[k] += CUP_POINTS[n]; });
+  const bossRace = !!bossRun, chipsBefore = S.chips;
+  const { prize, sparkle, starUp } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: cupRun, day: dayKey(new Date()) });
+  if (starUp) setTimeout(() => toast(`⭐ Mastery star ${starUp} on ${currentTrack.name}!`), 1800);
+  const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
+  chipToast(S.chips > chipsBefore);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
-  S.history.unshift({ d: dayKey(new Date()), t: currentTrack.id, df: S.diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30);
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers = (S.stats.powers || 0) + r.stats.powers; S.stats.rings = (S.stats.rings || 0) + (r.stats.rings || 0);
-  S.stats.pearls = (S.stats.pearls || 0) + (r.stats.pearls || 0); S.stats.drifts = (S.stats.drifts || 0) + (r.stats.drifts || 0); S.stats.loops = (S.stats.loops || 0) + (r.stats.loops || 0);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -676,8 +646,7 @@ function showResult(r) {
   $("r-unlock").hidden = !fresh.length;
   if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " " + sparkleMsg; u.hidden = false; }, 0);
   if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
-  const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay * (1 + 0.15 * (S.research.luckyChests || 0)));
-  chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
+  chestValues = rollChests(S, currentTrack, S.diff);
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
   $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a treasure chest!";
@@ -685,12 +654,9 @@ function showResult(r) {
   if (bossRun) {
     const b = bossRun, car = CARS.find(c => c.id === b.car);
     if (r.place === 1) {
-      const first = !S.bosses[b.id];
-      const bonus = first ? 5000 : 1000;
-      S.bosses[b.id] = true; S.coins += bonus; save();
-      if (first) museumAdd(b.icon, `Beat ${b.name}`);
-      if (!S.owned.includes(car.id)) { S.owned.push(car.id); upsOf(car.id); museumAdd("🚗", `Won the ${car.name}`); save(); }
-      awardChip("boss:" + b.id);
+      const { first, bonus, car: gotCar, chip: gotChip } = bossReward(S, b, dayKey(new Date()));
+      if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
+      save(); chipToast(gotChip);
       const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
       $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
@@ -722,13 +688,8 @@ $("btn-next").onclick = () => {
 $("btn-home").onclick = () => { sfx("click"); if (cupRun && cupRun.i >= 2) { showCupEnd(); return; } cupRun = null; bossRun = null; trialRun = false; menuDemo(); show("s-hub"); };
 
 /* ---------- daily gift ---------- */
-const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const giftReady = () => S.lastGift !== dayKey(new Date());
-function giftInfo() {
-  const y = new Date(); y.setDate(y.getDate() - 1);
-  const streak = S.lastGift === dayKey(y) ? S.giftStreak + 1 : 1;
-  return { streak, amount: 100 + 50 * Math.min(streak, 7) };
-}
+const giftInfo = () => giftFor(S, dayKey(new Date()), yesterdayKey());
 function openGift() {
   const ready = giftReady();
   $("s-gift").classList.toggle("later", !ready);
@@ -740,7 +701,7 @@ function openGift() {
     show("s-gift"); sfx("chest"); return;
   }
   // today's gift is already opened: show tomorrow's so he knows to come back
-  const next = 100 + 50 * Math.min((S.giftStreak || 0) + 1, 7);
+  const next = REWARDS.gift((S.giftStreak || 0) + 1);
   $("gift-icon").textContent = "💤"; $("gift-head").textContent = "Come back tomorrow!";
   $("gift-day").textContent = `Tomorrow: Day ${(S.giftStreak || 0) + 1} 🔥`;
   $("gift-amt").textContent = next; $("gift-take").textContent = "OK!";
@@ -748,11 +709,9 @@ function openGift() {
 }
 $("gift-take").onclick = () => {
   if (!giftReady()) { show("s-hub"); return; }
-  const g = giftInfo();
-  S.lastGift = dayKey(new Date()); S.giftStreak = g.streak;
-  if (g.streak % 7 === 0) awardChip("gift7:" + S.lastGift);
+  const g = claimGift(S, dayKey(new Date()), yesterdayKey());
   const r = $("gift-take").getBoundingClientRect();
-  earn(g.amount, r.left + r.width / 2, r.top);
+  save(); refreshCoins(); coinBurst(r.left + r.width / 2, r.top); chipToast(g.chip);
   sfx("buy"); confetti(90);
   show("s-hub");
 };
@@ -805,10 +764,8 @@ function openRank() {
 }
 $("rk-up").onclick = () => {
   if (!rankReady()) return;
-  S.rank++;
-  museumAdd("⭐", `Reached Rank ${S.rank}, ${rankTitle(S.rank)}`);
-  const reward = 200 * S.rank; S.coins += reward; save();
-  if (S.rank >= 5) awardChip("rank:" + S.rank);
+  const { coins: reward, chip: gotChip } = rankUp(S, dayKey(new Date()), rankTitle(S.rank + 1));
+  save(); chipToast(gotChip);
   $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank}: ${rankTitle(S.rank)}`;
   const un = RANK_UNLOCKS[S.rank];
   $("ru-unlock").textContent = un ? `${un.icon} ${un.text} unlocked!` : "";
@@ -848,19 +805,12 @@ $("skills").addEventListener("click", e => {
   const after = licenseLevel(S);
   if (after > before) {
     confetti(160); sfx("win"); toast(`🪪 ${LICENSES[after].name} license!`);
-    if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); upsOf("patrol"); save(); setTimeout(() => toast("🚓 You earned the Piqua Patrol car!"), 2700); }
+    if (after >= 3 && grantCar(S, "patrol")) { save(); setTimeout(() => toast("🚓 You earned the Piqua Patrol car!"), 2700); }
   }
 });
 // grown-up settings for the Math School (behind the grown-up check)
 $("sch-log").onclick = () => { sfx("click"); grownUp("s-school", openLog); };
-const LAPS = ["math", "word"];
-const lapToday = a => { const d = dayKey(new Date()); return S.school.log.find(e => e.a === a && e.d === d) || null; };
-const lapsToday = () => LAPS.map(lapToday).filter(Boolean);
-const ticketsLeftToday = () => S.school.capT ? Math.max(0, S.school.capT - lapsToday().reduce((n, e) => n + (e.t || 0), 0)) : Infinity;
-function lapEntry(a) {
-  let e = lapToday(a); if (e) return e;
-  const sc = S.school; e = { d: dayKey(new Date()), a, m: 0, t: 0 }; sc.log.unshift(e); sc.log.length = Math.min(sc.log.length, 60); return e;
-}
+const lapsToday = () => LAPS.map(a => lapOf(S, a, dayKey(new Date()))).filter(Boolean);
 function openLog() { paintLog(); show("s-log"); }
 function paintLog() {
   const sc = S.school, m = sc.math, w = sc.word, today = lapsToday(), pct = x => x.right + x.wrong ? Math.round(100 * x.right / (x.right + x.wrong)) : 0;
@@ -913,13 +863,11 @@ $("math-ans").addEventListener("click", e => {
 });
 function finishLap() {
   const sc = S.school, m = sc.math, top = MATH_LEVELS[sc.mathMax] || 3, perfect = mqMiss === 0;
-  const want = perfect ? 2 : 1, got = Math.min(want, ticketsLeftToday());
   m.laps++;
   // two perfect laps in a row move up a level; a lap with lots of tries moves back down
   m.p = perfect ? m.p + 1 : 0;
   if (m.p >= 2 && m.lv < top) { m.lv++; m.p = 0; } else if (mqMiss >= 4 && m.lv > 1) m.lv--;
-  const e = lapEntry("math");
-  e.m += MATH_LAP; e.t += got; sc.tickets += got; sc.earned += got; save();
+  const got = lapTickets(S, "math", perfect, MATH_LAP, dayKey(new Date())); save();
   $("s-math").classList.add("finished"); $("math-done").hidden = false;
   $("math-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great math, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
     : `🏁 Lap done!<small>That's all the tickets for today. Great practice, ${who()}!</small>`;
@@ -958,11 +906,10 @@ $("word-ans").addEventListener("click", e => {
 });
 function finishWord() {
   const sc = S.school, w = sc.word, top = WORD_LEVELS[sc.wordMax] || 4, perfect = wqMiss === 0;
-  const want = perfect ? 2 : 1, got = Math.min(want, ticketsLeftToday());
   w.laps++;
   w.p = perfect ? w.p + 1 : 0;
   if (w.p >= 2 && w.lv < top) { w.lv++; w.p = 0; } else if (wqMiss >= 4 && w.lv > 1) w.lv--;
-  const e = lapEntry("word"); e.m += WORD_LAP; e.t += got; sc.tickets += got; sc.earned += got; save();
+  const got = lapTickets(S, "word", perfect, WORD_LAP, dayKey(new Date())); save();
   $("s-word").classList.add("finished"); $("word-done").hidden = false;
   $("word-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great reading, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
     : `🏁 Lap done!<small>That's all the tickets for today. Great reading, ${who()}!</small>`;
@@ -1009,16 +956,13 @@ function openMissions() {
     const { icon, text } = missionText(m), ready = !m.claimed && m.have >= m.goal;
     return `<div class="mis ${ready ? "ready" : m.claimed ? "done" : ""}"><div class="mi">${icon}</div><b>${text}</b>
       <div class="bar"><i style="width:${Math.round(100 * m.have / m.goal)}%"></i></div><small>${m.have} / ${m.goal}</small>
-      <button data-mis="${i}">${m.claimed ? "✔ Done" : "🪙 " + m.reward}</button></div>`;
+      <button data-mis="${i}">${m.claimed ? "✔ Done" : "🪙 " + missionPay(S, m)}</button></div>`;
   }).join("");
   const all = M.list.every(m => m.claimed);
-  if (all && !M.bonus) {
-    M.bonus = true; S.coins += 200 + 50 * S.rank; save();
-    awardChip("missions:" + M.day); refreshCoins(); confetti(140); sfx("win");
-  }
+  const bonus = all && missionsBonus(S, M);
+  if (bonus) { save(); chipToast(bonus.chip); refreshCoins(); confetti(140); sfx("win"); }
   $("mis-bonus").className = "mis-bonus " + (M.bonus ? "got" : "");
-  $("mis-bonus").textContent = M.bonus ? "✔ All done today! New missions tomorrow." : `Finish all 3 → 🧠 Brain Chip + 🪙 ${200 + 50 * S.rank}`;
-  if (S.school.skills.smarts) for (const b of document.querySelectorAll("[data-mis]")) if (!b.textContent.startsWith("✔")) b.textContent = "🪙 " + Math.round(+b.textContent.replace(/\D/g, "") * (1 + 0.1 * S.school.skills.smarts));
+  $("mis-bonus").textContent = M.bonus ? "✔ All done today! New missions tomorrow." : `Finish all 3 → 🧠 Brain Chip + 🪙 ${REWARDS.missionsAll(S.rank)}`;
   show("s-missions");
 }
 $("mis-list").addEventListener("click", e => {
@@ -1026,9 +970,8 @@ $("mis-list").addEventListener("click", e => {
   const m = S.missions.list[+b.dataset.mis];
   if (m.claimed) { sfx("click"); return; }
   if (m.have < m.goal) { sfx("nope"); return; }
-  m.claimed = true;
-  const r = b.getBoundingClientRect();
-  earn(Math.round(m.reward * (1 + 0.1 * S.school.skills.smarts)), r.left + r.width / 2, r.top); sfx("chest");
+  const r = b.getBoundingClientRect(), got = claimMission(S, m);
+  save(); refreshCoins(); coinBurst(r.left + r.width / 2, r.top); sfx("chest"); void got;
   setTimeout(() => { if (screen === "s-missions") openMissions(); }, 350);
 });
 
@@ -1085,17 +1028,17 @@ $("town-wrap").addEventListener("click", e => {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 3;
     if (go === "icecream") {
-      if (S.daily.icecream === today()) { sfx("click"); toast("🍦 Come back tomorrow for more ice cream!"); return; }
-      S.daily.icecream = today(); earn(300 + 25 * S.rank, x, y); sfx("chest"); toast(`🍦 Yum! Free ice cream: +🪙${300 + 25 * S.rank}`);
+      const got = treat(S, "icecream", today());
+      if (!got) { sfx("click"); toast("🍦 Come back tomorrow for more ice cream!"); return; }
+      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🍦 Yum! Free ice cream: +🪙${got.coins}`);
     } else if (go === "park") {
-      if (S.daily.park === today()) { sfx("click"); toast("🧺 The picnic is packed up. Come back tomorrow!"); return; }
-      S.daily.park = today(); earn(500 + 25 * S.rank, x, y); sfx("chest");
       const nd = new Date(), dn = Math.floor(Date.UTC(nd.getFullYear(), nd.getMonth(), nd.getDate()) / 86400000);
-      toast(`🧺 Picnic in the park: +🪙${500 + 25 * S.rank}`);
-      if (dn % 3 === 0) awardChip("park:" + today());
+      const got = treat(S, "park", today(), dn);
+      if (!got) { sfx("click"); toast("🧺 The picnic is packed up. Come back tomorrow!"); return; }
+      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🧺 Picnic in the park: +🪙${got.coins}`); chipToast(got.chip);
     } else if (go === "fire") {
-      if (S.owned.includes("firetruck")) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
-      S.owned.push("firetruck"); upsOf("firetruck"); museumAdd("🚒", "Got Fire Dash from the firefighters"); save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
+      if (!treat(S, "fire", today())) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
+      save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
     }
     refreshHub();
   }

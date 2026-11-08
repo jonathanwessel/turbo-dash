@@ -1,15 +1,18 @@
 // Career simulator: a bot plays the WHOLE game day by day and reports when each stage gate falls.
 //   npm run career                 -> 12 races a day, up to 1000 days
 //   npm run career -- 20 600       -> 20 races a day, up to 600 days
-// It uses the game's own rules from src/data.js (prizes, ranks, research, goals) and races with the real engine.
+// It pays exactly what the game pays (src/rules.js: races, chests, bosses, cups, trials, rank-ups, gifts, treats,
+// missions, Math/Word Lap tickets) and races with the real engine. Bank interest is modelled too.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
 import { trackLen } from "../src/engine.js";
-import { SKILLS, SKILL_MAX, skillCost, licenseLevel } from "../src/data.js";
-const REAL_MIN = +(process.argv[4] || 20);   // minutes of real-world time logged per day (reading/outside)
+import { SKILLS, SKILL_MAX, skillCost, licenseLevel, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
+import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapTickets, grantCar } from "../src/rules.js";
+const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
+const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
 import {
-  CARS, TRACKS, CUPS, CUP_POINTS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
-  prizeFor, upgradeCost, trackOpen, worldOpen, BOSSES, trialMedal, trialPay, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor,
+  CARS, TRACKS, CUPS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
+  upgradeCost, trackOpen, worldOpen, BOSSES, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor, rankTitle,
 } from "../src/data.js";
 
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
@@ -20,33 +23,28 @@ const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
   cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, trials: {}, trialMedals: {},
   bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
-  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 } }, parent: { license: true },
+  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], capT: 6 }, parent: { license: true },
+  museum: [], days: {}, history: [], dirt: {}, sparkle: "", daily: {}, lastGift: "", bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0 },
 };
+const today = () => dayKey(new Date(2027, 0, 1 + day)), yesterday = () => dayKey(new Date(2027, 0, day));
 let day = 0, clock = 0, raceNo = 0, lastRankDay = 0;
 const gates = [];
 const gate = (key, text) => { if (gates.some(g => g.key === key)) return; gates.push({ key, text, day, race: raceNo }); };
-const chip = key => { if (S.chipLog[key]) return; S.chipLog[key] = 1; S.chips++; };
 const lv = id => S.research[id] || 0;
 
 function rankUps() {
   while (S.rank < RANK_CAP && FRONTS.every(f => f.have(S) >= rankNeeds(S.rank, S)[f.id])) {
-    S.rank++; S.coins += 200 * S.rank; if (S.rank >= 5) chip("rank:" + S.rank);
+    rankUp(S, today(), rankTitle(S.rank + 1));
     gate("rank" + S.rank, `Rank ${S.rank}`); lastRankDay = day;
   }
 }
 function claimGoals() { for (const g of GOALS) if (!S.claimed.includes(g.id) && g.have(S) >= g.goal) { S.claimed.push(g.id); S.coins += g.reward; } }
 
-function reward(track, r, diff) {
-  S.races++; raceNo++; clock += 75;
-  if (r.place === 1) S.wins++;
-  const dk = track.id + ":" + diff;
-  S.best[track.id] = Math.min(S.best[track.id] || 99, r.place);
-  S.bestD[dk] = Math.min(S.bestD[dk] || 99, r.place);
-  if (r.place === 1) { gate("gold:" + dk, `First ${diffOf(diff).icon} win on ${track.name}`); S.mastery[dk] = (S.mastery[dk] || 0) + 1; }
-  if (diff === "hard" && r.place === 1) chip("hard:" + track.id);
-  const chestBase = (30 + 25 * track.diff) * diffOf(diff).pay * (1 + 0.15 * lv("luckyChests"));
-  S.coins += Math.round(prizeFor(track, r.place, diff) * (1 + 0.05 * lv("coinBoost"))) + r.coins + Math.round(chestBase * 7 / 3);
-  S.stats.roadCoins += r.coins; S.stats.stunts += r.stats.stunts; S.stats.turbos += r.stats.turbos; S.stats.bams += r.stats.bams; S.stats.powers += r.stats.powers || 0; S.stats.rings += r.stats.rings || 0; S.stats.pearls += r.stats.pearls || 0; S.stats.drifts += r.stats.drifts || 0; S.stats.loops += r.stats.loops || 0;
+function reward(track, r, diff, opts = {}) {
+  raceNo++; clock += 75;
+  if (r.place === 1 && !opts.boss) gate("gold:" + track.id + ":" + diff, `First ${diffOf(diff).icon} win on ${track.name}`);
+  raceReward(S, track, r, { diff, day: today(), ...opts });
+  const chests = chestValues(S, track, diff); S.coins += chests[Math.floor(Math.random() * 3)];   // he picks one of three
   for (const t of TRACKS) if (trackOpen(S, t)) gate("open:" + t.id, `Opened ${t.name}`);
 }
 
@@ -58,33 +56,25 @@ const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid",
 function playBoss(b) {
   const car = carOf(), t = TRACKS.find(x => x.id === b.track);
   const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, { ...b, def: CARS.find(c => c.id === b.car) });
-  reward(t, r, "normal");
-  if (r.place === 1 && !S.bosses[b.id]) { S.bosses[b.id] = true; S.coins += 5000; chip("boss:" + b.id); if (!S.owned.includes(b.car)) { S.owned.push(b.car); S.ups[b.car] = NO_UPS(); } gate("boss:" + b.id, `Beat ${b.name}`); }
+  reward(t, r, "normal", { boss: true });
+  if (r.place === 1) { bossReward(S, b, today()); gate("boss:" + b.id, `Beat ${b.name}`); }
 }
 
 /* one Time Trial a day: the newest open track still missing gold */
 function playTrial() {
   const t = [...TRACKS].reverse().find(x => trackOpen(S, x) && (S.trialMedals[x.id] || 0) < 3); if (!t) return false;
   const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, null, true);
-  const m = trialMedal(t, trackLen(t), r.time), old = S.trialMedals[t.id] || 0;
-  raceNo++; clock += 75; S.coins += r.coins; S.stats.roadCoins += r.coins; S.stats.pearls += r.stats.pearls || 0; S.stats.drifts += r.stats.drifts || 0; S.stats.loops += r.stats.loops || 0;
-  for (let k = old + 1; k <= m; k++) { S.coins += trialPay(t, k); if (k === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`); }
-  if (m > old) S.trialMedals[t.id] = m;
+  raceNo++; clock += 75;
+  const { medal } = trialReward(S, t, r, trackLen(t));
+  if (medal === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`);
   return true;
 }
 function playCup(cup, diff) {
-  const pts = [0, 0, 0, 0, 0, 0];
-  for (const id of cup.tracks) {
-    const t = TRACKS.find(x => x.id === id), r = race(t, diff);
-    reward(t, r, diff); r.standings.forEach((k, n) => { pts[k] += CUP_POINTS[n]; });
-  }
-  const order = [0, 1, 2, 3, 4, 5].sort((a, b) => pts[b] - pts[a] || (a === 0 ? -1 : 1)), place = order.indexOf(0) + 1, key = cup.id + ":" + diff;
-  S.cups[key] = Math.min(S.cups[key] || 99, place);
-  S.coins += Math.round(cup.bonus * diffOf(diff).pay * [1, 0.6, 0.4, 0.25, 0.15, 0.15][place - 1] * (1 + 0.05 * lv("coinBoost")));
-  if (place === 1) {
-    if (!S.owned.includes(cup.car)) { S.owned.push(cup.car); S.ups[cup.car] = NO_UPS(); gate("car:" + cup.car, `Won the ${CARS.find(c => c.id === cup.car).name}`); }
-    chip("cup:" + key); gate("cup:" + key, `Won the ${cup.name} on ${diffOf(diff).name}`);
-  }
+  const run = { pts: [0, 0, 0, 0, 0, 0] };
+  for (const id of cup.tracks) { const t = TRACKS.find(x => x.id === id); reward(t, race(t, diff), diff, { cup: run }); }
+  const res = cupEndReward(S, cup, diff, run.pts, today());
+  if (res.car) gate("car:" + cup.car, `Won the ${CARS.find(c => c.id === cup.car).name}`);
+  if (res.place === 1) gate("cup:" + cup.id + ":" + diff, `Won the ${cup.name} on ${diffOf(diff).name}`);
 }
 
 /* What a kid would race next: the hardest open track without a win yet; after 3 losses in a row there, farm the best-paying win. */
@@ -144,22 +134,28 @@ function spend() {
 
 for (day = 1; day <= MAX_DAYS; day++) {
   clock = day * 86400;
+  // the bank pays overnight; he takes it all out to go shopping (put back in at the end of the day)
+  if (BANK) { bankSettle(S.bank, S.rank, day * BANK_DAY); S.coins += bankWithdraw(S.bank, S.bank.bal); }
   // Main Street treats (the kid taps them every day once open)
-  if (S.rank >= 12) S.coins += 300 + 25 * S.rank;
-  if (S.rank >= 20) { S.coins += 500 + 25 * S.rank; if (day % 3 === 0) chip("park:" + day); }
-  if (S.rank >= 15 && !S.owned.includes("firetruck")) { S.owned.push("firetruck"); S.ups.firetruck = NO_UPS(); gate("car:firetruck", "Got Fire Dash from the Fire Station"); }
+  if (S.rank >= 12) treat(S, "icecream", today());
+  if (S.rank >= 20) treat(S, "park", today(), day);
+  if (S.rank >= 15 && treat(S, "fire", today())) gate("car:firetruck", "Got Fire Dash from the Fire Station");
   if (day % 7 === 0) for (const k of Object.keys(fails)) if (k.startsWith("cup:")) fails[k] = 0;   // try cups again each week
   collectLab();
-  S.giftStreak++; S.coins += 100 + 50 * Math.min(S.giftStreak, 7); if (S.giftStreak % 7 === 0) chip("gift7:" + day);
-  if (S.rank >= 7) { S.coins += 3 * (100 + 25 * S.rank) + 200 + 50 * S.rank; chip("missions:" + day); }   // assume he finishes the 3 daily missions
-  // the grown-up logs real-world time; the kid spends tickets on the cheapest lesson
-  S.school.tickets += Math.floor(REAL_MIN / 10);
+  claimGift(S, today(), yesterday());
+  if (S.rank >= 7) {   // assume he finishes the 3 daily missions
+    const M = { day: today(), bonus: false, list: [0, 1, 2].map(() => ({ reward: REWARDS.mission(S.rank), goal: 1, have: 1, claimed: false })) };
+    for (const m of M.list) claimMission(S, m);
+    missionsBonus(S, M);
+  }
+  // Math and Word Laps earn the tickets; the kid spends them on the cheapest lesson
+  for (let k = 0; k < LAPS_PER_DAY; k++) lapTickets(S, k % 2 ? "word" : "math", Math.random() < PERFECT, 5, today());
   for (let bought = true; bought;) {
     bought = false; const before = licenseLevel(S);
     const k = SKILLS.filter(x => S.school.skills[x.id] < SKILL_MAX).sort((a, b) => S.school.skills[a.id] - S.school.skills[b.id])[0];
     if (k && S.school.tickets >= skillCost(S.school.skills[k.id])) { S.school.tickets -= skillCost(S.school.skills[k.id]); S.school.skills[k.id]++; bought = true; }
     const after = licenseLevel(S); if (after > before) gate("lic" + after, `License level ${after}`);
-    if (after >= 3 && !S.owned.includes("patrol")) { S.owned.push("patrol"); S.ups.patrol = NO_UPS(); gate("car:patrol", "Earned the Piqua Patrol"); }
+    if (after >= 3 && grantCar(S, "patrol")) gate("car:patrol", "Earned the Piqua Patrol");
   }
   let trialToday = false;
   for (let n = 0; n < RACES_PER_DAY; n++) {
@@ -180,6 +176,8 @@ for (day = 1; day <= MAX_DAYS; day++) {
     }
     collectLab(); claimGoals(); rankUps(); spend();
   }
+  // whatever wasn't spent goes in the bank, up to its limit
+  if (BANK) { const n = Math.min(S.coins, Math.max(0, bankMax(S.rank) - S.bank.bal)); bankDeposit(S.bank, n, day * BANK_DAY); S.coins -= n; }
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
   if (day - lastRankDay > 60 && S.rank < RANK_CAP && !gates.some(g => g.key === "stuck" + S.rank)) {
     const need = rankNeeds(S.rank, S);

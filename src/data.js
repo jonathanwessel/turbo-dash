@@ -57,6 +57,18 @@ export const CUPS = [
   { id: "glacier", name: "Glacier Cup", color: "#bfefff", tracks: ["icecave", "frozenlake", "aurora"], car: "polar", bonus: 16000, rank: 31, world: "glacier" },
 ];
 export const CUP_POINTS = [10, 8, 6, 4, 2, 1];
+/* Every reward amount in one table (src/rules.js pays them; the career simulator uses the same rules) */
+export const REWARDS = {
+  coinBoost: 0.05,                        // per Coin Boost research level
+  sparkle: 0.1,                           // clean-car bonus: 10% of the prize (at least 5)
+  chestBase: trackDiff => 30 + 25 * trackDiff, luckyChests: 0.15,
+  bossFirst: 5000, bossAgain: 1000,
+  cupShare: [1, 0.6, 0.4, 0.25, 0.15, 0.15],
+  rankUp: rank => 200 * rank, rankChipFrom: 5,
+  gift: streak => 100 + 50 * Math.min(streak, 7),
+  icecream: rank => 300 + 25 * rank, park: rank => 500 + 25 * rank,
+  mission: rank => 100 + 25 * rank, missionsAll: rank => 200 + 50 * rank, smarts: 0.1,
+};
 
 /* 👑 Bosses: a one-on-one race against a named rival on that world's hardest track. Beat them to win their car. */
 export const BOSSES = [

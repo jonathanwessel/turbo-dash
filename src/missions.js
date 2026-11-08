@@ -1,5 +1,5 @@
 // Daily missions: three small picture tasks a day (same three all day). Finishing all three pays a Brain Chip.
-import { TRACKS, OPEN_RANK } from "./data.js";
+import { TRACKS, OPEN_RANK, REWARDS } from "./data.js";
 import { S, save } from "./save.js";
 
 export const MISSIONS_RANK = OPEN_RANK.missions;
@@ -22,7 +22,7 @@ export function todaysMissions(today, openTracks) {
   const pool = KINDS.slice(), list = [];
   while (list.length < 3) {
     const k = pool.splice(Math.floor(r() * pool.length), 1)[0];
-    const m = { kind: k.id, goal: k.goal(), have: 0, claimed: false, reward: 100 + 25 * S.rank };
+    const m = { kind: k.id, goal: k.goal(), have: 0, claimed: false, reward: REWARDS.mission(S.rank) };
     if (k.id === "track") { const opts = TRACKS.filter((t, i) => openTracks(i)); m.track = opts[Math.floor(r() * opts.length)].id; }
     list.push(m);
   }
