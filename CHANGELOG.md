@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.8.0 — One School, Good Student bonus 📚
+
+- **Laps give a short coin bonus instead of permanent upgrades.** Every Math Lap or Word Lap adds a **Good Student
+  bonus**: races pay +10% coins (+20% for a lap with no mistakes) for the next 30 real minutes. Bonuses stack, each
+  with its own 30 minutes, up to the daily limit a grown-up sets (now shown as a percentage). The race screen shows
+  the bonus next to the coins, and the result tells how many bonus coins it paid.
+- **Lessons and tickets are gone.** Focus, Reflexes, Courage and Smarts lessons already learned were reset, and the
+  License rank gauge is removed (ranks need Wins, Trophies, Garage and Research again).
+- **One School.** The Library building is gone from Main Street; Math Laps and Word Laps are both at the School
+  (it used to be called the Driver School).
+- **The School Resource Officer car** (it was the Piqua Patrol) now comes after 20 laps. Anyone who already had it
+  keeps it. The two school goals count laps now.
+- For grown-ups: the long "You earned…" messages wrap instead of running off the screen, and the Grown-ups help text
+  explains the bonus. Saves from before 1.8 load with lessons reset; everything else carries over.
+
 ## v1.7.3 — Turbo you can read
 
 - **The Turbo meter drains while Turbo burns.** It used to stay full for the whole boost and only drop to empty at

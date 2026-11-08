@@ -6,8 +6,8 @@
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
 import { trackLen } from "../src/engine.js";
-import { SKILLS, SKILL_MAX, skillCost, licenseLevel, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
-import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapTickets, grantCar } from "../src/rules.js";
+import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
+import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar } from "../src/rules.js";
 const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
 const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
 import {
@@ -23,7 +23,7 @@ const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
   cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, trials: {}, trialMedals: {},
   bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
-  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], capT: 6 }, parent: { license: true },
+  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], capT: 6, boosts: [], math: { laps: 0 }, word: { laps: 0 } }, parent: {},
   museum: [], days: {}, history: [], dirt: {}, sparkle: "", daily: {}, lastGift: "", bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0 },
 };
 const today = () => dayKey(new Date(2027, 0, 1 + day)), yesterday = () => dayKey(new Date(2027, 0, day));
@@ -43,7 +43,7 @@ function claimGoals() { for (const g of GOALS) if (!S.claimed.includes(g.id) && 
 function reward(track, r, diff, opts = {}) {
   raceNo++; clock += 75;
   if (r.place === 1 && !opts.boss) gate("gold:" + track.id + ":" + diff, `First ${diffOf(diff).icon} win on ${track.name}`);
-  raceReward(S, track, r, { diff, day: today(), ...opts });
+  raceReward(S, track, r, { diff, day: today(), now: clock * 1000, ...opts });   // clock: race seconds, so the 30-minute Good Student bonus covers the first races of the day
   const chests = chestValues(S, track, diff); S.coins += chests[Math.floor(Math.random() * 3)];   // he picks one of three
   for (const t of TRACKS) if (trackOpen(S, t)) gate("open:" + t.id, `Opened ${t.name}`);
 }
@@ -148,15 +148,9 @@ for (day = 1; day <= MAX_DAYS; day++) {
     for (const m of M.list) claimMission(S, m);
     missionsBonus(S, M);
   }
-  // Math and Word Laps earn the tickets; the kid spends them on the cheapest lesson
-  for (let k = 0; k < LAPS_PER_DAY; k++) lapTickets(S, k % 2 ? "word" : "math", Math.random() < PERFECT, 5, today());
-  for (let bought = true; bought;) {
-    bought = false; const before = licenseLevel(S);
-    const k = SKILLS.filter(x => S.school.skills[x.id] < SKILL_MAX).sort((a, b) => S.school.skills[a.id] - S.school.skills[b.id])[0];
-    if (k && S.school.tickets >= skillCost(S.school.skills[k.id])) { S.school.tickets -= skillCost(S.school.skills[k.id]); S.school.skills[k.id]++; bought = true; }
-    const after = licenseLevel(S); if (after > before) gate("lic" + after, `License level ${after}`);
-    if (after >= 3 && grantCar(S, "patrol")) gate("car:patrol", "Earned the Piqua Patrol");
-  }
+  // Math and Word Laps before racing: each adds a Good Student coin bonus for 30 minutes (and 20 laps earn the car)
+  for (let k = 0; k < LAPS_PER_DAY; k++) { const kind = k % 2 ? "word" : "math"; S.school[kind].laps++; lapBonus(S, kind, Math.random() < PERFECT, 5, today(), clock * 1000); }
+  if (lapsDone(S) >= GOOD_STUDENT.patrolLaps && grantCar(S, "patrol")) gate("car:patrol", "Earned the School Resource Officer car");
   let trialToday = false;
   for (let n = 0; n < RACES_PER_DAY; n++) {
     if (!trialToday && n === 3) { trialToday = true; if (playTrial()) { collectLab(); claimGoals(); rankUps(); spend(); continue; } }

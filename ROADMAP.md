@@ -244,6 +244,10 @@ chevrons, friendlier bumps, a smooth rubber band, hills that move the background
 Still to do from it: rewriting the remaining ~55 repeated stylesheet rules by hand (they override each other on
 purpose, so each needs checking) and moving every font size onto the type ramp.
 
+### v1.8.0 📚 One School, Good Student bonus (shipped)
+Laps give a stacking +10% / +20% race-coin bonus for 30 minutes instead of permanent lessons; lessons reset, the
+License gauge removed, the Library folded into the School, and the School Resource Officer car after 20 laps.
+
 ### v1.3 – v1.7 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.

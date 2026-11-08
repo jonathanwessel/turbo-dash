@@ -38,7 +38,7 @@ export function howToGet(car, grid = false) {
   const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
   const boss = car.boss && BOSSES.find(b => b.id === car.boss), bld = car.building && BUILDINGS.find(b => b.id === car.building);
   return driving ? "✔ Driving" : owned ? (grid ? "✔ Yours" : "Drive it!") : far ? (grid ? `${w.name}, Rank ${w.rank}` : `Try ${w.name}`) : cup ? `🏆 Win the ${cup.name}`
-    : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name}, Rank ${bld.rank}` : car.school ? "🚦 Driver School" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
+    : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name}, Rank ${bld.rank}` : car.school ? "🚦 20 School laps" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
 }
 
 export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {

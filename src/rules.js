@@ -2,7 +2,7 @@
 // No page and no storage here: every function takes the save (S), changes it, and returns what happened so the
 // screen can show it. The game (src/main.js) and the career simulator (scripts/career.mjs) both use these, so the
 // simulator checks the same rules the game plays by. Numbers live in REWARDS (src/data.js).
-import { REWARDS, UPGRADES, CUP_POINTS, prizeFor, diffOf, starsFor, trialMedal, trialPay } from "./data.js";
+import { REWARDS, UPGRADES, CUP_POINTS, prizeFor, diffOf, starsFor, trialMedal, trialPay, GOOD_STUDENT } from "./data.js";
 
 export const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const coinBoost = S => 1 + REWARDS.coinBoost * (S.research.coinBoost || 0);
@@ -21,9 +21,9 @@ export function addRaceStats(S, r) {
   st.roadCoins = (st.roadCoins || 0) + (r.coins || 0);
 }
 
-/* a normal race (also each cup race and a boss race). opts: { diff, boss, cup, day }
-   returns { prize, sparkle, starUp, firstWin } */
-export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = null, day } = {}) {
+/* a normal race (also each cup race and a boss race). opts: { diff, boss, cup, day, now (ms, for the Good Student bonus) }
+   returns { prize, sparkle, starUp, firstWin, student } */
+export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = null, day, now = 0 } = {}) {
   const prize = Math.round(prizeFor(track, r.place, diff) * coinBoost(S)), dk = track.id + ":" + diff;
   S.races++; if (r.place === 1) S.wins++;
   if (S.days && day) { S.days[day] = (S.days[day] || 0) + 1; for (const old of Object.keys(S.days).sort().reverse().slice(30)) delete S.days[old]; }
@@ -36,6 +36,8 @@ export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = nul
     if (r.place === 1) { const before = starsFor(S.mastery[dk] || 0); S.mastery[dk] = (S.mastery[dk] || 0) + 1; if (starsFor(S.mastery[dk]) > before) starUp = starsFor(S.mastery[dk]); }
   }
   S.coins += prize + r.coins;
+  const gs = now ? goodStudentPct(S, now) : 0, student = Math.round((prize + r.coins) * gs / 100);   // 📚 the lap bonus
+  S.coins += student;
   let sparkle = 0;
   if (S.sparkle && !boss) { sparkle = Math.max(5, Math.round(prize * REWARDS.sparkle)); S.coins += sparkle; S.sparkle = ""; }
   if (S.dirt) S.dirt[S.car] = Math.min(5, (S.dirt[S.car] || 0) + 1);
@@ -43,7 +45,7 @@ export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = nul
   if (cup && r.standings) r.standings.forEach((k, n) => { cup.pts[k] += CUP_POINTS[n]; });
   if (S.history) { S.history.unshift({ d: day, t: track.id, df: diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30); }
   addRaceStats(S, r);
-  return { prize, sparkle, starUp, firstWin };
+  return { prize, sparkle, starUp, firstWin, student };
 }
 /* the three treasure chests after a race (one is picked) */
 export function chestValues(S, track, diff = S.diff, rnd = Math.random) {
@@ -115,14 +117,19 @@ export function missionsBonus(S, M) {
   M.bonus = true; const coins = REWARDS.missionsAll(S.rank); S.coins += coins;
   return { coins, chip: chip(S, "missions:" + M.day) };
 }
-/* Math and Word Laps: tickets for a lap (2 for a perfect one), under one daily limit for both */
+/* Math and Word Laps: each lap adds a Good Student bonus (one step = +10% race coins, two for a perfect lap) that
+   lasts 30 real minutes; bonuses stack. The grown-up's daily limit counts steps for both laps together. */
 export const LAPS = ["math", "word"];
 export const lapToday = (S, a, today) => S.school.log.find(e => e.a === a && e.d === today) || null;
-export const ticketsLeft = (S, today) => S.school.capT ? Math.max(0, S.school.capT - LAPS.map(a => lapToday(S, a, today)).filter(Boolean).reduce((n, e) => n + (e.t || 0), 0)) : Infinity;
-export function lapTickets(S, kind, perfect, questions, today) {
-  const sc = S.school, got = Math.min(perfect ? 2 : 1, ticketsLeft(S, today));
+export const bonusLeft = (S, today) => S.school.capT ? Math.max(0, S.school.capT - LAPS.map(a => lapToday(S, a, today)).filter(Boolean).reduce((n, e) => n + (e.t || 0), 0)) : Infinity;
+export const activeBoosts = (S, now) => (S.school.boosts || []).filter(b => b.until > now);
+export const goodStudentPct = (S, now) => activeBoosts(S, now).reduce((n, b) => n + b.p, 0);
+export function lapBonus(S, kind, perfect, questions, today, now) {
+  const sc = S.school, steps = Math.min(perfect ? 2 : 1, bonusLeft(S, today));
   let e = lapToday(S, kind, today);
   if (!e) { e = { d: today, a: kind, m: 0, t: 0 }; sc.log.unshift(e); sc.log.length = Math.min(sc.log.length, 60); }
-  e.m += questions; e.t += got; sc.tickets += got; sc.earned += got;
-  return got;
+  e.m += questions; e.t += steps; sc.earned += steps;
+  sc.boosts = activeBoosts(S, now);
+  if (steps) sc.boosts.push({ p: steps * GOOD_STUDENT.pct, until: now + GOOD_STUDENT.mins * 60000 });
+  return { steps, pct: steps * GOOD_STUDENT.pct };
 }

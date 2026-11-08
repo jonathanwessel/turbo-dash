@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -39,7 +39,7 @@ const DEFAULTS = () => ({
   // Driver School: tickets come from real-world time a grown-up logs; skills are bought with tickets
   school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], readingDouble: true, capMin: 0,
     math: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, mathMax: "10", capT: 6,
-    word: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, wordMax: "5" },
+    word: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, wordMax: "5", boosts: [] },
 });
 
 export let S = DEFAULTS();
@@ -143,10 +143,12 @@ export function port(d) {
   s.missions = typeof M.day === "string" && Array.isArray(M.list) && M.list.length && M.list.every(okM) ? { ...M, list: M.list.map(m => ({ ...m, claimed: m.claimed === true })) } : null;
   s.history = arr(d.history).filter(h => h && typeof h === "object").slice(0, 30);
   s.cloud = { linked: obj(d.cloud).linked === true };
-  const sc = obj(d.school), sk = obj(sc.skills);
+  const sc = obj(d.school), sk = obj(sc.skills), lessonsGone = (num(d.v, 0) || 0) < 20;   // v20 (1.8): lessons and tickets are reset
   s.school = {
-    tickets: Math.round(num(sc.tickets, 0, 0)), earned: Math.round(num(sc.earned, 0, 0)),
-    skills: Object.fromEntries(["focus", "reflex", "courage", "smarts"].map(k => [k, Math.round(num(sk[k], 0, 0, 10))])),
+    tickets: lessonsGone ? 0 : Math.round(num(sc.tickets, 0, 0)), earned: Math.round(num(sc.earned, 0, 0)),
+    skills: Object.fromEntries(["focus", "reflex", "courage", "smarts"].map(k => [k, lessonsGone ? 0 : Math.round(num(sk[k], 0, 0, 10))])),
+    // v20 (1.8): Good Student bonuses still running ({ p: percent, until: ms })
+    boosts: arr(sc.boosts).filter(b => b && Number.isFinite(b.p) && b.p > 0 && b.p <= 100 && Number.isFinite(b.until) && b.until > 0).map(b => ({ p: Math.round(b.p), until: b.until })).slice(-20),
     log: arr(sc.log).filter(e => e && typeof e === "object" && typeof e.a === "string").slice(0, 60),
     readingDouble: sc.readingDouble !== false, capMin: num(sc.capMin, 0, 0, 600),
     // v16 (1.1): Math School

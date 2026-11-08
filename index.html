@@ -38,7 +38,7 @@
       <div class="hud-lap">LAP <span id="h-lap">1</span>/<span id="h-laps">2</span></div>
       <div id="h-track"></div>
     </div>
-    <div class="hud-coins">🪙 <span id="h-coins">0</span></div>
+    <div class="hud-coins">🪙 <span id="h-coins">0</span><small class="h-gs" id="h-gs" hidden></small></div>
     <button id="btn-auto" class="hud-btn auto" aria-label="Auto Steer" hidden>🤖<small id="auto-lv">1</small></button>
     <button id="btn-pause" class="hud-btn" aria-label="Pause">⏸</button>
   </div>
@@ -223,10 +223,10 @@
   </section>
 
   <section id="s-school" class="screen panel" data-room="school" hidden>
-    <div class="screen-head"><button class="back" data-back>◀</button><h2>Driver School</h2></div>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>School</h2></div>
     <div class="school">
       <div class="classroom">
-        <div class="board"><b>DRIVER SCHOOL</b><div class="lights"><i></i><i></i><i></i></div></div>
+        <div class="board"><b>SCHOOL</b><div class="lights"><i></i><i></i><i></i></div></div>
         <div class="coach-row"><svg class="coach" viewBox="0 0 160 200" aria-hidden="true">
           <ellipse cx="80" cy="190" rx="70" ry="9" fill="rgba(0,0,0,.25)"/>
           <rect x="18" y="168" width="124" height="20" rx="6" fill="#e86a00"/>
@@ -237,13 +237,12 @@
           <path d="M68 70 Q80 80 92 70" stroke="#7a2a00" stroke-width="4" fill="none" stroke-linecap="round"/>
           <path d="M100 74 l20 6 l-2 8 l-20 -6z" fill="#ffd400"/><circle cx="122" cy="86" r="5" fill="#ffd400"/>
         </svg><div class="speech" id="coach-say">Hi Carter!</div></div>
-        <div class="tickets"><span>🎟️</span><b id="sch-tickets">0</b><small>tickets</small></div>
+        <div class="tickets"><span>📚</span><b id="sch-bonus">+0%</b><small>coins</small></div>
         <div class="lap-btns"><button id="sch-math" class="big-btn go">🧮 Math Lap</button><button id="sch-word" class="big-btn go">📚 Word Lap</button></div>
         <button id="sch-log" class="big-btn small">👪 Grown-ups</button>
       </div>
       <div class="school-right">
-        <div class="license" id="license"></div>
-        <div class="skills" id="skills"></div>
+        <div class="gs-panel" id="gs-panel"></div>
       </div>
     </div>
   </section>
@@ -257,7 +256,7 @@
       <div class="math-ans" id="math-ans"></div>
       <div class="math-done" id="math-done" hidden>
         <div class="math-win" id="math-win"></div>
-        <div class="row"><button id="math-again" class="big-btn go">🧮 Another lap</button><button id="math-school" class="big-btn small">🚦 Driver School</button></div>
+        <div class="row"><button id="math-again" class="big-btn go">🧮 Another lap</button><button id="math-school" class="big-btn small">🚦 School</button></div>
       </div>
     </div>
   </section>
@@ -271,7 +270,7 @@
       <div class="math-ans" id="word-ans"></div>
       <div class="math-done" id="word-done" hidden>
         <div class="math-win" id="word-win"></div>
-        <div class="row"><button id="word-again" class="big-btn go">📚 Another lap</button><button id="word-school" class="big-btn small">🚦 Driver School</button></div>
+        <div class="row"><button id="word-again" class="big-btn go">📚 Another lap</button><button id="word-school" class="big-btn small">🚦 School</button></div>
       </div>
     </div>
   </section>
@@ -300,12 +299,11 @@
   <section id="s-log" class="screen panel" data-room="school" hidden>
     <div class="screen-head"><button class="back" id="log-back">◀</button><h2>Grown-ups</h2></div>
     <div class="log-wrap">
-      <p class="log-help">Tickets come from <b>Math Laps</b> at the Driver School and <b>Word Laps</b> at the Library: 5 questions each, and every lap earns a 🎟️ (two for a lap with no mistakes). Two perfect laps in a row make the next ones a little harder, up to the levels you pick.</p>
+      <p class="log-help">A <b>Math Lap</b> or a <b>Word Lap</b> at the School is 5 questions. Each lap gives a <b>Good Student bonus</b>: races pay +10% coins (+20% for a lap with no mistakes) for the next 30 minutes. Bonuses add up. Two perfect laps in a row make the next ones a little harder, up to the levels you pick.</p>
       <div class="log-today" id="log-today"></div>
       <div class="p-set"><b>Hardest math</b><span id="log-lvl"></span></div>
       <div class="p-set"><b>Hardest words</b><span id="log-wlvl"></span></div>
-      <div class="p-set"><b>Most tickets per day (both laps together)</b><span id="log-cap"></span></div>
-      <div class="p-set"><b>License needed to rank up (from Rank 10)</b><span id="log-lic"></span></div>
+      <div class="p-set"><b>Most bonus per day (both laps together)</b><span id="log-cap"></span></div>
       <div class="log-hist" id="log-hist"></div>
     </div>
   </section>
@@ -393,7 +391,7 @@
       <div class="trophy" id="rest-moon">🌙</div>
       <h1>Break time!</h1>
       <div class="gift-day" id="rest-txt">Great racing today, Carter! Your car is resting too.</div>
-      <div class="gift-day rest-tip">📚 Read a book or 🌳 play outside! After the break, a 🧮 Math Lap or a 📚 Word Lap earns 🎟️ tickets.</div>
+      <div class="gift-day rest-tip">📚 Read a book or 🌳 play outside! After the break, a 🧮 Math Lap or a 📚 Word Lap gives bonus coins.</div>
       <div class="r-coins">⏱ <span id="rest-left">10:00</span></div>
     </div>
   </section>
@@ -470,10 +468,10 @@
       <div class="g-sec"><h3>🏁 Racing</h3><p>Steer with the ◀ ▶ buttons (or tilt the tablet, in Settings). 🚀 fires Turbo when it's full; ❓ boxes give a power-up for the round button on the left: 🛡️ a shield, 💰 8 coins, 🧲 a magnet or ⚡ a Super Turbo (a free boost that doesn't use the Turbo tank). Driving right behind another car gives a little extra speed (💨 drafting). 🏙️ Downtown is an extra, tricky course that's always open. The Preview worlds button lets him try a lap of a world that isn't open yet (no prizes). If the game feels slow on an older tablet, set ✨ Effects to Simple in Settings. Every race pays coins, plus a treasure chest. A new track opens when the one before it is <b>won</b> on Normal or Hard (or on Easy, if Easy is the only difficulty you allow).</p></div>
       <div class="g-sec"><h3>🏙️ Main Street</h3><p>The yellow <b>Next</b> sign under the rank always shows one thing to do next (the next track to win, or the rank gauge that needs the most help); tap it to go there. Red "!" badges show only the two most useful things at a time: coins waiting to be collected first, then prizes to claim, then a rank-up, then something to buy or learn. The back button ◀ is at the top-left on every screen and goes back to where he came from.</p></div>
       <div class="g-sec"><h3>🛣️ Bumps and curves</h3><p>Yellow arrow signs warn of sharp curves. Bumping into something at the roadside while steering back to the road only slows the car a little; bumping while nobody is steering (or bumping again right away) is a big slowdown, so a car left alone still finishes last.</p></div>
-      <div class="g-sec"><h3>⭐ Racer Rank</h3><p>Ranking up needs every gauge full: 🏁 wins, 🏆 trophies (medals, cups, goals, and ⭐ mastery stars: each track gives a star at 3, 10, 25, 50 and 100 wins on a difficulty; the little bar under the stars on a track card shows how close the next one is), 🔧 garage (cars and upgrades) and 🔬 research. From Rank 10 a 🪪 Driver License gauge joins (you can turn it off below). New ranks open buildings, cups, bosses and new worlds.</p></div>
+      <div class="g-sec"><h3>⭐ Racer Rank</h3><p>Ranking up needs every gauge full: 🏁 wins, 🏆 trophies (medals, cups, goals, and ⭐ mastery stars: each track gives a star at 3, 10, 25, 50 and 100 wins on a difficulty; the little bar under the stars on a track card shows how close the next one is), 🔧 garage (cars and upgrades) and 🔬 research. New ranks open buildings, cups, bosses and new worlds.</p></div>
       <div class="g-sec"><h3>🔬 Turbo Lab</h3><p>Research takes real time (minutes to hours) and coins. It keeps going while the tablet is off, so there's a reason to come back tomorrow. The big one, 🧠 Auto Steer, has 100 levels and takes years. It's off in boss races and Time Trials, and you can switch it off.</p></div>
       <div class="g-sec"><h3>🏦 Piqua National Bank</h3><p>Coins kept in the bank earn 7% every real day (put in 100, and a day later there are 107). Coins put in more than an hour into a bank day start earning the next day, so there's no trick of adding coins just before payday. The bank keeps up to 400 coins per rank (2,000 at Rank 5), and interest is paid only on coins up to that limit. Coins in the bank can't be spent until he takes them out, which he can do any time. A good first lesson in saving.</p></div>
-      <div class="g-sec"><h3>🚦 Driver School, 🧮 Math Laps and 📚 Word Laps</h3><p>A Math Lap is 5 adding or taking-away questions with pictures to count. A Word Lap, at the 📚 Library, is 5 reading questions: match a picture to its word, or a word to its picture. Each lap earns a 🎟️ ticket (two with no mistakes), up to one daily limit you choose for both. Wrong answers just try again. Math grows from sums to 5 up to the level you allow (adding to 10, to 10, or to 20). Words grow from 3-letter words, to look-alike words (cat, cap, can), to 4-letter and longer words. Tickets buy lessons that make him a better driver in every car, and lessons earn the license. Settings: Driver School → 👪 Grown-ups.</p></div>
+      <div class="g-sec"><h3>🚦 School: 🧮 Math Laps and 📚 Word Laps</h3><p>A Math Lap is 5 adding or taking-away questions with pictures to count. A Word Lap is 5 reading questions: match a picture to its word, or a word to its picture. Each lap gives a <b>Good Student bonus</b>: races pay +10% coins (+20% for a lap with no mistakes) for 30 real minutes. Bonuses add up, each with its own 30 minutes, up to one daily limit you choose. Nothing is permanent, so it rewards practice without making the game easier for good. Wrong answers just try again. Math grows from sums to 5 up to the level you allow; words grow from 3-letter words to look-alike words (cat, cap, can) to 4-letter and longer ones. After 20 laps he earns the School Resource Officer car. Settings: School, then Grown-ups.</p></div>
       <div class="g-sec"><h3>👪 Your controls (Parent Corner)</h3><p>Which difficulties he may pick; a steering helper for young drivers; a break reminder (a 10-minute rest screen after the time you choose); volume and vibration; Auto Steer on/off; the License gauge; weather. Parent Corner opens by tapping the version number 5 times on the title screen, behind a grown-up question (a multiplication typed on a number pad).</p></div>
       <div class="g-sec"><h3>💾 Saving</h3><p>Emoji pictures: Twemoji by Twitter, Inc. and other contributors (CC-BY 4.0). Fonts: Racing Sans One and Nunito (SIL Open Font License). Progress saves on this tablet by itself. A <b>save code</b> in Parent Corner copies it to another device. Installed from the website (📲 Install on the title screen), the game opens full screen and works offline. There are no purchases, no ads and no accounts, ever.</p></div>
       <div class="row"><button class="big-btn small go" data-backto="s-parent">◀ Back</button></div>

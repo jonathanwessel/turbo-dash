@@ -119,7 +119,7 @@ window.__sweep = async (only) => {
   await go("s-math:minus", () => td.mathShow({ a: 10, b: 7, op: "-", ans: 3 }), "#s-math");
   await go("s-math:big", () => td.mathShow({ a: 18, b: 9, op: "-", ans: 9 }), "#s-math");
   await go("s-math:done", () => td.mathDone(), "#s-math");
-  await go("s-word", async () => { await hub("library")(); await wait(60); });
+  await go("s-word", async () => { td.openWord(); await wait(60); });
   await go("s-word:pic-long", () => td.wordShow({ w: "carrot", pic: "🥕", mode: "pic", choices: [{ w: "carrot", pic: "🥕" }, { w: "parrot" }, { w: "carpet" }] }), "#s-word");
   await go("s-word:word-long", () => td.wordShow({ w: "rabbit", pic: "🐰", mode: "word", choices: [{ w: "rabbit", pic: "🐰" }, { w: "monkey", pic: "🐵" }, { w: "turtle", pic: "🐢" }] }), "#s-word");
   await go("s-word:done", () => td.wordDone(), "#s-word");

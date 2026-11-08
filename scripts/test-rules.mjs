@@ -1,14 +1,14 @@
 // Reward rules (src/rules.js): fixed inputs, fixed answers. The game and the career simulator both use these.
 //   node scripts/test-rules.mjs   (part of npm test)
 import { TRACKS, CUPS, BOSSES, REWARDS, prizeFor, diffOf, trialTimes } from "../src/data.js";
-import { raceReward, chestValues, bossReward, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapTickets, ticketsLeft, grantCar, chip } from "../src/rules.js";
+import { raceReward, chestValues, bossReward, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapBonus, bonusLeft, goodStudentPct, grantCar, chip } from "../src/rules.js";
 
 let fails = 0, checks = 0;
 const check = (ok, msg) => { checks++; if (!ok) { fails++; console.log("  ✖ " + msg); } };
 const fresh = (over = {}) => ({
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: { engine: 0, turbo: 0, tires: 0, magnet: 0 } }, best: {}, bestD: {}, mastery: {}, research: {}, cups: {}, bosses: {},
   trials: {}, trialMedals: {}, chips: 0, chipLog: {}, races: 0, wins: 0, rank: 5, stats: {}, museum: [], days: {}, history: [], dirt: {}, sparkle: "", daily: {},
-  lastGift: "", giftStreak: 0, school: { tickets: 0, earned: 0, skills: { smarts: 0 }, log: [], capT: 6 }, ...over,
+  lastGift: "", giftStreak: 0, school: { tickets: 0, earned: 0, skills: { smarts: 0 }, log: [], capT: 6, boosts: [] }, ...over,
 });
 const sunny = TRACKS[0], race = (place, extra = {}) => ({ place, coins: 12, time: 60, standings: [0, 1, 2, 3, 4, 5], stats: { stunts: 2, turbos: 1, bams: 1, powers: 1 }, ...extra });
 
@@ -56,9 +56,16 @@ const sunny = TRACKS[0], race = (place, extra = {}) => ({ place, coins: 12, time
 }
 { // laps: 2 tickets for a perfect lap, 1 otherwise, one daily limit for math and word together
   const S = fresh(); let got = 0;
-  got += lapTickets(S, "math", true, 5, "d"); got += lapTickets(S, "word", true, 5, "d"); got += lapTickets(S, "math", false, 5, "d"); got += lapTickets(S, "word", true, 5, "d");
-  check(got === 6 && S.school.tickets === 6 && ticketsLeft(S, "d") === 0 && lapTickets(S, "math", true, 5, "d") === 0, `daily cap (got ${got})`);
-  check(ticketsLeft(S, "e") === 6, "a new day resets the limit");
+  const T0 = 1e12, MIN = 60000;
+  for (const [kind, perfect] of [["math", true], ["word", true], ["math", false], ["word", true]]) got += lapBonus(S, kind, perfect, 5, "d", T0).steps;
+  check(got === 6 && bonusLeft(S, "d") === 0 && lapBonus(S, "math", true, 5, "d", T0).steps === 0, `daily cap (got ${got} steps)`);
+  check(goodStudentPct(S, T0) === 60, `bonuses should stack to +60% (got ${goodStudentPct(S, T0)})`);
+  check(goodStudentPct(S, T0 + 29 * MIN) === 60 && goodStudentPct(S, T0 + 31 * MIN) === 0, "a bonus should last 30 minutes, then stop");
+  check(bonusLeft(S, "e") === 6, "a new day resets the limit");
+  // a race pays the bonus on its prize and road coins
+  const R1 = fresh(); lapBonus(R1, "math", true, 5, "d", T0); const res = raceReward(R1, sunny, race(1), { diff: "normal", now: T0 + 5 * MIN });
+  check(res.student === Math.round((res.prize + 12) * 0.2) && R1.coins === res.prize + 12 + res.student, `a +20% bonus paid ${res.student}`);
+  const R2 = fresh(); lapBonus(R2, "math", true, 5, "d", T0); check(raceReward(R2, sunny, race(1), { diff: "normal", now: T0 + 40 * MIN }).student === 0, "an expired bonus still paid");
 }
 { // cars and chips never twice
   const S = fresh(); check(grantCar(S, "bolt") && !grantCar(S, "bolt") && S.owned.filter(c => c === "bolt").length === 1 && S.ups.bolt.engine === 0, "grantCar once");

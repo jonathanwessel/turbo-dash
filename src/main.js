@@ -1,7 +1,7 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance } from "./pace.js";
-import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapTickets } from "./rules.js";
+import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -308,6 +308,7 @@ function startRace(track) {
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
+  { const gs = isPreview() ? 0 : goodStudentPct(S, Date.now()); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
   nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
@@ -685,8 +686,9 @@ function showResult(r) {
   const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const bossRace = run.kind === "boss", chipsBefore = S.chips;
-  const { prize, sparkle, starUp } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()) });
+  const { prize, sparkle, starUp, student } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()), now: Date.now() });
   if (starUp) setTimeout(() => toast(`⭐ Mastery star ${starUp} on ${currentTrack.name}!`), 1800);
+  if (student) setTimeout(() => toast(`📚 Good Student bonus: +🪙${student}`), starUp ? 3400 : 1200);
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
   chipToast(S.chips > chipsBefore);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
@@ -835,39 +837,23 @@ $("rk-up").onclick = () => {
 $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
-/* ---------- 🚦 Driver School ---------- */
-const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Math makes great drivers!", "A Math Lap earns tickets!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!", "Reading makes great drivers too!", "A Word Lap at the Library earns tickets!"];
+/* ---------- 🚦 School (Math Laps and Word Laps) ---------- */
+const COACH = () => ["Hi " + who() + "! Ready for a lap?", "Math makes great drivers!", "Every lap gives you bonus coins!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!", "Reading makes great drivers too!", "More laps, more bonus coins!"];
 function openSchool() {
   { const L = COACH(); $("coach-say").textContent = L[Math.floor(Math.random() * L.length)]; }
   paintSchool(); show("s-school");
 }
+/* 📚 the Good Student bonus: each lap adds +10% race coins (+20% if perfect) for 30 minutes; they stack */
+const minsLeft = until => Math.max(1, Math.ceil((until - Date.now()) / 60000));
 function paintSchool() {
-  const sc = S.school, L = licenseLevel(S), lic = LICENSES[L], next = LICENSES[L + 1], n = lessonsOf(S);
-  $("sch-tickets").textContent = sc.tickets;
-  $("license").style.background = `linear-gradient(135deg, ${lic.color}, #fff)`;
-  $("license").innerHTML = `<div class="lc-pic">🚗</div><b>${who()}'s driver license</b><small>${lic.name}${next ? ` → ${next.name} at ${next.lessons} lessons` : ", the very best!"}</small>
-    <div class="bar"><i style="width:${next ? Math.round(100 * (n - lic.lessons) / (next.lessons - lic.lessons)) : 100}%"></i></div>`;
-  $("skills").innerHTML = SKILLS.map(k => {
-    const lv = sc.skills[k.id], max = lv >= SKILL_MAX, cost = skillCost(lv);
-    return `<div class="skill" data-sk="${k.id}"><div class="si">${k.icon}</div><b>${k.name}</b><small>${k.desc}</small>
-      <div class="pips">${Array.from({ length: SKILL_MAX }, (_, i) => `<i class="${i < lv ? "on" : ""}"></i>`).join("")}</div>
-      <button class="${max ? "max" : sc.tickets >= cost ? "" : "poor"}" data-learn="${k.id}">${max ? "MAX!" : "🎟️ " + cost}</button></div>`;
-  }).join("");
+  const now = Date.now(), pct = goodStudentPct(S, now), boosts = activeBoosts(S, now).sort((a, b) => a.until - b.until);
+  const left = bonusLeft(S, dayKey(new Date())), laps = lapsDone(S), need = GOOD_STUDENT.patrolLaps;
+  $("sch-bonus").textContent = "+" + pct + "%";
+  $("gs-panel").innerHTML = `<div class="gs-big ${pct ? "on" : ""}"><b>${pct ? "+" + pct + "%" : "No bonus yet"}</b><small>${pct ? "more coins from every race" : "Do a lap for bonus coins!"}</small></div>
+    <div class="gs-list">${boosts.map(b => `<span>📚 +${b.p}% <small>${minsLeft(b.until)} min</small></span>`).join("") || `<span class="gs-how">🧮 or 📚 lap = <b>+${GOOD_STUDENT.pct}%</b> for ${GOOD_STUDENT.mins} min</span>`}</div>
+    ${left === 0 ? `<div class="gs-done">That's all the bonuses for today. Great work, ${who()}!</div>` : ""}
+    ${S.owned.includes("patrol") ? "" : `<div class="gs-patrol">🚓 <div class="bar"><i style="width:${Math.min(100, Math.round(100 * laps / need))}%"></i></div><small>${Math.min(laps, need)} / ${need} laps</small></div>`}`;
 }
-$("skills").addEventListener("click", e => {
-  const b = e.target.closest("[data-learn]"); if (!b) return;
-  const id = b.dataset.learn, sc = S.school, lv = sc.skills[id];
-  if (lv >= SKILL_MAX) { sfx("click"); return; }
-  if (sc.tickets < skillCost(lv)) { sfx("nope"); toast("🎟️ Do a Math Lap or a Word Lap to earn tickets!"); return; }
-  const before = licenseLevel(S);
-  sc.tickets -= skillCost(lv); sc.skills[id]++; save(); sfx("buy");
-  paintSchool(); $("skills").querySelector(`[data-sk="${id}"]`)?.classList.add("flash");
-  const after = licenseLevel(S);
-  if (after > before) {
-    confetti(160); sfx("win"); toast(`🪪 ${LICENSES[after].name} license!`);
-    if (after >= 3 && grantCar(S, "patrol")) { save(); setTimeout(() => toast("🚓 You earned the Piqua Patrol car!"), 2700); }
-  }
-});
 // grown-up settings for the Math School (behind the grown-up check)
 $("sch-log").onclick = () => { sfx("click"); grownUp("s-school", openLog); };
 const lapsToday = () => LAPS.map(a => lapOf(S, a, dayKey(new Date()))).filter(Boolean);
@@ -875,25 +861,23 @@ function openLog() { paintLog(); show("s-log"); }
 function paintLog() {
   const sc = S.school, m = sc.math, w = sc.word, today = lapsToday(), pct = x => x.right + x.wrong ? Math.round(100 * x.right / (x.right + x.wrong)) : 0;
   const qs = today.reduce((n, e) => n + e.m, 0), ts = today.reduce((n, e) => n + e.t, 0);
-  $("log-today").textContent = `Today: ${qs} questions and 🎟️ ${ts} earned${sc.capT ? ` (most ${sc.capT})` : ""}. All time: ${m.laps} Math Laps (${pct(m)}% right), ${w.laps} Word Laps (${pct(w)}% right).`;
+  $("log-today").textContent = `Today: ${qs} questions and +${ts * GOOD_STUDENT.pct}% of bonus earned${sc.capT ? ` (most +${sc.capT * GOOD_STUDENT.pct}%)` : ""}. All time: ${m.laps} Math Laps (${pct(m)}% right), ${w.laps} Word Laps (${pct(w)}% right).`;
   $("log-lvl").innerHTML = [["add10", "Adding to 10"], ["10", "+ and − to 10"], ["20", "+ and − to 20"]].map(([v, l]) => `<button data-lvl="${v}" class="${sc.mathMax === v ? "on" : ""}">${l}</button>`).join("");
   $("log-wlvl").innerHTML = [["3", "3 letters"], ["4", "4 letters"], ["5", "Longer words"]].map(([v, l]) => `<button data-wlvl="${v}" class="${sc.wordMax === v ? "on" : ""}">${l}</button>`).join("");
-  $("log-cap").innerHTML = MATH_CAPS.map(n => `<button data-cap="${n}" class="${sc.capT === n ? "on" : ""}">${n || "No limit"}</button>`).join("");
-  $("log-lic").innerHTML = [true, false].map(v => `<button data-lic="${v}" class="${S.parent.license === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
+  $("log-cap").innerHTML = MATH_CAPS.map(n => `<button data-cap="${n}" class="${sc.capT === n ? "on" : ""}">${n ? "+" + n * GOOD_STUDENT.pct + "%" : "No limit"}</button>`).join("");
   const name = id => id === "math" ? { icon: "🧮", name: "Math Laps" } : id === "word" ? { icon: "📚", name: "Word Laps" } : ACTIVITIES.find(a => a.id === id);
-  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} ${LAPS.includes(e.a) ? "questions" : "min"}</span><span>🎟️ ${e.t}</span>`).join("");
+  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} ${LAPS.includes(e.a) ? "questions" : "min"}</span><span>${LAPS.includes(e.a) ? "+" + e.t * GOOD_STUDENT.pct + "%" : "🎟️ " + e.t}</span>`).join("");
 }
 $("s-log").addEventListener("click", e => {
-  const v = e.target.closest("[data-lvl]"), c = e.target.closest("[data-cap]"), l = e.target.closest("[data-lic]"), wv = e.target.closest("[data-wlvl]");
+  const v = e.target.closest("[data-lvl]"), c = e.target.closest("[data-cap]"), wv = e.target.closest("[data-wlvl]");
   if (v) { S.school.mathMax = v.dataset.lvl; S.school.math.lv = Math.min(S.school.math.lv, MATH_LEVELS[v.dataset.lvl]); save(); }
   if (wv) { S.school.wordMax = wv.dataset.wlvl; S.school.word.lv = Math.min(S.school.word.lv, WORD_LEVELS[wv.dataset.wlvl]); save(); }
   if (c) { S.school.capT = +c.dataset.cap; save(); }
-  if (l) { S.parent.license = l.dataset.lic === "true"; save(); }
-  if (v || c || l || wv) { sfx("click"); paintLog(); }
+  if (v || c || wv) { sfx("click"); paintLog(); }
 });
 $("log-back").onclick = () => { sfx("click"); back(); };
 
-/* ---------- 🧮 Math Lap: 5 questions with pictures to count; every lap earns a ticket ---------- */
+/* ---------- 🧮 Math Lap: 5 questions with pictures to count; every lap adds a Good Student bonus ---------- */
 const MATH_PICS = ["🚗", "🚙", "🪙", "⭐", "🍎", "🦆", "🎈", "🍪"];
 let mqSeen = new Set(), mq = null, mqN = 0, mqMiss = 0, mqFirst = true, mqLock = false, mqPic = "🚗";
 function openMath() { mqSeen = new Set(); mqN = 0; mqMiss = 0; mqPic = MATH_PICS[Math.floor(Math.random() * MATH_PICS.length)]; $("s-math").classList.remove("finished"); $("math-done").hidden = true; nextMath(); show("s-math"); }
@@ -927,19 +911,27 @@ function finishLap() {
   // two perfect laps in a row move up a level; a lap with lots of tries moves back down
   m.p = perfect ? m.p + 1 : 0;
   if (m.p >= 2 && m.lv < top) { m.lv++; m.p = 0; } else if (mqMiss >= 4 && m.lv > 1) m.lv--;
-  const got = lapTickets(S, "math", perfect, MATH_LAP, dayKey(new Date())); save();
+  lapDone("math", perfect, MATH_LAP, "math-win", "Great math");
   $("s-math").classList.add("finished"); $("math-done").hidden = false;
-  $("math-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great math, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
-    : `🏁 Lap done!<small>That's all the tickets for today. Great practice, ${who()}!</small>`;
-  sfx(got ? "win" : "buy"); confetti(got ? 120 : 50);
+}
+/* a finished lap: the bonus, the message, and the School Resource Officer car after 20 laps */
+function lapDone(kind, perfect, questions, winId, praise) {
+  const { pct } = lapBonus(S, kind, perfect, questions, dayKey(new Date()), Date.now()), total = goodStudentPct(S, Date.now());
+  const car = lapsDone(S) >= GOOD_STUDENT.patrolLaps && grantCar(S, "patrol");
+  if (car) museumAdd("🚓", "Earned the School Resource Officer car at the School");
+  save();
+  $(winId).innerHTML = pct ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${pct}% 🪙<small>${perfect ? "No mistakes, " + who() + "!" : praise + ", " + who() + "!"} Races pay +${total}% coins for ${GOOD_STUDENT.mins} minutes.</small>`
+    : `🏁 Lap done!<small>That's all the bonuses for today. Great practice, ${who()}!</small>`;
+  sfx(pct ? "win" : "buy"); confetti(pct ? 120 : 50);
+  if (car) setTimeout(() => { toast("🚓 You earned the School Resource Officer car!"); sfx("win"); confetti(160); }, 1800);
 }
 $("sch-math").onclick = () => { sfx("click"); openMath(); };
 $("math-again").onclick = () => { sfx("click"); openMath(); };
 $("math-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 $("math-back").onclick = () => { sfx("click"); back(); };
 
-/* ---------- 📚 Word Lap at the Library: match words and pictures; every lap earns a ticket ----------
-   Half the questions show a picture (tap its word), half show a word (tap its picture). Same tickets and daily
+/* ---------- 📚 Word Lap at the School: match words and pictures; every lap adds a Good Student bonus ----------
+   Half the questions show a picture (tap its word), half show a word (tap its picture). Same bonus and daily
    limit as a Math Lap; two perfect laps move up a level (3-letter words, then look-alike words, 4 letters, longer). */
 let wqSeen = new Set(), wq = null, wqN = 0, wqMiss = 0, wqLock = false;
 function openWord() { wqSeen = new Set(); wqN = 0; wqMiss = 0; $("s-word").classList.remove("finished"); $("word-done").hidden = true; nextWord(); show("s-word"); }
@@ -970,11 +962,8 @@ function finishWord() {
   w.laps++;
   w.p = perfect ? w.p + 1 : 0;
   if (w.p >= 2 && w.lv < top) { w.lv++; w.p = 0; } else if (wqMiss >= 4 && w.lv > 1) w.lv--;
-  const got = lapTickets(S, "word", perfect, WORD_LAP, dayKey(new Date())); save();
+  lapDone("word", perfect, WORD_LAP, "word-win", "Great reading");
   $("s-word").classList.add("finished"); $("word-done").hidden = false;
-  $("word-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great reading, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
-    : `🏁 Lap done!<small>That's all the tickets for today. Great reading, ${who()}!</small>`;
-  sfx(got ? "win" : "buy"); confetti(got ? 120 : 50);
 }
 $("sch-word").onclick = () => { sfx("click"); openWord(); };
 $("word-again").onclick = () => { sfx("click"); openWord(); };
@@ -1064,7 +1053,7 @@ function refreshHub() {
   badge("tb-lab", S.rank >= OPEN_RANK.lab && ls.done, 2);
   badge("tb-rank", rankReady(), 3);
   badge("tb-garage", garage.affordable(), 4);
-  badge("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!lapsToday().length && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX)), 4);
+  badge("tb-school", !goodStudentPct(S, Date.now()) && bonusLeft(S, dayKey(new Date())) > 0, 4);
   badge("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3, 4);
   badge("tb-lab", S.rank >= OPEN_RANK.lab && ls.idle && !ls.done, 4);
   const top2 = new Set(want.filter(w => w.on).sort((a, b) => a.pri - b.pri).map(w => w.id).filter((id, k, a) => a.indexOf(id) === k).slice(0, 2));
@@ -1105,7 +1094,6 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
-  else if (go === "library") { sfx("click"); openWord(); }
   else if (go === "bank") { sfx("click"); openBank(); }
   else if (go === "carwash" || go === "museum") {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
@@ -1283,12 +1271,12 @@ function openProgress() {
   let est = 0;
   for (const f of fr) if (f.have < f.need && f.id !== "license") { const perHour = hrs > 0.2 ? f.have / hrs : 0; est = Math.max(est, perHour > 0 ? (f.need - f.have) / perHour : Infinity); }
   $("pg-next").innerHTML = maxed ? "Top rank for now! 🎉" : `<b>Next: Rank ${S.rank + 1}</b> ${fr.map(f => `<span class="${f.have >= f.need ? "ok" : ""}">${f.icon} ${Math.min(f.have, f.need)}/${f.need}</span>`).join(" ")}
-    <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace${fr.some(f => f.id === "license" && f.have < f.need) ? ", plus a Driver School lesson" : ""}.`}</small>`;
+    <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace.`}</small>`;
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
   $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
   const mm = S.school.math, wm = S.school.word, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
   $("pg-bank").textContent = S.bank.paid ? `🏦 The bank has paid ${S.bank.paid.toLocaleString("en-US")} coins of interest so far (it keeps up to ${bankMax(S.rank).toLocaleString("en-US")} at Rank ${S.rank}).` : "";
-  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>📚 Word Laps <b>${wm.laps}</b></span><span>✔ Right <b>${mm.right + wm.right}</b></span><span>✖ Tries again <b>${mm.wrong + wm.wrong}</b></span><span>📈 Math level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span><span>📖 Word level <b>${["", "3 letters", "3 letters, look-alikes", "4 letters", "Longer words"][wm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons, ${S.school.tickets} 🎟️ waiting, license ${LICENSES[licenseLevel(S)].name}</small>`;
+  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>📚 Word Laps <b>${wm.laps}</b></span><span>✔ Right <b>${mm.right + wm.right}</b></span><span>✖ Tries again <b>${mm.wrong + wm.wrong}</b></span><span>📈 Math level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span><span>📖 Word level <b>${["", "3 letters", "3 letters, look-alikes", "4 letters", "Longer words"][wm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>School: ${S.owned.includes("patrol") ? "School Resource Officer car earned" : lapsDone(S) + " of " + GOOD_STUDENT.patrolLaps + " laps to the School Resource Officer car"}, Good Student bonus now +${goodStudentPct(S, Date.now())}%</small>`;
   show("s-progress");
 }
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };

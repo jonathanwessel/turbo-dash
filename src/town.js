@@ -21,10 +21,10 @@ const B = {
   garage: { x: 95, w: 150 }, gifts: { x: 270, w: 120 }, missions: { x: 415, w: 150 }, race: { x: 590, w: 230 },
   rank: { x: 845, w: 100 }, lab: { x: 970, w: 160 }, trophy: { x: 1155, w: 150 }, school: { x: 1330, w: 150 },
   // the street keeps going (scroll right): new buildings open with rank
-  library: { x: 1560, w: 140 }, bank: { x: 1730, w: 170 }, carwash: { x: 1930, w: 190 }, museum: { x: 2150, w: 200 },
-  icecream: { x: 2380, w: 140 }, fire: { x: 2550, w: 190 }, park: { x: 2770, w: 230 },
+  bank: { x: 1560, w: 170 }, carwash: { x: 1760, w: 190 }, museum: { x: 1980, w: 200 },
+  icecream: { x: 2210, w: 140 }, fire: { x: 2380, w: 190 }, park: { x: 2600, w: 230 },
 };
-export const TOWN_W = 3100;
+export const TOWN_W = 2930;
 const cx = k => B[k].x + B[k].w / 2;
 
 const garage = () => { const { x, w } = B.garage, top = BASE - 230; return `
@@ -122,15 +122,6 @@ const school = () => { const { x, w } = B.school, top = BASE - 200; return `
   ${badge("tb-school", x + w, top - 60)}
 </g>`; };
 
-const library = () => { const { x, w } = B.library, top = BASE - 210; return `
-<g class="bld" data-go="library">${hit(x, w, top - 90)}${lot(x, w)}
-  <rect x="${x}" y="${top}" width="${w}" height="210" fill="#e9d8b4"/>
-  <path d="M${x - 12} ${top} L${cx("library")} ${top - 50} L${x + w + 12} ${top}Z" fill="#8a5a2b"/>
-  ${[0, 1, 2].map(i => `<rect x="${x + 14 + i * (w - 40) / 2}" y="${top + 70}" width="16" height="${BASE - top - 70}" fill="#fff"/>`).join("")}
-  <rect x="${cx("library") - 22}" y="${BASE - 70}" width="44" height="70" rx="6" fill="#5a3416"/>
-  ${roofIcon(cx("library"), top - 52, "📚", 58)}
-  ${label(cx("library"), top + 12, w - 6, "LIBRARY", 24)}
-</g>`; };
 
 const bank = () => { const { x, w } = B.bank, top = BASE - 200; return `
 <g class="bld" data-go="bank">${hit(x, w, top - 100)}${lot(x, w)}
@@ -245,7 +236,7 @@ function site(id, x, w, rank) {
 const tree = x => `<g class="deco"><rect x="${x - 5}" y="${BASE - 60}" width="10" height="62" fill="#7a4a22"/><circle cx="${x}" cy="${BASE - 78}" r="26" fill="#2f9a3d"/><circle cx="${x - 9}" cy="${BASE - 90}" r="15" fill="#3fb84e"/></g>`;
 const lamp = x => `<g class="deco"><rect x="${x - 3}" y="${BASE - 120}" width="6" height="122" fill="#555"/><rect x="${x - 14}" y="${BASE - 128}" width="28" height="12" rx="6" fill="#555"/><circle cx="${x}" cy="${BASE - 114}" r="7" fill="#fff59a"/></g>`;
 const gaps = () => {
-  const order = ["garage", "gifts", "missions", "race", "rank", "lab", "trophy", "school", "library", "bank", "carwash", "museum", "icecream", "fire", "park"];
+  const order = ["garage", "gifts", "missions", "race", "rank", "lab", "trophy", "school", "bank", "carwash", "museum", "icecream", "fire", "park"];
   return order.slice(0, -1).map((k, i) => { const gx = B[k].x + B[k].w + (B[order[i + 1]].x - B[k].x - B[k].w) / 2; return i % 2 ? lamp(gx) : tree(gx); }).join("");
 };
 
@@ -271,14 +262,14 @@ export function townSVG() {
   <circle cx="1480" cy="110" r="95" fill="#fff59a" opacity=".35"/><circle cx="1480" cy="110" r="62" fill="#fff59a"/>
   <g class="clouds">${[[220, 110, 1], [720, 70, 0.8], [1150, 150, 1.1]].map(([x, y, s]) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="90" ry="30" fill="#fff"/><ellipse cx="-40" cy="8" rx="55" ry="26" fill="#fff"/><ellipse cx="35" cy="-12" rx="50" ry="30" fill="#fff"/></g>`).join("")}</g>
   <g class="birds" fill="none" stroke="#2a3a5a" stroke-width="4" stroke-linecap="round">${[[400, 200], [440, 225], [470, 195]].map(([x, y]) => `<path d="M${x - 12} ${y} q6 -8 12 0 q6 -8 12 0"/>`).join("")}</g>
-  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T3100 430 V900 H0Z" fill="#3fa553"/>
-  <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T3100 500" fill="none" stroke="#4fb6ff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
-  <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T3100 500" fill="none" stroke="#bfe9ff" stroke-width="6" stroke-dasharray="40 60" opacity=".8"/>
-  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T3100 535 V900 H0Z" fill="#5cc46a"/>
+  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T2930 430 V900 H0Z" fill="#3fa553"/>
+  <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#4fb6ff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
+  <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#bfe9ff" stroke-width="6" stroke-dasharray="40 60" opacity=".8"/>
+  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T2930 535 V900 H0Z" fill="#5cc46a"/>
   ${welcome()}
   <rect y="600" width="${TOWN_W}" height="300" fill="#5fd068"/>
   ${gaps()}
-  ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${library()}${bank()}${carwash()}${museum()}${icecream()}${fire()}${park()}
+  ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${bank()}${carwash()}${museum()}${icecream()}${fire()}${park()}
   <rect y="${BASE + 10}" width="${TOWN_W}" height="16" fill="#e9e9ef"/>
   <rect y="${BASE + 26}" width="${TOWN_W}" height="100" fill="#6b6f78"/>
   <line x1="0" y1="${BASE + 76}" x2="${TOWN_W}" y2="${BASE + 76}" stroke="#fff" stroke-width="8" stroke-dasharray="50 40"/>

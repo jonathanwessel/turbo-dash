@@ -1070,3 +1070,25 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .nitro.charging { animation: shake .4s; }
 /* v1.7.3: while Turbo burns, the button glows and its meter drains */
 .nitro.burning { box-shadow: 0 0 22px 6px #ff7a00; }
+
+/* v1.8 Good Student bonus (Driver School right side, and a small badge by the race coins) */
+.gs-panel { display: flex; flex-direction: column; gap: var(--s3); align-items: stretch; }
+.gs-big { background: var(--asphalt-2); border: 3px solid var(--lane); border-radius: 16px; padding: var(--s3) var(--s4); text-align: center; box-shadow: 0 5px 0 var(--ink); }
+.gs-big b { display: block; font-family: var(--race); font-weight: 400; font-size: var(--t-xxl); color: var(--lane); line-height: 1.1; }
+.gs-big.on b { color: var(--sign); }
+.gs-big small { font-size: var(--t-md); font-weight: 800; }
+.gs-list { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; }
+.gs-list span { background: var(--lane); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 2px var(--s3); font-weight: 900; font-size: var(--t-md); }
+.gs-list span small { font-weight: 800; opacity: .75; }
+.gs-list .gs-how { background: var(--asphalt-3); color: var(--lane); }
+.gs-done { text-align: center; font-weight: 800; color: var(--sign); }
+.gs-patrol { display: flex; align-items: center; gap: var(--s2); font-size: var(--t-lg); }
+.gs-patrol .bar { flex: 1; }
+.gs-patrol small { font-size: var(--t-sm); font-weight: 800; white-space: nowrap; }
+.h-gs { margin-left: 6px; font-size: .55em; vertical-align: middle; background: var(--go); color: #fff; border-radius: 999px; padding: 1px 8px; }
+.h-gs[hidden] { display: none; }
+/* long messages wrap instead of running off the screen */
+.toast { white-space: normal; max-width: calc(100vw - 32px); width: max-content; text-align: center; border-radius: 22px; }
+.gs-panel { margin: auto 0; }
+/* the slanted gift headline needs a little room below it */
+#gift-head { margin-bottom: 16px; }

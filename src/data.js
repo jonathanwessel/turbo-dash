@@ -11,7 +11,7 @@ export const CARS = [
   { id: "greenMachine", name: "Green Machine", price: null, cup: "green", body: "#39d353", accent: "#ffffff", type: "sport", speed: 0.12, accel: 0.15, grip: 0.15 },
   { id: "goldRush", name: "Gold Rush", price: null, cup: "gold", body: "#f5b301", accent: "#ffffff", type: "racer", speed: 0.24, accel: 0.22, grip: 0.2 },
   { id: "champX", name: "Champion X", price: null, cup: "champ", body: "#1c1c24", accent: "#ffd400", type: "galaxy", speed: 0.32, accel: 0.3, grip: 0.3 },
-  // earned at the Driver School (Gold license): Math Laps pay for this one
+  // earned at the School: finish 20 Math or Word Laps
   // 🌙 Moon Base cars
   { id: "rover", name: "Lunar Rover", price: 60000, world: "moon", body: "#e9edf3", accent: "#ff8a00", type: "rover", speed: 0.36, accel: 0.32, grip: 0.32 },
   { id: "comet", name: "Comet", price: null, cup: "moon", body: "#9fe8ff", accent: "#ffffff", type: "rocket", speed: 0.42, accel: 0.36, grip: 0.35 },
@@ -19,7 +19,7 @@ export const CARS = [
   { id: "thunder", name: "Thunder King", price: null, boss: "bruno", body: "#2a2a33", accent: "#ffd400", type: "monster", speed: 0.30, accel: 0.32, grip: 0.28 },
   { id: "starfire", name: "Starfire", price: null, boss: "luna", world: "moon", body: "#ff3fe5", accent: "#3cf2ff", type: "galaxy", speed: 0.48, accel: 0.4, grip: 0.4 },
   { id: "firetruck", name: "Fire Dash", price: null, building: "fire", body: "#e8262b", accent: "#ffd400", type: "fire", speed: 0.24, accel: 0.24, grip: 0.24 },
-  { id: "patrol", name: "Piqua Patrol", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
+  { id: "patrol", name: "School Resource Officer", price: null, school: true, body: "#ffffff", accent: "#1d6fb8", type: "patrol", speed: 0.18, accel: 0.22, grip: 0.3 },
   // 🌊 Deep Blue cars (added at the end so older cars keep their upgrade prices)
   { id: "sub", name: "Turbo Sub", price: 120000, world: "ocean", body: "#ffd400", accent: "#1f6fff", type: "sub", speed: 0.54, accel: 0.46, grip: 0.45 },
   { id: "manta", name: "Manta Ray", price: null, cup: "ocean", body: "#1a3a7a", accent: "#3cf2ff", type: "shark", speed: 0.6, accel: 0.5, grip: 0.5 },
@@ -82,7 +82,6 @@ export const BOSSES = [
 export const OPEN_RANK = { lab: 2, weather: 2, trial: 4, cups: 5, missions: 7, boss: 9 };
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
 export const BUILDINGS = [
-  { id: "library", name: "Library", rank: 1 },
   { id: "bank", name: "Bank", rank: 1 },
   { id: "icecream", name: "Ice Cream", rank: 12 },
   { id: "fire", name: "Fire Station", rank: 15 },
@@ -273,19 +272,16 @@ export const GOALS = [
   { id: "trial1", icon: "⏱️", name: "Earn a Time Trial medal", goal: 1, reward: 300, have: S => Object.values(S.trialMedals || {}).filter(m => m > 0).length },
   { id: "trialGold5", icon: "⏱️", name: "Gold Time Trial medal on 5 tracks", goal: 5, reward: 2500, have: S => Object.values(S.trialMedals || {}).filter(m => m >= 3).length },
   { id: "boss1", icon: "👑", name: "Beat a boss", goal: 1, reward: 4000, have: S => Object.keys(S.bosses || {}).length },
-  { id: "school1", icon: "🚦", name: "Take a Driver School lesson", goal: 1, reward: 300, have: S => lessonsOf(S) },
-  { id: "license3", icon: "🪪", name: "Earn a Gold license", goal: 3, reward: 2000, have: S => licenseLevel(S) },
+  { id: "school1", icon: "🚦", name: "Finish a Math or Word Lap", goal: 1, reward: 300, have: S => lapsDone(S) },
+  { id: "license3", icon: "📚", name: "Finish 20 Math or Word Laps", goal: 20, reward: 2000, have: S => lapsDone(S) },
   { id: "power10", icon: "❓", name: "Use 10 power-ups", goal: 10, reward: 200, have: S => S.stats.powers || 0 },
   { id: "power100", icon: "❓", name: "Use 100 power-ups", goal: 100, reward: 800, have: S => S.stats.powers || 0 },
 ];
 
 /* ---------- Racer Rank: four fronts that must all be full to rank up ---------- */
 export const RANK_CAP = 40;   // raised by later releases (each new world adds 5)
-/* License gauge (from Rank 10): Bronze for Rank 10→11, then one license level per two ranks, up to Piqua Pro.
-   Pass the save so a parent can switch the gauge off in Parent Corner. */
-export const licenseNeed = (r, S) => (S?.parent?.license === false || r < 10 ? 0 : Math.min(LICENSES.length - 1, Math.floor((r - 8) / 2)));
+/* (v1.8: the License gauge is gone; the School now gives a short Good Student coin bonus instead) */
 export const rankNeeds = (r, S) => ({
-  license: licenseNeed(r, S),
   wins: Math.round(Math.min(2.5 * r * r, 12 * Math.pow(r, 1.6))),   // gentle early ranks (Rank 3 at 10 wins), the same long climb later
   trophies: Math.round(4.5 * Math.pow(r, 1.35)),
   garage: Math.round(6 * Math.pow(r, 1.2)),
@@ -335,7 +331,6 @@ export const FRONTS = [
     have: S => S.owned.reduce((a, id) => a + 5 + Object.values(S.ups[id] || {}).reduce((x, y) => x + y, 0), 0) },
   { id: "research", icon: "🔬", name: "Research", hint: "Finish research in the Turbo Lab!",
     have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
-  { id: "license", icon: "🪪", name: "License", hint: "Do Math Laps at the Driver School, then take a lesson!", have: S => licenseLevel(S) },
 ];
 
 /* ---------- 🚦 Driver School: real-world time (logged by a grown-up) becomes driver training ---------- */
@@ -398,7 +393,7 @@ export function bankWithdraw(bank, n) {
   bank.bal -= n; bank.low = Math.min(bank.low, bank.bal); return n;
 }
 
-/* ---------- 📚 Word Lap at the Library: read a word, match it to a picture ----------
+/* ---------- 📚 Word Lap at the School: read a word, match it to a picture ----------
    Levels: 1 three-letter words, choices look different · 2 three-letter words, choices look alike (cat, cap, can)
    · 3 four-letter words · 4 longer words. Half the questions show the picture (pick the word), half show the word
    (pick the picture). A grown-up picks the top level: "3", "4" or "5" (longer words). */
@@ -444,24 +439,10 @@ export function wordQuestion(lv, rnd = Math.random, seen = new Set()) {
   const words = [ans.w, ...others].sort(() => rnd() - 0.5);
   return { w: ans.w, pic: ans.pic, mode, choices: words.map(w => ({ w, pic: WORDS.find(x => x.w === w)?.pic || null })) };
 }
-export const SKILLS = [
-  { id: "focus", icon: "🎯", name: "Focus", desc: "Curves pull you less" },
-  { id: "reflex", icon: "⚡", name: "Reflexes", desc: "Turbo fills faster" },
-  { id: "courage", icon: "🦁", name: "Courage", desc: "Bigger jump boosts" },
-  { id: "smarts", icon: "🧠", name: "Smarts", desc: "More mission coins" },
-];
-export const SKILL_MAX = 10;
-export const skillCost = lvl => lvl + 1;   // tickets for the next lesson (1, 2, … 10)
-export const LICENSES = [
-  { name: "Learner", lessons: 0, color: "#9aa4b1" },
-  { name: "Bronze", lessons: 5, color: "#cd7f32" },
-  { name: "Silver", lessons: 12, color: "#c0c8d6" },
-  { name: "Gold", lessons: 20, color: "#ffd400" },
-  { name: "Platinum", lessons: 30, color: "#b8f3ff" },
-  { name: "Piqua Pro", lessons: 40, color: "#ff3fe5" },
-];
-export const lessonsOf = S => Object.values(S.school?.skills || {}).reduce((a, b) => a + b, 0);
-export const licenseLevel = S => { const n = lessonsOf(S); let L = 0; LICENSES.forEach((x, i) => { if (n >= x.lessons) L = i; }); return L; };
+/* 📚 Good Student bonus (v1.8): every Math or Word Lap adds +10% race coins (+20% for a perfect lap) for 30 real
+   minutes. Bonuses stack, each with its own 30 minutes, up to the daily limit a grown-up sets. Nothing is permanent. */
+export const GOOD_STUDENT = { pct: 10, mins: 30, patrolLaps: 20 };
+export const lapsDone = S => (S.school?.math?.laps || 0) + (S.school?.word?.laps || 0);
 
 /* ---------- Turbo Lab research. Real-time timers; levels count toward the Research rank gauge. ---------- */
 // tier: lab tier (needs that rank). cost/time grow 45% / 35% per level. Effects are read through S.research[id].
