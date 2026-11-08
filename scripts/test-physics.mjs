@@ -145,7 +145,8 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   r.nitroT = 3; run(r, 1);
   const zoomed = r.camDepth;
   run(r, 2, q => { q.nitroT = 0; q.boostT = 0; });   // (no boost pads either)
-  check("turbo zoom", Math.abs(zoomed / base - 0.88) < 0.03 && Math.abs(r.camDepth / base - 1) < 0.02 && Number.isFinite(r.camDepth), `zoom ${(zoomed / base).toFixed(3)}, after ${(r.camDepth / base).toFixed(3)}`);
+  check("turbo zoom", Math.abs(zoomed / base - 0.88) < 0.03 && r.camDepth / base > 0.94 && r.camDepth / base <= 1.001 && r.camDepth > zoomed && Number.isFinite(r.camDepth),   // after Turbo: back to the mild speed zoom (v1.7)
+    `zoom ${(zoomed / base).toFixed(3)}, after ${(r.camDepth / base).toFixed(3)}`);
 }
 
 /* ---------- 🚇 tunnels, 🌃 the night track, and tracks built the same every time ---------- */
@@ -253,6 +254,67 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   const handsOff = [0, 1, 2].map(() => runRace(track("sunny"), zippy, NO_UPS, "normal", "none").place);
   check("hands-off loses", handsOff.every(pl => pl === 6), `hands-off places ${handsOff}`);
 }
+
+/* ---------- 🛣️ v1.7 Feel the Road ---------- */
+{
+  const { SPRITES } = await import("../src/draw.js");
+  const { rubberBand } = await import("../src/physics-common.js");
+  // softer bonks: a roadside bump leaves at least 35% of top speed (it used to drop to 15%)
+  {
+    const r = scene("sunny", { from: quietStretch("sunny") }), p = r.player, here = r.segAt(p.dist).index;
+    for (let k = 0; k < 8; k++) r.T.segs[(here + k) % r.T.segs.length].sprites.push({ type: "tree", offset: 1.6 });   // a row of trees just off the road
+    p.offset = 1.6; p.speed = BASE_MAX; r.input.left = true; r.steerIn = -1;   // steering back toward the road
+    let bonked = false, low = Infinity; run(r, 0.3, q => { if (q.bonkCD > 0) bonked = true; low = Math.min(low, q.player.speed); });
+    check("soft bonk when steering back", bonked && low >= BASE_MAX * 0.35 - 1, `bonked ${bonked}, lowest speed ${Math.round(low)} (floor ${BASE_MAX * 0.35})`);
+    // nobody steering: the old hard stop, so a hands-off car can't ride the trees to a podium
+    const r2 = scene("sunny", { from: quietStretch("sunny") }), p2 = r2.player, here2 = r2.segAt(p2.dist).index;
+    for (let k = 0; k < 8; k++) r2.T.segs[(here2 + k) % r2.T.segs.length].sprites.push({ type: "tree", offset: 1.6 });
+    p2.offset = 1.6; p2.speed = BASE_MAX; let low2 = Infinity; run(r2, 0.3, q => { low2 = Math.min(low2, q.player.speed); });
+    check("hard bonk when nobody steers", low2 <= BASE_MAX * 0.16, `lowest speed ${Math.round(low2)}`);
+  }
+  // chevrons: before every sharp curve, on the outside, never collidable
+  {
+    let curves = 0, missing = 0, solid = 0;
+    for (const t of TRACKS.filter(x => x.world === "earth")) {
+      const segs = buildTrack(t).segs;
+      for (let i = 13; i < segs.length; i++) {
+        if (Math.abs(segs[i].curve) <= 1.5 || Math.abs(segs[i - 1].curve) > 1.5) continue;
+        curves++;
+        const out = -Math.sign(segs[i].curve), signs = [3, 6, 9, 12].map(k => segs[i - k].sprites.find(q => q.type.startsWith("chevron")));
+        if (!signs.every(q => q && Math.sign(q.offset) === out)) missing++;
+        if (signs.some(q => q && SPRITES[q.type].collide)) solid++;
+      }
+    }
+    check("chevrons before sharp curves", curves > 10 && missing === 0 && solid === 0, `${curves} curves, ${missing} without chevrons on the outside, ${solid} solid`);
+  }
+  // the rubber band fades in: no jump bigger than 0.5% between neighbouring gaps
+  {
+    let worst = 0;
+    for (const df of ["easy", "normal", "hard"]) for (let g = -120; g < 120; g += 0.25) worst = Math.max(worst, Math.abs(rubberBand(g + 0.25, df, 2) - rubberBand(g, df, 2)));
+    check("smooth rubber band", worst < 0.005 && rubberBand(0, "normal") === 1 && rubberBand(200, "easy") === 0.8 && rubberBand(-200, "normal") === 1.07, `largest step ${worst.toFixed(4)}`);
+  }
+  // same race twice (same seed, same inputs) gives the same rival lanes
+  {
+    const lanes = () => { const r = scene("beach"); for (const c of r.rivals) { c.dist = 0; c.base = BASE_MAX; c.laneT = 0.01; } const out = []; run(r, 6, q => out.push(q.rivals.map(c => c.lane).join())); return out.join("|"); };
+    const a = lanes(), b = lanes();
+    // scene() builds a new Race each time, so both start at the same race number
+    check("seeded rival lanes", a === b && a.length > 0, "rival lanes differ between two identical races");
+  }
+  // steering: a driver who steers back to the middle (up to full lock) stays on the road through the sharpest normal curve of each world
+  {
+    const off = [];
+    for (const t of TRACKS.filter(x => !x.bonus && x.world !== "toy")) {
+      const segs = buildTrack(t).segs; let i = 0, best = 0;
+      segs.forEach((s, k) => { if (Math.abs(s.curve) > best && k > 30 && !segs.slice(k - 20, k + 20).some(q => q.ramp || q.gap)) { best = Math.abs(s.curve); i = k; } });
+      if (!best) continue;
+      const r = scene(t.id, { from: (i - 30) * SEG }), p = r.player; let worst = 0;
+      run(r, 2.2, q => { const s = q.segAt(q.player.dist); q.input.axis = clamp01(-q.player.offset * 4); worst = Math.max(worst, Math.abs(q.player.offset)); });
+      if (worst > 1.2) off.push(`${t.id} ${worst.toFixed(2)}`);
+    }
+    check("steer beats the sharpest curve", off.length === 0, `went off the road: ${off.join(", ")}`);
+  }
+}
+function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
 
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

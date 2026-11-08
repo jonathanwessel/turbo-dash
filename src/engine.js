@@ -2,11 +2,12 @@
 import { THEMES, RIVALS, PHYSICS, diffOf, MPH } from "./data.js";
 import { drawEmojiText } from "./emoji.js";
 import { buildToyTrack } from "./toy/track.js";
-import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
+import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
-export const BASE_MAX = 10000;     // starter car top speed (world units / s)
-const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, DRAW_DIST = 170, LANES = 3;
+import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed } from "./physics-common.js";
+export { BASE_MAX };   // starter car top speed (world units / s)
+const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, DRAW_DIST = 250, FAR = 150, LANES = 3;   // past FAR: no lane dashes or curbs (cheaper)
 export const RAIL_IN = 1.04;   // on a railed curve the car stays inside this (a car that went wide before the rail is guided back in)
 const CAM_DEPTH = 1 / Math.tan((100 / 2) * Math.PI / 180);
 const PLAYER_Z = CAM_H * CAM_DEPTH;
@@ -78,10 +79,16 @@ export function buildTrack(track) {
 
   const types = th.sprites;
   for (let i = 6; i < segs.length; i += 3 + Math.floor(r() * 4)) {
-    for (const side of [-1, 1]) if (r() < 0.75) { const type = types[Math.floor(r() * types.length)], away = 1.4 + r() * 2.2; segs[i].sprites.push({ type, offset: side * Math.max(away, 1.12 + 0.56 * SPRITES[type].w / ROAD_W) }); }
+    for (const side of [-1, 1]) if (r() < 0.75) { const type = types[Math.floor(r() * types.length)], away = 1.6 + r() * 2.2; segs[i].sprites.push({ type, offset: side * Math.max(away, 1.32 + 0.56 * SPRITES[type].w / ROAD_W) }); }
   }
   for (const s of [-1, 1]) segs[START + 8].sprites = [{ type: "sign", offset: s * 1.75 }];
   for (const s of segs) if (Math.abs(s.curve) > 1.5) s.rail = true;
+  // chevron signs on the outside before every sharp curve, pointing the way it turns (they never block the road)
+  if (track.layout !== "blocks") for (let i = 13; i < segs.length; i++) {
+    if (Math.abs(segs[i].curve) <= 1.5 || Math.abs(segs[i - 1].curve) > 1.5) continue;
+    const out = -Math.sign(segs[i].curve), type = segs[i].curve > 0 ? "chevronR" : "chevronL";
+    for (const k of [12, 9, 6, 3]) segs[i - k].sprites.push({ type, offset: out * 1.3 });
+  }
   if (track.layout === "blocks") {
     // 🚧 the outside of every corner is closed off: dump trucks and ROAD CLOSED barriers where the road would go straight on
     for (let i = 0; i < segs.length; i++) {
@@ -211,11 +218,12 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false;
-    this.driftT = 0;
+    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false;
+    this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
-      base: BASE_MAX * (1.06 + d * 0.12 + (4 - i) * 0.035) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
+      base: BASE_MAX * rivalBase(d, i) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
     }));
     // 👑 boss race: just you and the boss (who fires Turbo every few seconds)
     if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
@@ -231,9 +239,9 @@ export class Race {
     this.weather = opts.weather || null; this.puddles = new Map(); this.puddleHit = null;
     if (this.weather === "rain") {
       const segs = this.T.segs;
-      for (let i = START + 40; i < segs.length - 20; i += 80 + Math.floor(Math.random() * 60)) {
+      for (let i = START + 40; i < segs.length - 20; i += 80 + Math.floor(this.rand() * 60)) {
         const s = segs[i]; if (s.ramp || s.boost !== null || s.boxes || s.gap) continue;
-        this.puddles.set(i, [-0.55, 0, 0.55][Math.floor(Math.random() * 3)] + (Math.random() - 0.5) * 0.2);
+        this.puddles.set(i, [-0.55, 0, 0.55][Math.floor(this.rand() * 3)] + (this.rand() - 0.5) * 0.2);
       }
     }
     if (this.weather && mode !== "demo") this.popup(this.weather === "rain" ? "🌧️ RAINY RACE!" : "🌨️ SNOWY RACE!", "#bfe9ff");
@@ -341,9 +349,13 @@ export class Race {
     const flying = p.air > 0;
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
     if (!flying && !auto) { const hill = slopeOf(seg) * HILL * dt; if (hill) p.speed = Math.max(Math.min(p.speed, BASE_MAX * 0.2), p.speed - hill); }
-    if (!flying && Math.abs(p.offset) > 1 && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
+    // off the road: grass slows you (scraping along a rail is the rail's own cost, not grass)
+    if (!flying && Math.abs(p.offset) > (seg.rail ? RAIL_IN + 0.01 : 1) && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
-    const lat = steer * dx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
+    // steering still bites when slow (after a bump); the input eases in over 0.1 s so taps aren't twitchy
+    this.steerIn += (steer - this.steerIn) * (auto ? 1 : Math.min(1, dt / 0.1));
+    const steerDx = dt * 2.2 * Math.max(sp, 0.35 + 0.65 * sp);   // a floor when slow; unchanged at speed (curves need it)
+    const lat = this.steerIn * steerDx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
     const help = this.assist;   // 0 none, 1 a little, 2 lots
     if (ph.ice && !auto && !flying && dt > 0) {
       // ❄️ on ice the car keeps sliding: steering changes where you're GOING, not where you are.
@@ -375,7 +387,9 @@ export class Race {
     }
     // 🚀 Turbo zoom: the camera pulls in and widens a little while boosting (view only)
     this.fastT = fast ? this.fastT + dt : 0;
-    this.camDepth += ((fast ? CAM_DEPTH * 0.88 : CAM_DEPTH) - this.camDepth) * Math.min(1, dt * 3);
+    this.camDepth += ((fast ? CAM_DEPTH * 0.88 : CAM_DEPTH * (1 - 0.05 * clamp(sp - 0.5, 0, 0.9) / 0.9)) - this.camDepth) * Math.min(1, dt * 3);
+    this.camOff = this.camOff == null ? p.offset : this.camOff + (p.offset - this.camOff) * Math.min(1, dt / 0.1);   // the camera trails a little: you see the car slide
+    this.braking = p.speed < this.lastSpeed - BASE_MAX * 0.25 * dt; this.lastSpeed = p.speed;
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
@@ -451,10 +465,7 @@ export class Race {
       if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
-        const gap = c.dist - p.dist;
-        const hard = this.diff.id === "hard", easy = this.diff.id === "easy";
-        if (gap > 45 * SEG) target *= easy ? 0.8 : hard ? 1 : d <= 1 ? 0.93 : 0.98;
-        else if (gap < -45 * SEG) target *= hard ? 1.04 : 1.07;
+        target *= rubberBand((c.dist - p.dist) / SEG, this.diff.id, d);
       }
       c.knockT -= dt; c.wobT -= dt;
       if (this.track.layout === "blocks" && this.state !== "demo") { const cs = this.segAt(c.dist + 6 * SEG); if (Math.abs(cs.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(c.dist).curve) > BLOCK_CURVE * 0.5) target *= 0.92; }
@@ -462,7 +473,7 @@ export class Race {
       c.speed += clamp(target - c.speed, -BASE_MAX * dt / 2, BASE_MAX * dt / 4);
       if (c.air <= 0 && this.state !== "demo") { const hill = slopeOf(this.segAt(c.dist)) * HILL * dt; if (hill) c.speed = Math.max(Math.min(c.speed, BASE_MAX * 0.2), c.speed - hill); }
       c.laneT -= dt;
-      if (c.laneT <= 0) { c.lane = [-0.6, 0, 0.6][Math.floor(Math.random() * 3)]; c.laneT = 2 + Math.random() * 4; }
+      if (c.laneT <= 0) { c.lane = [-0.6, 0, 0.6][Math.floor(this.rand() * 3)]; c.laneT = 2 + this.rand() * 4; }
       for (const o of [p, ...this.rivals]) {
         if (o === c) continue;
         const g = o.dist - c.dist;
@@ -581,7 +592,12 @@ export class Race {
       for (const spr of s.sprites) {
         const info = SPRITES[spr.type];
         if (info.collide && overlap(p.offset, CAR_W, spr.offset, info.w / ROAD_W * 0.6)) {
-          p.speed = Math.min(p.speed, BASE_MAX * (0.15 + 0.1 * this.assist + (this.stats.bumper || 0)));
+          // a slip while steering back to the road is a bump, not a wall; nobody steering (or bumping again within
+          // 2 s, driving through the trees) is the old hard stop
+          const again = this.t - (this.lastBonkT ?? -9) < 2; this.lastBonkT = this.t;
+          const trying = Math.abs(this.steerIn) > 0.2 && Math.sign(this.steerIn) === -Math.sign(p.offset), soft = trying && !again;
+          const floor = (soft ? 0.35 : 0.15) + 0.1 * this.assist + (this.stats.bumper || 0);
+          p.speed = Math.min(p.speed, soft ? Math.max(BASE_MAX * floor, p.speed * 0.6) : BASE_MAX * floor);
           p.offset += spr.offset > p.offset ? -0.25 : 0.25;
           this.shake = 0.35; this.bonkCD = 0.6; this.hooks.sfx("bonk"); this.popup("BONK!", "#ffffff");
           break;
@@ -625,10 +641,14 @@ export class Race {
 
     ctx.save();
     if (this.shake > 0) ctx.translate((Math.random() - 0.5) * H * 0.03 * this.shake * 3, (Math.random() - 0.5) * H * 0.03 * this.shake * 3);
-    drawBackground(ctx, W, H, th, this.skyX, this.hillX, 0, t, this.lite);
+    // the far scenery sinks a little as you climb and rises as you drop, so hills feel like hills
+    const yMid = this.T.yMid ?? (this.T.yMid = (Math.min(...segs.map(s => s.p1.world.y)) + Math.max(...segs.map(s => s.p1.world.y))) / 2);
+    const bgLift = clamp((playerY - yMid) * H * 0.000008, -H * 0.08, H * 0.08);
+    drawBackground(ctx, W, H, th, this.skyX, this.hillX, bgLift, t, this.lite);
 
     let maxy = H, x = 0, dx = -(base.curve * basePct);
-    const camX = p.offset * ROAD_W, camY = playerY + CAM_H + p.air * 0.55;
+    const camOff = this.camOff ?? p.offset, camX = camOff * ROAD_W, camY = playerY + CAM_H + p.air * 0.55;
+    const carShift = (p.offset - camOff) * H;   // how far the car sits from the screen centre (road half-width at the car is H px)
     for (let n = 0; n < DRAW_DIST; n++) {
       const s = segs[(base.index + n) % N], cz = camZ - (s.index < base.index ? L : 0);
       s.clip = maxy;
@@ -636,8 +656,8 @@ export class Race {
       project(s.p2, camX - x - dx, camY, cz, W, H, F, depth);
       x += dx; dx += s.curve;
       if (s.p1.camera.z <= depth || s.p2.screen.y >= s.p1.screen.y || s.p2.screen.y >= maxy) continue;
-      this.drawSegment(ctx, s, th, W);
-      if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || th.sky[1]; ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
+      this.drawSegment(ctx, s, th, W, n > FAR);
+      if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || (th.haze = shade(th.sky[1], 0.18)); ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
       maxy = s.p2.screen.y;   // the far edge: nothing behind a hill crest draws over the road in front
     }
 
@@ -698,6 +718,7 @@ export class Race {
     const lift = Math.min(p.air, 900) * 0.45 / CAM_H * F;
     if (p.air > 0) { ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(W / 2, H - H * 0.01, pw * 0.5 * (1 - Math.min(0.5, p.air / 1500)), pw * 0.06, 0, 0, 7); ctx.fill(); }
     const dustCol = th.grass[0];
+    ctx.save(); ctx.translate(carShift, 0);   // screen-space dust and smoke follow the car
     for (const q of this.parts) {
       ctx.globalAlpha = Math.min(1, q.life * 2);
       if (q.c === "bubble") {
@@ -711,12 +732,14 @@ export class Race {
       ctx.beginPath(); ctx.arc(q.x * W, q.y * H, q.r * H * (q.c === "dust" ? 1.5 - q.life : 1), 0, 7); ctx.fill();
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
     }
-    ctx.globalAlpha = 1;
+    ctx.restore(); ctx.globalAlpha = 1;
     const dark = th.night || this.inTunnel;
-    if (dark) this.drawHeadlights(ctx, W / 2, H - H * 0.02 - lift - pw * 0.25, pw, H);
-    const lean = this.steerVis * Math.min(1, p.speed / BASE_MAX) * (p.air > 0 ? 0.3 : 1);
+    if (dark) this.drawHeadlights(ctx, W / 2 + carShift, H - H * 0.02 - lift - pw * 0.25, pw, H);
+    // lean into the steering, plus a little body roll from the curve pushing the car outward
+    const roll = p.air > 0 ? 0 : clamp(-pseg.curve * Math.min(1, p.speed / BASE_MAX) * 0.08, -0.35, 0.35);
+    const lean = this.steerVis * Math.min(1, p.speed / BASE_MAX) * (p.air > 0 ? 0.3 : 1) + roll;
     const squash = p.landT > 0 ? Math.sin((p.landT / 0.35) * Math.PI) * Math.min(1, p.landV / JUMP_VY) : 0;
-    drawCar(ctx, W / 2, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900, lean, squash });
+    drawCar(ctx, W / 2 + carShift, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900, lean, squash, brake: this.braking && this.state === "race", flat: this.lite });
     if (this.autoTarget !== null) {
       const segs2 = this.T.segs, pidx = pseg.index;
       ctx.fillStyle = "rgba(255,255,255,0.8)";
@@ -815,14 +838,14 @@ export class Race {
       if (this.T.theme.ice && c.air < 60 && w > 6) {
         // shiny ice: a faint upside-down reflection under the car
         ctx.save(); const a = ctx.globalAlpha; ctx.globalAlpha = a * 0.22; ctx.translate(x, lerp(s.p1.screen.y, s.p2.screen.y, pct)); ctx.scale(1, -0.45);
-        drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900 }); ctx.restore();
+        drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900, flat: this.lite }); ctx.restore();
       }
       if (c.air > 30) { const gy = lerp(s.p1.screen.y, s.p2.screen.y, pct), k = Math.max(0.4, 1 - c.air / 2000); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(x, gy, w * 0.55 * k, w * 0.07 * k, 0, 0, 7); ctx.fill(); }
       if ((this.T.theme.night || s.tunnel) && w > 4) {
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,240,180,0.22)";
         ctx.beginPath(); ctx.ellipse(x, y - w * 0.05 - w * 0.6, w * 0.7, w * 0.25, 0, 0, 7); ctx.fill(); ctx.restore();
       }
-      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30, lean: clamp(steer, -1, 1) * 0.5 });
+      drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30, lean: clamp(steer, -1, 1) * 0.5, flat: this.lite });
     });
   }
 
@@ -946,7 +969,7 @@ export class Race {
     });
   }
 
-  drawSegment(ctx, s, th, W) {
+  drawSegment(ctx, s, th, W, far = false) {
     const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, a = s.alt;
     // one shade for grass and road (alternating shades read as stripes racing at you); each piece overlaps the
     // nearer one by a pixel so no seam line shows between them. Curbs and lane dashes still alternate for speed.
@@ -978,7 +1001,7 @@ export class Race {
       quad(ctx, x1 - w1 + e1, y1, x1 - w1 + 2 * e1, y1, x2 - w2 + 2 * e2, y2, x2 - w2 + e2, y2);
       quad(ctx, x1 + w1 - 2 * e1, y1, x1 + w1 - e1, y1, x2 + w2 - e2, y2, x2 + w2 - 2 * e2, y2);
     }
-    if (!s.finish && a === 0) {
+    if (!s.finish && !far && s.index % 12 < 4) {   // lane dashes: 4 segments on, 8 off (about real spacing)
       ctx.fillStyle = th.lane;
       const l1 = w1 / 32, l2 = w2 / 32;
       for (let lane = 1; lane < LANES; lane++) {

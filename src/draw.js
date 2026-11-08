@@ -81,7 +81,8 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   if (def.rainbow) {
     g = ctx.createLinearGradient(-w * 0.5, 0, w * 0.5, 0);
     ["#ff3d3d", "#ff9d00", "#ffe600", "#3ddc5a", "#2fa8ff", "#8a3cff"].forEach((c, i) => g.addColorStop(i / 5, c));
-  } else {
+  } else if (o.flat) g = def.body;   // Simple effects: no gradient per car per frame
+  else {
     g = ctx.createLinearGradient(0, top, 0, by);
     g.addColorStop(0, shade(def.body, 0.3)); g.addColorStop(0.5, def.body); g.addColorStop(1, shade(def.body, -0.35));
   }
@@ -103,8 +104,8 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     ctx.fillRect(-w * 0.07 + cx * 0.5, top - ch + 1, w * 0.14, ch + bh - 2);
     if (type === "sport") { ctx.fillRect(-w * 0.17 + cx * 0.5, top, w * 0.04, bh - 2); ctx.fillRect(w * 0.13 + cx * 0.5, top, w * 0.04, bh - 2); }
   }
-  const wg = ctx.createLinearGradient(0, top - ch, 0, top);
-  wg.addColorStop(0, "#2b4c80"); wg.addColorStop(1, "#0f1b33");
+  let wg = "#1d3460";
+  if (!o.flat) { wg = ctx.createLinearGradient(0, top - ch, 0, top); wg.addColorStop(0, "#2b4c80"); wg.addColorStop(1, "#0f1b33"); }
   ctx.fillStyle = wg;
   poly(ctx, [-w * 0.33 + cx, top - 1, -w * 0.25 + cx, top - ch * 0.82, w * 0.25 + cx, top - ch * 0.82, w * 0.33 + cx, top - 1]);
   ctx.fillStyle = "rgba(255,255,255,0.25)";
@@ -261,6 +262,7 @@ export const SPRITES = {
   planet: { w: 1700, collide: false }, crystal: { w: 950, collide: true }, ufo: { w: 1300, collide: false },
   sign: { w: 2200, collide: true }, lamp: { w: 500, collide: true },
   shop: { w: 1700, collide: true }, house: { w: 1500, collide: true }, building: { w: 2000, collide: true },
+  chevronL: { w: 700, collide: false }, chevronR: { w: 700, collide: false },
   dumptruck: { w: 1500, collide: true }, roadclosed: { w: 1100, collide: true }, cone: { w: 420, collide: true }, trafficlight: { w: 500, collide: true },
   moonrock: { w: 1100, collide: true }, crater: { w: 1800, collide: false }, dish: { w: 1300, collide: true }, dome: { w: 1700, collide: true },
   autumnTree: { w: 1400, collide: true }, umbrella: { w: 1000, collide: true }, sandcastle: { w: 1000, collide: true }, surfboard: { w: 600, collide: true },
@@ -684,6 +686,17 @@ export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
       ctx.fillStyle = "#ff5a00"; ctx.fillRect(x + w * 0.3, yb - h * 0.53, w * 0.06, h * 0.03);
       break;
     }
+    case "chevronL":
+    case "chevronR": {
+      // a curve warning sign on a post: yellow with black arrows pointing the way the road turns
+      const d = type === "chevronR" ? 1 : -1, sw = w * 0.9, sh = h * 0.42, sy = yb - h * 0.95;
+      ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.04, sy + sh, w * 0.08, yb - sy - sh);
+      ctx.fillStyle = "#1d2230"; ctx.fillRect(x - sw / 2 - w * 0.03, sy - w * 0.03, sw + w * 0.06, sh + w * 0.06);
+      ctx.fillStyle = "#ffc928"; ctx.fillRect(x - sw / 2, sy, sw, sh);
+      ctx.fillStyle = "#1d2230";
+      for (const k of [-0.22, 0.12]) { const cx = x + k * sw * d; ctx.beginPath(); ctx.moveTo(cx - d * sw * 0.12, sy + sh * 0.12); ctx.lineTo(cx + d * sw * 0.12, sy + sh * 0.5); ctx.lineTo(cx - d * sw * 0.12, sy + sh * 0.88); ctx.lineTo(cx - d * sw * 0.02, sy + sh * 0.88); ctx.lineTo(cx + d * sw * 0.22, sy + sh * 0.5); ctx.lineTo(cx - d * sw * 0.02, sy + sh * 0.12); ctx.closePath(); ctx.fill(); }
+      break;
+    }
     case "roadclosed": {
       // ROAD CLOSED: a striped barrier on two legs with a sign
       ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.42, yb - h * 0.45, w * 0.05, h * 0.45); ctx.fillRect(x + w * 0.37, yb - h * 0.45, w * 0.05, h * 0.45);
@@ -772,7 +785,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
     ctx.fillStyle = "rgba(0,0,30,0.45)"; ell(ctx, ex + er * 0.55, ey + er * 0.1, er * 0.75, er * 1.1);
     ctx.restore();
   }
-  if (th.aurora) aurora(ctx, W, H, hz, skyX, t);
+  if (th.aurora) aurora(ctx, W, H, hz, skyX, t, lite);
   if (th.water) underwater(ctx, W, H, hz, skyX, t);
   else {
     const sx = W * (0.78 - Math.sin(skyX * Math.PI * 2) * 0.04), sy = hz * (th.sunY || 0.32);
@@ -825,23 +838,29 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
 }
 
 /* Glacier Rink (graphics ladder step 4): a starry evening sky with the northern lights waving across it. */
-function aurora(ctx, W, H, hz, skyX, t) {
+function aurora(ctx, W, H, hz, skyX, t, lite = false) {
   ctx.fillStyle = "#ffffff";
   for (let i = 0; i < 60; i++) {
     const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (hz * 0.6);
     ctx.globalAlpha = 0.35 + 0.35 * Math.sin(t * 2 + i); ctx.fillRect(sx, sy, 1.6, 1.6);
   }
   ctx.globalAlpha = 1;
+  if (lite) return;   // Simple effects: stars only
+  // three curtains, each ONE gradient and one wavy shape (was a gradient per strip: ~96 a frame)
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   const step = W / 30;
   for (const [col, yy, ph] of [["80,255,170", 0.1, 0], ["120,200,255", 0.2, 1.7], ["255,120,220", 0.05, 3.1]]) {
+    const tops = [], bots = [];
     for (let x = -step; x <= W + step; x += step) {
       const u = x / W + skyX * 0.25, wave = Math.sin(u * 7 + ph + t * 0.3) * hz * 0.06 + Math.sin(u * 13 + t * 0.5 + ph) * hz * 0.025;
-      const top = hz * yy + wave, len = hz * (0.22 + 0.1 * Math.sin(u * 5 + t * 0.7 + ph)), a = 0.14 + 0.1 * Math.sin(u * 9 + t * 0.9 + ph);
-      const g = ctx.createLinearGradient(0, top, 0, top + len);
-      g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(0.3, `rgba(${col},${a.toFixed(3)})`); g.addColorStop(1, `rgba(${col},0)`);
-      ctx.fillStyle = g; ctx.fillRect(x, top, step + 1, len);
+      const top = hz * yy + wave; tops.push([x, top]); bots.push([x, top + hz * (0.22 + 0.1 * Math.sin(u * 5 + t * 0.7 + ph))]);
     }
+    const g = ctx.createLinearGradient(0, hz * (yy - 0.04), 0, hz * (yy + 0.34));
+    g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(0.22, `rgba(${col},0.34)`); g.addColorStop(0.55, `rgba(${col},0.16)`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.beginPath();
+    tops.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    for (let k = bots.length - 1; k >= 0; k--) ctx.lineTo(bots[k][0], bots[k][1]);
+    ctx.closePath(); ctx.fill();
   }
   ctx.restore();
 }

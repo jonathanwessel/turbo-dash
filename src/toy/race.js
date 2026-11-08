@@ -8,10 +8,10 @@
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
+import { BASE_MAX, rivalBase, rubberBand, rng, strSeed } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
-const BASE_MAX = 10000;          // the classic engine's unit for speed stats
 const G = 30;                    // gravity
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -40,9 +40,10 @@ export class ToyRace {
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5, x: k % 2 ? 1.7 : -1.7 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? V0 * 1.2 : 0, finished: false, air: 0, vy: 0, airT: 0, fly: false, fallT: 0, landV: 0, landN: 0, ...slot(5),
       get offset() { return this.x / LIMIT; } };   // the classic engine's -1..1 across the road, for the race bot
+    this.raceSeq = (this.raceSeq || 0) + 1; this.rand = rng(strSeed(track.id) * 97 + this.raceSeq);
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({ def, ...slot(i), speed: mode === "demo" ? V0 : 0, lane: slot(i).x, laneT: 1 + i, knockT: 0, finished: false, air: 0,
-      base: V0 * (1.06 + d * 0.12 + (4 - i) * 0.035) * this.phys.rival * (mode === "demo" ? 0.8 : this.diff.rival) }));
+      base: V0 * rivalBase(d, i) * this.phys.rival * (mode === "demo" ? 0.8 : this.diff.rival) }));
     if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).x, laneT: 2, knockT: 0, finished: false, air: 0,
       base: V0 * opts.boss.speed * this.diff.rival * this.phys.rival, boss: true, btT: 5, bt: 0 }];
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
@@ -248,16 +249,14 @@ export class ToyRace {
       if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
-        const gap = c.dist - p.dist, hard = this.diff.id === "hard", easy = this.diff.id === "easy";
-        if (gap > 45) target *= easy ? 0.8 : hard ? 1 : 0.98;
-        else if (gap < -45) target *= hard ? 1.04 : 1.07;
+        target *= rubberBand(c.dist - p.dist, this.diff.id);
       }
       const ci = sampleAt(T, c.dist);
       if (T.flag[ci] & 4) target *= 1.15;                  // rivals ride the boosters too
       c.knockT -= dt; if (c.knockT > 0) target *= 0.75;
       c.speed += clamp(target - c.speed, -V0 * dt / 2, V0 * dt / 4);
       c.laneT -= dt;
-      if (c.laneT <= 0) { c.lane = [-2.2, 0, 2.2][Math.floor(Math.random() * 3)]; c.laneT = 2 + Math.random() * 4; }
+      if (c.laneT <= 0) { c.lane = [-2.2, 0, 2.2][Math.floor(this.rand() * 3)]; c.laneT = 2 + this.rand() * 4; }
       for (const o of [p, ...this.rivals]) {
         if (o === c) continue;
         const g = o.dist - c.dist;
