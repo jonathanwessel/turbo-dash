@@ -126,7 +126,7 @@ rooms.bank = () => {
   s += R(20, 444, 400, FLOOR - 444, "#8a6644");
   // safe boxes (right)
   for (let y = 120; y < 560; y += 74) for (let x = 1230; x < 1590; x += 90) s += R(x, y, 80, 64, "#c9a43a", `rx="6"`) + `<circle cx="${x + 40}" cy="${y + 32}" r="8" fill="#6b5320"/>`;
-  s += R(0, 0, W, 34, "#1f3b63") + `<text x="800" y="27" font-family="Arial" font-weight="900" font-size="26" text-anchor="middle" fill="#ffc928" letter-spacing="10">PIQUA NATIONAL BANK</text>`;
+  s += R(0, 0, W, 34, "#1f3b63");
   s += `<g fill="#ffc928" stroke="#b07a10" stroke-width="3">${[0, 1, 2, 3].map(i => `<ellipse cx="300" cy="${590 - i * 14}" rx="40" ry="12"/>`).join("")}${[0, 1].map(i => `<ellipse cx="380" cy="${590 - i * 14}" rx="40" ry="12"/>`).join("")}</g>`;
   return svg(s, "#6c7686");
 };

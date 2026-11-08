@@ -70,7 +70,6 @@ const race = () => { const { x, w } = B.race, top = BASE - 230; return `
   ${[0, 1, 2, 3].map(i => { const fx = x + 10 + i * (w - 20) / 3; return `<line x1="${fx}" y1="${top - 36}" x2="${fx}" y2="${top - 100}" stroke="#555" stroke-width="5"/><path class="flag f${i}" d="M${fx} ${top - 100} l40 12 l-40 12z" fill="${["#ffd400", "#3cf2ff", "#5be36a", "#ff3fa4"][i]}"/>`; }).join("")}
   <rect x="${x + 55}" y="${BASE - 80}" width="${w - 110}" height="80" fill="#333"/>
   ${Array.from({ length: 12 }, (_, i) => `<rect x="${x + 55 + (i % 6) * (w - 110) / 6}" y="${BASE - 80 + Math.floor(i / 6) * 20}" width="${(w - 110) / 6}" height="20" fill="${(i + Math.floor(i / 6)) % 2 ? "#fff" : "#111"}"/>`).join("")}
-  ${label(cx("race"), top + 120, w - 40, "RACE TRACK", 22)}
   <g class="go-pop"><rect x="${cx("race") - 104}" y="${top + 14}" width="208" height="98" rx="30" fill="#23a33a" stroke="#fff" stroke-width="8"/><rect x="${cx("race") - 92}" y="${top + 22}" width="184" height="36" rx="18" fill="#5be36a"/><text x="${cx("race")}" y="${top + 84}" class="bt" font-size="60">RACE!</text></g>
 </g>`; };
 

@@ -146,7 +146,7 @@ let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
   screen = id; inRoom = !!$(id)?.dataset.room;
-  document.body.classList.toggle("on-panel", !!$(id)?.classList.contains("panel"));
+  document.body.classList.toggle("on-panel", !!$(id)?.classList.contains("panel")); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
@@ -227,7 +227,8 @@ function refreshCoins(animate = true) {
   };
   coinAnim = requestAnimationFrame(tick);
 }
-function refreshChips() { $("chip-wrap").hidden = !S.chips; $("chip-n").textContent = S.chips; }
+// Brain Chips only show where they are spent or counted: the Turbo Lab and the Rank screen
+function refreshChips() { $("chip-wrap").hidden = !S.chips || !["s-lab", "s-rank"].includes(screen); $("chip-n").textContent = S.chips; }
 let toastT = 0;
 function toast(text) { const t = $("toast"); t.textContent = text; t.hidden = false; t.style.animation = "none"; void t.offsetWidth; t.style.animation = ""; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
 /* One-time Brain Chip rewards (each key pays once). */
@@ -346,7 +347,8 @@ $("diff-bar").addEventListener("click", e => {
 let raceTab = "races";
 const cupOpen = cup => S.rank >= Math.max(5, cup.rank || 0) && cup.tracks.every(id => unlocked(TRACKS.findIndex(t => t.id === id)));
 function paintCups() {
-  $("cup-list").innerHTML = CUPS.filter(c => (c.world || "earth") === S.world).map(c => {
+  const cups = CUPS.filter(c => (c.world || "earth") === S.world), nextCup = cups.find(c => !cupOpen(c));
+  $("cup-list").innerHTML = cups.filter(c => cupOpen(c) || c === nextCup).map(c => {
     const open = cupOpen(c), best = S.cups[c.id + ":" + S.diff], car = CARS.find(x => x.id === c.car), need = Math.max(5, c.rank || 0);
     return `<button class="cup-card ${open ? "" : "locked"}" data-cup="${c.id}" style="border-color:${c.color}">
       <div class="cc-cup" style="filter:drop-shadow(0 0 10px ${c.color})">🏆</div><div class="cc-name" style="color:${c.color}">${c.name}</div>
@@ -361,7 +363,10 @@ const TAB_RANK = { races: 0, trial: OPEN_RANK.trial, cups: OPEN_RANK.cups, boss:
 function paintRaceTabs() {
   if (S.rank < (TAB_RANK[raceTab] || 0)) raceTab = "races";
   let shown = 0;
-  document.querySelectorAll("[data-rtab]").forEach(b => { const ok = S.rank >= (TAB_RANK[b.dataset.rtab] || 0); b.hidden = !ok; shown += ok; b.classList.toggle("on", b.dataset.rtab === raceTab); });
+  document.querySelectorAll("[data-rtab]").forEach(b => {
+    const need = TAB_RANK[b.dataset.rtab] || 0, ok = S.rank >= need, soon = !ok && S.rank === need - 1;
+    b.hidden = !ok && !soon; shown += ok || soon; b.classList.toggle("soon", soon); b.dataset.rank = need; b.classList.toggle("on", b.dataset.rtab === raceTab);
+  });
   document.querySelector(".race-tabs").hidden = shown < 2;
   $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss"; $("trial-list").hidden = raceTab !== "trial";
   $("diff-bar").style.visibility = raceTab === "trial" || raceTab === "boss" ? "hidden" : "";
@@ -416,7 +421,8 @@ function showTrialResult(r) {
 /* ---------- 👑 bosses ---------- */
 const bossOpen = b => S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track));
 function paintBosses() {
-  $("boss-list").innerHTML = BOSSES.filter(b => b.world === S.world).map(b => {
+  const bosses = BOSSES.filter(b => b.world === S.world), nextBoss = bosses.find(b => !bossOpen(b));
+  $("boss-list").innerHTML = bosses.filter(b => bossOpen(b) || b === nextBoss).map(b => {
     const open = bossOpen(b), beat = S.bosses[b.id], car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
     return `<button class="cup-card boss ${open ? "" : "locked"}" data-boss="${b.id}" style="border-color:#ffd400">
       <div class="cc-cup">${b.icon}</div><div class="cc-name" style="color:#ffd400">${b.name}</div>
@@ -512,14 +518,17 @@ function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
+  const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !unlocked(i));   // only the next locked track shows
   list.innerHTML = TRACKS.map((t, i) => {
     if ((t.world || "earth") !== S.world) return "";
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
+    if (!open && i !== nextLocked) return "";
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       ${(() => { const w = S.mastery[t.id + ":" + S.diff] || 0, s = starsFor(w), lo = MASTERY[s - 1] || 0, hi = MASTERY[s];
         // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
+        if (!w) return "";   // stars and the bar appear after the first win here
         return `<div class="tc-stars" title="Win here to earn stars">${MASTERY.map((n, k) => `<i class="${k < s ? "on" : ""}">★</i>`).join("")}</div>`
           + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><small>${w}/${hi}</small>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
@@ -659,7 +668,7 @@ function showResult(r) {
   const next = fresh[0] || (currentTrack.bonus ? null : TRACKS.slice(ti + 1).find(t => trackOpen(S, t))), nowOpen = !!next;
   nextTrack = next;
   $("r-unlock").hidden = !fresh.length;
-  if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " " + sparkleMsg; u.hidden = false; }, 0);
+  if (sparkleMsg) setTimeout(() => toast(sparkleMsg), 1400);   // the result card keeps one "what changed" line
   if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
   chestValues = rollChests(S, currentTrack, S.diff);
   chestDone = false;
@@ -673,13 +682,14 @@ function showResult(r) {
       if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
       save(); chipToast(gotChip);
       const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
-      $("r-unlock").textContent = $("r-unlock").hidden ? msg : msg + " " + $("r-unlock").textContent; $("r-unlock").hidden = false;
+      $("r-unlock").textContent = msg; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
     } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }
     lastRun = { kind: "boss", boss: b }; run = RACE();
   } else lastRun = run.kind === "cup" ? null : RACE();
   if (run.kind === "cup") { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = run.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
   else { $("btn-next").hidden = !nowOpen; $("btn-again").hidden = false; $("btn-next").textContent = "Next ▶"; }
+  if (!$("r-unlock").hidden) $("r-goal").hidden = true;   // one "what changed" line: an unlock beats a goal reminder
   show("s-result"); refreshCoins();
   sfx(r.place <= 3 ? "win" : "lose");
   if (r.place <= 3) confetti(r.place === 1 ? 160 : 80);
@@ -952,8 +962,7 @@ function paintBank() {
   const ins = [100, 500, Math.min(S.coins, room)], outs = [100, 500, b.bal];
   $("bk-in").innerHTML = ins.map((n, i) => `<button data-in="${i}" ${n > 0 && n <= S.coins && n <= room ? "" : "disabled"}>${i === 2 ? "All I can" : "🪙 " + big(n)}</button>`).join("");
   $("bk-out").innerHTML = outs.map((n, i) => `<button data-out="${i}" ${n > 0 && n <= b.bal ? "" : "disabled"}>${i === 2 ? "All of it" : "🪙 " + big(n)}</button>`).join("");
-  $("bk-max").textContent = `At Rank ${S.rank} the bank keeps up to ${big(cap)} 🪙. Rank ${S.rank + 1}: ${big(bankMax(S.rank + 1))} 🪙.`;
-  $("bk-total").textContent = b.paid ? `The bank has paid you ${big(b.paid)} 🪙 so far.` : "";
+  $("bk-cap").textContent = `of ${big(cap)}`;   // the limit lives on the vault plate; the total paid is in Parent Progress
 }
 $("s-bank").addEventListener("click", e => {
   const i = e.target.closest("[data-in]"), o = e.target.closest("[data-out]"); if (!i && !o) return;
@@ -1007,23 +1016,49 @@ function refreshHub() {
       document.querySelectorAll(`#site-${b.id} .pip`).forEach(p => p.setAttribute("fill", +p.dataset.pip < done ? "#5be36a" : "#fff"));
     }
   }
-  bankTick(); tb("tb-bank", S.bank.news > 0);
-  tb("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today());
-  tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
-  tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
-  tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
-  tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!lapsToday().length && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
+  // "!" badges: only the two that matter most show at once (money to collect > something to claim > rank up >
+  // something to buy or learn), so Main Street never blinks everywhere
+  bankTick();
+  const ls = lab.status(), want = [];
+  const badge = (id, on, pri) => want.push({ id, on: !!on, pri });
+  badge("tb-gift", giftReady(), 1); badge("tb-bank", S.bank.news > 0, 1);
+  badge("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today(), 1); badge("tb-park", buildingOpen(S, "park") && S.daily.park !== today(), 1);
+  badge("tb-trophy", claimable().length > 0, 2); badge("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"), 2);
+  if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
+  badge("tb-missions", S.rank >= MISSIONS_RANK && missionsReady(), 2);
+  badge("tb-lab", S.rank >= OPEN_RANK.lab && ls.done, 2);
+  badge("tb-rank", rankReady(), 3);
+  badge("tb-garage", garage.affordable(), 4);
+  badge("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!lapsToday().length && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX)), 4);
+  badge("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3, 4);
+  badge("tb-lab", S.rank >= OPEN_RANK.lab && ls.idle && !ls.done, 4);
+  const top2 = new Set(want.filter(w => w.on).sort((a, b) => a.pri - b.pri).map(w => w.id).filter((id, k, a) => a.indexOf(id) === k).slice(0, 2));
+  for (const id of new Set(want.map(w => w.id))) tb(id, top2.has(id));
   $("lab-lock").style.display = S.rank >= OPEN_RANK.lab ? "none" : "";
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
-  if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
-  tb("tb-missions", S.rank >= MISSIONS_RANK && missionsReady());
-  const ls = lab.status();
-  tb("tb-lab", S.rank >= OPEN_RANK.lab && (ls.done || ls.idle)); $("lab-timer").textContent = ls.text;
+  $("lab-timer").textContent = ls.text;
+  paintNext();
   $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
   // wide screens: fill and trim the sky; squarer or portrait screens: show the whole street
   paintTownArrows();
 }
 addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
+/* ➡️ the "Next" sign on Main Street: one thing to do next, one tap to get there */
+function nextStep() {
+  if (rankReady()) return { icon: "⭐", text: "Rank up!", go: () => openRank() };
+  const i = TRACKS.findIndex((t, k) => (t.world || "earth") === S.world && unlocked(k) && S.bestD[t.id + ":" + S.diff] !== 1);
+  if (i >= 0) return { icon: TRACKS[i].icon, text: `Win ${TRACKS[i].name}`, go: () => openTracks() };
+  const todo = frontsNow().filter(f => f.need > 0 && f.have < f.need);
+  if (!todo.length) return null;
+  const low = todo.reduce((a, f) => (f.have / f.need < a.have / a.need ? f : a));
+  return { icon: low.icon, text: low.id === "wins" ? "Win more races" : low.hint, go: () => openRank() };
+}
+let nextGo = null;
+function paintNext() {
+  const n = nextStep(); $("next-plate").hidden = !n; if (!n) return;
+  $("np-icon").textContent = n.icon; $("np-text").textContent = n.text; nextGo = n.go;
+}
+$("next-plate").onclick = () => { sfx("click"); nextGo?.(); };
 $("town-wrap").addEventListener("click", e => {
   const b = e.target.closest("[data-go]"); if (!b) return;
   const go = b.dataset.go;
@@ -1216,6 +1251,7 @@ function openProgress() {
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
   $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
   const mm = S.school.math, wm = S.school.word, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
+  $("pg-bank").textContent = S.bank.paid ? `🏦 The bank has paid ${S.bank.paid.toLocaleString("en-US")} coins of interest so far (it keeps up to ${bankMax(S.rank).toLocaleString("en-US")} at Rank ${S.rank}).` : "";
   $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>📚 Word Laps <b>${wm.laps}</b></span><span>✔ Right <b>${mm.right + wm.right}</b></span><span>✖ Tries again <b>${mm.wrong + wm.wrong}</b></span><span>📈 Math level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span><span>📖 Word level <b>${["", "3 letters", "3 letters, look-alikes", "4 letters", "Longer words"][wm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons, ${S.school.tickets} 🎟️ waiting, license ${LICENSES[licenseLevel(S)].name}</small>`;
   show("s-progress");
 }

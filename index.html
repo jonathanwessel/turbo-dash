@@ -96,6 +96,7 @@
     <div id="town-wrap"></div>
     <button class="town-arrow l" id="town-l" aria-label="Scroll left" hidden>◀</button>
     <button class="town-arrow r" id="town-r" aria-label="Scroll right" hidden>▶<i id="town-r-dot" hidden>!</i></button>
+    <button id="next-plate" class="next-plate" hidden><span class="np-icon" id="np-icon"></span><b>Next:</b> <span id="np-text"></span> <span class="np-go">▶</span></button>
     <button id="rank-pill" class="rank-pill"><span class="rp-star">⭐</span><b id="rp-rank">1</b><span id="rp-title">Rookie</span></button>
   </section>
 
@@ -117,6 +118,10 @@
       </div>
       <div class="lab-list" id="lab-list"></div>
     </div>
+    <div class="lab-sheet" id="lab-sheet" hidden><div class="card">
+      <div class="ls-icon" id="ls-icon"></div><h1 id="ls-name"></h1><p id="ls-desc"></p><p class="ls-meta" id="ls-meta"></p>
+      <div class="row"><button id="ls-go" class="big-btn go">Start</button><button id="ls-close" class="big-btn small">Close</button></div>
+    </div></div>
   </section>
 
   <section id="s-cupend" class="screen dim" hidden>
@@ -276,7 +281,7 @@
           <g class="vd-bolts"><circle cx="178.0" cy="100.0" r="6"/><circle cx="155.2" cy="155.2" r="6"/><circle cx="100.0" cy="178.0" r="6"/><circle cx="44.8" cy="155.2" r="6"/><circle cx="22.0" cy="100.0" r="6"/><circle cx="44.8" cy="44.8" r="6"/><circle cx="100.0" cy="22.0" r="6"/><circle cx="155.2" cy="44.8" r="6"/></g><circle cx="100" cy="100" r="60" class="vd-ring"/>
           <g class="vd-wheel"><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(0 100 100)"/><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(60 100 100)"/><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(120 100 100)"/><circle cx="100" cy="100" r="20"/></g>
         </svg>
-        <div class="vault-bal"><small>In the bank</small><b id="bk-bal">0</b><span class="coin" role="img" aria-label="coins"></span></div>
+        <div class="vault-bal"><small>In the bank</small><b id="bk-bal">0</b><span class="coin" role="img" aria-label="coins"></span><small id="bk-cap"></small></div>
       </div>
       <div class="bank-right">
         <div class="bank-news" id="bk-news" hidden></div>
@@ -284,14 +289,12 @@
         <small class="bank-new" id="bk-new" hidden>Coins you just put in start earning at the next payday.</small>
         <div class="bank-row"><b>Put in</b><span id="bk-in"></span></div>
         <div class="bank-row"><b>Take out</b><span id="bk-out"></span></div>
-        <small class="bank-max" id="bk-max"></small>
-        <small class="bank-max" id="bk-total"></small>
       </div>
     </div>
   </section>
 
   <section id="s-log" class="screen panel" data-room="school" hidden>
-    <div class="screen-head"><button class="back" id="log-back">◀</button><h2>School settings</h2></div>
+    <div class="screen-head"><button class="back" id="log-back">◀</button><h2>Grown-ups</h2></div>
     <div class="log-wrap">
       <p class="log-help">Tickets come from <b>Math Laps</b> at the Driver School and <b>Word Laps</b> at the Library: 5 questions each, and every lap earns a 🎟️ (two for a lap with no mistakes). Two perfect laps in a row make the next ones a little harder, up to the levels you pick.</p>
       <div class="log-today" id="log-today"></div>
@@ -451,7 +454,7 @@
       <div class="p-box pg-next" id="pg-next"></div>
       <div class="p-grid">
         <div class="p-box"><h3>⭐ Best tracks</h3><div class="pg-list" id="pg-best"></div></div>
-        <div class="p-box"><h3>🚦 Away from the screen</h3><div class="pg-list" id="pg-school"></div></div>
+        <div class="p-box"><h3>🚦 Away from the screen</h3><div class="pg-list" id="pg-school"></div><small class="pg-bank" id="pg-bank"></small></div>
       </div>
       <p class="pg-note">Everything here stays on this tablet. Nothing is sent anywhere.</p>
       <div class="row"><button class="big-btn small go" data-backto="s-parent">◀ Back</button></div>

@@ -1030,3 +1030,29 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* Settings: tiles in centred rows (7 tiles: 4 + 3, the short row centred) */
 .set-grid { display: flex; flex-wrap: wrap; justify-content: center; align-content: safe center; gap: var(--s3); }
 .set-grid > * { flex: 0 1 200px; }
+
+/* v1.7: a race tab that opens next rank shows early, dimmed, with its rank */
+.race-tabs button.soon { opacity: .65; }
+.race-tabs button.soon::after { content: "Rank " attr(data-rank); margin-left: 6px; font-size: .7em; background: var(--ink); color: var(--lane); border-radius: 8px; padding: 1px 6px; }
+
+/* v1.7 Turbo Lab: cards are icon + name + one button; details open in a sheet */
+.proj { cursor: pointer; }
+.bench.empty { grid-template-columns: 1fr; justify-items: center; min-height: 64px; border-style: dashed; }
+.bench.empty .bi { grid-row: auto; opacity: .55; }
+.bench.locked { grid-template-columns: auto 1fr; }
+.bench.locked .bi { grid-row: auto; font-size: 28px; }
+.lab-sheet { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(13,17,26,.6); z-index: 5; padding: var(--s4); }
+.lab-sheet[hidden] { display: none; }
+.lab-sheet .card { max-width: 460px; text-align: center; }
+.lab-sheet .ls-icon { font-size: clamp(44px, 12vmin, 72px); line-height: 1.1; }
+.lab-sheet p { margin: var(--s2) 0; font-size: var(--t-md); }
+.lab-sheet .ls-meta { font-size: var(--t-sm); opacity: .85; }
+
+/* v1.7 the "Next" sign on Main Street: under the rank pill, one line */
+.next-plate { position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + clamp(44px, 9vmin, 60px)); left: 50%; transform: translateX(-50%); z-index: 20;
+  display: flex; align-items: center; gap: var(--s2); max-width: calc(100% - 180px); padding: var(--s1) var(--s4); white-space: nowrap; overflow: hidden;
+  font-size: var(--t-md); font-weight: 800; background: var(--sign); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--ink); }
+.next-plate[hidden] { display: none; }
+.next-plate:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.next-plate #np-text { overflow: hidden; text-overflow: ellipsis; }
+.next-plate .np-icon { font-size: 1.3em; line-height: 1; }

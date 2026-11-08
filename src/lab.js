@@ -46,27 +46,28 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
     const bs = benches();
     lastDone = doneBenches().length;
     $("lab-benches").innerHTML = bs.map((b, i) => {
-      if (!b.p) return `<div class="bench empty"><div class="bi">🧪</div><b>Bench ${i + 1}</b><small>Pick research below!</small></div>`;
+      if (!b.p) return `<div class="bench empty" aria-label="Empty bench ${i + 1}"><div class="bi">🧪</div></div>`;
       const r = RESEARCH.find(x => x.id === b.p), t = left(b), total = researchTime(r, levelOf(r.id));
       if (t <= 0) return `<button class="bench done" data-collect="${i}"><div class="bi">${r.icon}</div><b>${r.name}</b><span class="collect">✔ Tap to collect!</span></button>`;
       return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name} ${levelOf(r.id) + 1}</b>
         <div class="bar"><i style="width:${Math.round(100 * (1 - t / total))}%"></i></div><span class="timer" data-timer="${i}">⏱ ${fmt(t)}</span>
         <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
-    }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><b>Bench ${bs.length + 1}</b><small>Rank ${BENCH_RANKS[bs.length]}</small></div>` : "");
+    }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><small>Rank ${BENCH_RANKS[bs.length]}</small></div>` : "");
 
     const tiers = [...new Set(RESEARCH.map(r => r.tier))].sort((a, b) => a - b);   // every tier, so new worlds' kits always show
-    $("lab-list").innerHTML = tiers.map(tier => {
+    // open tiers, plus the next locked one (its cards dimmed); tiers further out stay hidden
+    const nextTier = tiers.find(t => S.rank < RESEARCH.find(r => r.tier === t).rank);
+    $("lab-list").innerHTML = tiers.filter(t => S.rank >= RESEARCH.find(r => r.tier === t).rank || t === nextTier).map(tier => {
       const items = RESEARCH.filter(r => r.tier === tier), needRank = items[0].rank, open = S.rank >= needRank;
-      return `<div class="tier-head">${open ? "⚗️" : "🔒"} Lab tier ${tier}${open ? "" : ` — Rank ${needRank}`}</div>` + items.map(r => {
+      return `<div class="tier-head">${open ? `Lab tier ${tier}` : `🔒 Lab tier ${tier}: Rank ${needRank}`}</div>` + items.map(r => {
         const lvl = levelOf(r.id), max = lvl >= r.max, running = busy(r.id), cost = max ? 0 : researchCost(r, lvl), chips = max ? 0 : researchChips(r, lvl);
         const rk = researchRank(r, lvl), need = (r.needs || []).find(id => levelOf(id) < 1), needR = need && RESEARCH.find(x => x.id === need);
         const ok = open && S.rank >= rk && !need;
         const can = ok && !max && !running && freeBench() && S.coins >= cost && S.chips >= chips;
         const short = n => n >= 10000 ? Math.round(n / 1000) + "k" : n;
-        const label = max ? "MAX!" : running ? "⏱ Working…" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? "  🧠" + chips : ""}  ⏱${fmt(researchTime(r, lvl))}`;
-        return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}">
-          <div class="pi">${r.icon}</div><b>${r.name}</b><small>${r.desc}</small>
-          <div class="plv">Lv ${lvl}/${r.max}</div>
+        const label = max ? "MAX!" : running ? "⏱ Working" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " 🧠" + chips : ""}`;
+        return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}" data-info="${r.id}">
+          <div class="pi">${r.icon}</div><b>${r.name}</b>
           <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${label}</button></div>`;
       }).join("");
     }).join("");
@@ -78,9 +79,19 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
     else if (r) rush(benches()[+r.dataset.rush]);
   });
   $("lab-list").addEventListener("click", e => {
-    const b = e.target.closest("[data-start]"); if (!b) return;
-    start(RESEARCH.find(r => r.id === b.dataset.start));
+    const b = e.target.closest("[data-start]");
+    if (b) { start(RESEARCH.find(r => r.id === b.dataset.start)); return; }
+    const c = e.target.closest("[data-info]"); if (c) openSheet(RESEARCH.find(r => r.id === c.dataset.info));
   });
+  // tap a card (not its button) for the details: what it does, its level and how long it takes
+  function openSheet(r) {
+    const lvl = levelOf(r.id), max = lvl >= r.max;
+    $("ls-icon").textContent = r.icon; $("ls-name").textContent = r.name; $("ls-desc").textContent = r.desc;
+    $("ls-meta").textContent = max ? `Level ${lvl} of ${r.max}: all done!` : `Level ${lvl} of ${r.max}. The next level takes ${fmt(researchTime(r, lvl))}.`;
+    $("ls-go").hidden = max; $("ls-go").onclick = () => { $("lab-sheet").hidden = true; start(r); };
+    $("lab-sheet").hidden = false; sfx("click");
+  }
+  $("ls-close").onclick = () => { $("lab-sheet").hidden = true; sfx("click"); };
 
   // once a second: update countdowns, re-render when something finishes
   let acc = 0;
