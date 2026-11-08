@@ -26,7 +26,14 @@
 
   <!-- race HUD -->
   <div id="hud" hidden>
-    <div class="hud-pos"><span id="h-pos">6</span><small id="h-suffix">th</small></div>
+    <div class="hud-left">
+      <div class="hud-pos"><span id="h-pos">6</span><small id="h-suffix">th</small></div>
+      <div class="speedo" aria-label="Speed">
+        <svg viewBox="0 0 120 64" aria-hidden="true"><path class="sp-dial" d="M10 58 A50 50 0 0 1 110 58"/><path class="sp-red" d="M105.0 36.3 A50 50 0 0 1 110 58"/><g class="sp-ticks"><line x1="14.0" y1="58.0" x2="22.0" y2="58.0"/><line x1="18.6" y1="38.0" x2="25.8" y2="41.5"/><line x1="31.3" y1="22.0" x2="36.3" y2="28.3"/><line x1="49.8" y1="13.2" x2="51.5" y2="21.0"/><line x1="70.2" y1="13.2" x2="68.5" y2="21.0"/><line x1="88.7" y1="22.0" x2="83.7" y2="28.3"/><line x1="101.4" y1="38.0" x2="94.2" y2="41.5"/><line x1="106.0" y1="58.0" x2="98.0" y2="58.0"/></g>
+          <g id="speedo-needle" class="sp-needle"><path d="M57.5 58 L60 16 L62.5 58 Z"/></g><circle cx="60" cy="58" r="6" class="sp-hub"/></svg>
+        <div class="sp-read"><b id="h-mph">0</b> mph</div>
+      </div>
+    </div>
     <div class="hud-mid">
       <div class="hud-lap">LAP <span id="h-lap">1</span>/<span id="h-laps">2</span></div>
       <div id="h-track"></div>
@@ -92,7 +99,7 @@
     <button id="rank-pill" class="rank-pill"><span class="rp-star">⭐</span><b id="rp-rank">1</b><span id="rp-title">Rookie</span></button>
   </section>
 
-  <section id="s-rank" class="screen panel" hidden>
+  <section id="s-rank" class="screen panel" data-room="rank" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Racer Rank</h2></div>
     <div class="rank-top"><div class="rank-star"><span id="rk-num">1</span></div><div><div class="rk-title" id="rk-title">Rookie</div><div class="rk-next" id="rk-next"></div></div></div>
     <div class="fronts" id="fronts"></div>
@@ -100,7 +107,7 @@
     <div id="rk-hint" class="rk-hint"></div>
   </section>
 
-  <section id="s-lab" class="screen panel" hidden>
+  <section id="s-lab" class="screen panel" data-room="lab" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Turbo Lab</h2></div>
     <div class="lab">
       <div class="lab-left">
@@ -146,7 +153,7 @@
     <div class="track-list" id="trial-list" hidden></div>
   </section>
 
-  <section id="s-garage" class="screen panel" hidden>
+  <section id="s-garage" class="screen panel" data-room="garage" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Garage</h2><button id="g-gridbtn" class="g-gridbtn">▦ All cars</button></div>
     <div class="g-grid" id="g-grid" hidden></div>
     <div class="garage">
@@ -165,7 +172,7 @@
     </div>
   </section>
 
-  <section id="s-trophies" class="screen panel" hidden>
+  <section id="s-trophies" class="screen panel" data-room="trophy" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Trophy Room</h2></div>
     <div class="trophies">
       <div class="shelf" id="shelf"></div>
@@ -206,7 +213,7 @@
     </div>
   </section>
 
-  <section id="s-school" class="screen panel" hidden>
+  <section id="s-school" class="screen panel" data-room="school" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Driver School</h2></div>
     <div class="school">
       <div class="classroom">
@@ -232,7 +239,7 @@
     </div>
   </section>
 
-  <section id="s-math" class="screen panel" hidden>
+  <section id="s-math" class="screen panel" data-room="school" hidden>
     <div class="screen-head"><button class="back" id="math-back">◀</button><h2>Math Lap</h2></div>
     <div class="math-wrap">
       <div class="math-lap" id="math-lap"></div>
@@ -246,7 +253,7 @@
     </div>
   </section>
 
-  <section id="s-word" class="screen panel" hidden>
+  <section id="s-word" class="screen panel" data-room="library" hidden>
     <div class="screen-head"><button class="back" id="word-back">◀</button><h2>Word Lap</h2></div>
     <div class="math-wrap">
       <div class="math-lap" id="word-lap"></div>
@@ -260,7 +267,30 @@
     </div>
   </section>
 
-  <section id="s-log" class="screen panel" hidden>
+  <section id="s-bank" class="screen panel" data-room="bank" hidden>
+    <div class="screen-head"><button class="back" data-back>◀</button><h2>Piqua National Bank</h2></div>
+    <div class="bank">
+      <div class="vault">
+        <svg class="vault-door" viewBox="0 0 200 200" aria-hidden="true">
+          <circle cx="100" cy="100" r="96" class="vd-rim"/><circle cx="100" cy="100" r="86" class="vd-face"/>
+          <g class="vd-bolts"><circle cx="178.0" cy="100.0" r="6"/><circle cx="155.2" cy="155.2" r="6"/><circle cx="100.0" cy="178.0" r="6"/><circle cx="44.8" cy="155.2" r="6"/><circle cx="22.0" cy="100.0" r="6"/><circle cx="44.8" cy="44.8" r="6"/><circle cx="100.0" cy="22.0" r="6"/><circle cx="155.2" cy="44.8" r="6"/></g><circle cx="100" cy="100" r="60" class="vd-ring"/>
+          <g class="vd-wheel"><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(0 100 100)"/><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(60 100 100)"/><rect x="94" y="52" width="12" height="96" rx="6" transform="rotate(120 100 100)"/><circle cx="100" cy="100" r="20"/></g>
+        </svg>
+        <div class="vault-bal"><small>In the bank</small><b id="bk-bal">0</b><span class="coin" role="img" aria-label="coins"></span></div>
+      </div>
+      <div class="bank-right">
+        <div class="bank-news" id="bk-news" hidden></div>
+        <div class="bank-pay" id="bk-pay"></div>
+        <small class="bank-new" id="bk-new" hidden>Coins you just put in start earning at the next payday.</small>
+        <div class="bank-row"><b>Put in</b><span id="bk-in"></span></div>
+        <div class="bank-row"><b>Take out</b><span id="bk-out"></span></div>
+        <small class="bank-max" id="bk-max"></small>
+        <small class="bank-max" id="bk-total"></small>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-log" class="screen panel" data-room="school" hidden>
     <div class="screen-head"><button class="back" id="log-back">◀</button><h2>School settings</h2></div>
     <div class="log-wrap">
       <p class="log-help">Tickets come from <b>Math Laps</b> at the Driver School and <b>Word Laps</b> at the Library: 5 questions each, and every lap earns a 🎟️ (two for a lap with no mistakes). Two perfect laps in a row make the next ones a little harder, up to the levels you pick.</p>
@@ -345,7 +375,7 @@
     </div>
   </section>
 
-  <section id="s-missions" class="screen panel" hidden>
+  <section id="s-missions" class="screen panel" data-room="missions" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>Daily Missions</h2></div>
     <div class="missions" id="mis-list"></div>
     <div class="mis-bonus" id="mis-bonus"></div>
@@ -370,7 +400,7 @@
     </div>
   </section>
 
-  <section id="s-gift" class="screen dim" hidden>
+  <section id="s-gift" class="screen dim" data-room="gifts" hidden>
     <div class="card gift">
       <div class="trophy" id="gift-icon">🎁</div>
       <h1 id="gift-head">Free Gift!</h1>
@@ -400,7 +430,7 @@
     <p class="lu-tip">🎢 Go fast into loops, or you'll fall off! 🖐️</p>
     <button id="lu-go" class="big-btn go">LET'S GO!</button>
   </div></div>
-  <section id="s-wash" class="screen panel" hidden>
+  <section id="s-wash" class="screen panel" data-room="carwash" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>🧼 Car Wash</h2></div>
     <div class="wash">
       <canvas id="wash-car" width="640" height="380"></canvas>
@@ -408,7 +438,7 @@
       <small class="wash-tip">Rub the car with your finger! A clean car earns a ✨ bonus on its next race (once a day).</small>
     </div>
   </section>
-  <section id="s-museum" class="screen panel" hidden>
+  <section id="s-museum" class="screen panel" data-room="museum" hidden>
     <div class="screen-head"><button class="back" data-back>◀</button><h2>🏛️ Museum</h2></div>
     <div class="mu-sum" id="mu-sum"></div>
     <div class="mu-list" id="mu-list"></div>
@@ -433,6 +463,7 @@
       <div class="g-sec"><h3>🏁 Racing</h3><p>Steer with the ◀ ▶ buttons (or tilt the tablet, in Settings). 🚀 fires Turbo when it's full; ❓ boxes give a power-up. Driving right behind another car gives a little extra speed (💨 drafting). 🏙️ Downtown is an extra, tricky course that's always open. The 👀 chip lets him try a lap of a world that isn't open yet (no prizes). If the game feels slow on an older tablet, set ✨ Effects to Simple in Settings. Every race pays coins, plus a treasure chest. A new track opens when the one before it is <b>won</b> on Normal or Hard (or on Easy, if Easy is the only difficulty you allow).</p></div>
       <div class="g-sec"><h3>⭐ Racer Rank</h3><p>Ranking up needs every gauge full: 🏁 wins, 🏆 trophies (medals, cups, goals, and ⭐ mastery stars: each track gives a star at 3, 10, 25, 50 and 100 wins on a difficulty; the little bar under the stars on a track card shows how close the next one is), 🔧 garage (cars and upgrades) and 🔬 research. From Rank 10 a 🪪 Driver License gauge joins (you can turn it off below). New ranks open buildings, cups, bosses and new worlds.</p></div>
       <div class="g-sec"><h3>🔬 Turbo Lab</h3><p>Research takes real time (minutes to hours) and coins. It keeps going while the tablet is off, so there's a reason to come back tomorrow. The big one, 🧠 Auto Steer, has 100 levels and takes years. It's off in boss races and Time Trials, and you can switch it off.</p></div>
+      <div class="g-sec"><h3>🏦 Piqua National Bank</h3><p>Coins kept in the bank earn 7% every real day (put in 100, and a day later there are 107). Coins put in more than an hour into a bank day start earning the next day, so there's no trick of adding coins just before payday. The bank keeps up to 400 coins per rank (2,000 at Rank 5), and interest is paid only on coins up to that limit. Coins in the bank can't be spent until he takes them out, which he can do any time. A good first lesson in saving.</p></div>
       <div class="g-sec"><h3>🚦 Driver School, 🧮 Math Laps and 📚 Word Laps</h3><p>A Math Lap is 5 adding or taking-away questions with pictures to count. A Word Lap, at the 📚 Library, is 5 reading questions: match a picture to its word, or a word to its picture. Each lap earns a 🎟️ ticket (two with no mistakes), up to one daily limit you choose for both. Wrong answers just try again. Math grows from sums to 5 up to the level you allow (adding to 10, to 10, or to 20). Words grow from 3-letter words, to look-alike words (cat, cap, can), to 4-letter and longer words. Tickets buy lessons that make him a better driver in every car, and lessons earn the license. Settings: Driver School → 👪 Grown-ups.</p></div>
       <div class="g-sec"><h3>👪 Your controls (Parent Corner)</h3><p>Which difficulties he may pick; a steering helper for young drivers; a break reminder (a 10-minute rest screen after the time you choose); volume and vibration; Auto Steer on/off; the License gauge; weather. Parent Corner opens by tapping the version number 5 times on the title screen, behind a grown-up question (a multiplication typed on a number pad).</p></div>
       <div class="g-sec"><h3>💾 Saving</h3><p>Emoji pictures: Twemoji by Twitter, Inc. and other contributors (CC-BY 4.0). Fonts: Racing Sans One and Nunito (SIL Open Font License). Progress saves on this tablet by itself. A <b>save code</b> in Parent Corner copies it to another device. Installed from the website (📲 Install on the title screen), the game opens full screen and works offline. There are no purchases, no ads and no accounts, ever.</p></div>

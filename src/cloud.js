@@ -1,6 +1,6 @@
 // Google Save: keeps a copy of the save in the parent's Google Drive (a hidden app folder only this game can see).
 // No server: Google's sign-in script gives the page a short-lived token for the drive.appdata scope only.
-// Needs GOOGLE_CLIENT_ID (README → "Google Save") and an https:// page (the GitHub Pages site) or localhost.
+// Needs GOOGLE_CLIENT_ID (src/cloud-config.js) and an https:// page or localhost.
 //
 // Syncing is three-way, so two devices never overwrite each other's progress by accident. This device remembers
 // what it last agreed with Google on (the Drive file's modifiedTime and a fingerprint of the save), then:

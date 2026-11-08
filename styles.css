@@ -977,3 +977,64 @@ html, body { font-family: var(--round); background: var(--asphalt); }
   .tickets { padding: 0 14px; } .tickets span { font-size: 24px; } .tickets b { font-size: 30px; }
   .lap-btns { gap: 5px; } .classroom .big-btn.go { font-size: 18px; } .classroom .big-btn.small { font-size: 14px; padding-top: 4px; padding-bottom: 4px; }
 }
+
+/* ---------- v1.6: speedometer under the place number ---------- */
+.hud-left { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.speedo { width: clamp(84px, 19vmin, 132px); background: var(--lane); color: var(--ink); border: 3px solid var(--ink); border-radius: 14px 14px 10px 10px; padding: 4px 6px 2px; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+.speedo svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sp-dial { fill: none; stroke: var(--asphalt-3); stroke-width: 8; stroke-linecap: round; }
+.sp-red { fill: none; stroke: var(--flag); stroke-width: 8; stroke-linecap: round; }
+.sp-ticks line { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.sp-needle { transform-box: view-box; transform-origin: 60px 58px; transform: rotate(-90deg); }
+.sp-needle path { fill: var(--flag); }
+.sp-hub { fill: var(--ink); }
+.sp-read { text-align: center; font-size: clamp(11px, 2.8vmin, 15px); font-weight: 800; line-height: 1.1; white-space: nowrap; }
+.sp-read b { font-size: 1.45em; font-variant-numeric: tabular-nums; }
+#hud.trial .speedo { display: none; }
+
+/* ---------- v1.6: 🏦 Piqua National Bank ---------- */
+.bank { flex: 1; width: min(100%, 980px); min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 32px); }
+.vault { position: relative; flex: 0 0 auto; width: clamp(170px, 34vmin, 300px); aspect-ratio: 1; }
+.vault-door { width: 100%; height: 100%; filter: drop-shadow(0 8px 0 rgba(0,0,0,.35)); }
+.vd-rim { fill: #8a95a6; stroke: var(--ink); stroke-width: 4; } .vd-face { fill: #c3ccd8; stroke: #6f7a8b; stroke-width: 3; }
+.vd-bolts circle { fill: #6f7a8b; } .vd-ring { fill: none; stroke: #8a95a6; stroke-width: 6; }
+.vd-wheel { fill: var(--sign); stroke: var(--ink); stroke-width: 3; transform-origin: 100px 100px; transition: transform .6s ease-out; }
+#s-bank:not([hidden]) .vd-wheel { animation: vaultspin 1s ease-out; }
+@keyframes vaultspin { from { transform: rotate(-120deg); } to { transform: none; } }
+.vault-bal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--lane); color: var(--ink); border: 3px solid var(--ink); border-radius: 14px;
+  padding: 2px 12px 4px; text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,.3); white-space: nowrap; }
+.vault-bal small { display: block; font-size: clamp(11px, 2.6vmin, 14px); font-weight: 800; }
+.vault-bal b { font-size: clamp(24px, 7vmin, 40px); font-variant-numeric: tabular-nums; display: inline-block; }
+.vault-bal b.bump { animation: cbump .35s; } .vault-bal .coin { margin-left: 4px; font-size: clamp(20px, 5vmin, 30px); }
+.bank-right { flex: 1; min-width: 0; max-width: 520px; display: flex; flex-direction: column; gap: clamp(6px, 1.6vmin, 12px); }
+.bank-news { background: var(--go); color: #fff; border: 3px solid var(--ink); border-radius: 12px; padding: 6px 12px; font-weight: 800; font-size: clamp(15px, 3.6vmin, 20px); text-align: center; }
+.bank-pay { background: var(--asphalt-2); border: 3px solid var(--lane); border-radius: 12px; padding: 6px 12px; font-weight: 800; font-size: clamp(15px, 3.6vmin, 20px); text-align: center; }
+.bank-pay b { color: var(--sign); }
+.bank-new { text-align: center; opacity: .85; }
+.bank-row { display: flex; align-items: center; gap: 8px; }
+.bank-row > b { width: 4.6em; flex: 0 0 auto; font-size: clamp(15px, 3.6vmin, 19px); }
+.bank-row > span { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.bank-row button { font-weight: 900; font-size: clamp(15px, 3.6vmin, 20px); padding: .35em .3em; border-radius: 12px; background: var(--sign); color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); white-space: nowrap; }
+.bank-row button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.bank-row button[disabled] { background: var(--asphalt-3); color: #9aa3b5; box-shadow: 0 4px 0 rgba(0,0,0,.4); border-color: rgba(0,0,0,.4); }
+#bk-out button:not([disabled]) { background: var(--lane); }
+.bank-max { text-align: center; opacity: .85; font-size: clamp(12px, 2.8vmin, 14px); }
+@media (orientation: portrait) { .bank { flex-direction: column; justify-content: flex-start; } .bank-right { width: 100%; } }
+@media (orientation: landscape) and (max-height: 480px) { .vault { width: clamp(140px, 30vmin, 200px); } .bank-right { gap: 5px; } }
+
+/* ---------- v1.6: inside the buildings ----------
+   Each building's screens show its own room (public/rooms/, drawn by scripts/rooms.mjs) instead of the race, with
+   a soft dark wash so the sticker panels still stand out. */
+.screen[data-room] { background: linear-gradient(rgba(13,17,26,.38), rgba(13,17,26,.62)), var(--room) center bottom / cover no-repeat, var(--asphalt); }
+.screen.dim[data-room] { background: linear-gradient(rgba(13,17,26,.5), rgba(13,17,26,.7)), var(--room) center bottom / cover no-repeat, var(--asphalt); }
+.screen[data-room="garage"] { --room: url("/rooms/garage.svg"); }
+.screen[data-room="lab"] { --room: url("/rooms/lab.svg"); }
+.screen[data-room="school"] { --room: url("/rooms/school.svg"); }
+.screen[data-room="library"] { --room: url("/rooms/library.svg"); }
+.screen[data-room="trophy"] { --room: url("/rooms/trophy.svg"); }
+.screen[data-room="rank"] { --room: url("/rooms/rank.svg"); }
+.screen[data-room="missions"] { --room: url("/rooms/missions.svg"); }
+.screen[data-room="gifts"] { --room: url("/rooms/gifts.svg"); }
+.screen[data-room="carwash"] { --room: url("/rooms/carwash.svg"); }
+.screen[data-room="museum"] { --room: url("/rooms/museum.svg"); }
+.screen[data-room="bank"] { --room: url("/rooms/bank.svg"); }

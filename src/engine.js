@@ -1,5 +1,5 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
-import { THEMES, RIVALS, PHYSICS, diffOf } from "./data.js";
+import { THEMES, RIVALS, PHYSICS, diffOf, MPH } from "./data.js";
 import { drawEmojiText } from "./emoji.js";
 import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES } from "./draw.js";
@@ -609,7 +609,7 @@ export class Race {
     return {
       state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.length) + 1, 1, this.track.laps), laps: this.track.laps,
-      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed / 50),
+      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed / 50), mph: Math.max(0, Math.round(p.speed / BASE_MAX * MPH)),
       progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
     };
   }

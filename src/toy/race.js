@@ -7,7 +7,7 @@
 // on the track (bumping them slows you), curves push you outward (banking helps), hills and loops speed you up
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
-import { RIVALS, PHYSICS, diffOf } from "../data.js";
+import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
@@ -293,7 +293,7 @@ export class ToyRace {
     return {
       state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.L) + 1, 1, this.track.laps), laps: this.track.laps,
-      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed * 10),
+      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed * 10), mph: Math.max(0, Math.round(p.speed / V0 * MPH)),
       progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
     };
   }

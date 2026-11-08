@@ -35,6 +35,7 @@ const FIXTURES = {
   "damaged missions (null entry, unknown kind, no reward)": { v: 14, coins: 777, owned: ["zippy"], rank: 8, missions: { day: "2026-11-07", list: [null, { kind: "fly", goal: 3, have: 0, reward: 100 }, { kind: "wins", goal: 2, have: 1 }] } },
   "v1.1 (math school)": { v: 16, name: "Carter", coins: 800, owned: ["zippy"], rank: 3, school: { tickets: 4, earned: 9, skills: { focus: 2, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "math", m: 15, t: 4 }, { d: "2026-11-01", a: "read", m: 20, t: 4 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 6, laps: 9, lv: 3, p: 1 }, mathMax: "20", capT: 10 } },
   "v1.2 (effects setting)": { v: 17, name: "Carter", coins: 500, owned: ["zippy"], rank: 3, opts: { tilt: false, flip: false, fx: "simple" } },
+  "v1.6 (bank)": { v: 19, name: "Carter", coins: 640, owned: ["zippy"], rank: 6, bank: { bal: 1284, low: 1200, t: 1794100000000, paid: 84, news: 84 } },
   "v1.5 (word laps)": { v: 18, name: "Carter", coins: 700, owned: ["zippy"], rank: 4, school: { tickets: 3, earned: 12, skills: { focus: 2, reflex: 1, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "word", m: 10, t: 3 }, { d: "2026-11-08", a: "math", m: 5, t: 2 }], readingDouble: true, capMin: 0, math: { right: 30, wrong: 4, laps: 7, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 18, wrong: 3, laps: 4, lv: 2, p: 1 }, wordMax: "4" } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
@@ -68,6 +69,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (Number.isFinite(raw.rank)) check(name, S.rank === Math.max(1, raw.rank), "rank lost");
   for (const k of ["stunts", "turbos", "bams", "roadCoins"]) if (raw.stats && typeof raw.stats[k] === "number") check(name, S.stats[k] === raw.stats[k], `stat ${k} lost`);
   if (raw.mastery) for (const [k, v] of Object.entries(raw.mastery)) check(name, S.mastery[k] === v, `mastery ${k} lost`);
+  if (raw.bank) check(name, JSON.stringify(S.bank) === JSON.stringify(raw.bank), "bank lost");
   if (raw.school) { check(name, S.school.tickets === raw.school.tickets && S.school.earned === raw.school.earned, "tickets lost"); for (const [k, v] of Object.entries(raw.school.skills)) check(name, S.school.skills[k] === v, `skill ${k} lost`); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); check(name, S.school.readingDouble === raw.school.readingDouble, "reading setting lost"); if (raw.school.math) check(name, JSON.stringify(S.school.math) === JSON.stringify(raw.school.math) && S.school.mathMax === raw.school.mathMax && S.school.capT === raw.school.capT, "math school progress lost"); if (raw.school.word) check(name, JSON.stringify(S.school.word) === JSON.stringify(raw.school.word) && S.school.wordMax === raw.school.wordMax, "word lap progress lost"); }
   if (raw.parent && raw.parent.license === false) check(name, S.parent.license === false, "license gauge setting lost");
   if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
@@ -90,6 +92,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.stats?.drifts) check(name, S.stats.drifts === raw.stats.drifts, "drift count lost");
   if (raw.stats?.rings) check(name, S.stats.rings === raw.stats.rings, "ring count lost");
   check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object" && S.school.math.lv >= 1 && S.school.math.lv <= 4 && ["add10", "10", "20"].includes(S.school.mathMax) && S.school.word.lv >= 1 && S.school.word.lv <= 4 && ["3", "4", "5"].includes(S.school.wordMax), "school data broken");
+  check(name, S.bank && Number.isInteger(S.bank.bal) && S.bank.bal >= 0 && S.bank.low <= S.bank.bal, "bank data broken");
   check(name, Array.isArray(S.lab.benches) && S.lab.benches.every(b => b.p === null || typeof b.p === "string"), "bad lab benches");
   check(name, Array.isArray(S.parent.diffs) && S.parent.diffs.length > 0, "no allowed difficulty");
   check(name, Array.isArray(S.history) && Array.isArray(S.claimed) && Array.isArray(S.paints), "lists broken");

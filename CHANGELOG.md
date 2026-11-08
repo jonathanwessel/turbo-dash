@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.6.0 — Calmer races, Piqua National Bank and real rooms 🏦
+
+- **Calmer races.** Every race runs at three-quarter speed: the road comes at you 25% slower, so there's more time
+  to steer. Everything slows together (your car, the other racers, jumps, Turbo), so tracks, jumps, wins and coins
+  work exactly as before. The race clock counts race seconds, so old best times and Time Trial medals stay fair.
+- **A speedometer.** A dial under your place shows your speed in mph. Zippy tops out at 45 mph; faster cars,
+  upgrades and Turbo push the needle past 100.
+- **Piqua National Bank** on Main Street, next to the Library. Coins kept in the bank earn 7% every real day (put in
+  100, and a day later there are 107). The bank holds up to 400 coins per rank, so it grows as he ranks up. A red
+  badge on the bank means it paid him while he was away.
+- **Inside the buildings.** The Garage, Turbo Lab, Driver School, Library, Bank, Trophy Room, Rank tower, Missions
+  office, Gift shop, Car Wash and Museum each show their own room instead of a race going by behind the menus.
+  The rooms are drawn in the game's own style (scripts/rooms.mjs). Not drawing the race there also saves battery.
+
 ## v1.5.0 — Word Laps at the Library 📚
 
 - **The Library has its own game.** A Word Lap is 5 reading questions: see a picture and tap its word, or read a
@@ -217,8 +231,7 @@ The 1.0 milestone: everything from the roadmap's 1.0 plan in one big release, th
 - **Every kind of car sounds different:** monster trucks rumble low, sports cars whine high, rockets roar, the
   submarine hums, the fire truck chugs.
 - **Google Save syncs safely between devices.** It now checks what changed on each side since the last sync, so
-  reading tickets logged on one device aren't overwritten by more races on another. (It still needs the Google
-  sign-in key: see README → "Google Save".)
+  reading tickets logged on one device aren't overwritten by more races on another.
 - **Fixes:** the construction-site signs ("RANK 12", "RANK 15", "RANK 20") ran off their boards; the ◀ ▶ scroll
   arrows on Main Street covered building signs (they now sit on the road); "TURBO LAB" was a pixel too wide.
 - **The layout checker now checks Main Street too.** It's drawn as one big picture (SVG), which the checker used
@@ -570,8 +583,7 @@ collisions, plus a race screen made simpler for a 6-year-old.
 - **⭐ Track Mastery**: win a track again and again to earn up to 5 stars per track and difficulty (at 3, 10, 25,
   50 and 100 wins). Stars show on the track cards and count as trophy points.
 - **☁️ Google Save** (Parent Corner): sign in with your Google account to keep a copy of the save in your Google
-  Drive and load it on any device. Needs a one-time sign-in key; see README → "Google Save". Works on the
-  website, not the LAN address.
+  Drive and load it on any device.
 - **Saves from every version load into this one.** Every field is checked and converted, and `npm test` loads a
   save from each past release (plus a deliberately broken one) before every release is allowed to ship.
 - **Undo** in Parent Corner brings back the save from before the last reset or load.

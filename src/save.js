@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -16,7 +16,7 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 0, coinsEarned: 0 }, claimed: [], world: "earth", bosses: {}, daily: {},
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 0, coinsEarned: 0 }, claimed: [], world: "earth", bosses: {}, daily: {}, bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0 },
   trials: {},          // trackId -> best Time Trial time (seconds)
   seen: {},            // one-time moments already shown (seen.toy: the "game levels up" card)
   days: {},            // "YYYY-MM-DD" -> races that day (last 30 days, for the Progress page)
@@ -74,6 +74,8 @@ export function port(d) {
   s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));
   s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));
   s.seen = Object.fromEntries(Object.entries(obj(d.seen)).filter(([, v]) => v === true));
+  // v19 (1.6): Piqua National Bank
+  s.bank = (b => { const bal = Math.round(num(b.bal, 0, 0)); return { bal, low: Math.round(num(b.low, 0, 0, bal)), t: num(b.t, 0, 0), paid: Math.round(num(b.paid, 0, 0)), news: Math.round(num(b.news, 0, 0)) }; })(obj(d.bank));
   s.daily = Object.fromEntries(Object.entries(obj(d.daily)).filter(([, v]) => typeof v === "string"));
 
   // cars: always own Zippy; keep unknown ids (they may belong to a newer version) but never drive one

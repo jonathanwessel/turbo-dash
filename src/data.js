@@ -69,6 +69,7 @@ export const BOSSES = [
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
 export const BUILDINGS = [
   { id: "library", name: "Library", rank: 1 },
+  { id: "bank", name: "Bank", rank: 1 },
   { id: "icecream", name: "Ice Cream", rank: 12 },
   { id: "fire", name: "Fire Station", rank: 15 },
   { id: "park", name: "Park", rank: 20 },
@@ -350,6 +351,40 @@ export function mathChoices(ans, rnd = Math.random) {
   for (let d = 1; c.size < 4; d++) c.add(ans + d);
   return [...c].sort((x, y) => x - y);
 }
+// v1.6 calmer races: the game runs every race at 3/4 time (cars, rivals, jumps, Turbo, everything together), so
+// the road comes at you 25% slower but every track, jump and race result is exactly what it was. The race clock,
+// best times, Time Trial medals and ghosts all count race seconds, so old records stay fair.
+export const PACE = 0.75;
+export const MPH = 45;                 // the speedometer: a starter car's top speed reads 45 mph
+
+/* ---------- 🏦 Piqua National Bank: coins kept in the bank earn 7% every real day ----------
+   Put in 100, and a day later there are 107. Interest is paid on the smallest amount that stayed in the bank the
+   whole day (coins put in later than an hour into a bank day start earning the day after), and only on coins up to the bank's
+   limit, which grows with rank. The first coins in an empty bank start their day right away. */
+export const BANK_RATE = 0.07, BANK_DAY = 24 * 60 * 60 * 1000, BANK_GRACE = 60 * 60 * 1000;
+export const bankMax = rank => 400 * Math.max(1, rank);
+export const bankPayOn = (bank, rank) => Math.round(Math.min(bank.low, bankMax(rank)) * BANK_RATE);
+/* pays every full day since the last payday; returns the coins paid */
+export function bankSettle(bank, rank, now = Date.now()) {
+  if (!bank.bal) { bank.bal = 0; bank.low = 0; bank.t = now; return 0; }
+  if (!(now >= bank.t)) { bank.t = now; return 0; }   // the device clock went backwards: start a fresh day
+  const days = Math.floor((now - bank.t) / BANK_DAY); let paid = 0;
+  for (let i = 0; i < Math.min(days, 90); i++) { const pay = bankPayOn(bank, rank); bank.bal += pay; paid += pay; bank.low = bank.bal; }
+  if (days > 0) bank.t += days * BANK_DAY;
+  bank.paid = (bank.paid || 0) + paid;
+  return paid;
+}
+export function bankDeposit(bank, n, now = Date.now()) {
+  if (!(n > 0)) return;
+  if (!bank.bal) { bank.t = now; bank.low = 0; }   // an empty bank: the day starts now
+  if (now - bank.t < BANK_GRACE) bank.low += n;     // coins added in the first hour of a bank day earn that day
+  bank.bal += n;
+}
+export function bankWithdraw(bank, n) {
+  n = Math.min(n, bank.bal); if (!(n > 0)) return 0;
+  bank.bal -= n; bank.low = Math.min(bank.low, bank.bal); return n;
+}
+
 /* ---------- 📚 Word Lap at the Library: read a word, match it to a picture ----------
    Levels: 1 three-letter words, choices look different · 2 three-letter words, choices look alike (cat, cap, can)
    · 3 four-letter words · 4 longer words. Half the questions show the picture (pick the word), half show the word

@@ -123,6 +123,8 @@ window.__sweep = async (only) => {
   await go("s-word:pic-long", () => td.wordShow({ w: "carrot", pic: "🥕", mode: "pic", choices: [{ w: "carrot", pic: "🥕" }, { w: "parrot" }, { w: "carpet" }] }), "#s-word");
   await go("s-word:word-long", () => td.wordShow({ w: "rabbit", pic: "🐰", mode: "word", choices: [{ w: "rabbit", pic: "🐰" }, { w: "monkey", pic: "🐵" }, { w: "turtle", pic: "🐢" }] }), "#s-word");
   await go("s-word:done", () => td.wordDone(), "#s-word");
+  await go("s-bank", () => td.openBank());
+  await go("s-bank:rich", () => { Object.assign(td.S.bank, { bal: 123456, low: 120000, news: 98765, paid: 1234567, t: Date.now() - 3600e3 }); td.openBank(); }, "#s-bank");
   await go("s-log:painted", () => td.openLog(), "#s-log");
   await go("s-missions", hub("missions"));
   await go("s-lab", hub("lab"));

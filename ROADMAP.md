@@ -1,12 +1,11 @@
 # Roadmap
 
-Turbo Dash is a racing game made for Carter (6), by Carter's Dad, set on Main Street in **Piqua, Ohio**. It is free
+Turbo Dash is a racing game made for Carter, by Carter's Dad, set on Main Street in **Piqua, Ohio**. It is free
 forever: no purchases, no ads, no accounts, no premium currency. Everything is earned by playing, and (from the
 Driver School on) some things are earned by **not** playing: reading, playing outside and helping out.
 
-Releases go to the play server (`npm run play`, port 5183, LAN http://192.168.1.162:5183) **and** to the public
-site https://jonathanwessel.github.io/turbo-dash/ (`git push origin main --tags` after every `npm run release`).
-Carter plays on an Android tablet, in landscape, full screen.
+Releases go to the play server (`npm run play`, port 5183) **and** to the public site
+https://jonathanwessel.github.io/turbo-dash/. It is designed for an Android tablet, in landscape, full screen.
 
 ## Release rules
 1. **Fewer, bigger releases.** Each release is a real chunk of new game. Hotfixes only for things that bother
@@ -210,8 +209,7 @@ plan for it was:
 - **A review of every screen:** a full code review, the career sim, and a save test from every version.
 
 ### v1.1.0 🧮 Math School (shipped)
-The grown-up check was a math question, and Carter learned to answer it and log reading time he never did. So the
-Driver School stops depending on a parent's log and earns its tickets from a math game he plays himself:
+The Driver School stops depending on a parent's log and earns its tickets from a math game the child plays:
 - **Coach Cone's Math Lap:** simple addition and subtraction (sums to 10 at first, then to 20; no negative
   answers), shown as big numbers with pictures (cars, cones, coins) to count. Three or four big answer buttons.
 - **Tickets for right answers:** a lap of 5 questions earns a ticket, with a small streak bonus. A wrong answer just
@@ -234,6 +232,10 @@ The Library had nothing of its own after Math School replaced the reading log. N
 himself: a Word Lap is 5 questions that match a picture to its word or a word to its picture. It starts with
 3-letter words, moves to look-alike choices (cat, cap, can), then 4-letter and longer words. Same tickets and one
 shared daily limit with Math Laps; a grown-up picks the hardest words.
+
+### v1.6.0 🏦 Calmer races, the bank, real rooms (shipped)
+Races at three-quarter speed with an mph speedometer; Piqua National Bank (7% a real day, limit 400 coins per
+rank); every building's menus show the inside of that building.
 
 ### v1.3 – v1.7 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
@@ -265,12 +267,11 @@ showroom, holiday events (Halloween, winter, his birthday), photo mode.
 - The City of Piqua's feather in the Q, if we find a version that looks good (set aside in v0.13).
 
 ## Known issues (not fixed yet)
-- **Google Save** is ready (three-way sync since v0.22) but needs the Google sign-in key (README → "Google Save").
 - Saves from before v0.13.1 lost tracks that were open under the old "3rd place opens the next track" rule but
   never raced.
 - On a device that can't show 3D, the Toy Track World goals and cars can't be finished, and a daily mission can
   still pick a toy track.
 
 ## Notes
-- Over the LAN (`http://`) Chrome can't install the app or use Google Save; the GitHub site can.
+- Over plain `http://` Chrome can't install the app; the https site can.
 - All numbers are starting points; the career simulator and Carter's play decide the final values.

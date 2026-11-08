@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, PACE, BANK_RATE, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
@@ -100,9 +100,10 @@ function frame(now) {
     slowT = frameMs > 24 ? slowT + raw / 1000 : 0;
     if (slowT > 3 && !autoLite) { autoLite = true; setLite(); }
   }
-  if (!paused && screen !== "s-hub") { acc += dt; while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
+  // races run at PACE (3/4 time) once the countdown is over; the countdown keeps real seconds
+  if (!paused && screen !== "s-hub") { acc += dt * (race.state === "countdown" ? 1 : PACE); while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
   if (race === toyRace && toyRace?.view?.lost) { lostT += dt; if (lostT > 0.6) recoverToy(); } else lostT = 0;
-  if (screen !== "s-hub") race.render();
+  if (screen !== "s-hub" && !inRoom) race.render();
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
   if (screen === "s-wash") drawWash(dt);
@@ -134,9 +135,10 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-preview", "s-pvend", "s-math", "s-word", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = ["s-preview", "s-pvend", "s-math", "s-word", "s-bank", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 function show(id) {
-  screen = id;
+  screen = id; inRoom = !!$(id)?.dataset.room;
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
@@ -290,6 +292,7 @@ function updateHud(dt) {
   const h = race.hud();
   if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
   h.progress.forEach((p, i) => { const d = dots[i]; d.style.left = (p.f * 100).toFixed(1) + "%"; d.style.background = p.color; d.classList.toggle("me", p.me); });
+  setText("h-mph", h.mph); $("speedo-needle").style.transform = `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(1)}deg)`;
   $("nitro-fill").style.height = (h.nitroOn ? 100 : h.nitro * 100).toFixed(0) + "%";
   $("btn-nitro").classList.toggle("ready", h.nitro >= 1 && h.state === "race");
   const cd = $("countdown");
@@ -970,6 +973,35 @@ $("word-again").onclick = () => { sfx("click"); openWord(); };
 $("word-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 $("word-back").onclick = () => { sfx("click"); if (wordFrom === "s-school") { paintSchool(); show("s-school"); } else show("s-hub"); };
 
+/* ---------- 🏦 Piqua National Bank ---------- */
+function bankTick() { const paid = bankSettle(S.bank, S.rank); if (paid) { S.bank.news += paid; save(); } }
+const big = n => Math.round(n).toLocaleString("en-US");
+function waitText(ms) { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} h ${m % 60} min` : `${m} min`; }
+function openBank() { bankTick(); paintBank(); show("s-bank"); if (S.bank.news) { sfx("chest"); confetti(90); } }
+function paintBank() {
+  const b = S.bank, cap = bankMax(S.rank), room = Math.max(0, cap - b.bal), pay = bankPayOn(b, S.rank);
+  $("bk-bal").textContent = big(b.bal);
+  $("bk-news").hidden = !b.news;
+  if (b.news) { $("bk-news").innerHTML = `The bank paid you <b>+${big(b.news)} 🪙</b> while you were away!`; b.news = 0; save(); }
+  $("bk-pay").innerHTML = b.bal ? (pay ? `Next payday in ${waitText(b.t + BANK_DAY - Date.now())}: <b>+${big(pay)} 🪙</b>` : `New coins start earning at the next payday, in ${waitText(b.t + BANK_DAY - Date.now())}.`)
+    : `Put coins in the bank. Every day it adds <b>7 for every 100</b>!`;
+  $("bk-new").hidden = !(b.bal > b.low && pay);
+  const ins = [100, 500, Math.min(S.coins, room)], outs = [100, 500, b.bal];
+  $("bk-in").innerHTML = ins.map((n, i) => `<button data-in="${i}" ${n > 0 && n <= S.coins && n <= room ? "" : "disabled"}>${i === 2 ? "All I can" : "🪙 " + big(n)}</button>`).join("");
+  $("bk-out").innerHTML = outs.map((n, i) => `<button data-out="${i}" ${n > 0 && n <= b.bal ? "" : "disabled"}>${i === 2 ? "All of it" : "🪙 " + big(n)}</button>`).join("");
+  $("bk-max").textContent = `At Rank ${S.rank} the bank keeps up to ${big(cap)} 🪙. Rank ${S.rank + 1}: ${big(bankMax(S.rank + 1))} 🪙.`;
+  $("bk-total").textContent = b.paid ? `The bank has paid you ${big(b.paid)} 🪙 so far.` : "";
+}
+$("s-bank").addEventListener("click", e => {
+  const i = e.target.closest("[data-in]"), o = e.target.closest("[data-out]"); if (!i && !o) return;
+  if ((i || o).disabled) return;
+  const b = S.bank, room = Math.max(0, bankMax(S.rank) - b.bal);
+  if (i) { const n = [100, 500, Math.min(S.coins, room)][+i.dataset.in]; if (!(n > 0) || n > S.coins || n > room) { sfx("nope"); return; } S.coins -= n; bankDeposit(b, n); sfx("buy"); }
+  else { const n = bankWithdraw(b, [100, 500, b.bal][+o.dataset.out]); if (!n) { sfx("nope"); return; } S.coins += n; sfx("coin"); }
+  save(); refreshCoins(); paintBank();
+  const v = $("bk-bal"); v.classList.remove("bump"); void v.offsetWidth; v.classList.add("bump");
+});
+
 /* ---------- daily missions ---------- */
 function openMissions() {
   const M = todaysMissions(dayKey(new Date()), unlocked);
@@ -1016,6 +1048,7 @@ function refreshHub() {
       document.querySelectorAll(`#site-${b.id} .pip`).forEach(p => p.setAttribute("fill", +p.dataset.pip < done ? "#5be36a" : "#fff"));
     }
   }
+  bankTick(); tb("tb-bank", S.bank.news > 0);
   tb("tb-icecream", buildingOpen(S, "icecream") && S.daily.icecream !== today());
   tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
   tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
@@ -1043,6 +1076,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
   else if (go === "library") { sfx("click"); openWord("s-hub"); }
+  else if (go === "bank") { sfx("click"); openBank(); }
   else if (go === "carwash" || go === "museum") {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     sfx("click"); if (go === "carwash") openWash(); else openMuseum();
@@ -1318,7 +1352,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();
