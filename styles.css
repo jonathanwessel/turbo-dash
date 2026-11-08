@@ -1068,3 +1068,5 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
   background: var(--sign); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: var(--s1) var(--s4); box-shadow: 0 4px 0 var(--ink); }
 @media (prefers-reduced-motion: reduce) { .ct-hand { animation: none; } }
 .nitro.charging { animation: shake .4s; }
+/* v1.7.3: while Turbo burns, the button glows and its meter drains */
+.nitro.burning { box-shadow: 0 0 22px 6px #ff7a00; }

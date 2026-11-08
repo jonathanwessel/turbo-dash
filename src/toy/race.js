@@ -69,12 +69,13 @@ export class ToyRace {
     if (p === "shield") { this.shieldT = 5; this.popup("SHIELD!", "#3cf2ff"); this.hooks.sfx("boost"); }
     else if (p === "coins") { this.coins += 8; this.popup("+8 COINS!", "#ffd400"); for (let i = 0; i < 6; i++) setTimeout(() => this.hooks.sfx("coin"), i * 70); }
     else if (p === "magnet") { this.magnetT = 8; this.popup("MEGA MAGNET!", "#ff3fa4"); this.hooks.sfx("boost"); }
-    else if (p === "turbo") { this.nitroT = this.stats.nitroTime * 1.6; this.popup("SUPER TURBO!", "#ff7a00"); this.hooks.sfx("nitro"); }
+    else if (p === "turbo") { this.nitroT = this.stats.nitroTime * 1.6; this.nitroFull = 0;   // a free boost: the tank stays as it is
+      this.popup("SUPER TURBO!", "#ff7a00"); this.hooks.sfx("nitro"); }
     return true;
   }
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
-    this.nitro = 0; this.nitroT = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
+    this.nitro = 0; this.nitroT = this.nitroFull = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
   }
   topSpeed() { const S = this.stats; return S.maxSpeed / BASE_MAX * V0 * (this.player.def.toy ? 1 : 0.96); }
 
@@ -292,7 +293,7 @@ export class ToyRace {
     return {
       state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.L) + 1, 1, this.track.laps), laps: this.track.laps,
-      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, speed: Math.round(p.speed * 10), mph: Math.max(0, Math.round(p.speed / V0 * MPH)),
+      coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, tankBurn: this.nitroT > 0 && this.nitroFull ? Math.min(1, this.nitroT / this.nitroFull) : null, speed: Math.round(p.speed * 10), mph: Math.max(0, Math.round(p.speed / V0 * MPH)),
       progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
     };
   }

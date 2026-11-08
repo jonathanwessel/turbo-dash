@@ -25,7 +25,7 @@ let resultT = 0;
 load();
 setAudioOpts({ music: S.music, sfx: S.sfx, volume: S.parent.volume });
 
-const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "🚀" };
+const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "⚡" };   // Super Turbo is ⚡ so it never looks like the 🚀 Turbo button
 const buzz = ms => { if (S.parent.buzz && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate?.(ms); } catch (e) { /* not allowed yet */ } };
 const hooks = {
   sfx: n => { sfx(n); if (n === "bonk") buzz(60); else if (n === "bam" || n === "land") buzz(25); },
@@ -352,7 +352,8 @@ function updateHud(dt) {
   if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
   h.progress.forEach((p, i) => { const d = dots[i]; d.style.left = (p.f * 100).toFixed(1) + "%"; d.style.background = p.color; d.classList.toggle("me", p.me); });
   setText("h-mph", h.mph); $("speedo-needle").style.transform = `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(1)}deg)`;
-  $("nitro-fill").style.height = (h.nitroOn ? 100 : h.nitro * 100).toFixed(0) + "%";
+  // the tank drains while Turbo burns it (a Super Turbo power-up leaves the tank alone)
+  $("nitro-fill").style.height = ((h.tankBurn ?? h.nitro) * 100).toFixed(0) + "%"; $("btn-nitro").classList.toggle("burning", h.nitroOn);
   $("btn-nitro").classList.toggle("ready", h.nitro >= 1 && h.state === "race");
   const cd = $("countdown");
   if (h.state === "countdown") {

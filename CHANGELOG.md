@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.3 — Turbo you can read
+
+- **The Turbo meter drains while Turbo burns.** It used to stay full for the whole boost and only drop to empty at
+  the end, so it looked like Turbo hadn't used the tank. The button also glows while boosting.
+- **Super Turbo has its own ⚡ picture.** The power-up from ❓ boxes used the same 🚀 as the Turbo button, and since
+  it's a free boost that doesn't use the tank, tapping it looked like Turbo firing without emptying. The parent's
+  guide now lists all four power-ups (🛡️ shield, 💰 8 coins, 🧲 magnet, ⚡ Super Turbo).
+
 ## v1.7.2 — Fair Downtown corners
 
 - **Fixed: Downtown kept throwing the car into the trucks.** Its city-block corners pushed the car outward about
