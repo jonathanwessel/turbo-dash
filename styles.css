@@ -817,6 +817,10 @@ img.emo { display: inline-block; width: 1.12em; height: 1.12em; vertical-align: 
   --sign: #ffc928; --sign-lip: #b8860b; --flag: #e4312b; --flag-lip: #9c1d18; --go: #2db34a; --go-lip: #1b7a30; --sky: #5ec4f2;
   --race: "TD Race", "TD Round", system-ui, sans-serif; --round: "TD Round", "Nunito", system-ui, sans-serif;
   --checker: conic-gradient(var(--ink) 25%, var(--lane) 0 50%, var(--ink) 0 75%, var(--lane) 0) 0 0 / 22px 22px;
+  /* v1.7 one grid: spacing steps and a type ramp (new and reworked rules use these) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --t-xs: clamp(11px, 2.6vmin, 13px); --t-sm: clamp(13px, 3.2vmin, 16px); --t-md: clamp(15px, 3.8vmin, 20px);
+  --t-lg: clamp(18px, 4.8vmin, 26px); --t-xl: clamp(24px, 6.5vmin, 38px); --t-xxl: clamp(32px, 9vmin, 60px);
 }
 html, body { margin: 0; height: 100%; overflow: hidden; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; font-family: var(--round); background: var(--asphalt); }
 #town .lbl { font-family: var(--round); }
@@ -1012,3 +1016,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; color: #fff; user-select
 .screen[data-room="carwash"] { --room: url("/rooms/carwash.svg"); }
 .screen[data-room="museum"] { --room: url("/rooms/museum.svg"); }
 .screen[data-room="bank"] { --room: url("/rooms/bank.svg"); }
+
+/* ---------- v1.7: one panel template ----------
+   The back button sits top-LEFT on every panel (like every other tablet app); the coins move to the top-right
+   there so they don't share the corner. The content between the header and the bottom is centred when it fits and
+   scrolls when it doesn't (auto margins collapse to 0 when it overflows). */
+.screen-head .back { left: 0; right: auto; }
+@media (orientation: landscape) and (max-height: 420px) { .screen-head .back { transform-origin: top left; } }
+body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)); }
+.screen.panel > .screen-head + * { margin-top: auto; }
+.screen.panel > :last-child { margin-bottom: auto; }
+.screen-head h2 { padding: 0 64px; text-align: center; }
+/* Settings: tiles in centred rows (7 tiles: 4 + 3, the short row centred) */
+.set-grid { display: flex; flex-wrap: wrap; justify-content: center; align-content: safe center; gap: var(--s3); }
+.set-grid > * { flex: 0 1 200px; }

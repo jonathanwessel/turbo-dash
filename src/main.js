@@ -146,6 +146,7 @@ let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
   screen = id; inRoom = !!$(id)?.dataset.room;
+  document.body.classList.toggle("on-panel", !!$(id)?.classList.contains("panel"));
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
