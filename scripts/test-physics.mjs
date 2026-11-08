@@ -316,5 +316,13 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
 }
 function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
 
+/* ---------- 🎥 the camera starts every race on the car (v1.7.1: it used to keep the last race's position) ---------- */
+{
+  const r = scene("sunny", { from: quietStretch("sunny") });
+  r.player.offset = -0.8; run(r, 1);   // the camera follows the car to the left side
+  r.setup(track("beach"), "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+  check("camera starts on the car", r.camOff == null || Math.abs(r.camOff - r.player.offset) < 1e-9, `camera at ${r.camOff}, car at ${r.player.offset}`);
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

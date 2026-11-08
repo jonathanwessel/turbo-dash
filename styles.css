@@ -1058,3 +1058,13 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .next-plate .np-icon { font-size: 1.3em; line-height: 1; }
 /* short screens: the header is 44px tall, so the back button is too (it sits top-left over content otherwise) */
 @media (max-height: 560px) { .screen-head .back { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; } }
+
+/* v1.7.1: the first-race lesson (hands bounce above the buttons) and Turbo-not-full feedback */
+.coach-tips { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+.coach-tips[hidden], .ct-hand[hidden] { display: none; }
+.ct-hand { position: absolute; transform: translate(-50%, -100%); font-size: clamp(44px, 11vmin, 80px); line-height: 1; animation: ctbounce .7s ease-in-out infinite alternate; filter: drop-shadow(0 4px 0 rgba(0,0,0,.35)); }
+@keyframes ctbounce { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, -80%); } }
+.ct-say { position: absolute; left: 50%; top: 32%; transform: translateX(-50%); white-space: nowrap; font-size: var(--t-lg); font-weight: 900;
+  background: var(--sign); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: var(--s1) var(--s4); box-shadow: 0 4px 0 var(--ink); }
+@media (prefers-reduced-motion: reduce) { .ct-hand { animation: none; } }
+.nitro.charging { animation: shake .4s; }

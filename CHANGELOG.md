@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.1 — Learn to steer
+
+- **The first race teaches the controls.** On a new player's first race, bouncing hands point at ◀ and ▶ with
+  "Hold ◀ or ▶ to steer!" until both have been used, then at 🚀 the first time Turbo is full, until it's used.
+- **Turbo always answers.** Tapping 🚀 before the meter is full used to do nothing; now the button shakes, a
+  "nope" sounds and "Turbo is filling up!" shows, so it never feels broken.
+- **Fixed:** at the start of a race the view could sit off to one side (the car drawn right of centre) because the
+  camera kept its position from the race before. It now starts on the car every race.
+
 ## v1.7.0 — Clean screens, real road 🛣️
 
 **Driving**

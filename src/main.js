@@ -125,7 +125,14 @@ function holdButton(el, on, off) {
 }
 holdButton($("btn-left"), () => race.input.left = true, () => race.input.left = false);
 holdButton($("btn-right"), () => race.input.right = true, () => race.input.right = false);
-$("btn-nitro").addEventListener("pointerdown", e => { e.preventDefault(); race.useNitro(); });
+$("btn-nitro").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  if (race.useNitro() || race.state !== "race" || race.player.finished) return;
+  // not full yet: say so, so it never feels like the button is broken
+  sfx("nope"); const b = $("btn-nitro"); b.classList.remove("charging"); void b.offsetWidth; b.classList.add("charging");
+  if (!nitroToldAt || race.t - nitroToldAt > 6) { nitroToldAt = race.t; race.popup?.("Turbo is filling up!", "#ffd400"); }
+});
+let nitroToldAt = 0;
 $("btn-power").addEventListener("pointerdown", e => { e.preventDefault(); race.usePower(); });
 // Touching the left or right half of the race picture also steers.
 const touches = new Map();
@@ -163,8 +170,9 @@ function back() {
   navBack = true;
   try { if (!id) show("s-hub"); else (REOPEN[id] || (() => show(id)))(); } finally { navBack = false; }
 }
+addEventListener("resize", () => { if (coach) paintCoach(); });
 function setRaceUi(on) {
-  if (!on) { classic.input.axis = null; if (toyRace) toyRace.input.axis = null; setRain(false); classic.weather = null; classic.puddles = new Map(); } $("hud").hidden = !on; $("controls").hidden = !on; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
+  if (!on) { classic.input.axis = null; if (toyRace) toyRace.input.axis = null; setRain(false); classic.weather = null; classic.puddles = new Map(); } $("hud").hidden = !on; $("controls").hidden = !on; if (!on) $("coach-tips").hidden = true; if (!on) { $("countdown").hidden = true; $("btn-power").hidden = true; setWater(false); } }
 
 function goFullscreen() {
   if (matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || document.fullscreenElement) return;
@@ -300,7 +308,8 @@ function startRace(track) {
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  show(null); setRaceUi(true); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
+  nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
+  show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
 }
@@ -313,8 +322,33 @@ function buildProgress(n = 6) {
   for (let i = 0; i < n; i++) { const d = document.createElement("i"); box.appendChild(d); dots.push(d); }
 }
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
+/* 👆 the first race of a new save teaches the controls: hands point at ◀ and ▶ until he has steered both ways,
+   then at 🚀 the first time Turbo is full, until he uses it */
+let coach = null;
+function paintCoach() {
+  const el = $("coach-tips"); el.hidden = !coach || coach.stage === "done";
+  if (el.hidden) return;
+  const steer = coach.stage === "steer", turbo = coach.stage === "turbo";
+  $("ct-l").hidden = $("ct-r").hidden = !steer; $("ct-t").hidden = !turbo;
+  $("ct-say").innerHTML = steer ? "Hold ◀ or ▶ to steer!" : "Tap 🚀 for a Turbo boost!";
+  // each hand sits just above its button, wherever the buttons are on this screen
+  for (const [hand, btn] of [["ct-l", "btn-left"], ["ct-r", "btn-right"], ["ct-t", "btn-nitro"]]) {
+    const b = $(btn).getBoundingClientRect(), hEl = $(hand); if (!b.width) continue;
+    hEl.style.left = (b.left + b.width / 2) + "px"; hEl.style.top = (b.top - 8) + "px";
+  }
+}
+function tickCoach(dt, h) {
+  if (!coach || coach.stage === "done") return;
+  coach.t += dt;
+  if (race.input.left) coach.l += dt; if (race.input.right) coach.r += dt;
+  if (coach.stage === "steer" && ((coach.l > 0.3 && coach.r > 0.3) || coach.t > 25)) { coach.stage = "wait"; if (coach.t <= 25) toast("👍 Great steering!"); paintCoach(); }
+  if (coach.stage === "wait" && h.nitro >= 1 && h.state === "race") { coach.stage = "turbo"; coach.tt = 0; paintCoach(); }
+  if (coach.stage === "turbo") { coach.tt += dt; if (h.nitroOn || coach.tt > 12) { coach.stage = "done"; paintCoach(); } }
+  if (h.state === "done") { coach.stage = "done"; paintCoach(); }
+}
 function updateHud(dt) {
   const h = race.hud();
+  tickCoach(dt, h);
   if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
   h.progress.forEach((p, i) => { const d = dots[i]; d.style.left = (p.f * 100).toFixed(1) + "%"; d.style.background = p.color; d.classList.toggle("me", p.me); });
   setText("h-mph", h.mph); $("speedo-needle").style.transform = `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(1)}deg)`;

@@ -218,7 +218,7 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false;
-    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false;
+    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null;   // the camera starts centred on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
