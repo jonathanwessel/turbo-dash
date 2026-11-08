@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.1 — Smooth calmer races
+
+- **Fixed: races stuttered after v1.6.** The calmer pace skipped one physics step in four, so on a 60 Hz screen
+  one frame in four showed the same picture twice. Now the game runs one step every frame and makes each step a
+  little shorter, so the road moves smoothly at the same calmer speed. (`npm test` now checks this:
+  scripts/test-pace.mjs.)
+- **Fixed:** at the top of a hill, road from behind the crest could draw over the road in front.
+- Side bumps push the same amount however fast the game runs.
+
 ## v1.6.0 — Calmer races, Piqua National Bank and real rooms 🏦
 
 - **Calmer races.** Every race runs at three-quarter speed: the road comes at you 25% slower, so there's more time

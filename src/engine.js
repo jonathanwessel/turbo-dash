@@ -498,7 +498,7 @@ export class Race {
         } else if (Math.abs(g) < SEG * 0.45) {
           // side by side: the rival gets nudged aside and wobbles. Only steering INTO it costs a little speed (1%).
           const dir = p.offset >= c.offset ? 1 : -1, into = steer !== 0 && Math.sign(steer) === -dir;
-          p.offset += dir * 0.06; c.offset -= dir * 0.21; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8); c.wobT = 0.5;
+          p.offset += dir * 0.06 * dt * 60; c.offset -= dir * 0.21 * dt * 60; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8); c.wobT = 0.5;
           if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; if (into) { p.speed *= 0.99; c.speed *= 0.99; } this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
         } else if (g > 0 && p.speed > c.speed) {
           // catching a slower car from behind: ease off (no wall), stay behind it, and slide a little to get around
@@ -638,7 +638,7 @@ export class Race {
       if (s.p1.camera.z <= depth || s.p2.screen.y >= s.p1.screen.y || s.p2.screen.y >= maxy) continue;
       this.drawSegment(ctx, s, th, W);
       if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || th.sky[1]; ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
-      maxy = s.p1.screen.y;
+      maxy = s.p2.screen.y;   // the far edge: nothing behind a hill crest draws over the road in front
     }
 
     // rivals by segment

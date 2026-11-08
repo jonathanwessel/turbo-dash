@@ -1,5 +1,6 @@
-import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, PACE, BANK_RATE, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_RATE, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
+import { advance } from "./pace.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -18,7 +19,6 @@ const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
 const $ = id => document.getElementById(id);
 const canvas = $("game");
-const STEP = 1 / 60;
 let resultT = 0;
 
 load();
@@ -86,7 +86,8 @@ function resize() {
 addEventListener("resize", () => resize());
 
 /* ---------- game loop ---------- */
-let mode = "menu", screen = "s-title", paused = false, last = performance.now(), acc = 0, goT = 0, lastReal = performance.now();
+const clock = { acc: 0 };
+let mode = "menu", screen = "s-title", paused = false, last = performance.now(), goT = 0, lastReal = performance.now();
 const NOT_PLAYING = ["s-rest", "s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-grownup", "s-reset", "s-update"];
 let frameMs = 16.7, slowT = 0, autoLite = false;
 function setLite() {
@@ -100,8 +101,8 @@ function frame(now) {
     slowT = frameMs > 24 ? slowT + raw / 1000 : 0;
     if (slowT > 3 && !autoLite) { autoLite = true; setLite(); }
   }
-  // races run at PACE (3/4 time) once the countdown is over; the countdown keeps real seconds
-  if (!paused && screen !== "s-hub") { acc += dt * (race.state === "countdown" ? 1 : PACE); while (acc >= STEP) { race.update(STEP); acc -= STEP; } } else acc = 0;
+  // one physics step per real 1/60 s; races run at PACE by slowing each step (src/pace.js)
+  if (!paused && screen !== "s-hub") advance(clock, dt, race); else clock.acc = 0;
   if (race === toyRace && toyRace?.view?.lost) { lostT += dt; if (lostT > 0.6) recoverToy(); } else lostT = 0;
   if (screen !== "s-hub" && !inRoom) race.render();
   if (mode === "race") updateHud(dt);
