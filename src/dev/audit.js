@@ -8,7 +8,7 @@ window.__audit = (rootSel) => {
   const vis = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const s = getComputedStyle(e); if (s.display === "none" || s.visibility === "hidden" || +s.opacity < 0.05 || e.hidden) return false; } const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; };
   const textRect = el => { const rs = []; for (const n of el.childNodes) if (n.nodeType === 3 && n.textContent.trim()) { const rg = document.createRange(); rg.selectNodeContents(n); for (const r of rg.getClientRects()) if (r.width > 0) rs.push(r); } if (!rs.length) return null; const x0 = Math.min(...rs.map(r => r.left)), y0 = Math.min(...rs.map(r => r.top)), x1 = Math.max(...rs.map(r => r.right)), y1 = Math.max(...rs.map(r => r.bottom)); return { left: x0, top: y0, right: x1, bottom: y1 }; };
   const name = e => (e.id ? "#" + e.id : e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : "")) + ` "${(e.textContent || "").trim().slice(0, 24)}"`;
-  const items = [];
+  const items = [], unreachable = [];
   for (const e of root.querySelectorAll("*")) {
     if (!vis(e)) continue;
     if (e.closest("svg")) continue;
@@ -22,6 +22,10 @@ window.__audit = (rootSel) => {
       const s = getComputedStyle(a);
       if (/(auto|scroll)/.test(s.overflowX + s.overflowY)) {
         scrolled = true; const ar = a.getBoundingClientRect();
+        // the hidden part must really be reachable by scrolling (content spilling out of a fixed-height box isn't)
+        const below = r.bottom - ar.bottom, right = r.right - ar.right;
+        if ((below > 3 && a.scrollTop + a.clientHeight + below > a.scrollHeight + 3 && /(auto|scroll)/.test(s.overflowY)) || (right > 3 && a.scrollLeft + a.clientWidth + right > a.scrollWidth + 3 && /(auto|scroll)/.test(s.overflowX)) || (below > 3 && !/(auto|scroll)/.test(s.overflowY)))
+          unreachable.push(name(e) + " in " + name(a));
         if (r.bottom < ar.top + 2 || r.top > ar.bottom - 2 || r.right < ar.left + 2 || r.left > ar.right - 2) hiddenByScroll = true;   // scrolled out of view
         else r = { left: Math.max(r.left, ar.left), top: Math.max(r.top, ar.top), right: Math.min(r.right, ar.right), bottom: Math.min(r.bottom, ar.bottom) };   // only the part you can see
         break;
@@ -30,8 +34,8 @@ window.__audit = (rootSel) => {
     }
     if (!hiddenByScroll) items.push({ e, r, scrolled, clipped });
   }
-  const issues = [];
-  const BAD = /\b(null|undefined|NaN|Infinity)\b|\[object/;
+  const issues = unreachable.map(u => "CAN'T SCROLL TO " + u);
+  const BAD =/\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));
   const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -115,6 +119,10 @@ window.__sweep = async (only) => {
   await go("s-math:minus", () => td.mathShow({ a: 10, b: 7, op: "-", ans: 3 }), "#s-math");
   await go("s-math:big", () => td.mathShow({ a: 18, b: 9, op: "-", ans: 9 }), "#s-math");
   await go("s-math:done", () => td.mathDone(), "#s-math");
+  await go("s-word", async () => { await hub("library")(); await wait(60); });
+  await go("s-word:pic-long", () => td.wordShow({ w: "carrot", pic: "🥕", mode: "pic", choices: [{ w: "carrot", pic: "🥕" }, { w: "parrot" }, { w: "carpet" }] }), "#s-word");
+  await go("s-word:word-long", () => td.wordShow({ w: "rabbit", pic: "🐰", mode: "word", choices: [{ w: "rabbit", pic: "🐰" }, { w: "monkey", pic: "🐵" }, { w: "turtle", pic: "🐢" }] }), "#s-word");
+  await go("s-word:done", () => td.wordDone(), "#s-word");
   await go("s-log:painted", () => td.openLog(), "#s-log");
   await go("s-missions", hub("missions"));
   await go("s-lab", hub("lab"));

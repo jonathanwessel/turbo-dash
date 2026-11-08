@@ -350,7 +350,53 @@ export function mathChoices(ans, rnd = Math.random) {
   for (let d = 1; c.size < 4; d++) c.add(ans + d);
   return [...c].sort((x, y) => x - y);
 }
-export const ticketsFor = (activity, minutes, readingDouble) => Math.floor(minutes / 10) * (activity === "read" && readingDouble ? 2 : 1);
+/* ---------- 📚 Word Lap at the Library: read a word, match it to a picture ----------
+   Levels: 1 three-letter words, choices look different · 2 three-letter words, choices look alike (cat, cap, can)
+   · 3 four-letter words · 4 longer words. Half the questions show the picture (pick the word), half show the word
+   (pick the picture). A grown-up picks the top level: "3", "4" or "5" (longer words). */
+export const WORD_LAP = 5;
+export const WORD_LEVELS = { "3": 2, "4": 3, "5": 4 };
+// every word here has its own picture; a picture word is never also a fair answer for another picture
+export const WORDS = [
+  ["cat", "🐱"], ["dog", "🐶"], ["sun", "☀️"], ["bus", "🚌"], ["pig", "🐷"], ["bed", "🛏️"], ["hat", "🎩"], ["box", "📦"],
+  ["car", "🚗"], ["bee", "🐝"], ["cow", "🐮"], ["fox", "🦊"], ["egg", "🥚"], ["map", "🗺️"], ["bat", "🦇"], ["ant", "🐜"],
+  ["owl", "🦉"], ["key", "🔑"], ["pie", "🥧"], ["pen", "🖊️"],
+  ["fish", "🐟"], ["frog", "🐸"], ["duck", "🦆"], ["star", "⭐"], ["cake", "🎂"], ["boat", "⛵"], ["tree", "🌳"], ["moon", "🌙"],
+  ["ball", "⚽"], ["kite", "🪁"], ["lion", "🦁"], ["bear", "🐻"], ["drum", "🥁"], ["corn", "🌽"],
+  ["milk", "🥛"], ["sock", "🧦"], ["shoe", "👟"], ["door", "🚪"], ["bell", "🔔"], ["gift", "🎁"],
+  ["truck", "🚚"], ["train", "🚆"], ["horse", "🐴"], ["apple", "🍎"], ["house", "🏠"], ["snake", "🐍"], ["robot", "🤖"],
+  ["pizza", "🍕"], ["zebra", "🦓"], ["tiger", "🐯"], ["whale", "🐳"], ["cloud", "☁️"], ["chair", "🪑"], ["clock", "⏰"],
+  ["sheep", "🐑"], ["mouse", "🐭"], ["plane", "✈️"], ["rocket", "🚀"], ["turtle", "🐢"], ["banana", "🍌"], ["rabbit", "🐰"],
+  ["monkey", "🐵"], ["cookie", "🍪"], ["pencil", "✏️"], ["carrot", "🥕"],
+].map(([w, pic]) => ({ w, pic }));
+// look-alike words that are never shown as a picture (so they can never be a right answer by mistake)
+const LOOKALIKE = ("can cap cut hot hut hit hop top tip tap pan pin pot rug run sit bag big bit bun dig dot fan fin fun hug jam " +
+  "jog lid lip log mad man mat mop mud nap nod nut pat pet rat ten tub web wet win yes zip " +
+  "and art own owe leg peg beg see bet sum fix fog how now bow hey hen tie lie " +
+  "dish wish from flag drop dock deck luck stop step stay care cane coat beat boot free trap trip noon mood band bend tall wall call " +
+  "bite kick lime line bean shop slip drip mild mile rock lock sack show doll good lift left born horn silk mill rest best nest " +
+  "make lake bake tuck barn cord core " +
+  "track trick trunk brain grain hours shake robin rocks pocket prize tired timer while white could cloth chain charm " +
+  "click block sleep sheet plant place plate little purple ribbon money rookie pebble parrot carpet").split(" ");
+const wlen = lv => lv <= 2 ? [3, 3] : lv === 3 ? [4, 4] : [5, 6];
+const alike = (a, b) => { let n = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] === b[i]) n++; return n + (a[0] === b[0] ? 1 : 0) + [...new Set(b)].filter(c => a.includes(c)).length * 0.5; };
+export function wordQuestion(lv, rnd = Math.random, seen = new Set()) {
+  const [lo, hi] = wlen(lv), pool = WORDS.filter(x => x.w.length >= lo && x.w.length <= hi);
+  const fresh = pool.filter(x => !seen.has(x.w)), ans = (fresh.length ? fresh : pool)[Math.floor(rnd() * (fresh.length || pool.length))];
+  const mode = rnd() < 0.5 ? "pic" : "word";   // "pic": show the picture, pick the word · "word": show the word, pick the picture
+  const pick = (cands, n) => {
+    const scored = cands.filter(c => c !== ans.w).map(c => ({ c, s: (lv >= 2 ? alike(ans.w, c) : -alike(ans.w, c)) + rnd() * (lv >= 2 ? 0.8 : 1.5) }));
+    if (lv < 2) scored.forEach(x => { if (x.c[0] === ans.w[0]) x.s -= 9; });   // level 1: no two choices start alike
+    return scored.sort((a, b) => b.s - a.s).slice(0, n).map(x => x.c);
+  };
+  const near = w => w.length >= lo - (lv >= 4 ? 1 : 0) && w.length <= hi + (lv >= 4 ? 1 : 0);
+  let others;
+  if (mode === "pic") others = pick([...new Set([...pool.map(x => x.w), ...LOOKALIKE.filter(near)])], 2);
+  else others = pick(pool.map(x => x.w), 2);
+  const words = [ans.w, ...others].sort(() => rnd() - 0.5);
+  return { w: ans.w, pic: ans.pic, mode, choices: words.map(w => ({ w, pic: WORDS.find(x => x.w === w)?.pic || null })) };
+}
+export const ticketsFor =(activity, minutes, readingDouble) => Math.floor(minutes / 10) * (activity === "read" && readingDouble ? 2 : 1);
 export const SKILLS = [
   { id: "focus", icon: "🎯", name: "Focus", desc: "Curves pull you less" },
   { id: "reflex", icon: "⚡", name: "Reflexes", desc: "Turbo fills faster" },

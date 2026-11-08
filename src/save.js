@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -38,7 +38,8 @@ const DEFAULTS = () => ({
   cloud: { linked: false },   // Google Save
   // Driver School: tickets come from real-world time a grown-up logs; skills are bought with tickets
   school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], readingDouble: true, capMin: 0,
-    math: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, mathMax: "10", capT: 6 },
+    math: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, mathMax: "10", capT: 6,
+    word: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, wordMax: "5" },
 });
 
 export let S = DEFAULTS();
@@ -150,6 +151,9 @@ export function port(d) {
     math: (m => ({ right: Math.round(num(m.right, 0, 0)), wrong: Math.round(num(m.wrong, 0, 0)), laps: Math.round(num(m.laps, 0, 0)), lv: Math.round(num(m.lv, 1, 1, 4)), p: Math.round(num(m.p, 0, 0, 9)) }))(obj(sc.math)),
     mathMax: ["add10", "10", "20"].includes(sc.mathMax) ? sc.mathMax : "10",
     capT: [3, 6, 10, 0].includes(sc.capT) ? sc.capT : 6,
+    // v18 (1.5): Word Laps at the Library
+    word: (m => ({ right: Math.round(num(m.right, 0, 0)), wrong: Math.round(num(m.wrong, 0, 0)), laps: Math.round(num(m.laps, 0, 0)), lv: Math.round(num(m.lv, 1, 1, 4)), p: Math.round(num(m.p, 0, 0, 9)) }))(obj(sc.word)),
+    wordMax: ["3", "4", "5"].includes(sc.wordMax) ? sc.wordMax : "5",
   };
   s.v = SAVE_VERSION;
   return s;

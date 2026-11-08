@@ -229,6 +229,12 @@ Drafting, friendlier bumps, solid guardrails, landing squash; skid marks, Turbo 
 tunnels, a night track with headlights, a sunset; a glossier Toy Track World with bouncy toys; an Effects setting;
 the garage grid; world previews; the 🏙️ Downtown bonus course.
 
+### v1.5.0 📚 Word Laps at the Library (shipped)
+The Library had nothing of its own after Math School replaced the reading log. Now it has a reading game he plays
+himself: a Word Lap is 5 questions that match a picture to its word or a word to its picture. It starts with
+3-letter words, moves to look-alike choices (cat, cap, can), then 4-letter and longer words. Same tickets and one
+shared daily limit with Math Laps; a grown-up picks the hardest words.
+
 ### v1.3 – v1.7 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.

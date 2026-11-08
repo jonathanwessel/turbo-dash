@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
+import { BONUS_TRACKS, BONUS_IDS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, SKILLS, SKILL_MAX, LICENSES, skillCost, lessonsOf, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, licenseLevel, GOALS, PLAYER, CUPS, CUP_POINTS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialMedal, trialPay } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
@@ -134,7 +134,7 @@ addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = tr
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
-const SCREENS = ["s-preview", "s-pvend", "s-math", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
+const SCREENS = ["s-preview", "s-pvend", "s-math", "s-word", "s-wash", "s-museum", "s-progress", "s-guide", "s-name", "s-title", "s-hub", "s-tracks", "s-garage", "s-result", "s-pause", "s-gift", "s-trophies", "s-parent", "s-update", "s-rank", "s-rankup", "s-lab", "s-cupend", "s-missions", "s-rest", "s-settings", "s-grownup", "s-reset", "s-school", "s-log", "s-boss"];
 function show(id) {
   screen = id;
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -816,7 +816,7 @@ $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
 /* ---------- 🚦 Driver School ---------- */
-const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Math makes great drivers!", "A Math Lap earns tickets!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!"];
+const COACH = () => ["Hi " + who() + "! Ready for a lesson?", "Math makes great drivers!", "A Math Lap earns tickets!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!", "Reading makes great drivers too!", "A Word Lap at the Library earns tickets!"];
 function openSchool() {
   { const L = COACH(); $("coach-say").textContent = L[Math.floor(Math.random() * L.length)]; }
   paintSchool(); show("s-school");
@@ -838,7 +838,7 @@ $("skills").addEventListener("click", e => {
   const b = e.target.closest("[data-learn]"); if (!b) return;
   const id = b.dataset.learn, sc = S.school, lv = sc.skills[id];
   if (lv >= SKILL_MAX) { sfx("click"); return; }
-  if (sc.tickets < skillCost(lv)) { sfx("nope"); toast("🎟️ Do a Math Lap to earn tickets!"); return; }
+  if (sc.tickets < skillCost(lv)) { sfx("nope"); toast("🎟️ Do a Math Lap or a Word Lap to earn tickets!"); return; }
   const before = licenseLevel(S);
   sc.tickets -= skillCost(lv); sc.skills[id]++; save(); sfx("buy");
   paintSchool(); $("skills").querySelector(`[data-sk="${id}"]`)?.classList.add("flash");
@@ -850,24 +850,33 @@ $("skills").addEventListener("click", e => {
 });
 // grown-up settings for the Math School (behind the grown-up check)
 $("sch-log").onclick = () => { sfx("click"); grownUp("s-school", openLog); };
-const mathToday = () => { const e = S.school.log[0]; return e && e.a === "math" && e.d === dayKey(new Date()) ? e : null; };
-const ticketsLeftToday = () => S.school.capT ? Math.max(0, S.school.capT - (mathToday()?.t || 0)) : Infinity;
+const LAPS = ["math", "word"];
+const lapToday = a => { const d = dayKey(new Date()); return S.school.log.find(e => e.a === a && e.d === d) || null; };
+const lapsToday = () => LAPS.map(lapToday).filter(Boolean);
+const ticketsLeftToday = () => S.school.capT ? Math.max(0, S.school.capT - lapsToday().reduce((n, e) => n + (e.t || 0), 0)) : Infinity;
+function lapEntry(a) {
+  let e = lapToday(a); if (e) return e;
+  const sc = S.school; e = { d: dayKey(new Date()), a, m: 0, t: 0 }; sc.log.unshift(e); sc.log.length = Math.min(sc.log.length, 60); return e;
+}
 function openLog() { paintLog(); show("s-log"); }
 function paintLog() {
-  const sc = S.school, m = sc.math, today = mathToday(), pct = m.right + m.wrong ? Math.round(100 * m.right / (m.right + m.wrong)) : 0;
-  $("log-today").textContent = `Today: ${today ? today.m : 0} questions and 🎟️ ${today ? today.t : 0} earned${sc.capT ? ` (most ${sc.capT})` : ""}. All time: ${m.laps} laps, ${pct}% right.`;
+  const sc = S.school, m = sc.math, w = sc.word, today = lapsToday(), pct = x => x.right + x.wrong ? Math.round(100 * x.right / (x.right + x.wrong)) : 0;
+  const qs = today.reduce((n, e) => n + e.m, 0), ts = today.reduce((n, e) => n + e.t, 0);
+  $("log-today").textContent = `Today: ${qs} questions and 🎟️ ${ts} earned${sc.capT ? ` (most ${sc.capT})` : ""}. All time: ${m.laps} Math Laps (${pct(m)}% right), ${w.laps} Word Laps (${pct(w)}% right).`;
   $("log-lvl").innerHTML = [["add10", "Adding to 10"], ["10", "+ and − to 10"], ["20", "+ and − to 20"]].map(([v, l]) => `<button data-lvl="${v}" class="${sc.mathMax === v ? "on" : ""}">${l}</button>`).join("");
+  $("log-wlvl").innerHTML = [["3", "3 letters"], ["4", "4 letters"], ["5", "Longer words"]].map(([v, l]) => `<button data-wlvl="${v}" class="${sc.wordMax === v ? "on" : ""}">${l}</button>`).join("");
   $("log-cap").innerHTML = MATH_CAPS.map(n => `<button data-cap="${n}" class="${sc.capT === n ? "on" : ""}">${n || "No limit"}</button>`).join("");
   $("log-lic").innerHTML = [true, false].map(v => `<button data-lic="${v}" class="${S.parent.license === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
-  const name = id => id === "math" ? { icon: "🧮", name: "Math Laps" } : ACTIVITIES.find(a => a.id === id);
-  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} ${e.a === "math" ? "questions" : "min"}</span><span>🎟️ ${e.t}</span>`).join("");
+  const name = id => id === "math" ? { icon: "🧮", name: "Math Laps" } : id === "word" ? { icon: "📚", name: "Word Laps" } : ACTIVITIES.find(a => a.id === id);
+  $("log-hist").innerHTML = sc.log.slice(0, 12).map(e => `<span>${e.d.slice(5)}</span><span>${name(e.a)?.icon || ""} ${name(e.a)?.name || ""}</span><span>${e.m} ${LAPS.includes(e.a) ? "questions" : "min"}</span><span>🎟️ ${e.t}</span>`).join("");
 }
 $("s-log").addEventListener("click", e => {
-  const v = e.target.closest("[data-lvl]"), c = e.target.closest("[data-cap]"), l = e.target.closest("[data-lic]");
+  const v = e.target.closest("[data-lvl]"), c = e.target.closest("[data-cap]"), l = e.target.closest("[data-lic]"), wv = e.target.closest("[data-wlvl]");
   if (v) { S.school.mathMax = v.dataset.lvl; S.school.math.lv = Math.min(S.school.math.lv, MATH_LEVELS[v.dataset.lvl]); save(); }
+  if (wv) { S.school.wordMax = wv.dataset.wlvl; S.school.word.lv = Math.min(S.school.word.lv, WORD_LEVELS[wv.dataset.wlvl]); save(); }
   if (c) { S.school.capT = +c.dataset.cap; save(); }
   if (l) { S.parent.license = l.dataset.lic === "true"; save(); }
-  if (v || c || l) { sfx("click"); paintLog(); }
+  if (v || c || l || wv) { sfx("click"); paintLog(); }
 });
 $("log-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 
@@ -875,7 +884,8 @@ $("log-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); }
 const MATH_PICS = ["🚗", "🚙", "🪙", "⭐", "🍎", "🦆", "🎈", "🍪"];
 let mqSeen = new Set(), mq = null, mqN = 0, mqMiss = 0, mqFirst = true, mqLock = false, mqPic = "🚗";
 function openMath() { mqSeen = new Set(); mqN = 0; mqMiss = 0; mqPic = MATH_PICS[Math.floor(Math.random() * MATH_PICS.length)]; $("s-math").classList.remove("finished"); $("math-done").hidden = true; nextMath(); show("s-math"); }
-function paintLap() { $("math-lap").innerHTML = Array.from({ length: MATH_LAP }, (_, i) => `<i class="${i < mqN ? "done" : i === mqN ? "car" : ""}">${i < mqN ? "⭐" : i === mqN ? "🏎️" : "⚪"}</i>`).join("") + `<i class="done">${mqN >= MATH_LAP ? "🏎️" : "🏁"}</i>`; }
+const lapTrack = (n, total) => Array.from({ length: total }, (_, i) => `<i class="${i < n ? "done" : i === n ? "car" : ""}">${i < n ? "⭐" : i === n ? "🏎️" : "⚪"}</i>`).join("") + `<i class="done">${n >= total ? "🏎️" : "🏁"}</i>`;
+function paintLap() { $("math-lap").innerHTML = lapTrack(mqN, MATH_LAP); }
 function nextMath(force) {
   const m = S.school.math, top = MATH_LEVELS[S.school.mathMax] || 3;
   let q = force; if (!q) for (let k = 0; k < 30; k++) { q = mathQuestion(Math.min(m.lv, top)); if (!mqSeen.has(q.a + q.op + q.b)) break; }   // no repeats in a lap
@@ -905,7 +915,7 @@ function finishLap() {
   // two perfect laps in a row move up a level; a lap with lots of tries moves back down
   m.p = perfect ? m.p + 1 : 0;
   if (m.p >= 2 && m.lv < top) { m.lv++; m.p = 0; } else if (mqMiss >= 4 && m.lv > 1) m.lv--;
-  let e = mathToday(); if (!e) { e = { d: dayKey(new Date()), a: "math", m: 0, t: 0 }; sc.log.unshift(e); sc.log.length = Math.min(sc.log.length, 60); }
+  const e = lapEntry("math");
   e.m += MATH_LAP; e.t += got; sc.tickets += got; sc.earned += got; save();
   $("s-math").classList.add("finished"); $("math-done").hidden = false;
   $("math-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great math, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
@@ -915,6 +925,50 @@ function finishLap() {
 $("sch-math").onclick = () => { sfx("click"); openMath(); };
 $("math-again").onclick = () => { sfx("click"); openMath(); };
 $("math-school").onclick = $("math-back").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+
+/* ---------- 📚 Word Lap at the Library: match words and pictures; every lap earns a ticket ----------
+   Half the questions show a picture (tap its word), half show a word (tap its picture). Same tickets and daily
+   limit as a Math Lap; two perfect laps move up a level (3-letter words, then look-alike words, 4 letters, longer). */
+let wqSeen = new Set(), wq = null, wqN = 0, wqMiss = 0, wqLock = false, wordFrom = "s-hub";
+function openWord(from) { if (from) wordFrom = from; wqSeen = new Set(); wqN = 0; wqMiss = 0; $("s-word").classList.remove("finished"); $("word-done").hidden = true; nextWord(); show("s-word"); }
+function nextWord(force) {
+  const w = S.school.word, top = WORD_LEVELS[S.school.wordMax] || 4;
+  const q = force || wordQuestion(Math.min(w.lv, top), Math.random, wqSeen);
+  wqSeen.add(q.w); wq = q; wqLock = false; $("word-lap").innerHTML = lapTrack(wqN, WORD_LAP);
+  const pic = q.mode === "pic";
+  $("word-ask").textContent = pic ? "Which word is it?" : "Which picture is it?";
+  $("word-show").className = "word-show " + (pic ? "is-pic" : "is-word");
+  $("word-show").textContent = pic ? q.pic : q.w;
+  $("word-ans").className = "math-ans word-ans " + (pic ? "words" : "pics");
+  $("word-ans").innerHTML = q.choices.map(c => `<button data-w="${c.w}">${pic ? c.w : c.pic}</button>`).join("");
+}
+$("word-ans").addEventListener("click", e => {
+  const b = e.target.closest("[data-w]"); if (!b || wqLock || b.classList.contains("no")) return;
+  const w = S.school.word;
+  if (b.dataset.w !== wq.w) {
+    sfx("nope"); b.classList.add("no"); wqMiss++; w.wrong++;
+    const g = $("word-ans"); g.classList.remove("shake"); void g.offsetWidth; g.classList.add("shake"); save(); return;
+  }
+  wqLock = true; b.classList.add("yes"); sfx("coin"); w.right++; wqN++;
+  $("word-show").className = "word-show is-both"; $("word-show").textContent = wq.pic + " " + wq.w; $("word-lap").innerHTML = lapTrack(wqN, WORD_LAP);
+  setTimeout(() => { if (screen !== "s-word") return; wqN >= WORD_LAP ? finishWord() : nextWord(); }, 900);
+});
+function finishWord() {
+  const sc = S.school, w = sc.word, top = WORD_LEVELS[sc.wordMax] || 4, perfect = wqMiss === 0;
+  const want = perfect ? 2 : 1, got = Math.min(want, ticketsLeftToday());
+  w.laps++;
+  w.p = perfect ? w.p + 1 : 0;
+  if (w.p >= 2 && w.lv < top) { w.lv++; w.p = 0; } else if (wqMiss >= 4 && w.lv > 1) w.lv--;
+  const e = lapEntry("word"); e.m += WORD_LAP; e.t += got; sc.tickets += got; sc.earned += got; save();
+  $("s-word").classList.add("finished"); $("word-done").hidden = false;
+  $("word-win").innerHTML = got ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${got} 🎟️<small>${perfect ? "No mistakes, " + who() + "!" : "Great reading, " + who() + "!"} You have ${sc.tickets} 🎟️.</small>`
+    : `🏁 Lap done!<small>That's all the tickets for today. Great reading, ${who()}!</small>`;
+  sfx(got ? "win" : "buy"); confetti(got ? 120 : 50);
+}
+$("sch-word").onclick = () => { sfx("click"); openWord("s-school"); };
+$("word-again").onclick = () => { sfx("click"); openWord(); };
+$("word-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
+$("word-back").onclick = () => { sfx("click"); if (wordFrom === "s-school") { paintSchool(); show("s-school"); } else show("s-hub"); };
 
 /* ---------- daily missions ---------- */
 function openMissions() {
@@ -966,7 +1020,7 @@ function refreshHub() {
   tb("tb-park", buildingOpen(S, "park") && S.daily.park !== today());
   tb("tb-carwash", buildingOpen(S, "carwash") && (S.dirt[S.car] || 0) >= 3);
   tb("tb-fire", buildingOpen(S, "fire") && !S.owned.includes("firetruck"));
-  tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!mathToday() && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
+  tb("tb-gift", giftReady()); tb("tb-school", SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX && S.school.tickets >= skillCost(S.school.skills[k.id])) || (!lapsToday().length && SKILLS.some(k => S.school.skills[k.id] < SKILL_MAX))); tb("tb-garage", garage.affordable()); tb("tb-trophy", claimable().length > 0); tb("tb-rank", rankReady());
   $("lab-lock").style.display = S.rank >= 2 ? "none" : "";
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
   if (S.rank >= MISSIONS_RANK) todaysMissions(dayKey(new Date()), unlocked);
@@ -988,7 +1042,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }
   else if (go === "school") { sfx("click"); openSchool(); }
-  else if (go === "library") { sfx("click"); toast("📚 Read a real book with a grown-up! Then try a 🧮 Math Lap at the Driver School."); setTimeout(() => { if (screen === "s-hub") openSchool(); }, 600); }
+  else if (go === "library") { sfx("click"); openWord("s-hub"); }
   else if (go === "carwash" || go === "museum") {
     if (!buildingOpen(S, go)) { nope(); toast(`🚧 Opens at Rank ${BUILDINGS.find(x => x.id === go).rank}`); return; }
     sfx("click"); if (go === "carwash") openWash(); else openMuseum();
@@ -1169,8 +1223,8 @@ function openProgress() {
     <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace${fr.some(f => f.id === "license" && f.have < f.need) ? ", plus a Driver School lesson" : ""}.`}</small>`;
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
   $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
-  const mm = S.school.math, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
-  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>✔ Right <b>${mm.right}</b></span><span>✖ Tries again <b>${mm.wrong}</b></span><span>📈 Level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons, ${S.school.tickets} 🎟️ waiting, license ${LICENSES[licenseLevel(S)].name}</small>`;
+  const mm = S.school.math, wm = S.school.word, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
+  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>📚 Word Laps <b>${wm.laps}</b></span><span>✔ Right <b>${mm.right + wm.right}</b></span><span>✖ Tries again <b>${mm.wrong + wm.wrong}</b></span><span>📈 Math level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span><span>📖 Word level <b>${["", "3 letters", "3 letters, look-alikes", "4 letters", "Longer words"][wm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons, ${S.school.tickets} 🎟️ waiting, license ${LICENSES[licenseLevel(S)].name}</small>`;
   show("s-progress");
 }
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
@@ -1264,7 +1318,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return previewRun; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

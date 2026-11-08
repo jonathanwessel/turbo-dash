@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.5.0 — Word Laps at the Library 📚
+
+- **The Library has its own game.** A Word Lap is 5 reading questions: see a picture and tap its word, or read a
+  word and tap its picture. It starts with 3-letter words (cat, sun, bus) whose choices look different, then the
+  choices start to look alike (cat, cap, can) so he has to read every letter, then 4-letter words (frog, cake,
+  boat) and longer ones (rocket, turtle, carrot). Two perfect laps in a row move up a level.
+- **Same tickets as math.** A lap earns a 🎟️ (two with no mistakes) for Driver School lessons. Math Laps and Word
+  Laps share one daily ticket limit, so it doesn't add screen time. Tap the Library, or the new Word Lap button at
+  the Driver School.
+- **For grown-ups:** School settings (Driver School → Grown-ups) has a new "Hardest words" choice (3 letters,
+  4 letters, longer words). Progress shows Word Laps and the reading level. Old saves start at the first level.
+- Before, tapping the Library only said "read a book" and opened the Driver School.
+
 ## v1.4.0 — Race-day look 🏁
 
 A new look for every menu and dialog, drawn from the game's own world (toy race cars, a county speedway, pit boards,
