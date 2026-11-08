@@ -237,6 +237,13 @@ shared daily limit with Math Laps; a grown-up picks the hardest words.
 Races at three-quarter speed with an mph speedometer; Piqua National Bank (7% a real day, limit 400 coins per
 rank); every building's menus show the inside of that building.
 
+### v1.7.0 🛣️ Clean screens, real road (shipped)
+The evaluation of v1.6: one panel template (back top-left, centred content), less text on the busiest screens, a
+Next sign and at most two badges on Main Street; shared reward rules for the game and the career simulator; curve
+chevrons, friendlier bumps, a smooth rubber band, hills that move the background, cheaper drawing.
+Still to do from it: rewriting the remaining ~55 repeated stylesheet rules by hand (they override each other on
+purpose, so each needs checking) and moving every font size onto the type ramp.
+
 ### v1.3 – v1.7 More worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.

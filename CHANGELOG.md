@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.7.0 — Clean screens, real road 🛣️
+
+**Driving**
+- **Curves you can see coming:** yellow chevron signs on the outside before every sharp curve, pointing the way the
+  road turns. The camera trails the car a little, so you see it slide when a curve pushes it, and the car leans
+  and rolls with the curve.
+- **Friendlier bumps:** hitting something at the roadside while steering back to the road is a bump, not a wall
+  (the car keeps at least a third of its speed). Bumping while nobody steers, or bumping again right away, is still
+  a big slowdown, so a car left alone still finishes last. Roadside things stand a little further from the road,
+  and grinding along a guard rail no longer also counts as driving on the grass.
+- **Smoother rivals:** rivals far ahead or behind ease off or catch up gradually instead of at a fixed distance,
+  and their lane changes are the same every time a race is replayed the same way.
+- **Steering:** it still works when the car is slow (after a bump), and taps ease in over a tenth of a second.
+- **Looks:** the far scenery rises and sinks with the hills, lane dashes are spaced like real ones, the road
+  reaches further into a light haze, brake lights glow when slowing, and the view widens a touch at speed.
+- **Faster drawing:** the aurora draws with 3 gradients instead of about 96 a frame, and Simple effects also skips
+  it and the shading on every car.
+
+**Screens**
+- **The back button is top-left** on every screen and goes back to where you came from (it used to always go to
+  Main Street). Coins sit top-right on those screens.
+- **Content sits in the middle** of each screen instead of hugging the top; Settings tiles are centred in rows.
+- **Less to read:** the track picker shows the open tracks plus only the next locked one (stars appear after the
+  first win); race tabs appear one rank before they open; Turbo Lab cards show just the picture, name and price,
+  with the details on a tap; the bank's fine print moved to Parent Progress.
+- **Main Street:** a yellow "Next" sign shows one thing to do next, and at most two "!" badges show at once.
+- Brain Chips show only in the Turbo Lab and on the Rank screen. The result card shows one "what's new" line.
+
+**Under the hood**
+- `src/rules.js` holds every reward rule (races, chests, bosses, cups, trials, rank-ups, gifts, treats, missions,
+  lap tickets). The game and the career simulator both use it, so the simulator now checks the same rules the game
+  plays by, including Math and Word Lap tickets and the bank. `npm test` checks the rules (`scripts/test-rules.mjs`).
+- `src/physics-common.js` holds what both race engines share. One "run" object replaces six race flags, and a
+  back stack replaces five "return to" variables. Repeated stylesheet rules were folded together where the order
+  couldn't matter (checked with a layout snapshot of every screen), and the stylesheet has spacing and type tokens.
+
 ## v1.6.1 — Smooth calmer races
 
 - **Fixed: races stuttered after v1.6.** The calmer pace skipped one physics step in four, so on a 60 Hz screen

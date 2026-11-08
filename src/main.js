@@ -1057,6 +1057,7 @@ let nextGo = null;
 function paintNext() {
   const n = nextStep(); $("next-plate").hidden = !n; if (!n) return;
   $("np-icon").textContent = n.icon; $("np-text").textContent = n.text; nextGo = n.go;
+  const pill = $("rank-pill"); $("next-plate").style.top = (pill.offsetTop + pill.offsetHeight + 8) + "px";   // always just under the rank pill
 }
 $("next-plate").onclick = () => { sfx("click"); nextGo?.(); };
 $("town-wrap").addEventListener("click", e => {

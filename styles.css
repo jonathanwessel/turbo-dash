@@ -1056,3 +1056,5 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .next-plate:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .next-plate #np-text { overflow: hidden; text-overflow: ellipsis; }
 .next-plate .np-icon { font-size: 1.3em; line-height: 1; }
+/* short screens: the header is 44px tall, so the back button is too (it sits top-left over content otherwise) */
+@media (max-height: 560px) { .screen-head .back { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; } }

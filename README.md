@@ -34,8 +34,8 @@ Play (5183), dev (5184) and stage (5185) are different origins, so each keeps it
 
 ## Tests
 
-`npm test` checks that every older save still loads, the Math and Word Lap questions, the bank's interest, and
-the race physics. `npm run release` runs it first and stops if anything fails.
+`npm test` checks that every older save still loads, the Math and Word Lap questions, the bank's interest, every
+reward rule, the race physics and that the calmer pace stays smooth. `npm run release` runs it first and stops if anything fails.
 
 ## Releasing
 
