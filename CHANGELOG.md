@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.0 — Race-day look 🏁
+
+A new look for every menu and dialog, drawn from the game's own world (toy race cars, a county speedway, pit boards,
+race numbers and checkered flags) instead of generic purple glass:
+- **Panels are race stickers:** solid asphalt with a thick white die-cut edge, a hard shadow and a checkered-flag
+  band across the top of each dialog.
+- **Type with a voice:** headlines in a slanted racing face (Racing Sans One), everything a child reads in a round,
+  sturdy face (Nunito). Both ship with the game and work offline (SIL Open Font License).
+- **Buttons are road signs:** flat color with a solid lip that presses down. The coin and rank counters are white
+  plates like race numbers.
+- **The Rank screen is a pit board:** one row per gauge instead of a grid of identical cards, with a race-number
+  roundel for the rank.
+- **Fewer decorations:** no pink italics, no dot-joined fine print, headings in normal case ("Rank up!",
+  "1st place!"). The world previews are a plain "Preview worlds" button, and world chips are just names.
+
 ## v1.3.0 — The game's own pictures 🎨
 
 - **Every emoji is now the game's own picture.** Phones and tablets draw emoji with their own fonts, so the same game

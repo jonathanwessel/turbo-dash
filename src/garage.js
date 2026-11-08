@@ -37,8 +37,8 @@ export function howToGet(car, grid = false) {
   const owned = S.owned.includes(car.id), driving = S.car === car.id;
   const cup = car.cup && CUPS.find(c => c.id === car.cup), far = car.world && !worldOpen(S, car.world) && !owned, w = far && WORLDS.find(x => x.id === car.world);
   const boss = car.boss && BOSSES.find(b => b.id === car.boss), bld = car.building && BUILDINGS.find(b => b.id === car.building);
-  return driving ? "✔ Driving" : owned ? (grid ? "✔ Yours" : "Drive it!") : far ? (grid ? `${w.icon} ${w.name} · Rank ${w.rank}` : `👀 Try ${w.name}`) : cup ? `🏆 Win the ${cup.name}`
-    : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name} · Rank ${bld.rank}` : car.school ? "🚦 Driver School" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
+  return driving ? "✔ Driving" : owned ? (grid ? "✔ Yours" : "Drive it!") : far ? (grid ? `${w.name}, Rank ${w.rank}` : `Try ${w.name}`) : cup ? `🏆 Win the ${cup.name}`
+    : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name}, Rank ${bld.rank}` : car.school ? "🚦 Driver School" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
 }
 
 export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
@@ -57,7 +57,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const html = [];
     for (const w of WORLDS) {
       const list = CARS.map((c, i) => [c, i]).filter(([c]) => worldOf(c) === w.id); if (!list.length) continue;
-      html.push(`<h3 class="gg-head">${w.icon} ${w.name}<small>${list.filter(([c]) => S.owned.includes(c.id)).length} / ${list.length}</small></h3>`);
+      html.push(`<h3 class="gg-head">${w.name}<small>${list.filter(([c]) => S.owned.includes(c.id)).length} / ${list.length}</small></h3>`);
       for (const [c, i] of list) {
         const owned = S.owned.includes(c.id), buy = !owned && c.price != null && !(c.world && !worldOpen(S, c.world));
         html.push(`<button class="gc ${owned ? "mine" : ""} ${S.car === c.id ? "driving" : ""} ${buy && S.coins >= c.price ? "gold" : ""}" data-gi="${i}"><canvas width="160" height="95"></canvas><b>${owned || buy ? c.name + (c.ice ? " ❄️" : "") : "???"}</b><small>${howToGet(c, true)}</small></button>`);
@@ -100,7 +100,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     $("g-worlds").hidden = chips.length < 2;
     $("g-worlds").innerHTML = chips.map(w => {
       const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
-      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.icon}</span><small>${mine}/${list.length}</small></button>`;
+      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.name}</span><small>${mine}/${list.length}</small></button>`;
     }).join("");
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${carKnown(car) ? Math.round(8 + 92 * Math.min(1, v)) : 0}%"></i></div>`).join("");
     const btn = $("g-action");

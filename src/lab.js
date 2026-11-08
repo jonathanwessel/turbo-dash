@@ -63,7 +63,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
         const ok = open && S.rank >= rk && !need;
         const can = ok && !max && !running && freeBench() && S.coins >= cost && S.chips >= chips;
         const short = n => n >= 10000 ? Math.round(n / 1000) + "k" : n;
-        const label = max ? "MAX!" : running ? "⏱ Working…" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " · 🧠" + chips : ""} · ⏱${fmt(researchTime(r, lvl))}`;
+        const label = max ? "MAX!" : running ? "⏱ Working…" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? "  🧠" + chips : ""}  ⏱${fmt(researchTime(r, lvl))}`;
         return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}">
           <div class="pi">${r.icon}</div><b>${r.name}</b><small>${r.desc}</small>
           <div class="plv">Lv ${lvl}/${r.max}</div>

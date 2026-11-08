@@ -180,7 +180,7 @@ addEventListener("devicemotion", e => {
 });
 function paintTiltLive() {
   const d = tiltNow - (tiltZero ?? 0);
-  $("set-tilt-now").textContent = !S.opts.tilt ? "Off" : Math.abs(d) < 0.8 ? "On · tilt me!" : d > 0 ? "On · ➡️ right" : "⬅️ left · On";
+  $("set-tilt-now").textContent = !S.opts.tilt ? "Off" : Math.abs(d) < 0.8 ? "On: tilt me!" : d > 0 ? "On: right ➡️" : "On: ⬅️ left";
 }
 $("set-tilt").onclick = async () => {
   sfx("click");
@@ -353,7 +353,7 @@ function paintTrials() {
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${TRIAL_MEDALS[medal]}</div>
       <div class="tc-time">${best ? "⏱ " + best.toFixed(1) + "s" : "⏱ no time yet"}</div>
-      <div class="tc-prize">${medal < 3 ? `${TRIAL_MEDALS[medal + 1]} ${times[medal].toFixed(1)}s · 🪙${trialPay(t, medal + 1)}` : "🥇 All medals!"}</div>
+      <div class="tc-prize">${medal < 3 ? `${TRIAL_MEDALS[medal + 1]} ${times[medal].toFixed(1)}s for 🪙${trialPay(t, medal + 1)}` : "🥇 All medals!"}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>Open this track first</small></div>`}</button>`;
   }).join("");
 }
@@ -414,7 +414,7 @@ $("boss-list").addEventListener("click", e => {
 function openBossIntro(b) {
   const car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
   $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
-  $("bi-info").textContent = `${t.icon} ${t.name} · one on one · win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`;
+  $("bi-info").textContent = `One on one on ${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`;
   const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("bi-go").onclick = () => { sfx("click"); cupRun = null; trialRun = false; bossRun = b; startRace(t); };
   $("bi-back").onclick = () => { sfx("click"); openTracks(); };
@@ -433,11 +433,11 @@ $("cup-list").addEventListener("click", e => {
 });
 function paintWorlds() {
   if (!worldOpen(S, S.world)) S.world = "earth";
-  // the open worlds, then one 👀 chip with every world still to come (it opens a preview card)
+  // the open worlds, then a "Preview worlds" button for every world still to come (it opens a preview card)
   const open = WORLDS.filter(w => !w.soon && worldOpen(S, w.id)), later = lockedWorlds();
   $("world-bar").hidden = open.length + (later.length ? 1 : 0) < 2;
-  $("world-bar").innerHTML = open.map(w => `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""}">${w.icon} ${w.name}</button>`).join("")
-    + (later.length ? `<button data-peek class="peek" aria-label="Preview new worlds">👀 ${later.map(w => w.icon).join("")}</button>` : "");
+  $("world-bar").innerHTML = open.map(w => `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""}">${w.name}</button>`).join("")
+    + (later.length ? `<button data-peek class="peek">Preview worlds</button>` : "");
 }
 $("world-bar").addEventListener("click", e => {
   if (e.target.closest("[data-peek]")) { sfx("click"); openPreview(lockedWorlds()[0].id, "s-tracks"); return; }
@@ -454,15 +454,15 @@ let previewRun = null, previewBack = "s-tracks";
 const UPS3 = { engine: 3, turbo: 3, tires: 3, magnet: 0 };
 const worldCar = w => CARS.find(c => c.world === w.id && c.price != null) || CARS.find(c => c.world === w.id) || CARS[0];
 const lockedWorlds = () => WORLDS.filter(w => !w.soon && !worldOpen(S, w.id));
-const howToOpen = w => [S.rank < w.rank ? `⭐ Rank ${w.rank}` : "", w.kit && !S.research[w.kit] ? `🔬 ${RESEARCH.find(r => r.id === w.kit)?.name || "the World Kit"}` : ""].filter(Boolean).join(" + ");
+const howToOpen = w => [S.rank < w.rank ? `Rank ${w.rank}` : "", w.kit && !S.research[w.kit] ? `the ${RESEARCH.find(r => r.id === w.kit)?.name || "World Kit"} research` : ""].filter(Boolean).join(" and ");
 function openPreview(worldId, back = "s-tracks") {
   const w = WORLDS.find(x => x.id === worldId); if (!w || w.soon) return;
   if (cupRun && cupRun.i > 0) { sfx("nope"); return; }   // never in the middle of a cup
   previewBack = back;
   const car = worldCar(w), track = TRACKS.find(t => t.world === w.id);
-  $("pv-icon").textContent = w.icon; $("pv-name").textContent = `👀 ${w.name}`;
+  $("pv-name").textContent = w.name;
   $("pv-says").textContent = `Take a peek! One lap of ${track.name} in ${carKnown(car) ? "the " + car.name : "a mystery car"}. No coins or prizes in a preview.`;
-  $("pv-info").textContent = `Opens for real at ${howToOpen(w)}`;
+  $("pv-info").textContent = `Opens with ${howToOpen(w)}.`;
   const cv = $("pv-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
   $("pv-go").onclick = () => { sfx("click"); startPreview(w); };
   // ◀ ▶ flip through every world still to come
@@ -478,10 +478,9 @@ function startPreview(w) {
 function showPreviewResult(r) {
   const w = WORLDS.find(x => x.id === previewRun.world);
   mode = "menu"; setRaceUi(false); engineOff(); setRain(false);
-  $("pe-icon").textContent = r.place === 1 ? "🏆" : w.icon;
   $("pe-title").textContent = r.place === 1 ? "You won the preview!" : "Preview done!";
   $("pe-place").textContent = `You came ${r.place}${suffix(r.place)} in ${w.name}, ${who()}!`;
-  $("pe-info").textContent = `${w.name} opens for real at ${howToOpen(w)}`;
+  $("pe-info").textContent = `${w.name} opens with ${howToOpen(w)}.`;
   show("s-pvend"); sfx(r.place <= 3 ? "win" : "lose"); if (r.place === 1) confetti(80);
 }
 $("pv-back").onclick = () => { sfx("click"); show(previewBack); };
@@ -511,7 +510,7 @@ function openTracks() {
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-ribbon">🔥 BONUS · tricky!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-ribbon">Bonus: tricky!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
   show("s-tracks");
@@ -612,7 +611,7 @@ function drawWash(dt) {
 /* ---------- 🏛️ Museum: a timeline of his firsts ---------- */
 function openMuseum() {
   const M = S.museum || [];
-  $("mu-sum").textContent = M.length ? `${M.length} moments · ${M.filter(e => e.icon === "🏆").length} cups · ${M.filter(e => e.text.startsWith("First win")).length} first wins · ${M.filter(e => e.text.startsWith("Beat")).length} bosses` : "";
+  $("mu-sum").textContent = M.length ? `${M.length} moments, ${M.filter(e => e.icon === "🏆").length} cups, ${M.filter(e => e.text.startsWith("First win")).length} first wins, ${M.filter(e => e.text.startsWith("Beat")).length} bosses` : "";
   const nice = d => d ? new Date(d + "T12:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "Before 1.0";
   const esc = v => String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   $("mu-list").innerHTML = M.length ? M.map(e => `<div class="mu-item"><span class="mu-ico">${esc(e.icon)}</span><b>${esc(e.text)}</b><small>${nice(e.d)}</small></div>`).join("")
@@ -662,7 +661,7 @@ function showResult(r) {
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
-  $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} PLACE!` : `${r.place}${suffix(r.place)} — Good try!`;
+  $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} place!` : `${r.place}${suffix(r.place)} place. Good try!`;
   countUp($("r-prize"), prize); countUp($("r-road"), r.coins);
   const cheers = r.place === 1 ? ["Way to go, " + who() + "!", "You're the champ, " + who() + "!", "Super fast, " + who() + "!"]
     : r.place <= 3 ? ["Great driving, " + who() + "!", "So close, " + who() + "!"] : ["Upgrade your car and try again, " + who() + "!", "Keep going, " + who() + "!"];
@@ -672,7 +671,7 @@ function showResult(r) {
   const next = fresh[0] || (currentTrack.bonus ? null : TRACKS.slice(ti + 1).find(t => trackOpen(S, t))), nowOpen = !!next;
   nextTrack = next;
   $("r-unlock").hidden = !fresh.length;
-  if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " · " + sparkleMsg; u.hidden = false; }, 0);
+  if (sparkleMsg) setTimeout(() => { const u = $("r-unlock"); u.textContent = u.hidden ? sparkleMsg : u.textContent + " " + sparkleMsg; u.hidden = false; }, 0);
   if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
   const base = Math.round((30 + 25 * currentTrack.diff) * diffOf(S.diff).pay * (1 + 0.15 * (S.research.luckyChests || 0)));
   chestValues = [base, base * 2, base * 4].sort(() => Math.random() - 0.5);
@@ -804,10 +803,10 @@ function openRank() {
 $("rk-up").onclick = () => {
   if (!rankReady()) return;
   S.rank++;
-  museumAdd("⭐", `Reached Rank ${S.rank} · ${rankTitle(S.rank)}`);
+  museumAdd("⭐", `Reached Rank ${S.rank}, ${rankTitle(S.rank)}`);
   const reward = 200 * S.rank; S.coins += reward; save();
   if (S.rank >= 5) awardChip("rank:" + S.rank);
-  $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank} · ${rankTitle(S.rank)}`;
+  $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank}: ${rankTitle(S.rank)}`;
   const un = RANK_UNLOCKS[S.rank];
   $("ru-unlock").textContent = un ? `${un.icon} ${un.text} unlocked!` : "";
   $("ru-coins").textContent = reward;
@@ -826,7 +825,7 @@ function paintSchool() {
   const sc = S.school, L = licenseLevel(S), lic = LICENSES[L], next = LICENSES[L + 1], n = lessonsOf(S);
   $("sch-tickets").textContent = sc.tickets;
   $("license").style.background = `linear-gradient(135deg, ${lic.color}, #fff)`;
-  $("license").innerHTML = `<div class="lc-pic">🚗</div><b>DRIVER LICENSE · ${who().toUpperCase()}</b><small>${lic.name}${next ? ` → ${next.name} at ${next.lessons} lessons` : " · the very best!"}</small>
+  $("license").innerHTML = `<div class="lc-pic">🚗</div><b>${who()}'s driver license</b><small>${lic.name}${next ? ` → ${next.name} at ${next.lessons} lessons` : ", the very best!"}</small>
     <div class="bar"><i style="width:${next ? Math.round(100 * (n - lic.lessons) / (next.lessons - lic.lessons)) : 100}%"></i></div>`;
   $("skills").innerHTML = SKILLS.map(k => {
     const lv = sc.skills[k.id], max = lv >= SKILL_MAX, cost = skillCost(lv);
@@ -856,7 +855,7 @@ const ticketsLeftToday = () => S.school.capT ? Math.max(0, S.school.capT - (math
 function openLog() { paintLog(); show("s-log"); }
 function paintLog() {
   const sc = S.school, m = sc.math, today = mathToday(), pct = m.right + m.wrong ? Math.round(100 * m.right / (m.right + m.wrong)) : 0;
-  $("log-today").textContent = `Today: ${today ? today.m : 0} questions · 🎟️ ${today ? today.t : 0} earned${sc.capT ? ` (most ${sc.capT})` : ""} · all time ${m.laps} laps, ${pct}% right`;
+  $("log-today").textContent = `Today: ${today ? today.m : 0} questions and 🎟️ ${today ? today.t : 0} earned${sc.capT ? ` (most ${sc.capT})` : ""}. All time: ${m.laps} laps, ${pct}% right.`;
   $("log-lvl").innerHTML = [["add10", "Adding to 10"], ["10", "+ and − to 10"], ["20", "+ and − to 20"]].map(([v, l]) => `<button data-lvl="${v}" class="${sc.mathMax === v ? "on" : ""}">${l}</button>`).join("");
   $("log-cap").innerHTML = MATH_CAPS.map(n => `<button data-cap="${n}" class="${sc.capT === n ? "on" : ""}">${n || "No limit"}</button>`).join("");
   $("log-lic").innerHTML = [true, false].map(v => `<button data-lic="${v}" class="${S.parent.license === v ? "on" : ""}">${v ? "Yes" : "No"}</button>`).join("");
@@ -1027,7 +1026,7 @@ document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("c
 const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
 $("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); toyDiag.floor = 0; saveDiag(); paintToggles(); sfx("click"); };
 function paintToggles() {
-  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? (autoLite ? " · simple now" : " · full now") : "");
+  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? (autoLite ? " (simple now)" : " (full now)") : "");
   $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
   $("set-tilt").classList.toggle("off", !S.opts.tilt); paintTiltLive();
   $("set-name-now").textContent = S.name || "Tap to add";
@@ -1157,7 +1156,7 @@ document.querySelectorAll("[data-backto]").forEach(b => b.addEventListener("clic
 function openProgress() {
   const st = S.stats, hrs = st.playMs / 3600000, rate = S.races ? Math.round(100 * S.wins / S.races) : 0;
   const time = hrs < 1 ? Math.round(hrs * 60) + " min" : hrs.toFixed(1) + " h";
-  const tiles = [["⏱️", time, "played"], ["🏁", S.races, "races"], ["🏆", S.wins, `wins · ${rate}%`], ["🪙", Math.round(st.coinsEarned).toLocaleString(), "coins earned"], ["⭐", "Rank " + S.rank, rankTitle(S.rank)], ["🚗", S.owned.filter(id => CARS.some(c => c.id === id)).length + " / " + CARS.length, "cars"]];
+  const tiles = [["⏱️", time, "played"], ["🏁", S.races, "races"], ["🏆", S.wins, `wins (${rate}%)`], ["🪙", Math.round(st.coinsEarned).toLocaleString(), "coins earned"], ["⭐", "Rank " + S.rank, rankTitle(S.rank)], ["🚗", S.owned.filter(id => CARS.some(c => c.id === id)).length + " / " + CARS.length, "cars"]];
   $("pg-tiles").innerHTML = tiles.map(([i, v, l]) => `<div class="pg-tile"><span>${i}</span><b>${v}</b><small>${l}</small></div>`).join("");
   const days = [...Array(14)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); const k = dayKey(d); return { n: S.days[k] || 0, l: d.toLocaleDateString([], { weekday: "narrow" }), today: i === 13 }; });
   const max = Math.max(1, ...days.map(d => d.n));
@@ -1171,7 +1170,7 @@ function openProgress() {
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");
   $("pg-best").innerHTML = best || "<span>No wins yet.</span>";
   const mm = S.school.math, old = (S.school.log || []).filter(e => e.a !== "math").reduce((a, e) => a + (e.m || 0), 0);
-  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>✔ Right <b>${mm.right}</b></span><span>✖ Tries again <b>${mm.wrong}</b></span><span>📈 Level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons · ${S.school.tickets} 🎟️ waiting · license ${LICENSES[licenseLevel(S)].name}</small>`;
+  $("pg-school").innerHTML = `<span>🧮 Math Laps <b>${mm.laps}</b></span><span>✔ Right <b>${mm.right}</b></span><span>✖ Tries again <b>${mm.wrong}</b></span><span>📈 Level <b>${["", "+ to 5", "+ to 10", "± to 10", "± to 20"][mm.lv]}</b></span>${old ? `<span>📚 Logged before 1.1 <b>${old} min</b></span>` : ""}` + `<small>Driver School: ${lessonsOf(S)} lessons, ${S.school.tickets} 🎟️ waiting, license ${LICENSES[licenseLevel(S)].name}</small>`;
   show("s-progress");
 }
 $("p-vol").oninput = () => { S.parent.volume = $("p-vol").value / 100; setAudioOpts({ volume: S.parent.volume }); save(); };
@@ -1181,7 +1180,7 @@ const NAMES3D = { full: "full", light: "light", min: "minimal" };
 $("btn-settings").onclick = () => {
   sfx("click");
   const chip = (toyDiag.gpu || "").replace(/^ANGLE \(|\)$/g, "").replace(/, (OpenGL|Vulkan)[^,]*$/i, "").slice(0, 40);
-  $("set-ver").textContent = (VERSION === "dev" ? "dev build" : "v" + VERSION) + (toyDiag.tier ? ` · 3D ${NAMES3D[toyDiag.tier]}${toyDiag.crashes ? ` (stopped ${toyDiag.crashes}×)` : ""}${chip ? " · " + chip : ""}` : "");
+  $("set-ver").textContent = (VERSION === "dev" ? "dev build" : "v" + VERSION) + (toyDiag.tier ? `, 3D ${NAMES3D[toyDiag.tier]}${toyDiag.crashes ? `, stopped ${toyDiag.crashes}×` : ""}${chip ? ` (${chip})` : ""}` : "");
   paintToggles(); show("s-settings");
 };
 /* Grown-up check: a two-digit multiplication typed on a number pad (no answers to pick from), and a

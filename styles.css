@@ -825,3 +825,133 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 /* 🎨 the game's own emoji pictures (Twemoji, CC-BY 4.0; see src/emoji.js) */
 img.emo { display: inline-block; width: 1.12em; height: 1.12em; vertical-align: -0.2em; margin: 0 .03em; pointer-events: none; user-select: none; }
+
+/* =====================================================================================================
+   🏁 v1.4 design: race-day stickers. Every panel is a die-cut decal: solid asphalt, a thick white edge and a
+   hard shadow (no glass, no glow). Headlines are set in a slanted racing face; everything a child reads is a
+   round, sturdy sans. Buttons are road signs with a solid lip that presses down. One signature detail: the
+   checkered band across the top of a dialog. Colors: asphalt, lane white, sign yellow, flag red, go green.
+   Fonts (SIL OFL, in public/fonts): Racing Sans One, Nunito.
+   ===================================================================================================== */
+@font-face { font-family: "TD Race"; src: url("/fonts/racing-sans-one-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "TD Round"; src: url("/fonts/nunito-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "TD Round"; src: url("/fonts/nunito-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "TD Round"; src: url("/fonts/nunito-latin-900-normal.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+:root {
+  --asphalt: #1d2230; --asphalt-2: #2a3142; --asphalt-3: #374057; --lane: #f7f7f2; --ink: #0d111a;
+  --sign: #ffc928; --sign-lip: #b8860b; --flag: #e4312b; --flag-lip: #9c1d18; --go: #2db34a; --go-lip: #1b7a30; --sky: #5ec4f2;
+  --race: "TD Race", "TD Round", system-ui, sans-serif; --round: "TD Round", "Nunito", system-ui, sans-serif;
+  --checker: conic-gradient(var(--ink) 25%, var(--lane) 0 50%, var(--ink) 0 75%, var(--lane) 0) 0 0 / 22px 22px;
+}
+html, body { font-family: var(--round); background: var(--asphalt); }
+#town .lbl { font-family: var(--round); }
+
+/* screens: a neutral asphalt dim over the demo race (not purple glass) */
+.screen { background: rgba(13,17,26,.5); }
+.screen.dim { background: rgba(13,17,26,.62); }
+.screen.panel { background: rgba(29,34,48,.93); }
+.screen:not([hidden]) > .card { animation: popin .22s ease-out; }
+.screen.panel:not([hidden]) > * { animation: none; }
+
+/* headings: the racing face, slanted a touch, with a hard offset shadow */
+.screen-head h2, .card h1 { font-family: var(--race); font-weight: 400; color: var(--sign); letter-spacing: .5px; transform: rotate(-1.5deg); text-shadow: 3px 3px 0 var(--ink); }
+.screen-head h2 { font-size: clamp(30px, 8vmin, 50px); }
+.card h1 { font-size: clamp(34px, 9.5vmin, 62px); line-height: 1; }
+
+/* the sticker panel: asphalt, a white die-cut edge, a hard shadow, and the checkered band */
+.card { background: var(--asphalt); border: 6px solid var(--lane); border-radius: 22px; box-shadow: 0 0 0 3px var(--ink), 0 9px 0 3px var(--ink); padding: 0 24px 18px; }
+.card::before { content: ""; display: block; height: 22px; margin: 0 -24px 12px; background: var(--checker); border-bottom: 4px solid var(--ink); }
+@media (max-height: 430px) and (orientation: landscape) { .card { padding: 0 18px 10px; } .card::before { height: 16px; margin: 0 -18px 8px; background-size: 16px 16px; } }
+.boss-card { background: var(--asphalt); border-color: var(--lane); }
+.boss-says { font-style: normal; color: var(--lane); font-weight: 800; }
+.gift-day { opacity: 1; font-weight: 800; }
+
+/* road-sign buttons: flat color, a solid lip underneath, an ink outline; pressing pushes the sign down */
+.big-btn { font-family: var(--race); font-weight: 400; letter-spacing: .3px; border: 3px solid var(--ink); border-radius: 16px; background: var(--asphalt-3); color: var(--lane);
+  box-shadow: 0 6px 0 var(--ink); text-shadow: 2px 2px 0 var(--ink); }
+.big-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+.big-btn.go { background: var(--go); border-color: var(--ink); box-shadow: inset 0 -5px 0 var(--go-lip), 0 6px 0 var(--ink); }
+.big-btn.gold { background: var(--sign); color: var(--ink); text-shadow: none; border-color: var(--ink); box-shadow: inset 0 -5px 0 var(--sign-lip), 0 6px 0 var(--ink); }
+.big-btn.danger { background: var(--flag); border-color: var(--ink); box-shadow: inset 0 -5px 0 var(--flag-lip), 0 6px 0 var(--ink); }
+.big-btn.small { font-family: var(--round); font-weight: 900; text-shadow: none; border-radius: 12px; }
+.big-btn.go:active, .big-btn.gold:active, .big-btn.danger:active { box-shadow: inset 0 -2px 0 rgba(0,0,0,.3), 0 1px 0 var(--ink); }
+
+/* square sign buttons (back, settings, arrows, pause) */
+.back, .icon-btn, .arrow, .hud-btn { background: var(--asphalt-3); border: 3px solid var(--lane); box-shadow: 0 0 0 2px var(--ink), 0 5px 0 2px var(--ink); color: var(--lane); }
+.back:active, .icon-btn:active, .arrow:active { transform: translateY(4px); box-shadow: 0 0 0 2px var(--ink), 0 1px 0 2px var(--ink); }
+.back { border-radius: 14px; } .arrow { border-radius: 50%; }
+
+/* the coin and rank plates at the top: white plates with ink lettering, like a race number */
+.coinbar, .rank-pill { background: var(--lane); color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); text-shadow: none; }
+.rank-pill b { color: var(--flag); }
+.coinbar.shake { border-color: var(--flag); }
+
+/* segmented choices (tabs, difficulty, worlds, parent settings): asphalt keys, the chosen one is sign yellow */
+.g-tabs button, .diff-bar button, .race-tabs button, .world-bar button, .p-set button, .acts button, .mins button {
+  background: var(--asphalt-3); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--lane); }
+.g-tabs button.on, .diff-bar button.on, .race-tabs button.on, .world-bar button.on, .p-set button.on, .acts button.on, .mins button.on {
+  background: var(--sign); color: var(--ink); border-color: var(--ink); }
+.world-bar button.peek { background: var(--asphalt-2); border-style: dashed; border-color: var(--lane); }
+
+/* tiles and list rows inside screens: plain asphalt plates (smaller radius than panels), yellow when they want a tap */
+.up-card, .goal, .bench, .front, .proj, .skill, .mis, .pg-tile, .p-box, .set-tile, .gc {
+  background: var(--asphalt-2); border: 3px solid var(--asphalt-3); border-radius: 14px; box-shadow: 0 4px 0 var(--ink); }
+.goal.ready, .mis.ready, .front.behind, .bench.done, .gc.driving { border-color: var(--sign); background: var(--asphalt-2); }
+.gc.mine { border-color: var(--lane); }
+.front.full { border-color: var(--go); background: var(--asphalt-2); }
+.front.behind { animation: none; }
+.set-tile { border-radius: 16px; }
+.set-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+
+/* small action buttons inside tiles: sign yellow when affordable, asphalt when not */
+.up-buy, .goal button, .mis button, .proj .pbtn, .skill button { background: var(--sign); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.up-buy.poor, .goal button, .proj .pbtn.poor, .skill button.poor { background: var(--asphalt-3); color: #aeb6c8; }
+.goal.ready button, .mis.ready button { background: var(--sign); color: var(--ink); animation: none; }
+.up-buy.max { background: var(--go); color: var(--lane); }
+
+/* bars and gauges: an ink track with a sign-yellow fill (green when full) */
+.bar, .front .gauge, .tc-bar { background: var(--ink); border: 2px solid var(--asphalt-3); }
+.bar i, .front .gauge i { background: var(--sign); }
+.front.full .gauge i { background: var(--go); }
+.pips i { background: var(--ink); border-color: var(--asphalt-3); border-radius: 4px; }
+.pips i.on { background: var(--sign); border-color: var(--ink); }
+
+/* speech bubbles and toasts: lane-white cards with ink text */
+.speech, .classroom .speech { background: var(--lane); color: var(--ink); border: 3px solid var(--ink); }
+.speech::before { border-right-color: var(--ink); }
+.toast { background: var(--lane); color: var(--ink); border: 4px solid var(--ink); box-shadow: 0 6px 0 var(--ink); text-shadow: none; font-weight: 900; }
+
+/* rank: a race-number roundel and a pit board of gauges (rows, not a card grid) */
+.rank-star, .rank-star.big { clip-path: none; border-radius: 50%; background: var(--lane); color: var(--ink); border: 6px solid var(--flag); box-shadow: 0 6px 0 var(--ink); font-family: var(--race); font-weight: 400; }
+.rank-star span { margin-top: 0; }
+.rk-title { font-family: var(--race); font-weight: 400; color: var(--sign); text-shadow: 3px 3px 0 var(--ink); }
+.fronts { flex-direction: column; flex-wrap: nowrap; gap: 8px; width: min(100%, 620px); }
+.front { width: 100%; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "fi b small" "fi gauge gauge"; align-items: center; column-gap: 12px; row-gap: 2px; padding: 6px 14px; text-align: left; }
+.front .fi { grid-area: fi; font-size: clamp(26px, 6vmin, 38px); }
+.front b { grid-area: b; font-size: clamp(15px, 3.8vmin, 19px); }
+.front small { grid-area: small; }
+.front .gauge { grid-area: gauge; margin: 0; height: 16px; }
+.rk-hint { background: var(--sign); color: var(--ink); border-radius: 12px; padding: 6px 14px; font-weight: 900; }
+.rk-hint:empty { display: none; }
+
+/* track and cup cards keep their scenery, framed like stickers */
+.track-card, .cup-card { border: 5px solid var(--lane); box-shadow: 0 0 0 3px var(--ink), 0 7px 0 3px var(--ink); }
+.track-card .tc-name, .cup-card .cc-name { font-family: var(--race); font-weight: 400; letter-spacing: .3px; text-shadow: 2px 2px 0 var(--ink); }
+.track-card .tc-prize { background: var(--ink); }
+.track-card .tc-ribbon { background: var(--flag); border: 2px solid var(--ink); box-shadow: none; border-radius: 8px; }
+
+/* the title screen logo is the hero: the racing face, big and slanted */
+.logo, #s-title .logo, #splash .logo { font-family: var(--race); font-weight: 400; font-style: normal; color: var(--sign); -webkit-text-stroke: 0; letter-spacing: 1px; text-shadow: 4px 4px 0 var(--flag), 8px 8px 0 var(--ink); }
+.logo span:last-child { color: var(--lane); }
+#countdown, .hud-pos { font-family: var(--race); font-weight: 400; -webkit-text-stroke: 0; text-shadow: 4px 4px 0 var(--ink); }
+.hud-lap, .hud-coins { background: var(--lane); color: var(--ink); text-shadow: none; border: 3px solid var(--ink); }
+
+/* result card: compact enough that the buttons always show on a tablet */
+.card.result .trophy { font-size: clamp(40px, 11vmin, 84px); margin-bottom: 0; }
+.card.result h1 { font-size: clamp(30px, 8.5vmin, 54px); margin: 2px 0 4px; }
+.card.result::before { margin-bottom: 8px; }
+.set-foot { opacity: .8; line-height: 1.5; text-align: center; }
+.card h1 { line-height: 1.12; margin-bottom: 8px; }
+.g-gridbtn, .g-worlds button { background: var(--asphalt-3); color: var(--lane); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 12px; }
+.g-gridbtn.on, .g-worlds button.on { background: var(--sign); color: var(--ink); border-color: var(--ink); }
+.card.result .r-sub, .result .r-sub { margin: 0 0 6px; }

@@ -74,4 +74,5 @@ is further along (races, research, Driver School, cars, upgrades, goals and rank
 `npm run release -- v0.1.0` rebuilds an older tag, which is also how to roll back.
 
 ## Credits
+Fonts: [Racing Sans One](https://fonts.google.com/specimen/Racing+Sans+One) and [Nunito](https://fonts.google.com/specimen/Nunito), SIL Open Font License (in `public/fonts/`).
 Emoji pictures: [Twemoji](https://github.com/jdecked/twemoji) by Twitter, Inc. and other contributors, licensed CC-BY 4.0 (in `public/emoji/`).
