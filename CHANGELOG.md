@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.9.0 — More Earth, more wins 🎢
+
+- **Four new Earth tracks.** The race simulator showed that each car wins every time up to some track and then not
+  at all on the next one, with big jumps after Night Lights and Lava Mountain, and Farm Fields, Pirate Port and
+  Night Lights opened nothing. Now each of those opens a new track, placed between the old ones in difficulty, so
+  there is almost always a track you can just about win:
+  - **🎢 County Fair** (after Farm Fields): a Ferris wheel on the horizon, striped tents, balloons, cotton candy.
+  - **🦇 Haunted Hill** (after Pirate Port): a purple evening, a big moon with bats, friendly ghosts,
+    jack-o'-lanterns and a spooky old house.
+  - **🤖 Robot Factory** (after Night Lights): smokestacks, turning gears, waving robots, crates, hazard-stripe curbs.
+  - **✨ Crystal Caves** (after Lava Mountain): a cave ceiling with twinkling gems, glowing crystals and mushrooms,
+    mine carts, crystal tunnels and headlights.
+- **The School fits the screen.** Math Lap and Word Lap sit side by side under the bonus; Word Lap used to hide below
+  the screen on tablets. The boss card also fits on small phones.
+- **The Next sign is smarter.** It names the track that opens the next one, and says "on Normal" when a win on Easy
+  wouldn't open anything.
+- Fixes from a code review: a Good Student bonus can never last more than 30 minutes, even if the tablet's clock was
+  wrong; a race pays the bonus the race screen showed at the start; the grown-ups' race history counts bonus coins;
+  Google Save compares Math and Word Laps instead of the old lessons when deciding which copy is further along; the
+  last of the old lesson and License code is gone.
+- For grown-ups: `npm run sim -- ladder` shows which tracks each car can win, and the layout checker flags a big
+  button that you'd have to scroll to.
+
 ## v1.8.0 — One School, Good Student bonus 📚
 
 - **Laps give a short coin bonus instead of permanent upgrades.** Every Math Lap or Word Lap adds a **Good Student
@@ -409,7 +432,7 @@ Fixes for things Carter's dad spotted on the tablet, and a check of every screen
 ## v0.20.0 — Smoother Racing & a Simpler Race Screen
 
 A tune-up of the classic engine (Earth, Moon, Deep Blue, Glacier Rink) after a full review of its physics and
-collisions, plus a race screen made simpler for a 6-year-old.
+collisions, plus a race screen made simpler for young kids.
 
 **Physics and collisions**
 - **Rivals no longer drive through each other.** Before, two rivals overlapped about 4% of every race; now

@@ -19,7 +19,7 @@ const STEP = 1 / 60;
 function scene(trackId, { ups = UPS, from = 0 } = {}) {
   const r = new Race({ getContext: () => null, width: 1, height: 1 }, { sfx: n => r.sounds.push(n), engine() {}, onFinish() {} });
   r.sounds = [];
-  r.setup(track(trackId), "race", zippy, statsFor(zippy, ups, {}, {}), { diff: "normal" });
+  r.setup(track(trackId), "race", zippy, statsFor(zippy, ups, {}), { diff: "normal" });
   r.state = "race"; r.count = 0;
   for (const c of r.rivals) { c.dist = -1e7; c.speed = 0; c.base = 0; c.offset = c.lane = 0.8; }
   const p = r.player; p.dist = from; p.offset = 0; p.speed = r.stats.maxSpeed; r.prevIdx = r.segAt(p.dist).index;
@@ -118,7 +118,7 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   check("skid marks on a hard turn", r.skids.size > 0, "no skid marks");
   check("skid marks are capped", r.skids.size <= 400, `${r.skids.size} marks`);
   check("smoke on a hard turn", r.parts.some(q => q.c === "smoke"), "no tire smoke");
-  r.setup(track("autumn"), "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+  r.setup(track("autumn"), "race", zippy, statsFor(zippy, UPS, {}), { diff: "normal" });
   check("skid marks cleared for a new race", r.skids.size === 0, "old marks kept");
   const big = scene("autumn"); for (let k = 0; k < 900; k++) { big.skids.set(k, { x: 0, t: 0 }); if (big.skids.size > 400) big.skids.delete(big.skids.keys().next().value); }
   check("skid ring buffer", big.skids.size === 400, `${big.skids.size}`);
@@ -204,7 +204,7 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   for (let n = 0; n < 10; n++) for (const bot of ["kid", "good"]) {
     const r = botRace; let res = null;
     r.hooks = { sfx() {}, engine() {}, onFinish: x => { res = x; } };
-    r.setup(dt, "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+    r.setup(dt, "race", zippy, statsFor(zippy, UPS, {}), { diff: "normal" });
     for (let k = 0; !res && k < 400 * 60; k++) {
       const p = r.player, edge = bot === "good" ? 0.25 : 0.7;
       r.input.left = p.offset > edge; r.input.right = p.offset < -edge;
@@ -231,7 +231,7 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   for (const t of earth) for (const bot of ["kid", "good"]) {
     const r = botRace; let res = null, wasRail = false, lastA = 0;
     r.hooks = { sfx() {}, engine() {}, onFinish: x => { res = x; } };
-    r.setup(t, "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+    r.setup(t, "race", zippy, statsFor(zippy, UPS, {}), { diff: "normal" });
     for (let k = 0; !res && k < 400 * 60; k++) {
       const p = r.player, edge = bot === "good" ? 0.25 : 0.7;
       r.input.left = p.offset > edge; r.input.right = p.offset < -edge;
@@ -320,7 +320,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
 {
   const r = scene("sunny", { from: quietStretch("sunny") });
   r.player.offset = -0.8; run(r, 1);   // the camera follows the car to the left side
-  r.setup(track("beach"), "race", zippy, statsFor(zippy, UPS, {}, {}), { diff: "normal" });
+  r.setup(track("beach"), "race", zippy, statsFor(zippy, UPS, {}), { diff: "normal" });
   check("camera starts on the car", r.camOff == null || Math.abs(r.camOff - r.player.offset) < 1e-9, `camera at ${r.camOff}, car at ${r.player.offset}`);
 }
 
@@ -331,7 +331,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   for (const lvl of [0, 3]) for (let k = 0; k < 2; k++) {
     let done = null; races++;
     const r = new Race({ getContext: () => null, width: 1, height: 1 }, { sfx: n => { if (n === "bonk") bonks++; }, engine() {}, onFinish: x => { done = x; } });
-    r.setup(BONUS_TRACKS[0], "race", zippy, statsFor(zippy, { engine: lvl, turbo: lvl, tires: lvl, magnet: 0 }, {}, {}), { diff: "normal" });
+    r.setup(BONUS_TRACKS[0], "race", zippy, statsFor(zippy, { engine: lvl, turbo: lvl, tires: lvl, magnet: 0 }, {}), { diff: "normal" });
     for (let i = 0; i < 60 * 300 && !done; i++) { const p = r.player; r.input.left = p.offset > 0.35; r.input.right = p.offset < -0.35; r.update(STEP); }
   }
   check("Downtown corners are fair", bonks / races <= 3, `${(bonks / races).toFixed(1)} barrier hits a race`);

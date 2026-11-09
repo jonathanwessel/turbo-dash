@@ -1,6 +1,7 @@
 // Race simulator: runs whole races headless with a bot driver, so balance changes can be checked before a release.
 //   npm run sim             -> finishing places per car tier, track and difficulty
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
+//   npm run sim -- ladder   -> wins per car on every Earth track, easiest first (finds difficulty gaps)
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { race, runRace } from "./racebot.mjs";
 
@@ -69,6 +70,17 @@ else if (mode === "start") {
   for (const bot of ["none", "kid", "good"]) for (const up of [0, 1, 2, 3]) {
     const places = Array.from({ length: 6 }, () => runRace(t, z, lvl(up), "normal", bot).place);
     console.log(`  ${bot.padEnd(5)} Zippy +${up} on Sunny Hills: ${places.join(" ")}`);
+  }
+}
+else if (mode === "ladder") {
+  // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.
+  // A car wins every time up to some track and then never; tracks spaced closely keep that edge soft.
+  const earth = TRACKS.filter(t => t.world === "earth").sort((a, b) => a.diff - b.diff);
+  const tiers = [["zippy", 2], ["zippy", 4], ["bolt", 2], ["bolt", 4], ["monster", 3], ["monster", 4], ["shark", 3], ["shark", 4], ["shark", 5], ["rocket", 5]];
+  console.log("".padEnd(14) + earth.map(t => (t.id + " " + t.diff).padEnd(13)).join(""));
+  for (const [id, n] of tiers) {
+    const car = CARS.find(c => c.id === id);
+    console.log((car.name + " +" + n).padEnd(14) + earth.map(t => { let w = 0, p = 0; for (let k = 0; k < 4; k++) { const r = runRace(t, car, lvl(n), "normal"); w += r.place === 1; p += r.place; } return (w + "w " + (p / 4).toFixed(1)).padEnd(13); }).join(""));
   }
 }
 else table();

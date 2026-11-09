@@ -40,10 +40,10 @@ export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = nul
   S.coins += student;
   let sparkle = 0;
   if (S.sparkle && !boss) { sparkle = Math.max(5, Math.round(prize * REWARDS.sparkle)); S.coins += sparkle; S.sparkle = ""; }
+  if (S.history) { S.history.unshift({ d: day, t: track.id, df: diff, p: r.place, c: prize + r.coins + student + sparkle }); S.history.length = Math.min(S.history.length, 30); }
   if (S.dirt) S.dirt[S.car] = Math.min(5, (S.dirt[S.car] || 0) + 1);
   if (diff === "hard" && r.place === 1) chip(S, "hard:" + track.id);
   if (cup && r.standings) r.standings.forEach((k, n) => { cup.pts[k] += CUP_POINTS[n]; });
-  if (S.history) { S.history.unshift({ d: day, t: track.id, df: diff, p: r.place, c: prize + r.coins }); S.history.length = Math.min(S.history.length, 30); }
   addRaceStats(S, r);
   return { prize, sparkle, starUp, firstWin, student };
 }
@@ -110,7 +110,7 @@ export function treat(S, id, today, dayNumber) {
   return null;
 }
 /* daily missions: one claimed, and the bonus for all three */
-export const missionPay = (S, m) => Math.round(m.reward * (1 + REWARDS.smarts * (S.school.skills.smarts || 0)));
+export const missionPay = (S, m) => m.reward;
 export function claimMission(S, m) { if (m.claimed || m.have < m.goal) return 0; m.claimed = true; const c = missionPay(S, m); S.coins += c; return c; }
 export function missionsBonus(S, M) {
   if (M.bonus || !M.list.every(m => m.claimed)) return null;
@@ -122,7 +122,7 @@ export function missionsBonus(S, M) {
 export const LAPS = ["math", "word"];
 export const lapToday = (S, a, today) => S.school.log.find(e => e.a === a && e.d === today) || null;
 export const bonusLeft = (S, today) => S.school.capT ? Math.max(0, S.school.capT - LAPS.map(a => lapToday(S, a, today)).filter(Boolean).reduce((n, e) => n + (e.t || 0), 0)) : Infinity;
-export const activeBoosts = (S, now) => (S.school.boosts || []).filter(b => b.until > now);
+export const activeBoosts = (S, now) => (S.school.boosts || []).filter(b => b.until > now).map(b => ({ p: b.p, until: Math.min(b.until, now + GOOD_STUDENT.mins * 60000) }));
 export const goodStudentPct = (S, now) => activeBoosts(S, now).reduce((n, b) => n + b.p, 0);
 export function lapBonus(S, kind, perfect, questions, today, now) {
   const sc = S.school, steps = Math.min(perfect ? 2 : 1, bonusLeft(S, today));

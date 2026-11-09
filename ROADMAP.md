@@ -1,8 +1,8 @@
 # Roadmap
 
 Turbo Dash is a racing game made for Carter, by Carter's Dad, set on Main Street in **Piqua, Ohio**. It is free
-forever: no purchases, no ads, no accounts, no premium currency. Everything is earned by playing, and (from the
-Driver School on) some things are earned by **not** playing: reading, playing outside and helping out.
+forever: no purchases, no ads, no accounts, no premium currency. Everything is earned by playing. The School adds
+short Math and Word Laps that give a 30-minute coin bonus, so learning helps racing without being required.
 
 Releases go to the play server (`npm run play`, port 5183) **and** to the public site
 https://jonathanwessel.github.io/turbo-dash/. It is designed for an Android tablet, in landscape, full screen.
@@ -50,9 +50,11 @@ https://jonathanwessel.github.io/turbo-dash/. It is designed for an Android tabl
 - **Winning must be earned.** Hands-off driving once won; the starter car now loses until it is upgraded, a
   track opens only after a Normal/Hard win, and `npm run sim -- start` checks that hands-off finishes last.
 - **Grown-up controls must be kid-proof.** Reset and Parent Corner sit behind a sum, a 3-second hold and a last
-  "are you sure"; a 6-year-old taps everything.
-- **Show a 6-year-old only what he can use.** Menus show open things plus one next goal; locked modes and
+  "are you sure"; a young kid taps everything.
+- **Show a young kid only what he can use.** Menus show open things plus one next goal; locked modes and
   far-future worlds stay hidden until they're close.
+- **There is always a track you can almost win.** Each car wins every time up to some track and then not at
+  all on the next, so tracks must be spaced closely in difficulty. v1.9 filled the gaps with four new tracks.
 - **Keep the art simple and recognizable.** The Piqua sign works best as plain, clear lettering.
 - **The pay-to-win feel, without the pay.** Race → coins → shiny thing → faster, with something new to unlock every
   release and a reason to come back tomorrow.
@@ -62,10 +64,11 @@ https://jonathanwessel.github.io/turbo-dash/. It is designed for an Android tabl
 # How the game fits together
 
 ```
-  🏁 WINS ─┐                                   ┌─ 🚦 DRIVER SCHOOL (real-world reading,
-  🏆 TROPHIES ─┼─►  RACER RANK  ─► unlocks ─────┤    outside time, helping) ─► Driver
-  🔧 GARAGE ──┤    (all gauges full)            │    License + Driver Skills
-  🔬 RESEARCH ─┘   + 🪪 LICENSE (Rank 10+, opt)  └─ new worlds, buildings, cars, lab tiers, Auto Steer
+  🏁 WINS ──────┐                                 ┌─ new worlds, buildings, cars, lab tiers, Auto Steer
+  🏆 TROPHIES ──┼─►  RACER RANK  ─► unlocks ───────┤
+  🔧 GARAGE ────┤    (all gauges full)             └─ 🏦 bank limit grows with every rank
+  🔬 RESEARCH ──┘
+  🏫 SCHOOL: Math and Word Laps ─► +10% race coins for 30 min (stacks) ─► 🚓 a car after 20 laps
 ```
 
 ## Racer Rank
@@ -89,7 +92,6 @@ Four gauges must all be full to RANK UP (the emptiest one glows with a picture h
 - **Garage** = 5 per car owned + every upgrade level on every car. Each new world must add cars (the Garage
   gauge maxes at 225 with today's 9 cars).
 - **Rank cap** is 40 now (Toy Track World) and rises with each world: 45, 50 … 60.
-- **🪪 License gauge (new, from Rank 10, parent can switch it off):** see Driver School.
 
 ## Turbo Lab
 Real-time research on 1–4 benches (Rank 2/4/9/15), coins only, rush for coins. Tier 1 (Rank 2): Coin Boost,
@@ -104,28 +106,22 @@ Super Paint. Tier 3 (Rank 8+): the Robot Brain chain → **Auto Steer**. Future 
 (46+), boost pads and dodging (66+), smart Turbo (86+), perfect line with gold trail (100). Hand steering always
 wins, it's off in time trials and boss races, and Parent Corner can disable it.
 
-## 🚦 Driver School & real-world rewards (shipped in v0.14.0; became Math School in v1.1)
-**Goal: the game gives Carter a reason to put the tablet down.** A grown-up logs what he did away from the screen,
-and that becomes driver training in the game.
-- **Parent log (Parent Corner → Driver School, behind the grown-up check):** big buttons for 📚 Reading,
-  🌳 Outside play, 🧹 Helping out, 🎨 Making something, 🚲 Exercise, each in 10-minute steps. Optional daily cap and a
-  history list. Nothing is collected or sent anywhere; it's stored with the save (and Google Save).
-- **Training Tickets 🎟️:** every 10 minutes logged = 1 ticket (reading counts double, a Parent Corner option).
-- **In the Driver School:** Coach Cone, a friendly traffic cone, runs lessons. Spending tickets trains permanent
-  **Driver Skills** that help every car: Focus (steadier steering), Reflexes (Turbo fills faster), Courage
-  (bigger landing boosts), Smarts (more coins from missions). Each skill has 10 levels, so it's a long road.
-- **Driver License 🪪:** lessons earn license levels: Learner → Bronze → Silver → Gold → Platinum → Piqua Pro.
-  Each level gives a license card with Carter's name, a new license-plate sticker, and at Gold a special car
-  (**Piqua Patrol**). From Rank 10, the License becomes a 5th rank gauge, so ranking up also needs some
-  real-world time. A Parent Corner switch turns that gauge off.
-- **Also counts for the break reminder:** when the break screen shows, it suggests something to log ("Go read a
-  book → come back for a ticket!").
+## 🏫 School: Math Laps, Word Laps and the Good Student bonus
+**Goal: learning helps racing, but racing never needs it.** The School started in v0.14 as a log a grown-up
+filled in (reading, outside play) that paid tickets for permanent Driver Skills and a License gauge. v1.1 replaced
+the log with Math Laps, v1.5 added Word Laps, and v1.8 replaced the permanent rewards with a short bonus.
+- **A lap is 5 questions.** Math Laps: adding and taking away with pictures to count. Word Laps: match a picture to
+  its word or a word to its picture, from 3-letter words up. A wrong answer just tries again; no timer.
+- **Good Student bonus:** each lap adds +10% race coins (+20% for a perfect lap) for 30 real minutes. Bonuses
+  stack, each with its own timer. A grown-up sets a daily limit (default +60% a day) in Grown-ups.
+- **School Resource Officer:** a police car for finishing 20 laps.
+- **Nothing permanent:** no skills, no license and no rank gauge, so a kid who skips the School still ranks up.
 
 ## 🏙️ Piqua Main Street grows
 New buildings appear on Main Street as Carter ranks up, so the town itself shows his progress (the street scrolls
 sideways once it's full): 🍦 Ice Cream Shop (Rank 12, daily treat bonus), 🚒 Fire Station (Rank 15, red paint
-and a fire-truck car), 📚 Library (with Driver School: reading tickets), 🏞️ Riverside Park (Rank 20, picnic
-gifts), 🚗 Car Wash (repaint for free), 🏛️ Museum (a history of every trophy). Buildings stay simple and separate,
+and a fire-truck car), 🏫 School (Math and Word Laps), 🏦 Piqua National Bank (7% interest a real day),
+🏞️ Riverside Park (Rank 20, picnic gifts), 🚗 Car Wash (repaint for free), 🏛️ Museum (a history of every trophy). Buildings stay simple and separate,
 one word on each sign.
 
 ## 🎨 The graphics ladder
@@ -192,10 +188,6 @@ The Next Gen leap, built for real: a new 3D engine (three.js), a giant playroom,
 loop-the-loops, jumps over gaps, booster stations, the toy hand, Shrink Ray research, three toy cars, the Toy Cup
 and the boss Major Wind-Up. Rank cap 40.
 
-### Next: more worlds in the Next Gen engine
-The remaining worlds come after Toy Track World and are built in the new 3D engine, each with its own physics,
-cars, cup, boss and research (Rank 40, 45 … up to Turbo God at 60). A track builder fits naturally here
-(snapping plastic track pieces together).
 
 ### v1.0.0 Carter's 1.0 (shipped)
 Tilt to steer, a launch splash, the Parent Progress page and guide, three new Earth tracks and the Country Cup,
@@ -219,7 +211,7 @@ The Driver School stops depending on a parent's log and earns its tickets from a
 - **Parent Corner:** pick the level (to 10 / to 20 / adding only) and a daily cap; Progress shows questions answered
   and how many were right. The reading/outside log goes away, so there's nothing to fake. Saves keep the tickets,
   skills and history they already have.
-- **A harder grown-up check** for Parent Corner (one a 6-year-old can't answer, such as a two-digit multiplication
+- **A harder grown-up check** for Parent Corner (one a young kid can't answer, such as a two-digit multiplication
   or a long press), since the old one was easy for him.
 
 ### v1.2.0 🏎️ Feel the Speed (shipped)
@@ -248,8 +240,23 @@ purpose, so each needs checking) and moving every font size onto the type ramp.
 Laps give a stacking +10% / +20% race-coin bonus for 30 minutes instead of permanent lessons; lessons reset, the
 License gauge removed, the Library folded into the School, and the School Resource Officer car after 20 laps.
 
-### v1.3 – v1.7 More worlds
-Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release, each
+### v1.9.0 🎢 More Earth, more wins (shipped)
+The race simulator showed that each car wins every time up to some track and then not at all on the next one, and
+the jumps were big: Night Lights → Lava Mountain and Lava Mountain → Space Road. Farm Fields, Pirate Port and
+Night Lights also opened nothing. Four new Earth tracks fill the gaps, each opened by one of those tracks:
+- **🎢 County Fair** (after Farm Fields): a Ferris wheel on the horizon, striped tents, balloons, a cotton candy stand.
+- **🦇 Haunted Hill** (after Pirate Port): a purple evening, a big moon with bats, friendly ghosts, jack-o'-lanterns,
+  a spooky old house.
+- **🤖 Robot Factory** (after Night Lights): smokestacks, turning gears, waving robots, crates, hazard-stripe curbs.
+- **✨ Crystal Caves** (after Lava Mountain, before Space Road): a cave ceiling with hanging rocks, glowing crystals
+  and mushrooms, mine carts, crystal tunnels.
+- **Interface:** the School puts both laps side by side under the bonus, so nothing needs scrolling; the layout
+  checker now flags a main button you'd have to scroll to.
+- **Code review** of v1.7–v1.8 (a fresh session): the Good Student bonus is capped at 30 minutes against a wrong
+  device clock, the race pays the bonus it showed, history and Google Save count laps, the lesson code is removed.
+
+### Later: more worlds
+Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release in the Next Gen engine, each
 raising the rank cap by 5 with new cars and a boss. **Turbo God** (Rank 60) arrives with the last one.
 
 ## 🚀 Next Gen: Toy Track World (the big leap)
@@ -261,8 +268,7 @@ fling the car forward), all set in a giant playroom.
   module so the classic game keeps working; likely WebGL (three.js) for the 3D.
 - **A new look:** the graphics jump from today's flat retro style to a shinier, more futuristic one (glossy
   plastic, lighting, reflections). The leap itself is the reward: Carter "graduates" into it.
-- **How you get there:** after the classic worlds (around Rank 40) plus a Next Gen license at the Driver School,
-  with a big "the game levels up" moment.
+- **How you get there:** Rank 35 plus the 🪄 Shrink Ray research, with a big "the game levels up" moment.
 - **Track Builder fits here:** snapping plastic track pieces together is the most natural track builder.
 - **Name:** "Toy Track World" in the game (Matchbox is a toy brand name, and the game is public).
 - **Plan:** a prototype release (one test track with loops and boosters working), then the world (cars, tracks,
@@ -273,7 +279,7 @@ A track builder (Carter designs tracks from curve, hill, ramp and boost pieces),
 showroom, holiday events (Halloween, winter, his birthday), photo mode.
 
 ## Ideas parking lot
-- More Earth tracks every couple of releases (Farm Fields, Pirate Port, Haunted Hill, a Piqua river track).
+- More Earth tracks wherever the race simulator shows a difficulty gap.
 - A pet sidekick that rides along and cheers. Weather on Earth tracks.
 - The City of Piqua's feather in the Q, if we find a version that looks good (set aside in v0.13).
 

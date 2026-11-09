@@ -2,7 +2,7 @@
 //   npm run career                 -> 12 races a day, up to 1000 days
 //   npm run career -- 20 600       -> 20 races a day, up to 600 days
 // It pays exactly what the game pays (src/rules.js: races, chests, bosses, cups, trials, rank-ups, gifts, treats,
-// missions, Math/Word Lap tickets) and races with the real engine. Bank interest is modelled too.
+// missions, the Math/Word Lap Good Student bonus) and races with the real engine. Bank interest is modelled too.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
 import { trackLen } from "../src/engine.js";
@@ -23,7 +23,7 @@ const S = {
   coins: 0, owned: ["zippy"], car: "zippy", ups: { zippy: NO_UPS() }, best: {}, bestD: {}, research: {}, lab: { benches: [] },
   cups: {}, chips: 0, chipLog: {}, claimed: [], stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, trials: {}, trialMedals: {},
   bosses: {}, wins: 0, races: 0, rank: 1, giftStreak: 0, diff: "normal", paints: ["stock"], stickers: ["none"], mastery: {},
-  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], capT: 6, boosts: [], math: { laps: 0 }, word: { laps: 0 } }, parent: {},
+  school: { earned: 0, log: [], capT: 6, boosts: [], math: { laps: 0 }, word: { laps: 0 } }, parent: {},
   museum: [], days: {}, history: [], dirt: {}, sparkle: "", daily: {}, lastGift: "", bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0 },
 };
 const today = () => dayKey(new Date(2027, 0, 1 + day)), yesterday = () => dayKey(new Date(2027, 0, day));
@@ -41,7 +41,7 @@ function rankUps() {
 function claimGoals() { for (const g of GOALS) if (!S.claimed.includes(g.id) && g.have(S) >= g.goal) { S.claimed.push(g.id); S.coins += g.reward; } }
 
 function reward(track, r, diff, opts = {}) {
-  raceNo++; clock += 75;
+  raceNo++; clock += 75 + 35;
   if (r.place === 1 && !opts.boss) gate("gold:" + track.id + ":" + diff, `First ${diffOf(diff).icon} win on ${track.name}`);
   raceReward(S, track, r, { diff, day: today(), now: clock * 1000, ...opts });   // clock: race seconds, so the 30-minute Good Student bonus covers the first races of the day
   const chests = chestValues(S, track, diff); S.coins += chests[Math.floor(Math.random() * 3)];   // he picks one of three
@@ -50,12 +50,12 @@ function reward(track, r, diff, opts = {}) {
 
 const carOf = () => CARS.find(c => c.id === S.car);
 // weather like the game: about a quarter of Earth races (from Rank 2) have rain or snow
-const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"].includes(t.theme) ? "rain" : null) : null;
-const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), S.school.skills, null, false, weatherFor(track));
+const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"].includes(t.theme) ? "rain" : null) : null;
+const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), null, false, weatherFor(track));
 
 function playBoss(b) {
   const car = carOf(), t = TRACKS.find(x => x.id === b.track);
-  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, { ...b, def: CARS.find(c => c.id === b.car) });
+  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, { ...b, def: CARS.find(c => c.id === b.car) });
   reward(t, r, "normal", { boss: true });
   if (r.place === 1) { bossReward(S, b, today()); gate("boss:" + b.id, `Beat ${b.name}`); }
 }
@@ -63,8 +63,8 @@ function playBoss(b) {
 /* one Time Trial a day: the newest open track still missing gold */
 function playTrial() {
   const t = [...TRACKS].reverse().find(x => trackOpen(S, x) && (S.trialMedals[x.id] || 0) < 3); if (!t) return false;
-  const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, S.school.skills, null, true);
-  raceNo++; clock += 75;
+  const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, null, true);
+  raceNo++; clock += 75 + 35;
   const { medal } = trialReward(S, t, r, trackLen(t));
   if (medal === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`);
   return true;

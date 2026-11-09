@@ -67,7 +67,7 @@ export const REWARDS = {
   rankUp: rank => 200 * rank, rankChipFrom: 5,
   gift: streak => 100 + 50 * Math.min(streak, 7),
   icecream: rank => 300 + 25 * rank, park: rank => 500 + 25 * rank,
-  mission: rank => 100 + 25 * rank, missionsAll: rank => 200 + 50 * rank, smarts: 0.1,
+  mission: rank => 100 + 25 * rank, missionsAll: rank => 200 + 50 * rank,
 };
 
 /* 👑 Bosses: a one-on-one race against a named rival on that world's hardest track. Beat them to win their car. */
@@ -113,13 +113,17 @@ export const TRACKS = [
   { id: "beach",  name: "Beach Boardwalk", icon: "🏖️", diff: 0.6, laps: 2, seed: 83, theme: "beach",  world: "earth", after: "sunny" },
   { id: "farm",   name: "Farm Fields",    icon: "🚜", diff: 0.8, laps: 2, seed: 241, theme: "farm",   world: "earth", after: "beach" },
   { id: "desert", name: "Desert Dash",    icon: "🌵", diff: 1,   laps: 2, seed: 23, theme: "desert", world: "earth", after: "beach" },
+  { id: "fair",   name: "County Fair",    icon: "🎢", diff: 1.25, laps: 2, seed: 271, theme: "fair", world: "earth", after: "farm" },
   { id: "pirate", name: "Pirate Port",    icon: "🏴‍☠️", diff: 1.5, laps: 2, seed: 251, theme: "pirate", world: "earth", after: "desert" },
   { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
+  { id: "haunted", name: "Haunted Hill",  icon: "🦇", diff: 2.25, laps: 2, seed: 277, theme: "haunted", world: "earth", after: "pirate" },
   { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
   { id: "river",  name: "Piqua River Run", icon: "🛶", diff: 2.8, laps: 2, seed: 263, theme: "river",  world: "earth", after: "autumn" },
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
   { id: "night",  name: "Piqua Night Lights", icon: "🌃", diff: 3.4, laps: 2, seed: 313, theme: "night", world: "earth", after: "candy" },
+  { id: "factory", name: "Robot Factory", icon: "🤖", diff: 3.7, laps: 2, seed: 281, theme: "factory", world: "earth", after: "night" },
   { id: "lava",   name: "Lava Mountain",  icon: "🌋", diff: 4,   laps: 2, seed: 59, theme: "lava",   world: "earth", after: "candy" },
+  { id: "caves",  name: "Crystal Caves",  icon: "✨", diff: 4.5, laps: 2, seed: 283, theme: "caves", world: "earth", after: "lava" },
   { id: "space",  name: "Space Road",     icon: "🪐", diff: 5,   laps: 2, seed: 67, theme: "space",  world: "earth", after: "lava" },
   { id: "crater",   name: "Crater Hop",     icon: "🌑", diff: 7.4, laps: 2, seed: 101, theme: "moon", world: "moon" },
   { id: "moonbase", name: "Moonbase Loop",  icon: "🛰️", diff: 7.7, laps: 2, seed: 113, theme: "moon", world: "moon", after: "crater" },
@@ -201,6 +205,11 @@ export const THEMES = {
   river:  { sky: ["#6fc0ff", "#d8f2ff"], hills: ["#4fae5a", "#3d9a4a"], grass: ["#6cc970", "#60bd64"], rumble: ["#ffffff", "#1d6fb8"], road: ["#6b6f78", "#656972"], lane: "#ffffff", sun: "#fff59a", sprites: ["tree", "cattail", "duck", "canoe", "coveredbridge", "bush", "cattail", "tree"], clouds: true, river: true },
   downtown: { sky: ["#7fb6e6", "#d8ecff"], hills: ["#9aa6b8", "#8794a8"], grass: ["#b9bcc4", "#adb1ba"], rumble: ["#ffffff", "#8f96a3"], road: ["#4a4e57", "#464a53"], lane: "#ffffff", sun: "#fff7c0", sprites: ["building", "shop", "shop", "building", "house", "trafficlight"], clouds: true, city: "#8592ab" },
   night:  { sky: ["#05081f", "#25306a"], hills: ["#1b2344", "#141a36"], grass: ["#1d3328", "#182b22"], rumble: ["#ffd400", "#2c2f3a"], road: ["#3a3e4c", "#363a47"], lane: "#ffe680", sun: "#f3f0d2", sprites: ["shop", "lamp", "tree", "shop", "house"], clouds: false, stars: true, city: "#121733", night: true, tunnels: "brick" },
+  // v1.9
+  fair:    { sky: ["#45b0ff", "#c8ecff"], hills: ["#62c46a", "#48a957"], grass: ["#7fd36a", "#72c65e"], rumble: ["#ffffff", "#ff3d8a"], road: ["#6f7380", "#696d7a"], lane: "#ffffff", sun: "#fff59a", sprites: ["tent", "balloons", "cottoncandy", "tree", "balloons", "hay", "tent", "flower"], clouds: true, fair: true },
+  haunted: { sky: ["#1e0f3a", "#7a3f9e"], sunY: 0.3, mountains: "#2a1840", hills: ["#3a2a52", "#2c1f42"], grass: ["#3d4a3a", "#354232"], rumble: ["#ff8a00", "#1a1424"], road: ["#3e3a48", "#3a3644"], lane: "#ffb000", sun: "#fff2c8", sprites: ["spookytree", "jackolantern", "ghost", "hauntedhouse", "spookytree", "pumpkin", "ghost", "jackolantern"], clouds: false, stars: true, haunted: true },
+  factory: { sky: ["#ff8a4a", "#ffd9a0"], sunY: 0.55, hills: ["#7a7470", "#66605c"], grass: ["#a9a49c", "#9f9a92"], rumble: ["#ffd400", "#222222"], road: ["#55565c", "#505157"], lane: "#ffd400", sun: "#fff0c0", sprites: ["gear", "robot", "crate", "smokestack", "crate", "gear", "robot", "crate"], clouds: false, factory: "#5a4f4c", tunnels: "brick" },
+  caves:   { sky: ["#0a0518", "#3a2470"], mountains: "#1e1438", hills: ["#2e2050", "#241840"], grass: ["#3a2d5a", "#33274f"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#2c2838", "#292535"], lane: "#3cf2ff", sun: "#ffffff", sprites: ["crystal", "stalagmite", "glowshroom", "minecart", "crystal", "glowshroom", "stalagmite", "crystal"], clouds: false, cave: true, tunnels: "crystal" },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 
@@ -333,7 +342,7 @@ export const FRONTS = [
     have: S => Object.values(S.research || {}).reduce((a, b) => a + b, 0) },
 ];
 
-/* ---------- 🚦 Driver School: real-world time (logged by a grown-up) becomes driver training ---------- */
+/* ---------- the old School log (before v1.1 a grown-up logged real-world time); only used to name old rows in Progress ---------- */
 export const ACTIVITIES = [
   { id: "read", icon: "📚", name: "Reading" },
   { id: "outside", icon: "🌳", name: "Playing outside" },
@@ -341,12 +350,12 @@ export const ACTIVITIES = [
   { id: "make", icon: "🎨", name: "Making something" },
   { id: "move", icon: "🚲", name: "Exercise" },
 ];
-/* ---------- 🧮 Math School: Math Laps earn the Driver School tickets ----------
+/* ---------- 🧮 Math Laps at the School: each lap adds a Good Student coin bonus ----------
    Levels: 1 adding to 5 · 2 adding to 10 · 3 adding and taking away to 10 · 4 adding and taking away to 20.
    A grown-up picks the top level: "add10" (adding to 10), "10" (to 10), "20" (to 20). Never a negative answer. */
 export const MATH_LAP = 5;                // questions in a lap
 export const MATH_LEVELS = { add10: 2, "10": 3, "20": 4 };
-export const MATH_CAPS = [3, 6, 10, 0];   // tickets a day (0 = no limit)
+export const MATH_CAPS = [3, 6, 10, 0];   // daily limit in +10% bonus steps, Math and Word Laps together (0 = no limit)
 export function mathQuestion(lv, rnd = Math.random) {
   const int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
   const top = lv >= 4 ? 20 : lv >= 2 ? 10 : 5, minus = lv >= 3 && rnd() < 0.5;

@@ -272,6 +272,10 @@ export const SPRITES = {
   barn: { w: 1900, collide: true }, cow: { w: 900, collide: true }, windmill: { w: 1300, collide: true }, corn: { w: 700, collide: false },
   pirateship: { w: 2200, collide: true }, barrel: { w: 650, collide: true }, parrot: { w: 500, collide: false }, cannon: { w: 900, collide: true },
   cattail: { w: 500, collide: false }, duck: { w: 450, collide: false }, canoe: { w: 1100, collide: true }, coveredbridge: { w: 2400, collide: true },
+  tent: { w: 1800, collide: true }, balloons: { w: 550, collide: false }, cottoncandy: { w: 1100, collide: true },
+  ghost: { w: 650, collide: false }, jackolantern: { w: 800, collide: true }, spookytree: { w: 1400, collide: true }, hauntedhouse: { w: 2100, collide: true },
+  gear: { w: 1200, collide: true }, robot: { w: 900, collide: true }, crate: { w: 800, collide: true }, smokestack: { w: 1100, collide: true },
+  glowshroom: { w: 750, collide: false }, stalagmite: { w: 950, collide: true }, minecart: { w: 1150, collide: true },
   icepine: { w: 1300, collide: true }, icecrystal: { w: 1000, collide: true }, igloo: { w: 1600, collide: true }, penguin: { w: 600, collide: true }, snowfort: { w: 1500, collide: true },
 };
 
@@ -686,6 +690,157 @@ export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
       ctx.fillStyle = "#ff5a00"; ctx.fillRect(x + w * 0.3, yb - h * 0.53, w * 0.06, h * 0.03);
       break;
     }
+    /* ---- 🎢 County Fair ---- */
+    case "tent": {
+      // a striped fair tent with a flag on top
+      const cols = ["#e8262b", "#ffffff"], top = yb - h * 0.95, sx = x - w * 0.45, sw = w * 0.15;
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = cols[(i + 1) % 2]; ctx.fillRect(sx + i * sw, yb - h * 0.45, sw + 0.5, h * 0.45); }
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = cols[i % 2]; poly(ctx, [x, top, sx + i * sw, yb - h * 0.45, sx + (i + 1) * sw, yb - h * 0.45]); }
+      ctx.fillStyle = "#3a1a10"; poly(ctx, [x - w * 0.1, yb, x, yb - h * 0.32, x + w * 0.1, yb]);
+      ctx.fillStyle = "#555"; ctx.fillRect(x - w * 0.01, top - h * 0.15, w * 0.02, h * 0.15);
+      ctx.fillStyle = "#ffd400"; poly(ctx, [x + w * 0.01, top - h * 0.15, x + w * 0.14 * (1 + 0.1 * Math.sin(t * 5 + ph)), top - h * 0.11, x + w * 0.01, top - h * 0.07]);
+      break;
+    }
+    case "balloons": {
+      // a bunch of balloons tied to a little box, bobbing in the breeze
+      const bob = Math.sin(t * 1.8 + ph) * h * 0.05, cols = ["#e8262b", "#ffd400", "#1f6fff", "#2fbf3a", "#ff5fc8"], k0 = Math.abs(seed | 0);
+      const bs = [[-0.22, 1.25], [0, 1.45], [0.22, 1.3], [-0.1, 1.05], [0.12, 1.1]];
+      ctx.strokeStyle = "#f4f4f4"; ctx.lineWidth = Math.max(1, w * 0.015); ctx.beginPath();
+      for (const [bx, by] of bs) { ctx.moveTo(x, yb - h * 0.2); ctx.lineTo(x + w * bx, yb - h * by + bob); }
+      ctx.stroke();
+      ctx.fillStyle = "#8a5a2b"; ctx.fillRect(x - w * 0.07, yb - h * 0.2, w * 0.14, h * 0.2);
+      bs.forEach(([bx, by], k) => {
+        ctx.fillStyle = cols[(k + k0) % cols.length]; ell(ctx, x + w * bx, yb - h * by - h * 0.12 + bob, w * 0.13, h * 0.16);
+        ctx.fillStyle = "rgba(255,255,255,0.45)"; ell(ctx, x + w * bx - w * 0.04, yb - h * by - h * 0.17 + bob, w * 0.03, h * 0.045);
+      });
+      break;
+    }
+    case "cottoncandy": {
+      // a pink and white cotton candy stand with a big cone on the roof
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x - w * 0.42, yb - h * 0.5, w * 0.84, h * 0.5);
+      ctx.fillStyle = "#ff8fd0"; for (let i = 0; i < 4; i++) ctx.fillRect(x - w * 0.42 + i * w * 0.21, yb - h * 0.5, w * 0.105, h * 0.5);
+      ctx.fillStyle = "#ffe08a"; ctx.fillRect(x - w * 0.46, yb - h * 0.56, w * 0.92, h * 0.08);
+      ctx.fillStyle = "#c0c8d6"; ctx.fillRect(x - w * 0.44, yb - h * 0.95, w * 0.04, h * 0.4); ctx.fillRect(x + w * 0.4, yb - h * 0.95, w * 0.04, h * 0.4);
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? "#ffffff" : "#ff5fc8"; ctx.fillRect(x - w * 0.48 + i * w * 0.16, yb - h * 1.05, w * 0.16, h * 0.13); ell(ctx, x - w * 0.4 + i * w * 0.16, yb - h * 0.92, w * 0.08, h * 0.05); }
+      ctx.fillStyle = "#f4e7c8"; poly(ctx, [x + w * 0.26, yb - h * 1.05, x + w * 0.3, yb - h * 1.3, x + w * 0.34, yb - h * 1.05]);
+      ctx.fillStyle = "#ffb3e6"; ell(ctx, x + w * 0.3, yb - h * 1.38, w * 0.15, h * 0.13); ctx.fillStyle = "#ffd0f0"; ell(ctx, x + w * 0.26, yb - h * 1.42, w * 0.07, h * 0.06);
+      break;
+    }
+    /* ---- 🦇 Haunted Hill (friendly ghosts, nothing scary) ---- */
+    case "ghost": {
+      const fy = yb - h * (0.95 + 0.12 * Math.sin(t * 2 + ph)), gx = x + Math.sin(t * 1.3 + ph) * w * 0.08, r0 = w * 0.3;
+      ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.beginPath(); ctx.arc(gx, fy, r0, Math.PI, 0); ctx.lineTo(gx + r0, fy + h * 0.45);
+      for (let k = 1; k <= 6; k++) ctx.lineTo(gx + r0 - k * r0 / 3, fy + h * (k % 2 ? 0.36 : 0.45));
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#2a1450"; ell(ctx, gx - w * 0.1, fy, w * 0.045, h * 0.07); ell(ctx, gx + w * 0.1, fy, w * 0.045, h * 0.07);
+      ctx.strokeStyle = "#2a1450"; ctx.lineWidth = Math.max(1, w * 0.03); ctx.beginPath(); ctx.arc(gx, fy + h * 0.08, w * 0.08, 0.2, Math.PI - 0.2); ctx.stroke();
+      ctx.fillStyle = "rgba(255,140,180,0.6)"; ell(ctx, gx - w * 0.17, fy + h * 0.08, w * 0.04, h * 0.025); ell(ctx, gx + w * 0.17, fy + h * 0.08, w * 0.04, h * 0.025);
+      break;
+    }
+    case "jackolantern": {
+      const glow = 0.75 + 0.25 * Math.sin(t * 9 + ph * 3), cy = yb - h * 0.33;
+      ctx.fillStyle = `rgba(255,200,60,${0.22 * glow})`; ell(ctx, x, cy, w * 0.62, h * 0.5);
+      ctx.fillStyle = "#ff7a00"; ell(ctx, x - w * 0.18, cy, w * 0.24, h * 0.3); ell(ctx, x + w * 0.18, cy, w * 0.24, h * 0.3);
+      ctx.fillStyle = "#ff9a1f"; ell(ctx, x, cy - h * 0.01, w * 0.26, h * 0.32);
+      ctx.fillStyle = "#3a7a2a"; ctx.fillRect(x - w * 0.04, yb - h * 0.75, w * 0.08, h * 0.14);
+      ctx.fillStyle = `rgba(255,235,110,${glow})`;
+      poly(ctx, [x - w * 0.2, cy - h * 0.04, x - w * 0.13, cy - h * 0.16, x - w * 0.06, cy - h * 0.04]);
+      poly(ctx, [x + w * 0.06, cy - h * 0.04, x + w * 0.13, cy - h * 0.16, x + w * 0.2, cy - h * 0.04]);
+      poly(ctx, [x - w * 0.24, cy + h * 0.04, x - w * 0.12, cy + h * 0.1, x, cy + h * 0.06, x + w * 0.12, cy + h * 0.1, x + w * 0.24, cy + h * 0.04, x + w * 0.12, cy + h * 0.18, x - w * 0.12, cy + h * 0.18]);
+      break;
+    }
+    case "spookytree": {
+      // a bare, twisty tree with two blinking eyes in its hollow (an owl, of course)
+      ctx.strokeStyle = "#2a1a30"; ctx.lineCap = "round";
+      ctx.lineWidth = Math.max(1, w * 0.13); ctx.beginPath(); ctx.moveTo(x, yb); ctx.quadraticCurveTo(x - w * 0.08, yb - h * 0.4, x + w * 0.05, yb - h * 0.72); ctx.stroke();
+      ctx.lineWidth = Math.max(1, w * 0.05); ctx.beginPath();
+      ctx.moveTo(x + w * 0.02, yb - h * 0.55); ctx.lineTo(x - w * 0.3, yb - h * 0.82); ctx.lineTo(x - w * 0.45, yb - h * 0.78);
+      ctx.moveTo(x + w * 0.05, yb - h * 0.7); ctx.lineTo(x + w * 0.3, yb - h * 1.0); ctx.lineTo(x + w * 0.42, yb - h * 1.02);
+      ctx.moveTo(x + w * 0.0, yb - h * 0.42); ctx.lineTo(x + w * 0.36, yb - h * 0.58); ctx.lineTo(x + w * 0.44, yb - h * 0.72);
+      ctx.moveTo(x + w * 0.05, yb - h * 0.72); ctx.lineTo(x - w * 0.06, yb - h * 1.08);
+      ctx.moveTo(x - w * 0.3, yb - h * 0.82); ctx.lineTo(x - w * 0.34, yb - h * 0.98);
+      ctx.stroke(); ctx.lineCap = "butt";
+      ctx.fillStyle = "#120a18"; ell(ctx, x - w * 0.02, yb - h * 0.38, w * 0.07, h * 0.06);
+      if (Math.sin(t * 1.7 + ph) > -0.9) { ctx.fillStyle = "#ffd400"; ell(ctx, x - w * 0.045, yb - h * 0.38, w * 0.018, w * 0.018); ell(ctx, x + w * 0.005, yb - h * 0.38, w * 0.018, w * 0.018); }
+      break;
+    }
+    case "hauntedhouse": {
+      const fl = 0.7 + 0.3 * Math.sin(t * 6 + ph);
+      ctx.fillStyle = "#4a3a5a"; ctx.fillRect(x - w * 0.4, yb - h * 0.6, w * 0.8, h * 0.6);
+      ctx.fillStyle = "#2a1f38"; poly(ctx, [x - w * 0.48, yb - h * 0.6, x - w * 0.05, yb - h * 0.95, x + w * 0.3, yb - h * 0.6]);
+      ctx.fillStyle = "#4a3a5a"; ctx.fillRect(x + w * 0.16, yb - h * 1.0, w * 0.2, h * 0.42);
+      ctx.fillStyle = "#2a1f38"; poly(ctx, [x + w * 0.12, yb - h * 1.0, x + w * 0.26, yb - h * 1.32, x + w * 0.4, yb - h * 1.0]);
+      ctx.fillStyle = `rgba(255,220,90,${fl})`;
+      for (const [wx, wy] of [[-0.3, 0.45], [-0.1, 0.45], [0.2, 0.88], [0.2, 0.45]]) ctx.fillRect(x + w * wx, yb - h * wy, w * 0.1, h * 0.12);
+      ctx.fillStyle = "#2a1a10"; ctx.fillRect(x - w * 0.06, yb - h * 0.26, w * 0.13, h * 0.26); ell(ctx, x + w * 0.005, yb - h * 0.26, w * 0.065, h * 0.06);
+      ctx.fillStyle = "#6a5a7a"; ctx.fillRect(x - w * 0.4, yb - h * 0.64, w * 0.8, h * 0.04);
+      break;
+    }
+    /* ---- 🤖 Robot Factory ---- */
+    case "gear": {
+      const r0 = w * 0.3, cy = yb - h * 0.62, dir = Math.abs(seed | 0) % 2 ? 1 : -1;
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.05, cy, w * 0.1, yb - cy);
+      ctx.save(); ctx.translate(x, cy); ctx.rotate(t * 0.8 * dir + ph);
+      ctx.fillStyle = "#9aa3ad"; for (let k = 0; k < 8; k++) { ctx.rotate(Math.PI / 4); ctx.fillRect(-w * 0.06, -r0 - w * 0.09, w * 0.12, w * 0.14); }
+      ell(ctx, 0, 0, r0, r0);
+      ctx.fillStyle = "#6b737d"; ell(ctx, 0, 0, r0 * 0.5, r0 * 0.5); ctx.fillStyle = "#3a3f46"; ell(ctx, 0, 0, r0 * 0.18, r0 * 0.18);
+      ctx.restore();
+      break;
+    }
+    case "robot": {
+      // a friendly orange robot waving at the racers
+      const wave = Math.sin(t * 4 + ph) * 0.5;
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.2, yb - h * 0.3, w * 0.12, h * 0.3); ctx.fillRect(x + w * 0.08, yb - h * 0.3, w * 0.12, h * 0.3);
+      ctx.fillStyle = "#c0c8d6"; ctx.fillRect(x - w * 0.38, yb - h * 0.72, w * 0.1, h * 0.36);
+      ctx.save(); ctx.translate(x + w * 0.33, yb - h * 0.72); ctx.rotate(-2.4 + wave); ctx.fillRect(-w * 0.05, 0, w * 0.1, h * 0.38); ell(ctx, 0, h * 0.4, w * 0.07, w * 0.07); ctx.restore();
+      ctx.fillStyle = "#ff9d1c"; rr(ctx, x - w * 0.28, yb - h * 0.78, w * 0.56, h * 0.5, w * 0.05);
+      ctx.fillStyle = "#ffe08a"; ctx.fillRect(x - w * 0.12, yb - h * 0.65, w * 0.24, h * 0.14);
+      ctx.fillStyle = "#c0c8d6"; rr(ctx, x - w * 0.2, yb - h * 1.08, w * 0.4, h * 0.28, w * 0.05);
+      ctx.fillStyle = "#3cf2ff"; ell(ctx, x - w * 0.08, yb - h * 0.96, w * 0.05, w * 0.05); ell(ctx, x + w * 0.08, yb - h * 0.96, w * 0.05, w * 0.05);
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.01, yb - h * 1.2, w * 0.02, h * 0.12);
+      ctx.fillStyle = (t * 2 + ph | 0) % 2 ? "#ff3d3d" : "#ffd400"; ell(ctx, x, yb - h * 1.22, w * 0.04, w * 0.04);
+      break;
+    }
+    case "crate":
+      ctx.fillStyle = "#c08a4a"; ctx.fillRect(x - w * 0.4, yb - h * 0.7, w * 0.8, h * 0.7);
+      ctx.strokeStyle = "#8a5a2b"; ctx.lineWidth = Math.max(1, w * 0.05);
+      ctx.strokeRect(x - w * 0.36, yb - h * 0.66, w * 0.72, h * 0.62);
+      ctx.beginPath(); ctx.moveTo(x - w * 0.36, yb - h * 0.66); ctx.lineTo(x + w * 0.36, yb - h * 0.04); ctx.moveTo(x + w * 0.36, yb - h * 0.66); ctx.lineTo(x - w * 0.36, yb - h * 0.04); ctx.stroke();
+      break;
+    case "smokestack": {
+      ctx.fillStyle = "#8a4a3a"; poly(ctx, [x - w * 0.16, yb, x - w * 0.11, yb - h * 1.5, x + w * 0.11, yb - h * 1.5, x + w * 0.16, yb]);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(x - w * 0.12, yb - h * 1.36, w * 0.24, h * 0.07);
+      ctx.fillStyle = "#5a2a20"; ctx.fillRect(x - w * 0.13, yb - h * 1.52, w * 0.26, h * 0.05);
+      for (let k = 0; k < 4; k++) { const u = ((t * 0.35 + k / 4 + Math.abs(ph)) % 1); ctx.fillStyle = `rgba(225,222,218,${0.6 * (1 - u)})`; ell(ctx, x + u * w * 0.5, yb - h * 1.58 - u * h * 0.8, w * (0.1 + u * 0.18), w * (0.08 + u * 0.14)); }
+      break;
+    }
+    /* ---- ✨ Crystal Caves ---- */
+    case "glowshroom": {
+      const pulse = 0.6 + 0.4 * Math.sin(t * 2.5 + ph);
+      for (const [dx, s] of [[-0.22, 0.7], [0.12, 1], [0.34, 0.55]]) {
+        const mx = x + w * dx, mh = h * s;
+        ctx.fillStyle = `rgba(80,255,220,${0.2 * pulse})`; ell(ctx, mx, yb - mh * 0.55, w * 0.3 * s, h * 0.3 * s);
+        ctx.fillStyle = "#d8fff6"; ctx.fillRect(mx - w * 0.03 * s, yb - mh * 0.55, w * 0.06 * s, mh * 0.55);
+        ctx.fillStyle = "#3cf2c8"; ctx.beginPath(); ctx.ellipse(mx, yb - mh * 0.55, w * 0.17 * s, h * 0.15 * s, 0, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = "#eaffff"; ell(ctx, mx - w * 0.06 * s, yb - mh * 0.62, w * 0.03 * s, w * 0.03 * s); ell(ctx, mx + w * 0.05 * s, yb - mh * 0.66, w * 0.025 * s, w * 0.025 * s);
+      }
+      break;
+    }
+    case "stalagmite":
+      ctx.fillStyle = "#5a4a7a"; poly(ctx, [x - w * 0.35, yb, x - w * 0.08, yb - h * 1.1, x + w * 0.05, yb - h * 0.9, x + w * 0.35, yb]);
+      ctx.fillStyle = "#7a6a9a"; poly(ctx, [x - w * 0.2, yb, x - w * 0.08, yb - h * 1.1, x - w * 0.02, yb]);
+      ctx.fillStyle = "#4a3a6a"; poly(ctx, [x + w * 0.22, yb, x + w * 0.36, yb - h * 0.45, x + w * 0.5, yb]);
+      ctx.fillStyle = "#ff8af0"; poly(ctx, [x + w * 0.02, yb - h * 0.35, x + w * 0.08, yb - h * 0.5, x + w * 0.14, yb - h * 0.35, x + w * 0.08, yb - h * 0.28]);
+      break;
+    case "minecart": {
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.55, yb - h * 0.04, w * 1.1, h * 0.04);
+      ctx.fillStyle = "#222"; ell(ctx, x - w * 0.25, yb - h * 0.1, w * 0.09, w * 0.09); ell(ctx, x + w * 0.25, yb - h * 0.1, w * 0.09, w * 0.09);
+      const gems = [["#3cf2ff", -0.22], ["#ff3fe5", -0.05], ["#ffd400", 0.1], ["#9a6bff", 0.25]];
+      for (const [c, gx] of gems) { ctx.fillStyle = c; poly(ctx, [x + w * (gx - 0.08), yb - h * 0.48, x + w * gx, yb - h * 0.66, x + w * (gx + 0.08), yb - h * 0.48]); }
+      ctx.fillStyle = "#8a5a3a"; poly(ctx, [x - w * 0.45, yb - h * 0.5, x + w * 0.45, yb - h * 0.5, x + w * 0.36, yb - h * 0.12, x - w * 0.36, yb - h * 0.12]);
+      ctx.fillStyle = "#59606b"; ctx.fillRect(x - w * 0.42, yb - h * 0.42, w * 0.84, h * 0.04); ctx.fillRect(x - w * 0.39, yb - h * 0.24, w * 0.78, h * 0.04);
+      break;
+    }
     case "chevronL":
     case "chevronR": {
       // a curve warning sign on a post: yellow with black arrows pointing the way the road turns
@@ -787,6 +942,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
   }
   if (th.aurora) aurora(ctx, W, H, hz, skyX, t, lite);
   if (th.water) underwater(ctx, W, H, hz, skyX, t);
+  else if (th.cave) caveRoof(ctx, W, H, hz, skyX, t);
   else {
     const sx = W * (0.78 - Math.sin(skyX * Math.PI * 2) * 0.04), sy = hz * (th.sunY || 0.32);
     ctx.fillStyle = th.sun;
@@ -795,7 +951,8 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
     ctx.globalAlpha = 1; ell(ctx, sx, sy, H * 0.08, H * 0.08);
     if (th.night) { ctx.fillStyle = th.sky[0]; ell(ctx, sx + H * 0.03, sy - H * 0.015, H * 0.07, H * 0.07); }   // a crescent moon
   }
-  if (!th.stars && !th.water && !th.aurora && !th.night) {
+  if (th.haunted) bats(ctx, W, H, hz, skyX, t);
+  if (!th.stars && !th.water && !th.aurora && !th.night && !th.cave) {
     ctx.strokeStyle = "rgba(40,50,80,0.7)"; ctx.lineWidth = Math.max(1.5, H * 0.004); ctx.lineCap = "round";
     for (let i = 0; i < 4; i++) {
       const bx = (((t * 0.025 * (1 + i * 0.3) + i * 0.27 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.2 + 0.09 * i) + Math.sin(t * 1.3 + i) * H * 0.01;
@@ -817,6 +974,8 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
     if (th.mountains) peaks(ctx, W, H, hz, th.mountains, hillX * 0.15, H * 0.3, th.tunnels === "ice");
     if (th.mesas) mesas(ctx, W, H, hz, th.mesas, hillX * 0.2);
     if (th.city) city(ctx, W, H, hz, th.city, hillX * 0.35, th.night, t);
+    if (th.factory) factory(ctx, W, H, hz, th.factory, hillX * 0.3, t);
+    if (th.fair) ferris(ctx, W, H, hz, hillX * 0.3, t);
   }
   if (th.clouds) {
     ctx.fillStyle = "rgba(255,255,255,0.9)";
@@ -936,6 +1095,56 @@ function city(ctx, W, H, hz, col, off, night, t) {
     }
   }
   void t;
+}
+/* 🎢 County Fair: a Ferris wheel turning slowly on the horizon (the cabins stay upright) */
+function ferris(ctx, W, H, hz, off, t) {
+  const r = H * 0.13, x = ((((0.72 - off) % 1) + 1) % 1) * W * 1.4 - W * 0.2, cy = hz - r - H * 0.035;
+  if (x < -r * 2 || x > W + r * 2) return;
+  ctx.strokeStyle = "#f2f5fa"; ctx.lineWidth = Math.max(1.5, H * 0.006);
+  ctx.beginPath(); ctx.moveTo(x - r * 0.55, hz); ctx.lineTo(x, cy); ctx.lineTo(x + r * 0.55, hz); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI * 2); ctx.stroke();
+  const cols = ["#e8262b", "#ffd400", "#1f6fff", "#2fbf3a"], a0 = t * 0.25;
+  ctx.lineWidth = Math.max(1, H * 0.003); ctx.beginPath();
+  for (let k = 0; k < 8; k++) { const a = a0 + k * Math.PI / 4; ctx.moveTo(x, cy); ctx.lineTo(x + Math.cos(a) * r, cy + Math.sin(a) * r); }
+  ctx.stroke();
+  for (let k = 0; k < 8; k++) { const a = a0 + k * Math.PI / 4, px = x + Math.cos(a) * r, py = cy + Math.sin(a) * r; ctx.fillStyle = cols[k % 4]; rr(ctx, px - H * 0.014, py, H * 0.028, H * 0.022, H * 0.006); }
+  ctx.fillStyle = "#f2f5fa"; ell(ctx, x, cy, H * 0.01, H * 0.01);
+}
+/* 🦇 Haunted Hill: little bats flapping across the evening sky */
+function bats(ctx, W, H, hz, skyX, t) {
+  ctx.fillStyle = "#1a0d26";
+  for (let i = 0; i < 5; i++) {
+    const bx = (((t * 0.03 * (1 + i * 0.25) + i * 0.21 + skyX * 0.4) % 1.2) - 0.1) * W, by = hz * (0.18 + 0.1 * (i % 3)) + Math.sin(t * 2 + i * 1.7) * H * 0.02;
+    const s = H * (0.016 + 0.004 * (i % 2)), f = Math.sin(t * 14 + i * 2) * s * 0.6;
+    poly(ctx, [bx, by - s * 0.15, bx - s * 0.5, by - s * 0.3 - f, bx - s * 1.2, by - f * 1.2, bx - s * 0.7, by + s * 0.2, bx - s * 0.3, by + s * 0.1, bx, by + s * 0.3, bx + s * 0.3, by + s * 0.1, bx + s * 0.7, by + s * 0.2, bx + s * 1.2, by - f * 1.2, bx + s * 0.5, by - s * 0.3 - f]);
+  }
+}
+/* 🤖 Robot Factory: saw-tooth roofs and smokestacks puffing on the horizon */
+function factory(ctx, W, H, hz, col, off, t) {
+  const bw = W / 8, sh = (((off * 8) % 1) + 1) % 1;
+  for (let k = -1; k <= 9; k++) {
+    const n = k + Math.floor(off * 8), x = (k - sh) * bw, h = H * (0.05 + 0.04 * Math.abs(Math.sin(n * 1.7))), w = bw * 0.8;
+    ctx.fillStyle = col; ctx.fillRect(x, hz - h, w, h);
+    for (let s = 0; s < 3; s++) poly(ctx, [x + s * w / 3, hz - h, x + s * w / 3, hz - h - H * 0.025, x + (s + 1) * w / 3, hz - h]);
+    if (Math.abs(n) % 2 === 0) {
+      const sx = x + w * 0.7, top = hz - h - H * 0.11; ctx.fillRect(sx, top, w * 0.09, H * 0.11);
+      for (let p = 0; p < 3; p++) { const u = (t * 0.2 + p / 3 + Math.abs(n) * 0.13) % 1; ctx.fillStyle = `rgba(235,230,225,${0.5 * (1 - u)})`; ell(ctx, sx + w * 0.045 + u * W * 0.03, top - u * H * 0.08, H * (0.012 + u * 0.025), H * (0.01 + u * 0.02)); }
+    }
+  }
+}
+/* ✨ Crystal Caves: a rock ceiling with hanging stalactites; some hold twinkling gems */
+function caveRoof(ctx, W, H, hz, off, t) {
+  ctx.fillStyle = "#33265a"; ctx.fillRect(0, 0, W, H * 0.05);
+  const n = 12, sh = (((off * n) % 1) + 1) % 1, base = Math.floor(off * n), wd = W / n * 0.75;
+  for (let k = -1; k <= n + 1; k++) {
+    const id = k + base, x = (k - sh) / n * W, len = H * (0.06 + 0.12 * Math.abs(Math.sin(id * 2.3)));
+    ctx.fillStyle = Math.abs(id) % 2 ? "#33265a" : "#3d2e6a"; poly(ctx, [x - wd / 2, 0, x + wd / 2, 0, x + wd * 0.12, H * 0.04 + len * 0.6, x, H * 0.04 + len, x - wd * 0.15, H * 0.04 + len * 0.5]);
+    if (Math.abs(id) % 3 === 0) {
+      const g = 0.6 + 0.4 * Math.sin(t * 3 + id), gy = H * 0.04 + len * 0.35, s = H * 0.012;
+      ctx.fillStyle = Math.abs(id) % 2 ? `rgba(60,242,255,${g})` : `rgba(255,110,235,${g})`;
+      poly(ctx, [x, gy - s, x + s * 0.7, gy, x, gy + s, x - s * 0.7, gy]);
+    }
+  }
 }
 function hills(ctx, W, H, hz, col, off, amp, freq, seed) {
   ctx.fillStyle = col;

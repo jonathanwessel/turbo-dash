@@ -36,8 +36,9 @@ const FIXTURES = {
   "v1.1 (math school)": { v: 16, name: "Carter", coins: 800, owned: ["zippy"], rank: 3, school: { tickets: 4, earned: 9, skills: { focus: 2, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "math", m: 15, t: 4 }, { d: "2026-11-01", a: "read", m: 20, t: 4 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 6, laps: 9, lv: 3, p: 1 }, mathMax: "20", capT: 10 } },
   "v1.2 (effects setting)": { v: 17, name: "Carter", coins: 500, owned: ["zippy"], rank: 3, opts: { tilt: false, flip: false, fx: "simple" } },
   "v1.6 (bank)": { v: 19, name: "Carter", coins: 640, owned: ["zippy"], rank: 6, bank: { bal: 1284, low: 1200, t: 1794100000000, paid: 84, news: 84 } },
-  "v1.8 (good student bonus)": { v: 20, name: "Carter", coins: 900, owned: ["zippy", "patrol"], rank: 6, school: { tickets: 0, earned: 14, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-09", a: "math", m: 10, t: 3 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 3, laps: 12, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 30, wrong: 2, laps: 9, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 1794200000000 }, { p: 10, until: 1794200500000 }] } },
   "v1.5 (word laps)": { v: 18, name: "Carter", coins: 700, owned: ["zippy"], rank: 4, school: { tickets: 3, earned: 12, skills: { focus: 2, reflex: 1, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "word", m: 10, t: 3 }, { d: "2026-11-08", a: "math", m: 5, t: 2 }], readingDouble: true, capMin: 0, math: { right: 30, wrong: 4, laps: 7, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 18, wrong: 3, laps: 4, lv: 2, p: 1 }, wordMax: "4" } },
+  "v1.8 (good student bonus)": { v: 20, name: "Carter", coins: 900, owned: ["zippy", "patrol"], rank: 6, school: { tickets: 0, earned: 14, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-09", a: "math", m: 10, t: 3 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 3, laps: 12, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 30, wrong: 2, laps: 9, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 1794200000000 }, { p: 10, until: 1794200500000 }] } },
+  "v1.9 (more earth, bonus from a wrong clock)": { v: 21, name: "Carter", coins: 1200, owned: ["zippy", "bolt"], rank: 7, best: { fair: 1, haunted: 2 }, bestD: { "fair:normal": 1, "haunted:normal": 2 }, school: { earned: 20, log: [{ d: "2026-11-10", a: "word", m: 10, t: 2 }], math: { right: 50, wrong: 4, laps: 14, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 40, wrong: 2, laps: 11, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 9e15 }] } },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -71,11 +72,10 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   for (const k of ["stunts", "turbos", "bams", "roadCoins"]) if (raw.stats && typeof raw.stats[k] === "number") check(name, S.stats[k] === raw.stats[k], `stat ${k} lost`);
   if (raw.mastery) for (const [k, v] of Object.entries(raw.mastery)) check(name, S.mastery[k] === v, `mastery ${k} lost`);
   if (raw.bank) check(name, JSON.stringify(S.bank) === JSON.stringify(raw.bank), "bank lost");
-  if (raw.school) { // v20 (1.8): lessons and tickets from older saves are reset (the Driver School now gives a short coin bonus)
-    if ((raw.v || 0) < 20) check(name, S.school.tickets === 0 && Object.values(S.school.skills).every(v => v === 0), "old lessons should be reset");
-    else { check(name, S.school.tickets === raw.school.tickets, "tickets lost"); for (const [k, v] of Object.entries(raw.school.skills)) check(name, S.school.skills[k] === v, `skill ${k} lost`); }
-    check(name, S.school.earned === raw.school.earned, "earned count lost"); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); check(name, S.school.readingDouble === raw.school.readingDouble, "reading setting lost"); if (raw.school.math) check(name, JSON.stringify(S.school.math) === JSON.stringify(raw.school.math) && S.school.mathMax === raw.school.mathMax && S.school.capT === raw.school.capT, "math school progress lost"); if (raw.school.word) check(name, JSON.stringify(S.school.word) === JSON.stringify(raw.school.word) && S.school.wordMax === raw.school.wordMax, "word lap progress lost"); }
-  if (raw.parent && raw.parent.license === false) check(name, S.parent.license === false, "license gauge setting lost");
+  if (raw.school) { // v20 (1.8) reset lessons and tickets; v21 (1.9) drops those fields from every save
+    check(name, !("tickets" in S.school) && !("skills" in S.school) && !("readingDouble" in S.school) && !("capMin" in S.school), "old lesson fields should be gone");
+    check(name, S.school.earned === raw.school.earned, "earned count lost"); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); if (raw.school.math) check(name, JSON.stringify(S.school.math) === JSON.stringify(raw.school.math) && S.school.mathMax === raw.school.mathMax && S.school.capT === raw.school.capT, "math school progress lost"); if (raw.school.word) check(name, JSON.stringify(S.school.word) === JSON.stringify(raw.school.word) && S.school.wordMax === raw.school.wordMax, "word lap progress lost"); }
+  check(name, !("license" in S.parent), "the old License gauge switch should be gone");
   if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
   if (raw.daily) check(name, Object.entries(raw.daily).every(([k, v]) => S.daily[k] === v), "daily treats lost");
   if (raw.world) check(name, S.world === raw.world, "world choice lost");
@@ -95,8 +95,9 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (raw.seen) check(name, Object.keys(raw.seen).every(k => S.seen[k] === true), "seen moments lost");
   if (raw.stats?.drifts) check(name, S.stats.drifts === raw.stats.drifts, "drift count lost");
   if (raw.stats?.rings) check(name, S.stats.rings === raw.stats.rings, "ring count lost");
-  check(name, S.school && Number.isInteger(S.school.tickets) && typeof S.school.skills === "object" && S.school.math.lv >= 1 && S.school.math.lv <= 4 && ["add10", "10", "20"].includes(S.school.mathMax) && S.school.word.lv >= 1 && S.school.word.lv <= 4 && ["3", "4", "5"].includes(S.school.wordMax), "school data broken");
-  if (raw.school?.boosts) check(name, JSON.stringify(S.school.boosts) === JSON.stringify(raw.school.boosts), "Good Student bonuses lost");
+  check(name, S.school && Number.isInteger(S.school.earned) && S.school.math.lv >= 1 && S.school.math.lv <= 4 && ["add10", "10", "20"].includes(S.school.mathMax) && S.school.word.lv >= 1 && S.school.word.lv <= 4 && ["3", "4", "5"].includes(S.school.wordMax), "school data broken");
+  if (raw.school?.boosts) check(name, S.school.boosts.length === raw.school.boosts.length && S.school.boosts.every((b, k) => b.p === raw.school.boosts[k].p && b.until === Math.min(raw.school.boosts[k].until, b.until)), "Good Student bonuses lost");
+  check(name, S.school.boosts.every(b => b.until <= Date.now() + 30 * 60000 + 1000), "a bonus lasts longer than 30 minutes (wrong device clock)");
   check(name, Array.isArray(S.school.boosts), "no Good Student bonus list");
   check(name, S.bank && Number.isInteger(S.bank.bal) && S.bank.bal >= 0 && S.bank.low <= S.bank.bal, "bank data broken");
   check(name, Array.isArray(S.lab.benches) && S.lab.benches.every(b => b.p === null || typeof b.p === "string"), "bad lab benches");
@@ -138,10 +139,10 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
 // Google Save: the three-way sync decision (what changed where since the last sync)
 {
   const { decide, fingerprint } = await import("../src/cloud.js");
-  const base = { races: 100, rank: 5, research: { coinBoost: 2 }, school: { skills: { focus: 1 }, earned: 10 }, owned: ["zippy"], ups: {}, claimed: [] };
+  const base = { races: 100, rank: 5, research: { coinBoost: 2 }, school: { math: { laps: 3 }, earned: 10 }, owned: ["zippy"], ups: {}, claimed: [] };
   const bk = { mt: "t1", print: fingerprint(base) };
   const tablet = { ...base, races: 104 };                                     // raced 4 more on this device
-  const phone = { ...base, school: { skills: { focus: 1 }, earned: 30 } };      // reading tickets logged on the phone
+  const phone = { ...base, school: { math: { laps: 9 }, earned: 30 } };      // Math Laps done on the phone
   check("cloud: nothing new", decide(base, { mt: "t1", save: null }, bk) === "nothing", "synced copies should do nothing");
   check("cloud: only here changed", decide(tablet, { mt: "t1", save: null }, bk) === "upload", "local progress wasn't uploaded");
   check("cloud: only Google changed", decide(base, { mt: "t2", save: phone }, bk) === "load", "the other device's progress wasn't loaded");

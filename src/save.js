@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -32,12 +32,12 @@ const DEFAULTS = () => ({
   lab: { benches: [] }, // [{ p: projectId | null, end: ms timestamp }]
   cups: {},            // "cupId:difficulty" -> best place
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
-  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, license: true, weather: true },  // helper: 0 off, 1 a little, 2 lots
+  parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, weather: true },  // helper: 0 off, 1 a little, 2 lots
   autoOn: false,
   missions: null, history: [], restUntil: 0,
   cloud: { linked: false },   // Google Save
-  // Driver School: tickets come from real-world time a grown-up logs; skills are bought with tickets
-  school: { tickets: 0, earned: 0, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [], readingDouble: true, capMin: 0,
+  // School: Math and Word Laps; each adds a Good Student bonus (earned counts all the +10% steps ever given)
+  school: { earned: 0, log: [],
     math: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, mathMax: "10", capT: 6,
     word: { right: 0, wrong: 0, laps: 0, lv: 1, p: 0 }, wordMax: "5", boosts: [] },
 });
@@ -114,7 +114,7 @@ export function port(d) {
   s.parent = {
     diffs: pd.length ? pd : def.parent.diffs,
     helper: Math.round(num(p.helper, 0, 0, 2)), breakMin: num(p.breakMin, 0, 0, 240), volume: num(p.volume, 0.8, 0, 1),
-    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, license: p.license !== false, weather: p.weather !== false,
+    buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, weather: p.weather !== false,
   };
   // v15 (1.0): Progress page, Car Wash, Museum, tilt steering
   const isDay = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
@@ -143,14 +143,13 @@ export function port(d) {
   s.missions = typeof M.day === "string" && Array.isArray(M.list) && M.list.length && M.list.every(okM) ? { ...M, list: M.list.map(m => ({ ...m, claimed: m.claimed === true })) } : null;
   s.history = arr(d.history).filter(h => h && typeof h === "object").slice(0, 30);
   s.cloud = { linked: obj(d.cloud).linked === true };
-  const sc = obj(d.school), sk = obj(sc.skills), lessonsGone = (num(d.v, 0) || 0) < 20;   // v20 (1.8): lessons and tickets are reset
+  // v20 (1.8) dropped lessons and tickets, v21 (1.9) the last of their fields: tickets, skills, readingDouble, capMin
+  const sc = obj(d.school), soon = Date.now() + 30 * 60000;
   s.school = {
-    tickets: lessonsGone ? 0 : Math.round(num(sc.tickets, 0, 0)), earned: Math.round(num(sc.earned, 0, 0)),
-    skills: Object.fromEntries(["focus", "reflex", "courage", "smarts"].map(k => [k, lessonsGone ? 0 : Math.round(num(sk[k], 0, 0, 10))])),
-    // v20 (1.8): Good Student bonuses still running ({ p: percent, until: ms })
-    boosts: arr(sc.boosts).filter(b => b && Number.isFinite(b.p) && b.p > 0 && b.p <= 100 && Number.isFinite(b.until) && b.until > 0).map(b => ({ p: Math.round(b.p), until: b.until })).slice(-20),
+    earned: Math.round(num(sc.earned, 0, 0)),
+    // v20 (1.8): Good Student bonuses still running ({ p: percent, until: ms }); never more than 30 minutes out
+    boosts: arr(sc.boosts).filter(b => b && Number.isFinite(b.p) && b.p > 0 && b.p <= 100 && Number.isFinite(b.until) && b.until > 0).map(b => ({ p: Math.round(b.p), until: Math.min(b.until, soon) })).slice(-20),
     log: arr(sc.log).filter(e => e && typeof e === "object" && typeof e.a === "string").slice(0, 60),
-    readingDouble: sc.readingDouble !== false, capMin: num(sc.capMin, 0, 0, 600),
     // v16 (1.1): Math School
     math: (m => ({ right: Math.round(num(m.right, 0, 0)), wrong: Math.round(num(m.wrong, 0, 0)), laps: Math.round(num(m.laps, 0, 0)), lv: Math.round(num(m.lv, 1, 1, 4)), p: Math.round(num(m.p, 0, 0, 9)) }))(obj(sc.math)),
     mathMax: ["add10", "10", "20"].includes(sc.mathMax) ? sc.mathMax : "10",

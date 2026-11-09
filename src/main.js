@@ -251,7 +251,7 @@ function spend(n) {
 /* ---------- race setup ---------- */
 function carStats() {
   const car = CARS.find(c => c.id === S.car) || CARS[0];
-  return { car: lookOf(car), stats: statsFor(car, upsOf(car.id), S.research, S.school.skills) };
+  return { car: lookOf(car), stats: statsFor(car, upsOf(car.id), S.research) };
 }
 
 function menuDemo() {
@@ -262,7 +262,7 @@ function menuDemo() {
   (engineFor(track) || engineFor(track = TRACKS[0])).setup(track, "demo", car, stats);
 }
 
-let currentTrack = TRACKS[0];
+let currentTrack = TRACKS[0], raceStartAt = 0;
 /* Break reminder: after the parent's set play time, the next race start shows a 10-minute rest screen. */
 let playMs = 0;
 function restDue() {
@@ -296,19 +296,20 @@ function startRace(track) {
   if (!isPreview() && track.world !== "earth" && !S.seen["w:" + track.world]) { const w = WORLDS.find(x => x.id === track.world); S.seen["w:" + track.world] = true; if (w) museumAdd(w.icon, `First race in ${w.name}`); }
   currentTrack = track; if (!isPreview()) { S.lastTrack = track.id; save(); }
   const pw = isPreview() && WORLDS.find(x => x.id === run.world), pcar = pw && worldCar(pw);
-  const { car, stats } = pw ? { car: pcar, stats: statsFor(pcar, UPS3, { ...S.research, ...(pw.kit ? { [pw.kit]: Math.max(1, S.research[pw.kit] || 0) } : {}) }, S.school.skills) } : carStats();
+  const { car, stats } = pw ? { car: pcar, stats: statsFor(pcar, UPS3, { ...S.research, ...(pw.kit ? { [pw.kit]: Math.max(1, S.research[pw.kit] || 0) } : {}) }) } : carStats();
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
   const boss = run.kind === "boss" && { ...run.boss, def: CARS.find(c => c.id === run.boss.car) };
   const trial = run.kind === "trial";
   // 🌧️ about one Earth race in four has weather (never in the very first races, never in Time Trials or boss races)
-  const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate"];
+  const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"];
   const weather = track.world === "earth" && S.parent.weather && S.rank >= OPEN_RANK.weather && !trial && !boss && Math.random() < 0.25
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  { const gs = isPreview() ? 0 : goodStudentPct(S, Date.now()); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
+  raceStartAt = Date.now();
+  { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
   nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
@@ -411,11 +412,10 @@ function paintRaceTabs() {
   if (raceTab === "boss") paintBosses();
 }
 /* ---------- ⏱️ Time Trials: alone against the clock and your own ghost ---------- */
-const trialLen = t => trackLen(t);
 function paintTrials() {
   $("trial-list").innerHTML = TRACKS.map((t, i) => {
     if ((t.world || "earth") !== S.world) return "";
-    const th = THEMES[t.theme], open = unlocked(i), best = S.trials[t.id], medal = S.trialMedals[t.id] || 0, times = trialTimes(t, trialLen(t));
+    const th = THEMES[t.theme], open = unlocked(i), best = S.trials[t.id], medal = S.trialMedals[t.id] || 0, times = trialTimes(t, trackLen(t));
     return `<button class="track-card trial-card ${open ? "" : "locked"}" data-trial="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${TRIAL_MEDALS[medal]}</div>
@@ -431,7 +431,7 @@ $("trial-list").addEventListener("click", e => {
   sfx("click"); run = { kind: "trial" }; startRace(TRACKS[i]);
 });
 function showTrialResult(r) {
-  const t = currentTrack, len = trialLen(t), goalsBefore = claimable().length;
+  const t = currentTrack, len = trackLen(t), goalsBefore = claimable().length;
   const { time, before, oldMedal, medal, record, pay } = trialReward(S, t, r, len);
   if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
   save();
@@ -686,7 +686,7 @@ function showResult(r) {
   const goalsBefore = claimable().length;
   const ti = TRACKS.indexOf(currentTrack), openBefore = TRACKS.filter(t => trackOpen(S, t));
   const bossRace = run.kind === "boss", chipsBefore = S.chips;
-  const { prize, sparkle, starUp, student } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()), now: Date.now() });
+  const { prize, sparkle, starUp, student } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()), now: raceStartAt || Date.now() });
   if (starUp) setTimeout(() => toast(`⭐ Mastery star ${starUp} on ${currentTrack.name}!`), 1800);
   if (student) setTimeout(() => toast(`📚 Good Student bonus: +🪙${student}`), starUp ? 3400 : 1200);
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
@@ -805,7 +805,7 @@ $("goals").addEventListener("click", e => {
 });
 
 /* ---------- racer rank: all four fronts must be full ---------- */
-const frontsNow = () => { const need = rankNeeds(S.rank, S); return FRONTS.filter(f => f.id !== "license" || need.license > 0).map(f => ({ ...f, have: f.have(S), need: need[f.id] })); };
+const frontsNow = () => { const need = rankNeeds(S.rank, S); return FRONTS.map(f => ({ ...f, have: f.have(S), need: need[f.id] })); };
 const rankReady = () => S.rank < RANK_CAP && frontsNow().every(f => f.have >= f.need);
 function openRank() {
   const fr = frontsNow(), ready = rankReady(), maxed = S.rank >= RANK_CAP;
@@ -848,7 +848,6 @@ const minsLeft = until => Math.max(1, Math.ceil((until - Date.now()) / 60000));
 function paintSchool() {
   const now = Date.now(), pct = goodStudentPct(S, now), boosts = activeBoosts(S, now).sort((a, b) => a.until - b.until);
   const left = bonusLeft(S, dayKey(new Date())), laps = lapsDone(S), need = GOOD_STUDENT.patrolLaps;
-  $("sch-bonus").textContent = "+" + pct + "%";
   $("gs-panel").innerHTML = `<div class="gs-big ${pct ? "on" : ""}"><b>${pct ? "+" + pct + "%" : "No bonus yet"}</b><small>${pct ? "more coins from every race" : "Do a lap for bonus coins!"}</small></div>
     <div class="gs-list">${boosts.map(b => `<span>📚 +${b.p}% <small>${minsLeft(b.until)} min</small></span>`).join("") || `<span class="gs-how">🧮 or 📚 lap = <b>+${GOOD_STUDENT.pct}%</b> for ${GOOD_STUDENT.mins} min</span>`}</div>
     ${left === 0 ? `<div class="gs-done">That's all the bonuses for today. Great work, ${who()}!</div>` : ""}
@@ -1070,8 +1069,14 @@ addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
 /* ➡️ the "Next" sign on Main Street: one thing to do next, one tap to get there */
 function nextStep() {
   if (rankReady()) return { icon: "⭐", text: "Rank up!", go: () => openRank() };
-  const i = TRACKS.findIndex((t, k) => (t.world || "earth") === S.world && unlocked(k) && S.bestD[t.id + ":" + S.diff] !== 1);
-  if (i >= 0) return { icon: TRACKS[i].icon, text: `Win ${TRACKS[i].name}`, go: () => openTracks() };
+  // a track opens when the one before it is won on Normal or Hard (or Easy, when a grown-up allows only Easy)
+  const diffs = allowedDiffs(), easyOnly = !diffs.includes("normal") && !diffs.includes("hard");
+  const opener = t => S.bestD[t.id + ":normal"] === 1 || S.bestD[t.id + ":hard"] === 1 || (easyOnly && S.bestD[t.id + ":easy"] === 1);
+  const here = (t, k) => (t.world || "earth") === S.world && unlocked(k);
+  let i = TRACKS.findIndex((t, k) => here(t, k) && !opener(t) && TRACKS.some((n, j) => n.after === t.id && !unlocked(j)));   // the key to a locked track
+  if (i < 0) i = TRACKS.findIndex((t, k) => here(t, k) && !TRACKS.some(n => n.after === t.id) && !Object.keys(S.bestD).some(d => d.startsWith(t.id + ":") && S.bestD[d] === 1));   // a track never won
+  if (i >= 0) { const t = TRACKS[i], onNormal = !easyOnly && S.diff === "easy" && !opener(t) && TRACKS.some(n => n.after === t.id);
+    return { icon: t.icon, text: `Win ${t.name}${onNormal ? " on Normal" : ""}`, go: () => openTracks() }; }
   const todo = frontsNow().filter(f => f.need > 0 && f.have < f.need);
   if (!todo.length) return null;
   const low = todo.reduce((a, f) => (f.have / f.need < a.have / a.need ? f : a));
@@ -1269,7 +1274,7 @@ function openProgress() {
   // the next rank: each gauge, and a rough "hours of play" from his own pace so far
   const fr = frontsNow().filter(f => f.need > 0), maxed = S.rank >= RANK_CAP;
   let est = 0;
-  for (const f of fr) if (f.have < f.need && f.id !== "license") { const perHour = hrs > 0.2 ? f.have / hrs : 0; est = Math.max(est, perHour > 0 ? (f.need - f.have) / perHour : Infinity); }
+  for (const f of fr) if (f.have < f.need) { const perHour = hrs > 0.2 ? f.have / hrs : 0; est = Math.max(est, perHour > 0 ? (f.need - f.have) / perHour : Infinity); }
   $("pg-next").innerHTML = maxed ? "Top rank for now! 🎉" : `<b>Next: Rank ${S.rank + 1}</b> ${fr.map(f => `<span class="${f.have >= f.need ? "ok" : ""}">${f.icon} ${Math.min(f.have, f.need)}/${f.need}</span>`).join(" ")}
     <small>${rankReady() ? "Ready to rank up now! Tap the Rank tower." : !isFinite(est) || hrs <= 0.2 ? "Play a little more to see an estimate." : `About ${est < 1 ? Math.max(5, Math.round(est * 60)) + " minutes" : est.toFixed(1) + " hours"} of play at his pace.`}</small>`;
   const best = Object.entries(S.mastery || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const [id, df] = k.split(":"), t = TRACKS.find(x => x.id === id); return t ? `<span>${t.icon} ${t.name} <small>${n} wins (${df})</small></span>` : ""; }).join("");

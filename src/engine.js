@@ -218,7 +218,7 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false;
-    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null;   // the camera starts centred on the car
+    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centred on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
@@ -620,7 +620,7 @@ export class Race {
     if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
-      this.coins += 3 + Math.floor((this.stats.courage || 0) / 3); this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9 + 0.08 * (this.stats.courage || 0)); this.nitro = Math.min(1, this.nitro + 0.1);
+      this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);
       this.popup(["STUNT!", "AIR TIME!", "WHOOSH!", "AWESOME!"][Math.floor(Math.random() * 4)], "#5be36a");
     }
   }
@@ -739,7 +739,7 @@ export class Race {
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
     }
     ctx.restore(); ctx.globalAlpha = 1;
-    const dark = th.night || this.inTunnel;
+    const dark = th.night || th.cave || this.inTunnel;
     if (dark) this.drawHeadlights(ctx, W / 2 + carShift, H - H * 0.02 - lift - pw * 0.25, pw, H);
     // lean into the steering, plus a little body roll from the curve pushing the car outward
     const roll = p.air > 0 ? 0 : clamp(-pseg.curve * Math.min(1, p.speed / BASE_MAX) * 0.08, -0.35, 0.35);
@@ -847,7 +847,7 @@ export class Race {
         drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900, flat: this.lite }); ctx.restore();
       }
       if (c.air > 30) { const gy = lerp(s.p1.screen.y, s.p2.screen.y, pct), k = Math.max(0.4, 1 - c.air / 2000); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(x, gy, w * 0.55 * k, w * 0.07 * k, 0, 0, 7); ctx.fill(); }
-      if ((this.T.theme.night || s.tunnel) && w > 4) {
+      if ((this.T.theme.night || this.T.theme.cave || s.tunnel) && w > 4) {
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,240,180,0.22)";
         ctx.beginPath(); ctx.ellipse(x, y - w * 0.05 - w * 0.6, w * 0.7, w * 0.25, 0, 0, 7); ctx.fill(); ctx.restore();
       }
@@ -871,7 +871,7 @@ export class Race {
     if (s.p1.camera.z <= this.camDepth || s.p2.camera.z <= this.camDepth) return;
     const a = s.p1.screen, b = s.p2.screen, ha = a.scale * 2600 * F, hb = b.scale * 2600 * F;
     if (a.w < 1) return;
-    const col = { rock: ["#8a5232", "#6e3f25"], ice: ["#cfe6f7", "#a9cbe6"], cave: ["#2a1410", "#1d0d0a"], brick: ["#6a3a32", "#4f2a24"] }[th.tunnels] || ["#555", "#444"];
+    const col = { rock: ["#8a5232", "#6e3f25"], ice: ["#cfe6f7", "#a9cbe6"], cave: ["#2a1410", "#1d0d0a"], crystal: ["#3a2a6a", "#2a1d50"], brick: ["#6a3a32", "#4f2a24"] }[th.tunnels] || ["#555", "#444"];
     this.clipped(ctx, s, a.y, () => {
       ctx.fillStyle = col[s.alt];
       quad(ctx, a.x - a.w * 1.3, a.y, b.x - b.w * 1.3, b.y, b.x - b.w * 1.3, b.y - hb, a.x - a.w * 1.3, a.y - ha);

@@ -83,7 +83,7 @@ export const fingerprint = s => {
 const remember = mt => { try { localStorage.setItem(BOOK, JSON.stringify({ mt, print: fingerprint(S) })); } catch (e) { /* storage blocked */ } };
 const sum = o => Object.values(o || {}).reduce((a, b) => a + (+b || 0), 0);
 /* "How far along" a save is, for when both devices changed: everything that is earned, not just races. */
-export const progress = s => (s.races || 0) * 10 + sum(s.research) * 40 + sum(s.school?.skills) * 30 + (s.school?.earned || 0) * 5
+export const progress = s => (s.races || 0) * 10 + sum(s.research) * 40 + ((s.school?.math?.laps || 0) + (s.school?.word?.laps || 0)) * 30 + (s.school?.earned || 0) * 5
   + (s.owned || []).length * 60 + Object.values(s.ups || {}).reduce((a, u) => a + sum(u), 0) * 8 + (s.claimed || []).length * 20 + (s.rank || 1) * 200;
 /* The decision, kept pure so it can be tested: "upload", "load" or "nothing". */
 export function decide(local, remote, book) {

@@ -35,6 +35,9 @@ window.__audit = (rootSel) => {
     if (!hiddenByScroll) items.push({ e, r, scrolled, clipped });
   }
   const issues = unreachable.map(u => "CAN'T SCROLL TO " + u);
+  // a screen's big green buttons must be on screen without scrolling (v1.9: Word Lap hid below the School). Small
+  // Back and Done buttons at the end of the long grown-up pages (Progress, Guide, Parent Corner) are meant to be scrolled to.
+  for (const e of root.querySelectorAll(".big-btn.go:not(.small)")) if (vis(e)) { const r = e.getBoundingClientRect(); if (r.bottom > H + 2 || r.right > W + 2) issues.push("NEEDS SCROLLING " + name(e)); }
   const BAD =/\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));
