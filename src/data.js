@@ -27,7 +27,7 @@ export const CARS = [
   // ❄️ Glacier Rink cars
   { id: "frost", name: "Frost Runner", price: 220000, world: "glacier", body: "#bfefff", accent: "#1f6fff", ice: true, type: "skis", speed: 0.72, accel: 0.6, grip: 0.6 },
   { id: "polar", name: "Polar Bear", price: null, cup: "glacier", ice: true, body: "#ffffff", accent: "#3cb6ff", type: "monster", speed: 0.78, accel: 0.66, grip: 0.64 },
-  // 🧸 Toy Track World cars (made for plastic track: other cars are 4% slower there)
+  // 🧸 Toy Track World cars (like every world's own cars, 5% faster at home: homeBonus in physics-common.js)
   { id: "toyRacer", name: "Toy Racer", price: 400000, world: "toy", toy: true, body: "#ff3d3d", accent: "#ffd400", type: "racer", speed: 0.9, accel: 0.78, grip: 0.7 },
   { id: "loopLegend", name: "Loop Legend", price: null, cup: "toy", toy: true, body: "#14e1ff", accent: "#ff2bd6", type: "galaxy", speed: 0.96, accel: 0.84, grip: 0.7 },
   { id: "windup", name: "Wind-Up Rocket", price: null, boss: "windup", world: "toy", toy: true, body: "#ffd400", accent: "#e8262b", type: "rocket", speed: 1.02, accel: 0.9, grip: 0.7 },
@@ -182,7 +182,7 @@ export const PHYSICS = {
   // on ice: cars slide (steering changes where you're going, not where you are), curves push harder,
   // drift into a curve for a DRIFT BOOST, and soft snowbanks sit in one lane
   // 🧸 Next Gen: a real 3D engine (src/toy). rival scales the rivals' speed on plastic track.
-  toy: { gravity: 1, top: 1, accel: 1, grip: 1, air: 0.6, toy: true, rival: 1.04 },
+  toy: { gravity: 1, top: 1, accel: 1, grip: 1, air: 0.6, toy: true, rival: 1.0 },   // rival 1.04 -> 1.0 in v1.11: the Toy Racer is no longer required on Normal
   glacier: { gravity: 0.9, top: 1, accel: 0.8, grip: 0.7, air: 0.7, ice: true, drift: true, snowbanks: true },
 };
 // Difficulty: Carter picks per race. Harder pays more and earns more trophy points.
@@ -205,9 +205,9 @@ export const upgradeCost = (carId, lvl, pitCrew = 0) => {
 export const THEMES = {
   sunny:  { sky: ["#4fb6ff", "#bfe9ff"], hills: ["#5cc46a", "#3fa553"], grass: ["#5fd068", "#4dbd57"], rumble: ["#ffffff", "#e8262b"], road: ["#6b6f78", "#656972"], lane: "#ffffff", sun: "#fff59a", sprites: ["tree", "tree", "bush", "flower"], clouds: true, city: "#a9cbe8" },
   desert: { sky: ["#ffb14d", "#ffe7a8"], hills: ["#e09a52", "#c97f3b"], grass: ["#f2cf86", "#e8c274"], rumble: ["#ffffff", "#ff7a00"], road: ["#8a7561", "#826d59"], lane: "#fff4d6", sun: "#fff3c4", sprites: ["cactus", "cactus", "rock", "palm"], clouds: false, mesas: "#d98a4a", tunnels: "rock" },
-  snow:   { sky: ["#7fb2e6", "#e6f3ff"], hills: ["#ffffff", "#d6e6f5"], grass: ["#f4f9ff", "#e3eef9"], rumble: ["#1f6fff", "#ffffff"], road: ["#5d6a7a", "#576474"], lane: "#ffffff", sun: "#ffffff", sprites: ["pine", "pine", "snowman"], clouds: true, mountains: "#9db8d6", tunnels: "ice" },
+  snow:   { sky: ["#7fb2e6", "#e6f3ff"], snow: true, hills: ["#ffffff", "#d6e6f5"], grass: ["#f4f9ff", "#e3eef9"], rumble: ["#1f6fff", "#ffffff"], road: ["#5d6a7a", "#576474"], lane: "#ffffff", sun: "#ffffff", sprites: ["pine", "pine", "snowman"], clouds: true, mountains: "#9db8d6", tunnels: "ice" },
   candy:  { sky: ["#ff8ad8", "#ffd6f3"], hills: ["#b46cff", "#9a4cf2"], grass: ["#7ef2c8", "#6ee3b8"], rumble: ["#ffffff", "#ff3fa4"], road: ["#c18bd6", "#b882cc"], lane: "#ffffff", sun: "#fffbe0", sprites: ["lollipop", "lollipop", "candycane", "cupcake"], clouds: true },
-  lava:   { sky: ["#3a0b0b", "#ff6a2a"], hills: ["#5a1d12", "#3e130c"], grass: ["#4a2a22", "#402219"], rumble: ["#ffd400", "#222222"], road: ["#2c2c30", "#28282c"], lane: "#ffb000", sun: "#ffcf4d", sprites: ["volcanorock", "lavaflame", "volcanorock"], clouds: false, mountains: "#2a0f0b", tunnels: "cave" },
+  lava:   { sky: ["#3a0b0b", "#ff6a2a"], haze: "#5e2418", hills: ["#5a1d12", "#3e130c"], grass: ["#4a2a22", "#402219"], rumble: ["#ffd400", "#222222"], road: ["#2c2c30", "#28282c"], lane: "#ffb000", sun: "#ffcf4d", sprites: ["volcanorock", "lavaflame", "volcanorock"], clouds: false, mountains: "#2a0f0b", tunnels: "cave" },
   beach:  { sky: ["#38b6ff", "#c9f1ff"], hills: ["#2fa8ff", "#1f8ad6"], grass: ["#f7e08a", "#efd57a"], rumble: ["#ffffff", "#2fa8ff"], road: ["#a87a4f", "#9c7046"], lane: "#fff4d6", sun: "#fff7b0", sprites: ["palm", "umbrella", "sandcastle", "surfboard"], clouds: true },
   autumn: { sky: ["#ff6a5f", "#ffc27b"], sunY: 0.62, mountains: "#8a4a6a", hills: ["#c9572b", "#a8431f"], grass: ["#d98c3a", "#cf8233"], rumble: ["#ffffff", "#b3261e"], road: ["#6b5a50", "#655448"], lane: "#ffe9c0", sun: "#fff0c8", sprites: ["autumnTree", "autumnTree", "pumpkin", "hay", "mushroom"], clouds: true },
   moon:   { sky: ["#02030f", "#1a2550"], hills: ["#6a7080", "#4f5565"], grass: ["#8f95a3", "#868c9a"], rumble: ["#3cf2ff", "#2a2f3a"], road: ["#3d4250", "#3a3f4c"], lane: "#3cf2ff", sun: "#fff8e0", sprites: ["moonrock", "crater", "dish", "moonrock", "dome", "crater"], clouds: false, stars: true, earth: true, detail: 2 },
@@ -223,7 +223,7 @@ export const THEMES = {
   fair:    { sky: ["#45b0ff", "#c8ecff"], hills: ["#62c46a", "#48a957"], grass: ["#7fd36a", "#72c65e"], rumble: ["#ffffff", "#ff3d8a"], road: ["#6f7380", "#696d7a"], lane: "#ffffff", sun: "#fff59a", sprites: ["tent", "balloons", "cottoncandy", "tree", "balloons", "hay", "tent", "flower"], clouds: true, fair: true },
   haunted: { sky: ["#1e0f3a", "#7a3f9e"], sunY: 0.3, mountains: "#2a1840", hills: ["#3a2a52", "#2c1f42"], grass: ["#3d4a3a", "#354232"], rumble: ["#ff8a00", "#1a1424"], road: ["#3e3a48", "#3a3644"], lane: "#ffb000", sun: "#fff2c8", sprites: ["spookytree", "jackolantern", "ghost", "hauntedhouse", "spookytree", "pumpkin", "ghost", "jackolantern"], clouds: false, stars: true, haunted: true, lights: true },
   factory: { sky: ["#ff8a4a", "#ffd9a0"], sunY: 0.55, hills: ["#7a7470", "#66605c"], grass: ["#a9a49c", "#9f9a92"], rumble: ["#ffd400", "#222222"], road: ["#55565c", "#505157"], lane: "#ffd400", sun: "#fff0c0", sprites: ["gear", "robot", "crate", "smokestack", "crate", "gear", "robot", "crate"], clouds: false, factory: "#5a4f4c", tunnels: "brick" },
-  caves:   { sky: ["#0a0518", "#3a2470"], mountains: "#1e1438", hills: ["#2e2050", "#241840"], grass: ["#3a2d5a", "#33274f"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#2c2838", "#292535"], lane: "#3cf2ff", sun: "#ffffff", sprites: ["crystal", "stalagmite", "glowshroom", "minecart", "crystal", "glowshroom", "stalagmite", "crystal"], clouds: false, cave: true, tunnels: "crystal" },
+  caves:   { sky: ["#0a0518", "#3a2470"], haze: "#2a1f4a", mountains: "#1e1438", hills: ["#2e2050", "#241840"], grass: ["#3a2d5a", "#33274f"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#2c2838", "#292535"], lane: "#3cf2ff", sun: "#ffffff", sprites: ["crystal", "stalagmite", "glowshroom", "minecart", "crystal", "glowshroom", "stalagmite", "crystal"], clouds: false, cave: true, tunnels: "crystal" },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
 };
 

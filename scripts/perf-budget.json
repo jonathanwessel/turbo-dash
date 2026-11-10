@@ -1,102 +1,102 @@
 {
  "sunny:3": {
-  "ops": 6969,
-  "area": 2.55,
+  "ops": 5324,
+  "area": 2.5,
   "grads": 12
  },
  "sunny:1": {
-  "ops": 5915,
-  "area": 2.46,
+  "ops": 4222,
+  "area": 2.41,
   "grads": 1
  },
  "sunny+rain:3": {
-  "ops": 7178,
-  "area": 2.55,
+  "ops": 5518,
+  "area": 2.49,
   "grads": 12
  },
  "sunny+rain:1": {
-  "ops": 6121,
-  "area": 2.46,
+  "ops": 4412,
+  "area": 2.4,
   "grads": 1
  },
  "fair:3": {
-  "ops": 8682,
-  "area": 2.55,
+  "ops": 6421,
+  "area": 2.48,
   "grads": 12
  },
  "fair:1": {
-  "ops": 6419,
-  "area": 2.55,
+  "ops": 4613,
+  "area": 2.49,
   "grads": 1
  },
  "haunted:3": {
-  "ops": 9204,
-  "area": 2.69,
+  "ops": 7060,
+  "area": 2.63,
   "grads": 13
  },
  "haunted:1": {
-  "ops": 7512,
-  "area": 2.56,
+  "ops": 6094,
+  "area": 2.52,
   "grads": 2
  },
  "night:3": {
-  "ops": 8211,
-  "area": 2.86,
+  "ops": 7081,
+  "area": 2.84,
   "grads": 13
  },
  "night:1": {
-  "ops": 6423,
-  "area": 2.76,
+  "ops": 5223,
+  "area": 2.73,
   "grads": 2
  },
  "lava:3": {
-  "ops": 9195,
-  "area": 2.4,
+  "ops": 6169,
+  "area": 2.3,
   "grads": 12
  },
  "lava:1": {
-  "ops": 5700,
-  "area": 2.28,
+  "ops": 4243,
+  "area": 2.23,
   "grads": 1
  },
  "caves:3": {
-  "ops": 8219,
-  "area": 2.85,
+  "ops": 7042,
+  "area": 2.83,
   "grads": 13
  },
  "caves:1": {
-  "ops": 6643,
-  "area": 2.69,
+  "ops": 5441,
+  "area": 2.66,
   "grads": 2
  },
  "crater:3": {
-  "ops": 6487,
-  "area": 3.07,
+  "ops": 5382,
+  "area": 3.04,
   "grads": 18.8
  },
  "crater:1": {
-  "ops": 5290,
-  "area": 3.09,
+  "ops": 4318,
+  "area": 3.06,
   "grads": 7.8
  },
  "kelp:3": {
-  "ops": 8051,
-  "area": 2.51,
+  "ops": 6809,
+  "area": 2.49,
   "grads": 9.5
  },
  "kelp:1": {
-  "ops": 7299,
-  "area": 2.53,
+  "ops": 5962,
+  "area": 2.5,
   "grads": 2.2
  },
  "icecave:3": {
-  "ops": 10623,
-  "area": 2.82,
+  "ops": 8100,
+  "area": 2.74,
   "grads": 18.8
  },
  "icecave:1": {
-  "ops": 7125,
-  "area": 2.5,
+  "ops": 5670,
+  "area": 2.44,
   "grads": 1
  }
 }

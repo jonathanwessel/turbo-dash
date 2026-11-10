@@ -12,6 +12,7 @@ export const WALL_H = 1.2;      // wall height
 export const BASE_Y = 1.6;      // the track floats a little above the floor on short stilts
 export const CAR_HW = 0.8;      // half a car's width
 export const LIMIT = HW - CAR_HW - 0.1;   // the farthest sideways a car can go before it touches a wall
+export const FLOOR_GAP = 0.3;   // the track's underside stays at least this far above the floor
 
 function rng(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -148,6 +149,11 @@ export function buildToyTrack(track) {
   const N = out.px.length, L = N * DS;
   const T = { track, N, L, R };
   for (const k of Object.keys(out)) T[k] = Float32Array.from(out[k]);
+  // the low side of a banked corner must not dip through the playroom floor (v1.11): find the lowest point of the
+  // track's underside and lift the whole track if needed (the race only uses height differences, so nothing changes)
+  { let low = Infinity; const O = HW + 0.35;
+    for (let i = 0; i < T.py.length; i++) for (const x of [-O, O]) low = Math.min(low, T.py[i] + T.ry[i] * x - T.uy[i] * 0.35);
+    if (low < FLOOR_GAP) for (let i = 0; i < T.py.length; i++) T.py[i] += FLOOR_GAP - low; }
   const fi = c => finalOf[(c + NP) % NP];
   for (const c of jumps) { const a = fi(c), b = fi(c + Math.round(GAPL / step)); gapsOut.push({ s0: a * DS, s1: b * DS, i0: a, i1: b }); }
   T.loops = loopsOut; T.gaps = gapsOut;
@@ -190,4 +196,11 @@ export function toyPoint(T, s, x = 0, h = 0, out = [0, 0, 0]) {
   }
   return out;
 }
+/* the start arch (v1.11): two poles standing on the road's edges, their tops level, the banner hung between them */
+export function startArch(T, height = 9) {
+  const L = toyPoint(T, 0, -HW - 1, 0), R = toyPoint(T, 0, HW + 1, 0), top = Math.max(L[1], R[1]) + height;
+  return { L, R, top, mid: [(L[0] + R[0]) / 2, top - 0.6, (L[2] + R[2]) / 2], width: Math.hypot(R[0] - L[0], R[2] - L[2]) + 0.6 };
+}
+/* the start line's four corners, lying on the road surface (banked or not): [near left, near right, far left, far right] */
+export const startLine = (T, half = 0.6) => [toyPoint(T, -half, -HW, 0.03), toyPoint(T, -half, HW, 0.03), toyPoint(T, half, -HW, 0.03), toyPoint(T, half, HW, 0.03)];
 export const sampleAt = (T, s) => Math.floor((((s % T.L) + T.L) % T.L) / DS) % T.N;

@@ -78,7 +78,7 @@ function run(id, weather, quality) {
   race.setup(track, "race", car, statsFor(car, { engine: 0, turbo: 0, tires: 0, magnet: 0 }, {}), { diff: "normal", weather });
   race.lite = quality === 1; race.quality = quality;
   while (race.state === "countdown") race.update(1 / 60);
-  const seg = Race.prototype.drawSegment; race.drawSegment = function (...a) { st.inBg = false; return seg.apply(this, a); };
+  const road = Race.prototype.drawRoad; race.drawRoad = function (...a) { st.inBg = false; return road.apply(this, a); };
   const sum = { ops: 0, grads: 0, area: 0, bg: 0, img: 0, spr: 0, skip: 0, max: 0, n: 0 };
   for (let f = 0; f < FRAMES && race.state === "race"; f++) {
     const p = race.player; race.input.left = p.offset > 0.7; race.input.right = p.offset < -0.7;

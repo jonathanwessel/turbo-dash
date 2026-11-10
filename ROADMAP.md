@@ -285,11 +285,23 @@ From the same review, the performance part:
 - **No work behind rooms and menus;** the HUD writes only on change.
 - Lesson: measure before tuning. The step counter (`#steps`) shows a device's real frame pattern in one race.
 
-### Next: v1.11 "Feel and finish"
-Toy World surviving a lost 3D context, Toy World steering that matches the classic road, star jitter, a hazed road
-end, tunnel exits, start line and arch on banked toy roads, toy corners that sink through the floor, batched road
-quads, a smaller track cache. Under discussion: a home-world bonus for cars built for a world (instead of needing
-the Toy Racer on Normal), and whether late-game curves should need more steering.
+### v1.11.0 🏠 Feel and finish (shipped)
+The rest of the same review, plus the owner's answer on world cars:
+- **Home-world bonus** (`homeBonus` in `physics-common.js`): a world's shop, cup and boss cars are 5% faster (top
+  speed and acceleration) in that world; it replaced the 4% penalty on ice and in Toy World. The Lunar Rover is the
+  Moon's car; no new car. Toy World rivals 1.04 → 1.00, so the Toy Racer isn't required on Normal (the Glacier cars
+  can start it). Other worlds were measured and left as they are: making the previous world's best shop car win on
+  Normal there would have made every Hard race a walk-over for the home car.
+- **Toy World** steering ease-in, drafting and the soft catch-up of the classic road; survives a lost 3D context
+  (rebuilds the picture, keeps the race); start line and arch on the banked road; never below the floor.
+- **Step-independent jumps, seeded race luck, stars, haze, tunnel exits, Snowy Peaks snow, no shimmer.**
+- **Road drawn in layers** (P8), 3 cached tracks (P10), less per-frame garbage (P11), view lifecycle fixes (T5).
+- Lesson: a balance target written as "the previous car can win" only works if the cars of neighbouring worlds are
+  close in stats; check both ends (Normal for the old car, Hard for the new one) before tuning.
+
+### Next
+Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
+(locked-box opacity, the bright poster) wait for the owner too.
 
 ### Later: more worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release in the Next Gen engine, each

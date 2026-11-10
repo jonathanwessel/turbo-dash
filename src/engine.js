@@ -5,7 +5,7 @@ import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
-import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep } from "./physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep, homeBonus } from "./physics-common.js";
 export { BASE_MAX };   // starter car top speed (world units / s)
 const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, LANES = 3;   // the draw distance is per quality level (past 60% of it: no lane dashes)
 /* picture quality (v1.10, set by the game from how fast this device draws; Settings > Effects can pin it):
@@ -38,7 +38,7 @@ function rng(seed) {
 const trackCache = new Map();
 export const clearTrackCache = () => trackCache.clear();   // tests: build a track again from scratch
 export function buildTrack(track) {
-  if (trackCache.has(track.id)) return trackCache.get(track.id);
+  if (trackCache.has(track.id)) { const T = trackCache.get(track.id); trackCache.delete(track.id); trackCache.set(track.id, T); return T; }   // most recent last
   const r = rng(track.seed * 7919), th = THEMES[track.theme], segs = [];
   const lastY = () => segs.length ? segs[segs.length - 1].p2.world.y : 0;
   const add = (curve, y) => {
@@ -177,6 +177,7 @@ export function buildTrack(track) {
   }
   const T = { segs, length: segs.length * SEG, theme: th, track };
   trackCache.set(track.id, T);
+  while (trackCache.size > 3) trackCache.delete(trackCache.keys().next().value);   // keep the last 3 tracks (v1.11: all of them took ~38 MB)
   return T;
 }
 
@@ -211,7 +212,7 @@ export class Race {
     for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
     this.hooks.onPower?.(null);
-    this.track = track; this.mode = mode; this.stats = stats;
+    this.track = track; this.mode = mode; this.stats = stats; this.home = homeBonus(car, track);   // 🏠 v1.11
     this.state = mode === "demo" ? "demo" : "countdown";
     this.count = 3.6; this.raceTime = 0;
     this.startZ = START * SEG + SEG * 0.5;
@@ -224,10 +225,11 @@ export class Race {
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false; this.quality = this.quality || 3;
     this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centred on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
+    this.luck = seededRng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks, boss Turbo timing, puddle shoves (v1.11)
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({
       def, ...slot(i), speed: mode === "demo" ? BASE_MAX * 0.6 : 0, lane: slot(i).offset, laneT: 1 + i, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
-      base: BASE_MAX * rivalBase(d, i) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top,
+      base: BASE_MAX * rivalBase(d, i) * (mode === "demo" ? 1 : this.diff.rival) * this.phys.top * (this.phys.rival || 1),   // rival: per world (v1.11)
     }));
     // 👑 boss race: just you and the boss (who fires Turbo every few seconds)
     if (opts.boss) this.rivals = [{ def: opts.boss.def, name: opts.boss.name, ...slot(4), speed: 0, lane: slot(4).offset, laneT: 2, knockT: 0, wobT: 0, finished: false, air: 0, vy: 0,
@@ -277,7 +279,7 @@ export class Race {
       if (g > 0 && g < 6 * SEG && c.speed < p.speed && Math.abs(c.offset - target) < CAR_W * 1.1 && this.nitroT <= 0 && this.shieldT <= 0) target = c.offset > 0 ? c.offset - 0.65 : c.offset + 0.65;
     }
     if (L >= 86) {                                                                                          // 86+: smart Turbo and power-ups
-      const straight = [...Array(25)].every((_, k) => Math.abs(segs[(idx + k) % N].curve) < 1.5);
+      let straight = true; for (let k = 0; k < 25 && straight; k++) straight = Math.abs(segs[(idx + k) % N].curve) < 1.5;
       if (this.nitro >= 1 && straight) this.useNitro();
       if (this.power) this.usePower();
     }
@@ -327,7 +329,7 @@ export class Race {
       this.count -= dt;
       const now = Math.ceil(this.count - 0.6);
       if (now !== before && now > 0) h.sfx("beep");
-      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); }
+      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.home > 1 && this.mode === "race") this.popup("🏠 HOME BONUS!", "#ffd400"); }
       h.engine(0.05, false);
       return;
     }
@@ -350,8 +352,8 @@ export class Race {
     const draft = this.drafting && !auto && !fast;
     // Downtown: like the rivals, the car eases off for a city-block corner (there's no brake pedal)
     const corner = this.track.layout === "blocks" && !auto && (Math.abs(seg.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(p.dist + 5 * SEG).curve) > BLOCK_CURVE * 0.5);
-    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (corner ? 0.86 : 1) * (ph.ice && !p.def.ice ? 0.96 : 1) * (draft ? 1.06 : 1)) * ph.top;
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : draft ? 1.3 : 1) * dt);
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (corner ? 0.86 : 1) * this.home * (draft ? 1.06 : 1)) * ph.top;
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * this.home * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : draft ? 1.3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
@@ -425,7 +427,8 @@ export class Race {
       while (this.recT >= 0.1) { this.recT -= 0.1; this.rec.d.push(Math.round(p.dist)); this.rec.o.push(Math.round(p.offset * 100) / 100); this.rec.a.push(Math.round(p.air)); }
     }
     if (flying) {
-      p.vy -= GRAVITY * ph.gravity * dt; p.air += p.vy * dt; p.airT += dt;
+      // exact for constant gravity, so a jump peaks at the same height whatever the step size (v1.11)
+      const g = GRAVITY * ph.gravity; p.air += p.vy * dt - 0.5 * g * dt * dt; p.vy -= g * dt; p.airT += dt;
       if (p.air <= 0) this.land();
     }
     // missed the jump over a gap? A friendly tractor beam floats you across (slowly). No crashes.
@@ -472,7 +475,7 @@ export class Race {
     for (const c of this.rivals) {
       let target = c.base;
       if (this.state !== "demo" && this.rivals.some(o => o !== c && o.dist - c.dist > SEG && o.dist - c.dist < 8 * SEG && Math.abs(o.offset - c.offset) < CAR_W && !o.air && !c.air)) target *= 1.03;
-      if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
+      if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + this.luck() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
         target *= rubberBand((c.dist - p.dist) / SEG, this.diff.id, d);
@@ -500,7 +503,7 @@ export class Race {
         }
       }
       c.dist += c.speed * dt;
-      if (c.air > 0) { c.vy -= GRAVITY * this.phys.gravity * dt; c.air += c.vy * dt; if (c.air <= 0) c.air = c.vy = 0; }
+      if (c.air > 0) { const g = GRAVITY * this.phys.gravity; c.air += c.vy * dt - 0.5 * g * dt * dt; c.vy -= g * dt; if (c.air <= 0) c.air = c.vy = 0; }
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY * jumpFor(c.speed); }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
@@ -547,7 +550,7 @@ export class Race {
     const pud = this.puddles.get(s.index);
     if (pud !== undefined && p.air <= 0 && this.puddleHit !== s.index && Math.abs(p.offset - pud) < 0.36) {
       // SPLASH: a little slide sideways and a spray of water (a small slowdown, never a crash)
-      this.puddleHit = s.index; p.offset += (Math.random() < 0.5 ? -1 : 1) * 0.14; p.speed *= 0.97;
+      this.puddleHit = s.index; p.offset += (this.luck() < 0.5 ? -1 : 1) * 0.14; p.speed *= 0.97;
       for (let k = 0; k < 14; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.25, y: 0.95, vx: (Math.random() - 0.5) * 0.7, vy: -0.4 - Math.random() * 0.3, life: 0.6, c: "#cdeeff", r: 0.006 + Math.random() * 0.008 });
       this.hooks.sfx("bump"); this.popup("SPLASH!", "#9fe8ff");
     }
@@ -587,7 +590,7 @@ export class Race {
       if (b.until > this.t || Math.abs(b.offset - p.offset) > CAR_W * 0.5 + 0.12) continue;
       b.until = this.t + 6;
       if (!this.power) {
-        const r = Math.random();
+        const r = this.luck();
         this.power = r < 0.3 ? "shield" : r < 0.55 ? "coins" : r < 0.8 ? "magnet" : "turbo";
         this.hooks.onPower?.(this.power); this.hooks.sfx("chest"); this.popup("?!", "#ffffff");
       }
@@ -678,15 +681,11 @@ export class Race {
     if (bgBottom < H) { ctx.save(); ctx.beginPath(); ctx.rect(-W, -H, W * 3, bgBottom + H); ctx.clip(); }
     drawBackground(ctx, W, H, th, this.skyX, this.hillX, bgLift, t, this.lite);
     if (bgBottom < H) ctx.restore();
-    for (const n of shown) {
-      const s = segs[(base.index + n) % N];
-      this.drawSegment(ctx, s, th, W, n > FAR);
-      if (n > DRAW_DIST * 0.3) { ctx.globalAlpha = Math.min(0.5, (n / DRAW_DIST - 0.3) * 0.75); ctx.fillStyle = th.haze || (th.haze = shade(th.sky[1], 0.18)); ctx.fillRect(0, s.p2.screen.y, W, s.p1.screen.y - s.p2.screen.y + 1); ctx.globalAlpha = 1; }
-    }
+    this.drawRoad(ctx, shown, segs, base.index, th, W, DRAW_DIST, FAR);
 
     // rivals by segment (on ice only the two nearest get a reflection)
     this.nearTwo = this.T.theme.ice && q >= 3 ? [...this.rivals].sort((a, b) => Math.abs(a.dist - p.dist) - Math.abs(b.dist - p.dist)).slice(0, 2) : [];
-    const bySeg = new Map(), behind = [];
+    const bySeg = this.bySeg || (this.bySeg = new Map()), behind = []; bySeg.clear();
     for (const c of this.rivals) {
       const z = mod(this.startZ + c.dist, L), idx = Math.floor(z / SEG) % N;
       const item = { c, pct: (z % SEG) / SEG, s: segs[idx] };
@@ -709,7 +708,7 @@ export class Race {
       if (s.rampStart) this.drawRamp(ctx, s, segs[(s.index + RAMP_LEN - 1) % N], F);
       if (s.index === START) this.drawArch(ctx, s, F);
       if (s.rail) this.drawRails(ctx, s, F);
-      if (s.tunnel) this.drawTunnel(ctx, s, F, th);
+      if (s.tunnel) { const a = ctx.globalAlpha; ctx.globalAlpha = Math.min(1, a * 2.5); this.drawTunnel(ctx, s, F, th); ctx.globalAlpha = a; }   // tunnels turn solid quickly (v1.11: no see-through rock in the distance)
       if (s.ventTop) this.drawVent(ctx, s, F);
       if (s.snow != null) this.drawSnowbank(ctx, s, F);
       // things on this segment. Past a hill crest only the part above the crest shows (one clip for the whole
@@ -731,13 +730,13 @@ export class Race {
         const cw = sc * COIN_W * F, cx = s.p1.screen.x + s.p1.screen.w * c.offset, cy = sy - cw * 0.9 - (c.h ? sc * c.h * F : 0);
         if (cx + cw * 3 < 0 || cx - cw * 3 > W) continue;
         if (c.ring) { if (cy - cw * 3 * RING_TOP < clip) { clipOn(); drawRing(ctx, cx, cy, cw * 3, t); } continue; }
-        if (c.pearl) { if (cy - cw * 1.1 * PEARL_TOP < clip) { clipOn(); drawPearl(ctx, cx, cy, cw * 1.1, t); } continue; }
-        if (cy - cw * COIN_TOP < clip) { clipOn(); drawCoin(ctx, cx, cy, cw, t); }
+        if (c.pearl) { if (cy - cw * 1.1 * PEARL_TOP < clip) { clipOn(); drawPearl(ctx, cx, cy, cw * 1.1, t, s.index * 0.7 + c.offset * 3); } continue; }
+        if (cy - cw * COIN_TOP < clip) { clipOn(); drawCoin(ctx, cx, cy, cw, t, s.index * 0.37 + c.offset * 2); }
       }
       if (s.boxes) for (const b of s.boxes) {
         if (b.until > t) continue;
         const bw = sc * 420 * F, bx = s.p1.screen.x + s.p1.screen.w * b.offset, by = sy - bw * 0.85;
-        if (by - bw * BOX_TOP < clip) { clipOn(); drawBox(ctx, bx, by, bw, t); }
+        if (by - bw * BOX_TOP < clip) { clipOn(); drawBox(ctx, bx, by, bw, t, s.index * 0.5 + b.offset * 2); }
       }
       if (clipped) ctx.restore();
       const list = bySeg.get(s.index);
@@ -903,6 +902,13 @@ export class Race {
       ctx.fillStyle = col[1];
       quad(ctx, a.x - a.w * 1.3, a.y - ha, a.x + a.w * 1.3, a.y - ha, b.x + b.w * 1.3, b.y - hb, b.x - b.w * 1.3, b.y - hb);
       if (s.index % 4 === 0) { ctx.fillStyle = "#ffb347"; ctx.beginPath(); ctx.ellipse(a.x, a.y - ha * 0.97, a.w * 0.12, Math.max(1, ha * 0.02), 0, 0, 7); ctx.fill(); }
+      if (s.tunnelEnd) {
+        // the way out: a rim of rock around the opening, so the exit reads as a hole in the hill (v1.11)
+        const rim = Math.max(1, a.w * 0.12);
+        ctx.fillStyle = col[0];
+        ctx.fillRect(b.x - b.w * 1.3 - rim, b.y - hb - rim, b.w * 2.6 + rim * 2, rim);
+        ctx.fillRect(b.x - b.w * 1.3 - rim, b.y - hb, rim, hb); ctx.fillRect(b.x + b.w * 1.3, b.y - hb, rim, hb);
+      }
       if (s.tunnelStart) {
         // the portal: a big face around the opening
         ctx.fillStyle = col[0];
@@ -999,98 +1005,66 @@ export class Race {
     });
   }
 
-  drawSegment(ctx, s, th, W, far = false) {
-    const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, a = s.alt;
-    // one shade for grass and road (alternating shades read as stripes racing at you); each piece overlaps the
-    // nearer one by a pixel so no seam line shows between them. Curbs and lane dashes still alternate for speed.
-    const yb = y1 + 1;
-    ctx.fillStyle = th.grass[0]; ctx.fillRect(0, y2, W, yb - y2);
-    const r1 = w1 / 6, r2 = w2 / 6;
-    ctx.fillStyle = th.rumble[a];
-    quad(ctx, x1 - w1 - r1, yb, x1 - w1 + 1, yb, x2 - w2 + 1, y2, x2 - w2 - r2, y2);
-    quad(ctx, x1 + w1 + r1, yb, x1 + w1 - 1, yb, x2 + w2 - 1, y2, x2 + w2 + r2, y2);
-    if (s.gap) {
-      ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 - r1, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 - w2 - r2, y2);
-      ctx.fillStyle = "rgba(60,242,255,0.35)"; quad(ctx, x1 - w1 - r1, yb, x1 - w1 - r1 * 0.5, yb, x2 - w2 - r2 * 0.5, y2, x2 - w2 - r2, y2);
-      quad(ctx, x1 + w1 + r1 * 0.5, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 + w2 + r2 * 0.5, y2);
-      return;
-    }
-    ctx.fillStyle = th.road[0];
-    quad(ctx, x1 - w1, yb, x1 + w1, yb, x2 + w2, y2, x2 - w2, y2);
-    if (s.finish) {
-      const cols = 10;
-      for (let c = 0; c < cols; c++) {
+  /* The road, layer by layer for every visible piece at once (v1.11): all the grass in one path and one fill, then
+     the curbs, the road, the edge lines and the lane dashes, instead of one path per piece (about 45 canvas calls a
+     piece before). Pieces don't overlap (each starts at the far edge of the one before), so the layers can go in any
+     order between pieces. Past 60% of the view (far) there are no curbs, edge lines or dashes: the haze covers them.
+     Special pieces (a jump gap, the finish line, underwater ripples) are drawn on top afterwards. The haze is drawn
+     last, one rectangle per band of equal strength. */
+  drawRoad(ctx, shown, segs, b0, th, W, DRAW_DIST, FAR) {
+    const N = segs.length, list = shown.map(n => segs[(b0 + n) % N]);
+    const layer = (style, fn) => { ctx.fillStyle = style; ctx.beginPath(); let any = false; for (let k = 0; k < list.length; k++) if (fn(list[k], shown[k] > FAR)) any = true; if (any) ctx.fill(); };
+    const q = (x1, y1, x2, y2, x3, y3, x4, y4) => { ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath(); };
+    layer(th.grass[0], s => { const a = s.p1.screen, b = s.p2.screen; ctx.rect(0, b.y, W, a.y + 1 - b.y); return true; });
+    for (const alt of [0, 1]) layer(th.rumble[alt], (s, far) => {
+      if (s.alt !== alt || (far && !s.gap)) return false;
+      const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, yb = y1 + 1, r1 = w1 / 6, r2 = w2 / 6;
+      q(x1 - w1 - r1, yb, x1 - w1 + 1, yb, x2 - w2 + 1, y2, x2 - w2 - r2, y2); q(x1 + w1 + r1, yb, x1 + w1 - 1, yb, x2 + w2 - 1, y2, x2 + w2 + r2, y2); return true;
+    });
+    layer(th.road[0], s => { if (s.gap) return false; const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen; q(x1 - w1, y1 + 1, x1 + w1, y1 + 1, x2 + w2, y2, x2 - w2, y2); return true; });
+    layer("rgba(255,255,255,0.9)", (s, far) => {
+      if (s.gap || s.finish || far) return false;
+      const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, e1 = w1 * 0.035, e2 = w2 * 0.035;
+      q(x1 - w1 + e1, y1, x1 - w1 + 2 * e1, y1, x2 - w2 + 2 * e2, y2, x2 - w2 + e2, y2); q(x1 + w1 - 2 * e1, y1, x1 + w1 - e1, y1, x2 + w2 - e2, y2, x2 + w2 - 2 * e2, y2); return true;
+    });
+    layer(th.lane, (s, far) => {   // lane dashes: 4 segments on, 8 off (about real spacing)
+      if (s.gap || s.finish || far || s.index % 12 >= 4) return false;
+      const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, l1 = w1 / 32, l2 = w2 / 32;
+      for (let lane = 1; lane < LANES; lane++) { const lx1 = x1 - w1 + (2 * w1 * lane) / LANES, lx2 = x2 - w2 + (2 * w2 * lane) / LANES; q(lx1 - l1 / 2, y1, lx1 + l1 / 2, y1, lx2 + l2 / 2, y2, lx2 - l2 / 2, y2); }
+      return true;
+    });
+    for (const s of list) {
+      const { x: x1, y: y1, w: w1 } = s.p1.screen, { x: x2, y: y2, w: w2 } = s.p2.screen, yb = y1 + 1, r1 = w1 / 6, r2 = w2 / 6;
+      if (s.gap) {
+        ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 - r1, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 - w2 - r2, y2);
+        ctx.fillStyle = "rgba(60,242,255,0.35)"; quad(ctx, x1 - w1 - r1, yb, x1 - w1 - r1 * 0.5, yb, x2 - w2 - r2 * 0.5, y2, x2 - w2 - r2, y2);
+        quad(ctx, x1 + w1 + r1 * 0.5, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 + w2 + r2 * 0.5, y2);
+        continue;
+      }
+      if (s.finish) for (let c = 0; c < 10; c++) {
         ctx.fillStyle = (c + s.index) % 2 ? "#ffffff" : "#111111";
-        const a1 = x1 - w1 + (2 * w1 * c) / cols, b1 = x1 - w1 + (2 * w1 * (c + 1)) / cols;
-        const a2 = x2 - w2 + (2 * w2 * c) / cols, b2 = x2 - w2 + (2 * w2 * (c + 1)) / cols;
+        const a1 = x1 - w1 + (2 * w1 * c) / 10, b1 = x1 - w1 + (2 * w1 * (c + 1)) / 10, a2 = x2 - w2 + (2 * w2 * c) / 10, b2 = x2 - w2 + (2 * w2 * (c + 1)) / 10;
         quad(ctx, a1, y1, b1, y1, b2, y2, a2, y2);
       }
-    } else {
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      const e1 = w1 * 0.035, e2 = w2 * 0.035;
-      quad(ctx, x1 - w1 + e1, y1, x1 - w1 + 2 * e1, y1, x2 - w2 + 2 * e2, y2, x2 - w2 + e2, y2);
-      quad(ctx, x1 + w1 - 2 * e1, y1, x1 + w1 - e1, y1, x2 + w2 - e2, y2, x2 + w2 - 2 * e2, y2);
-    }
-    if (!s.finish && !far && s.index % 12 < 4) {   // lane dashes: 4 segments on, 8 off (about real spacing)
-      ctx.fillStyle = th.lane;
-      const l1 = w1 / 32, l2 = w2 / 32;
-      for (let lane = 1; lane < LANES; lane++) {
-        const lx1 = x1 - w1 + (2 * w1 * lane) / LANES, lx2 = x2 - w2 + (2 * w2 * lane) / LANES;
-        quad(ctx, lx1 - l1 / 2, y1, lx1 + l1 / 2, y1, lx2 + l2 / 2, y2, lx2 - l2 / 2, y2);
+      if (th.water && s.index % 2 === 0 && w1 > 6) {
+        // light ripples from the surface dancing on the road
+        const k = 0.5 + 0.5 * Math.sin(this.t * 2.2 + s.index * 0.9), ym = (y1 + y2) / 2, hh = Math.max(1, (y1 - y2) * 0.6);
+        ctx.fillStyle = `rgba(210,250,255,${(0.05 + 0.08 * k).toFixed(3)})`;
+        for (const j of [0, 1]) { const u = Math.sin(this.t * 0.7 + s.index * 1.7 + j * 2.5) * 0.7; ctx.beginPath(); ctx.ellipse(x1 + w1 * u, ym, w1 * (0.12 + 0.06 * k), hh, 0, 0, 7); ctx.fill(); }
       }
     }
-    if (th.water && s.index % 2 === 0 && w1 > 6) {
-      // light ripples from the surface dancing on the road
-      const k = 0.5 + 0.5 * Math.sin(this.t * 2.2 + s.index * 0.9), ym = (y1 + y2) / 2, hh = Math.max(1, (y1 - y2) * 0.6);
-      ctx.fillStyle = `rgba(210,250,255,${0.05 + 0.08 * k})`;
-      for (const j of [0, 1]) { const u = Math.sin(this.t * 0.7 + s.index * 1.7 + j * 2.5) * 0.7; ctx.beginPath(); ctx.ellipse(x1 + w1 * u, ym, w1 * (0.12 + 0.06 * k), hh, 0, 0, 7); ctx.fill(); }
+    // haze: up to half by 70% of the view, then nearly solid over the last 15%, so the far end of the road fades into
+    // the distance instead of ending in a hard stub (v1.11). Pieces of nearly equal haze share one rectangle.
+    ctx.fillStyle = th.haze || (th.haze = shade(th.sky[1], 0.18));
+    let band = -1, top = 0, bot = 0;
+    const flush = () => { if (band > 0 && bot > top) { ctx.globalAlpha = band / 50; ctx.fillRect(0, top, W, bot - top); } };
+    for (let k = 0; k < list.length; k++) {
+      const u = shown[k] / DRAW_DIST; if (u <= 0.3) continue;
+      const al = u < 0.85 ? Math.min(0.5, (u - 0.3) * 0.75) : 0.5 + (u - 0.85) / 0.15 * 0.45, b = Math.round(al * 50);
+      const y1 = list[k].p1.screen.y, y2 = list[k].p2.screen.y;
+      if (b !== band || Math.abs(y1 - top) > 1) { flush(); band = b; bot = y1; }   // a new band, or a piece that doesn't join on
+      top = y2;
     }
-    if (th.ice && !s.finish) {
-      // glossy ice: long soft shines down the road (the same on every segment, so no stripes) and twinkling glints
-      ctx.fillStyle = "rgba(255,255,255,0.24)";
-      quad(ctx, x1 - w1 * 0.6, yb, x1 - w1 * 0.36, yb, x2 - w2 * 0.36, y2, x2 - w2 * 0.6, y2);
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      quad(ctx, x1 + w1 * 0.22, yb, x1 + w1 * 0.34, yb, x2 + w2 * 0.34, y2, x2 + w2 * 0.22, y2);
-      if (s.index % 3 === 0 && w1 > 14) {
-        const g = Math.sin(this.t * 3 + s.index * 2.3);
-        if (g > 0.55) { const gx = x1 + w1 * (((s.index * 0.618) % 1.6) - 0.8), gy = (y1 + y2) / 2, gs = Math.min(10, w1 * 0.02) * (g - 0.4) * 2; ctx.fillStyle = "#ffffff"; quad(ctx, gx - gs, gy, gx, gy - gs * 2.4, gx + gs, gy, gx, gy + gs * 2.4); }
-      }
-    }
-    if (s.current) {
-      // a current: a blue sheen with arrows sliding the way it pushes
-      ctx.fillStyle = "rgba(60,242,255,0.12)"; quad(ctx, x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2);
-      if (s.index % 4 === 0) {
-        const d = s.current, ph = (this.t * 0.9) % 0.5;
-        ctx.fillStyle = "rgba(220,255,255,0.75)";
-        for (const base of [-0.75, -0.25, 0.25]) {
-          const u = base + d * ph, ax = x1 + w1 * u, bx = x2 + w2 * u, cw = w1 * 0.09, ym = (y1 + y2) / 2;
-          if (Math.abs(u) > 0.9) continue;
-          ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
-        }
-      }
-    }
-    if (s.crosswalk && w1 > 3) {
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      for (let k = -4; k < 4; k++) { const u1 = (k + 0.15) / 4, u2 = (k + 0.65) / 4; quad(ctx, x1 + w1 * u1, y1, x1 + w1 * u2, y1, x2 + w2 * u2, y2, x2 + w2 * u1, y2); }
-    }
-    const sk = this.skids?.get(s.index);
-    if (sk && w1 > 3) {
-      const age = this.t - sk.t; ctx.fillStyle = `rgba(20,20,24,${Math.max(0, 0.45 - age * 0.02).toFixed(3)})`;
-      for (const side of [-1, 1]) { const u = sk.x + side * CAR_W * 0.38, m1 = w1 * 0.035, m2 = w2 * 0.035; quad(ctx, x1 + w1 * u - m1, y1, x1 + w1 * u + m1, y1, x2 + w2 * u + m2, y2, x2 + w2 * u - m2, y2); }
-    }
-    const pud = this.puddles?.get(s.index);
-    if (pud !== undefined && w1 > 4) {
-      // a puddle: a shiny blue patch on the road
-      const px1 = x1 + w1 * pud, px2 = x2 + w2 * pud, pw1 = w1 * 0.22, pw2 = w2 * 0.22;
-      ctx.fillStyle = "rgba(90,150,210,0.75)"; quad(ctx, px1 - pw1, y1, px1 + pw1, y1, px2 + pw2, y2, px2 - pw2, y2);
-      ctx.fillStyle = "rgba(255,255,255,0.35)"; quad(ctx, px1 - pw1 * 0.5, y1, px1 - pw1 * 0.1, y1, px2 - pw2 * 0.1, y2, px2 - pw2 * 0.5, y2);
-    }
-    if (s.boost !== null) {
-      const bx1 = x1 + w1 * s.boost, bx2 = x2 + w2 * s.boost, bw1 = w1 * 0.3, bw2 = w2 * 0.3;
-      ctx.fillStyle = s.index % 2 ? "#ffd400" : "#ff7a00";
-      quad(ctx, bx1 - bw1, y1, bx1 + bw1, y1, bx2 + bw2, y2, bx2 - bw2, y2);
-      ctx.fillStyle = s.index % 2 ? "#fff6a8" : "#ffb347";
-      quad(ctx, bx1 - bw1 * 0.15, y1, bx1 + bw1 * 0.15, y1, bx2 + bw2 * 0.15, y2, bx2 - bw2 * 0.15, y2);
-    }
+    flush(); ctx.globalAlpha = 1;
   }
 }

@@ -3,6 +3,7 @@ import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, S
 import { drawCar } from "./draw.js";
 import { drawEmojiText } from "./emoji.js";
 import { S, save, upsOf } from "./save.js";
+import { worldOf, homeNote } from "./physics-common.js";
 
 /* A car with its paint and sticker applied. */
 export function lookOf(car) {
@@ -15,7 +16,8 @@ export function lookOf(car) {
 /* ❓ A car you can't buy yet (a cup or boss prize, a building, the Driver School, or a world that isn't open) stays a
    mystery everywhere: "???" and a dark shape, until it's yours or in the shop. */
 export const carKnown = car => S.owned.includes(car.id) || (car.price != null && !(car.world && !worldOpen(S, car.world)));
-export const carName = car => carKnown(car) ? car.name + (car.ice ? " ❄️" : "") : "???";
+// a world's own car shows that world's icon: it is 5% faster there (the home bonus, v1.11)
+export const carName = car => carKnown(car) ? car.name + (homeNote(car) ? " " + homeNote(car).icon : "") : "???";
 let off = null;
 const MYSTERY = "rgb(104,88,170)";   // the mystery-car shape: a soft purple that shows on light and dark cards
 /* draw a car; a mystery car is drawn as a dark silhouette with a ❓ (on its own layer, so nothing behind it darkens) */
@@ -31,7 +33,7 @@ export function drawCarOrMystery(ctx, x, yb, w, car, o = {}) {
 }
 
 // which world a car belongs to: its own world, or the world of the cup that gives it (Earth otherwise)
-export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
+export { worldOf };
 /* What the car's button says: driving it, drive it, or how to get it (buy, a cup, a boss, a building, a new world). */
 export function howToGet(car, grid = false) {
   const owned = S.owned.includes(car.id), driving = S.car === car.id;
@@ -92,7 +94,8 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
 
   function render() {
     const car = CARS[idx], owned = S.owned.includes(car.id), driving = S.car === car.id;
-    $("g-name").textContent = carName(car);
+    $("g-name").textContent = carName(car); $("g-name").title = carKnown(car) && homeNote(car) ? homeNote(car).text : "";
+    $("g-home").hidden = !carKnown(car) || !homeNote(car); $("g-home").textContent = homeNote(car)?.text || "";
     const here = worldOf(car);
     // like the race screen: the worlds he can race in (or owns a car from), plus just the next one as a goal
     const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));

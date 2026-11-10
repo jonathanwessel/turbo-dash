@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { toyPoint, DS, HW, WALL_H } from "./track.js";
+import { toyPoint, DS, HW, WALL_H, startArch, startLine } from "./track.js";
 import { drawEmojiText } from "../emoji.js";
 
 const V = (a = 0, b = 0, c = 0) => new THREE.Vector3(a, b, c);
@@ -59,8 +59,11 @@ export function mergeStatic(root, skip = new Set(), cell = Infinity) {
 const ROOM_CELL = 250;   // the room is merged in squares this big (world units), so far-off toys can still be skipped
 let blobT = null;
 const blobTex = () => blobT ||= canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, w, w); });
-/* the graphics chip's name (to spot PowerVR, and to show in Settings), from a tiny throwaway context */
-function gpuName() {
+/* the graphics chip's name (to spot PowerVR, and to show in Settings), from a tiny throwaway context. Asked once per
+   session (v1.11): a rebuilt view after a lost context doesn't make another throwaway context. */
+let gpuSeen = null;
+function gpuName() { return gpuSeen ??= askGpu(); }
+function askGpu() {
   try {
     const c = document.createElement("canvas"), gl = c.getContext("webgl2") || c.getContext("webgl");
     if (!gl) return "";
@@ -132,7 +135,7 @@ function playroom(scene, T) {
     const cols = ["#4fb6ff", "#ffd400", "#ff6b9d", "#5be36a", "#b46cff", "#ff8a00"];
     for (let i = 0; i < 12; i++) { c.fillStyle = cols[i % cols.length]; c.beginPath(); c.arc(w / 2, w / 2, w / 2 * (1 - i / 12), 0, 7); c.fill(); }
   }), roughness: 0.95 }));
-  rug.rotation.x = -Math.PI / 2; rug.position.y = 0.05; rug.receiveShadow = true; room.add(rug);
+  rug.rotation.x = -Math.PI / 2; rug.position.y = 0.15;   // a little higher, so it never flickers into the floor far away rug.receiveShadow = true; room.add(rug);
   // walls with star wallpaper, a baseboard and a big bright window
   const paper = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#bfe4ff"; c.fillRect(0, 0, w, h); c.fillStyle = "#e9f6ff"; for (let i = 0; i < 9; i++) { const x = (i * 83) % w, y = (i * 137) % h; c.font = "40px sans-serif"; c.fillText("★", x, y); } }, 1);
   paper.repeat.set(10, 3);
@@ -216,10 +219,11 @@ function trackMeshes(T, pal) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  geo.computeVertexNormals();
   // the road only receives shadows: casting them redrew its 30,000+ triangles in the shadow pass every frame (v1.10).
   // Shared corners are merged (an indexed mesh) and the plastic is a plain shiny material, not a clear-coated one.
-  const road = new THREE.Mesh(mergeVertices(geo), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.05, side: THREE.DoubleSide }));
+  // smooth shading along each piece (v1.11): shared corners of the same colour are merged, then normals are averaged
+  geo.deleteAttribute("normal"); const roadGeo = mergeVertices(geo); roadGeo.computeVertexNormals();
+  const road = new THREE.Mesh(roadGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.05, side: THREE.DoubleSide }));
   road.castShadow = false; road.receiveShadow = true; grp.add(road);
   // stilts down to the floor (not under loops or gaps)
   const stilt = new THREE.CylinderGeometry(0.45, 0.6, 1, 10), stMat = plastic(pal[1]), list = [];
@@ -242,11 +246,17 @@ function trackMeshes(T, pal) {
   // start / finish arch with a checkered banner
   const chk = canvasTex(256, 64, (c, w, h) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { c.fillStyle = (i + j) % 2 ? "#111" : "#fff"; c.fillRect(i * w / 16, j * h / 4, w / 16, h / 4); } });
   const fwd = V(T.fx[0], T.fy[0], T.fz[0]), arch = new THREE.Group();
-  for (const x of [-HW - 1, HW + 1]) { const p = toyPoint(T, 0, x, 0), pole = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 9, 12), plastic("#e8262b")); pole.position.set(p[0], p[1] + 4.5, p[2]); pole.castShadow = true; arch.add(pole); }
-  const c0 = toyPoint(T, 0, 0, 8.4), banner = new THREE.Mesh(new THREE.BoxGeometry(2 * HW + 2.6, 1.6, 0.3), [std("#ffd400"), std("#ffd400"), std("#ffd400"), std("#ffd400"), std("#fff", { map: chk }), std("#fff", { map: chk })]);
+  // the poles stand on the road's two edges and reach the same height, so the banner hangs level on a banked start
+  const A = startArch(T);
+  for (const p of [A.L, A.R]) { const h = A.top - p[1], pole = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, h, 12), plastic("#e8262b")); pole.position.set(p[0], p[1] + h / 2, p[2]); pole.castShadow = true; arch.add(pole); }
+  const c0 = A.mid, banner = new THREE.Mesh(new THREE.BoxGeometry(A.width, 1.6, 0.3), [std("#ffd400"), std("#ffd400"), std("#ffd400"), std("#ffd400"), std("#fff", { map: chk }), std("#fff", { map: chk })]);
   banner.position.set(...c0); banner.lookAt(c0[0] + fwd.x, c0[1], c0[2] + fwd.z); arch.add(banner); grp.add(arch);
-  const line = new THREE.Mesh(new THREE.PlaneGeometry(2 * HW, 1.2), std("#fff", { map: canvasTex(128, 16, (c, w, h) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? "#111" : "#fff"; c.fillRect(i * w / 16, j * h / 2, w / 16, h / 2); } }) }));
-  const l0 = toyPoint(T, 0, 0, 0.03); line.position.set(...l0); line.lookAt(l0[0], l0[1] + 1, l0[2]); line.rotation.z = Math.atan2(fwd.x, fwd.z); grp.add(line);
+  // the start line lies on the road surface itself (a flat plane floated half in, half out of a banked road)
+  const SL = startLine(T), lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(SL.flat(), 3)); lineGeo.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 1, 1], 2));
+  lineGeo.setIndex([0, 2, 1, 1, 2, 3]); lineGeo.computeVertexNormals();
+  const line = new THREE.Mesh(lineGeo, std("#fff", { map: canvasTex(128, 16, (c, w, h) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? "#111" : "#fff"; c.fillRect(i * w / 16, j * h / 2, w / 16, h / 2); } }) }));
+  line.material.side = THREE.DoubleSide; grp.add(line);
   // booster stations: a yellow gateway with two big spinning tires that fling cars forward, and glowing arrows
   const wheels = [], arrows = [];
   for (const b of T.boosts) {
@@ -292,7 +302,7 @@ export class ToyView {
     this.tier = tier; this.light = tier !== "full"; this.min = tier === "min";
     const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !this.light, powerPreference: this.min ? "default" : "high-performance" });
     R.shadowMap.enabled = !this.min; R.shadowMap.type = this.light ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; R.toneMapping = this.min ? THREE.NoToneMapping : THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
-    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#cfeaff", 260, 900);
+    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#bfe4ff", 260, 900);   // the same colour as the sky behind it (v1.11)
     // Shiny reflections need a room "environment map", which needs half-float render targets. Many tablets can't
     // render to those, and a broken map blows the whole picture out to white. No support: no map (safe look).
     this.diag = { why: "" };
@@ -302,7 +312,7 @@ export class ToyView {
     else this.diag.why = "no half-float targets";
     this.scene.environmentIntensity = 0.8;
     this.checkT = 0; this.safe = this.light; this.quietSafe = this.light;   // the light look starts plain (no "Simple 3D" note)
-    glCanvas.addEventListener("webglcontextlost", e => { e.preventDefault(); this.diag.why = "context lost"; this.lost = true; });
+    glCanvas.addEventListener("webglcontextlost", e => { e.preventDefault(); this.diag.why = "context lost"; this.lost = true; this.lostHidden = document.hidden; });
     glCanvas.addEventListener("webglcontextrestored", () => { this.lost = false; });
     this.camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2000);
     this.scene.add(new THREE.HemisphereLight("#fff6e0", "#c08a55", this.light ? 1.6 : 1.1));   // brighter without reflections
@@ -319,7 +329,7 @@ export class ToyView {
   reset(race) {
     const T = race.T;
     if (this.trackId !== T.track.id) {
-      if (this.world) { this.scene.remove(this.world); this.world.traverse(m => { m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x?.map?.dispose(); x?.dispose?.(); }); }); }
+      if (this.world) { this.scene.remove(this.world); this.world.traverse(m => { if (m.isInstancedMesh) m.dispose(); m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x?.map?.dispose(); x?.dispose?.(); }); }); }
       this.world = new THREE.Group(); this.scene.add(this.world);
       const pal = T.track.pal || ["#ff7a1a", "#ff9b45"];
       this.room = playroom(this.world, T);
@@ -331,7 +341,7 @@ export class ToyView {
       this.trackId = T.track.id;
     }
     // free the old cars (and the old shield) so GPU memory doesn't grow race after race
-    const free = o => o.traverse(m => { m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => x?.dispose?.()); });
+    const free = o => o.traverse(m => { if (m.isInstancedMesh) m.dispose(); m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => x?.dispose?.()); });
     for (const g of this.cars.values()) { this.scene.remove(g); free(g); }
     if (this.shield) { this.scene.remove(this.shield); free(this.shield); }
     this.cars = new Map();
@@ -362,7 +372,7 @@ export class ToyView {
   goSafe() {
     if (this.safe) return;
     this.safe = true;
-    this.scene.environment = null;
+    this.scene.environment?.dispose(); this.scene.environment = null;   // free the reflection map's memory too (v1.11)
     // one new material per old one, so meshes that shared a material still share one (v1.10: the safe look used to
     // make a new material for every mesh, 193 became 335)
     const made = new Map(), swap = m => { if (!m) return m; if (!made.has(m)) made.set(m, make(m)); return made.get(m); };
@@ -376,12 +386,23 @@ export class ToyView {
       m.dispose(); return s;
     };
     this.scene.traverse(o => { if (o.material) o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material); });
+    // the things that animate a material keep pointing at the one now in use (v1.11: rainbow paint and the coin
+    // twinkle used to stop after the swap)
+    for (const g of this.cars.values()) { const d = g.userData; if (made.has(d.paint)) d.paint = made.get(d.paint); }
+    if (made.has(this.coinMat)) this.coinMat = made.get(this.coinMat);
     this.safeMats = true; this.safeMsg = !this.quietSafe;
     console.warn("Turbo Dash: Toy Track World switched to the safe 3D look (" + this.diag.why + ")");
   }
 
   /* Simple effects (or the tablet look): a smaller shadow map, a slightly lower resolution (v1.10), and the cars
      only keep their soft round blob shadows instead of real ones (v1.10) */
+  /* everything this view holds on the graphics chip (v1.11: called when a lost context is replaced) */
+  dispose() {
+    for (const o of [this.world, ...this.cars.values(), this.shield].filter(Boolean)) o.traverse(m => { if (m.isInstancedMesh) m.dispose(); m.geometry?.dispose(); (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x?.map?.dispose(); x?.dispose?.(); }); });
+    this.scene.environment?.dispose(); this.sun.shadow.map?.dispose();
+    this.renderer.dispose();
+  }
+
   setLite(lite) {
     lite = lite || this.light;
     if (this.lite === lite) return;

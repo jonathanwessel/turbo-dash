@@ -50,24 +50,42 @@ const toyTier = () => { const base = S.opts.fx === "full" ? 0 : S.opts.fx === "s
 function loadToy() {
   return toyLoading ||= import("./toy/view.js").then(m => { ToyView = m.ToyView; }).catch(e => { toyFailed = true; console.warn("Turbo Dash: Toy Track World couldn't load", e); });
 }
+/* The 3D picture was lost (the graphics chip reset, or the browser took it back). v1.11: the race itself doesn't
+   need 3D, so only the picture is rebuilt on a fresh canvas and the race carries on: a running race pauses ("Ready?"),
+   a finished one still pays. A loss counts toward a lower 3D level only when it happened on screen during a race,
+   and only the second one in a session (one hiccup, or a tab left in the background, is not a broken device). */
+let toyLosses = 0;
 function recoverToy() {
   lostT = 0;
-  const was = TIERS.indexOf(toyRace.view?.tier || "full");
-  toyDiag.crashes = (toyDiag.crashes || 0) + 1; toyDiag.lastCrash = was; toyDiag.floor = Math.max(toyDiag.floor || 0, was + 1);
-  if (toyDiag.floor > 2) { toyDiag.floor = 2; toyFailed = true; }   // even the minimal 3D stopped: this device can't do it yet
-  saveDiag();
+  const v = toyRace.view, racing = mode === "race" && race === toyRace;
+  if (racing && !v?.lostHidden) toyLosses++;
+  if (racing && !v?.lostHidden && toyLosses >= 2) {
+    const was = TIERS.indexOf(v?.tier || "full");
+    toyDiag.crashes = (toyDiag.crashes || 0) + 1; toyDiag.lastCrash = was; toyDiag.floor = Math.max(toyDiag.floor || 0, was + 1);
+    if (toyDiag.floor > 2) { toyDiag.floor = 2; toyFailed = true; }   // even the minimal 3D stopped: this device can't do it yet
+    saveDiag(); toyLosses = 0;
+  }
   const fresh = glCanvas.cloneNode(false); glCanvas.replaceWith(fresh); glCanvas = fresh;   // a lost canvas can't draw again
-  try { toyRace.view.renderer.dispose(); } catch (e) { /* already gone */ }
-  toyRace.view = null; run = RACE();
+  try { v.dispose ? v.dispose() : v.renderer.dispose(); } catch (e) { /* already gone */ }
+  toyRace.view = null;
+  if (!toyFailed) try { toyRace.view = new ToyView(glCanvas, canvas, { tier: toyTier() }); toyRace.view.setLite(qLevel(ladders.toy) <= 1); toyDiag.tier = toyRace.view.tier; saveDiag(); } catch (e) { toyFailed = true; }
+  if (!toyFailed) {
+    glCanvas.hidden = race !== toyRace;
+    if (racing && toyRace.state === "race" && !toyRace.player.finished && !paused) pause();
+    return;
+  }
+  // this device can't show 3D any more: back to Main Street's demo road, as before
+  run = RACE();
   const wasRace = mode === "race";
   S.lastTrack = "sunny"; menuDemo(); resize();
   if (wasRace) openTracks();
-  toast(toyFailed ? "🧸 This tablet can't show Toy Track World yet. Try updating its browser!" : "🧸 Toy Track World needed a little rest. Tap it to try again!");
+  toast("🧸 This tablet can't show Toy Track World yet. Try updating its browser!");
 }
 function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
+    if (toyRace.view?.lost) recoverToy();   // lost while another track was on screen: rebuild before racing
     if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { tier: toyTier() }); toyRace.view.setLite(qLevel(ladders.toy) <= 1); toyDiag.gpu = toyRace.view.gpu; toyDiag.tier = toyRace.view.tier; saveDiag(); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
@@ -122,7 +140,12 @@ function setLite() {
 }
 function frame(now) {
   const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
-  if (!document.hidden && !paused && ladder().frame(raw, mode === "race" && race.state === "race" && !race.player.finished) && S.opts.fx === "auto") setLite();
+  // both ladders learn this screen's own frame time from every frame; only the engine on screen is judged by it
+  if (!document.hidden && !paused) {
+    const on = ladder(), other = on === ladders.toy ? ladders.classic : ladders.toy;
+    other.frame(raw, false);
+    if (on.frame(raw, mode === "race" && race.state === "race" && !race.player.finished) && S.opts.fx === "auto") setLite();
+  }
   // physics once per screen frame, sized to the display (src/pace.js). Nothing runs on Main Street or inside a
   // building (its room picture covers the screen); behind a menu panel the race only moves and draws 15 times a
   // second (the panel covers 93% of it); while paused it is drawn once and then left alone (v1.10: battery and heat)

@@ -94,6 +94,12 @@ for (const [hz, q, j] of SCREENS) {
   clockNow += 15 * 864e5;
   for (let r = 0; r < 2; r++) { later.raceStart(); drive(later, 16.7, 900); later.raceEnd(); }
   check(later.level === 3, `15 days later level 3 is tried again (level ${later.level})`);
+  // a ladder must know the screen's rate before its first race: one that only ever saw slow race frames can't tell
+  // that they are slow (main.js feeds every frame to both ladders, so this is the case it prevents)
+  const cold = qualityLadder(); drive(cold, 33.4, 180, true);
+  const warm = qualityLadder(); drive(warm, 16.7, 300, false); warm.raceStart(); drive(warm, 33.4, 900);
+  check(warm.level < 3, `a ladder that saw the menus at 60 Hz steps down in a steady 30 fps race (level ${warm.level})`);
+  check(cold.level === 3, "(and without any menu frames it can't tell, which is why both ladders get every frame)");
   const bad = qualityLadder({ level: 7 }); check(bad.level === 3, "a broken saved level falls back to full");
   check(fifty.frame(500, true) === false && fifty.frame(NaN, true) === false, "a stall or broken frame time changes nothing");
 }
@@ -133,6 +139,17 @@ for (const hz of [40, 90, 144]) for (const k of ["classic", "toy"]) {
   check(Math.abs(d) < 0.03, `${k} races at a ${hz} Hz step took ${(d * 100).toFixed(1)}% longer than at 60 Hz`);
   const pd = mean(byHz[hz][k === "toy" ? "tp" : "cp"]) - mean(byHz[60][k === "toy" ? "tp" : "cp"]);
   check(Math.abs(pd) < 0.5, `${k} races at a ${hz} Hz step: average place moved by ${pd.toFixed(2)}`);
+}
+{ // a jump peaks at the same height at any step size (v1.11: exact gravity steps)
+  const { Race } = await import("../src/engine.js"), { statsFor } = await import("../src/stats.js");
+  const r = new Race({ width: 1, height: 1, getContext: () => null }, { sfx() {}, engine() {}, onFinish() {} }), peaks = {};
+  for (const hz of [30, 60, 144]) {
+    r.setup(TRACKS[0], "race", zippy, statsFor(zippy, ups, {}), { diff: "normal" }); while (r.state === "countdown") r.update(1 / 60);
+    r.player.air = 1; r.player.vy = 2700; let top = 0;
+    for (let i = 0; i < 2000 && r.player.air > 0; i++) { r.update(PACE / hz); top = Math.max(top, r.player.air); }
+    peaks[hz] = top;
+  }
+  check(Math.abs(peaks[30] / peaks[144] - 1) < 0.02 && Math.abs(peaks[60] / peaks[144] - 1) < 0.02, `jump peaks differ by step size: ${Object.entries(peaks).map(([h, v]) => h + " Hz " + v.toFixed(0)).join(", ")}`);
 }
 console.log("  (race seconds by step rate: " + [40, 60, 90, 144].map(hz => `${hz} Hz classic ${mean(byHz[hz].classic).toFixed(1)} toy ${mean(byHz[hz].toy).toFixed(1)}`).join(", ") + ")");
 console.log(`  (places ${mean(avg.full).toFixed(2)} → ${mean(avg.calm).toFixed(2)}, race seconds ${mean(times.full).toFixed(1)} → ${mean(times.calm).toFixed(1)}, real seconds ≈ ${(mean(times.calm) / PACE).toFixed(1)})`);

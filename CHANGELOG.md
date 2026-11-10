@@ -1,5 +1,38 @@
 # Changelog
 
+## v1.11.0 — Feel and finish 🏠
+
+- **🏠 Home-world bonus.** Every world's own cars (its shop car, cup prize and boss prize) are 5% faster, with 5%
+  more acceleration, in their own world: the Lunar Rover on the Moon, the Turbo Sub in Deep Blue, the Frost Runner
+  and friends on ice, the Toy Racer in Toy Track World. It replaces the old 4% slowdown for other cars on ice and in
+  Toy Track World. The Garage shows it under the car's name ("🌙 Faster in Moon Base"), and a race at home starts
+  with "🏠 HOME BONUS!".
+- **Toy Track World no longer needs the Toy Racer on Normal.** Its rivals are a little slower (1.04 → 1.00 of their
+  old speed). With the Glacier cars it can be started on Normal; the Toy Racer still makes it clearly easier, and
+  Hard stays a challenge.
+- **Toy Track World drives like the classic road:** the same short ease-in on the steering buttons, drafting behind
+  another car (💨), and catching a slower car eases off and slides around it instead of braking hard.
+- **Toy Track World keeps the race when the 3D picture is lost** (the tablet's graphics reset, or the browser took
+  it back). The picture is rebuilt, a running race pauses ("Ready?"), and a finished one still pays. A single loss,
+  or one while the game was in the background, no longer lowers the 3D quality for good.
+- **Jumps are the same height at any frame rate,** and power-up picks, boss Turbo timing and puddle shoves follow
+  each race's own seeded luck, so the race simulators give steady answers.
+- **Graphics:**
+  - Stars stay put when the horizon moves (they used to jitter and wrap).
+  - The far end of the road fades into the haze instead of ending in a hard stub; Lava and the Caves have their own
+    haze colour (it was orange and purple).
+  - Tunnels have a rocky rim around the way out, and far-off tunnels are solid, not see-through.
+  - Snow always falls on Snowy Peaks.
+  - Coins, pearls, boxes and lava flames keep their own sparkle instead of flickering as they slide sideways.
+  - Toy Track World: the start line lies on the banked road and the start arch stands level on it; banked corners
+    no longer dip through the playroom floor; rainbow paint and the coin twinkle keep working in the simpler 3D
+    looks; smoother road shading; the fog matches the sky.
+- **Faster drawing:** the classic road is drawn in layers (all the grass at once, then the curbs, the road, the
+  lines), about a quarter fewer canvas calls; only the last 3 tracks are kept in memory; less garbage per frame.
+- **Small fixes:** Effects Auto measures the screen's speed on every frame for both engines, so the first race on
+  an engine is judged correctly; on a tall (portrait) screen the Main Street arrows sit in the sky above the street
+  instead of over its signs.
+
 ## v1.10.0 — Smooth on every screen ✨
 
 - **One picture, one step.** The game clock now runs physics once for every frame the screen shows, sized to how

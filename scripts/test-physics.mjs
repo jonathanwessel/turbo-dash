@@ -337,5 +337,20 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   check("Downtown corners are fair", bonks / races <= 3, `${(bonks / races).toFixed(1)} barrier hits a race`);
 }
 
+{ // 🏠 home-world bonus (v1.11): a world's own cars (shop, cup or boss) are faster in that world, nowhere else
+  const { homeBonus, HOME_BONUS } = await import("../src/physics-common.js");
+  const { ToyRace } = await import("../src/toy/race.js");
+  const car = id => CARS.find(c => c.id === id);
+  check("home bonus", homeBonus(car("rover"), track("crater")) === 1 + HOME_BONUS && homeBonus(car("polar"), track("icecave")) === 1 + HOME_BONUS && homeBonus(car("windup"), track("bedroom")) === 1 + HOME_BONUS, "Lunar Rover on the Moon, Polar Bear (cup car) on ice and Wind-Up Rocket (boss car) in Toy World get it");
+  check("no bonus away", homeBonus(car("rover"), track("kelp")) === 1 && homeBonus(zippy, track("sunny")) === 1 && homeBonus(car("toyRacer"), track("crater")) === 1, "nobody gets it away from home, and Earth cars never");
+  const topAfter = (R, t, c) => { const r = new R({ getContext: () => null, width: 1, height: 1 }, { sfx() {}, engine() {}, onFinish() {} });
+    r.setup(t, "race", c, statsFor(c, UPS, {}), { diff: "normal" }); while (r.state === "countdown") r.update(STEP); for (let i = 0; i < 600; i++) r.update(STEP); return r.player.speed; };
+  for (const [R, t, id] of [[Race, track("crater"), "rover"], [Race, track("icecave"), "frost"], [ToyRace, track("bedroom"), "toyRacer"]]) {
+    const home = car(id), away = { ...home, world: "earth", cup: undefined, boss: undefined };
+    const a = topAfter(R, t, home), b = topAfter(R, t, away);
+    check("home car faster at home", a > b * 1.02, `${home.name} at home ${a.toFixed(1)} vs the same car from Earth ${b.toFixed(1)}`);
+  }
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

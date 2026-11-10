@@ -448,7 +448,7 @@ export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
       ctx.beginPath(); ctx.moveTo(x - w * 0.2, yb); ctx.lineTo(x - w * 0.1, yb - h * 0.35); ctx.lineTo(x + w * 0.1, yb - h * 0.5); ctx.moveTo(x - w * 0.1, yb - h * 0.35); ctx.lineTo(x + w * 0.25, yb - h * 0.2); ctx.stroke();
       break;
     case "lavaflame": {
-      const f = 1 + 0.15 * Math.sin(t * 9 + x);
+      const f = 1 + 0.15 * Math.sin(t * 9 + ph);   // its own phase, not its screen x (v1.11: no shimmer)
       ctx.fillStyle = "#ff3d00"; poly(ctx, [x - w * 0.4, yb, x, yb - h * 1.2 * f, x + w * 0.4, yb]);
       ctx.fillStyle = "#ffb000"; poly(ctx, [x - w * 0.25, yb, x, yb - h * 0.8 * f, x + w * 0.25, yb]);
       ctx.fillStyle = "#fff176"; poly(ctx, [x - w * 0.12, yb, x, yb - h * 0.4 * f, x + w * 0.12, yb]);
@@ -942,22 +942,22 @@ export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
   }
 }
 
-export function drawCoin(ctx, x, y, w, t) {
+export function drawCoin(ctx, x, y, w, t, ph = x * 0.002) {   // ph: its own spin phase (the road passes one per coin: no shimmer as it slides sideways)
   if (w < 1.5) return;
-  const sx = Math.abs(Math.cos(t * 4 + x * 0.002));
+  const sx = Math.abs(Math.cos(t * 4 + ph));
   ctx.fillStyle = "#c98a00"; ell(ctx, x, y, w * 0.5 * Math.max(0.15, sx), w * 0.5);
   ctx.fillStyle = "#ffd400"; ell(ctx, x, y, w * 0.42 * Math.max(0.1, sx), w * 0.42);
   if (w > 10 && sx > 0.4) { ctx.fillStyle = "#fff3a0"; ell(ctx, x - w * 0.1 * sx, y - w * 0.12, w * 0.1 * sx, w * 0.12); }
 }
 
 /* A pearl floating above a bubble vent: worth 5 coins. */
-export function drawPearl(ctx, x, y, w, t) {
+export function drawPearl(ctx, x, y, w, t, ph = x * 0.01) {
   if (w < 1.5) return;
   ctx.fillStyle = "rgba(255,200,240,0.35)"; ell(ctx, x, y, w * 0.75, w * 0.75);
   const g = ctx.createRadialGradient(x - w * 0.15, y - w * 0.18, w * 0.05, x, y, w * 0.5);
   g.addColorStop(0, "#ffffff"); g.addColorStop(0.6, "#f4e9ff"); g.addColorStop(1, "#d9a8e8");
   ctx.fillStyle = g; ell(ctx, x, y, w * 0.5, w * 0.5);
-  if (w > 8 && Math.sin(t * 5 + x * 0.01) > 0.5) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.22, y - w * 0.26, w * 0.12); }
+  if (w > 8 && Math.sin(t * 5 + ph) > 0.5) { ctx.fillStyle = "#fff"; star(ctx, x + w * 0.22, y - w * 0.26, w * 0.12); }
 }
 
 /* Sky, sun, clouds/stars and two layers of hills. skyX/hillX scroll with the road's curves. */
@@ -970,7 +970,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
   if (th.stars) {
     ctx.fillStyle = "#ffffff";
     for (let i = 0; i < 70; i++) {
-      const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (hz * 0.9);
+      const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (H * 0.45) + (hz - H * 0.5);   // a fixed spot per star, moved with the horizon as one (v1.11: no jitter)
       const s = 1 + (i % 3) * (H / 600) * (0.6 + 0.4 * Math.sin(t * 3 + i));
       ctx.fillRect(sx, sy, s, s);
     }
@@ -978,7 +978,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
   if (th.detail >= 2 && th.stars) {
     ctx.fillStyle = "#ffffff";
     for (let i = 0; i < 120; i++) {
-      const sx = ((i * 97.3 + skyX * W * 0.12) % W + W) % W, sy = (i * 41.9) % (hz * 0.95);
+      const sx = ((i * 97.3 + skyX * W * 0.12) % W + W) % W, sy = (i * 41.9) % (H * 0.475) + (hz - H * 0.5);
       ctx.globalAlpha = 0.25 + 0.25 * Math.sin(t * 2 + i * 1.7); ctx.fillRect(sx, sy, 1.2, 1.2);
     }
     ctx.globalAlpha = 1;
@@ -1060,7 +1060,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
 function aurora(ctx, W, H, hz, skyX, t, lite = false) {
   ctx.fillStyle = "#ffffff";
   for (let i = 0; i < 60; i++) {
-    const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (hz * 0.6);
+    const sx = ((i * 137.5 + skyX * W * 0.3) % W + W) % W, sy = (i * 61.7) % (H * 0.3) + (hz - H * 0.5);
     ctx.globalAlpha = 0.35 + 0.35 * Math.sin(t * 2 + i); ctx.fillRect(sx, sy, 1.6, 1.6);
   }
   ctx.globalAlpha = 1;
@@ -1219,10 +1219,10 @@ function hills(ctx, W, H, hz, col, off, amp, freq, seed) {
 }
 
 /* Power-up box: a spinning, color-changing block with a question mark and a soft glow. */
-export function drawBox(ctx, x, y, w, t) {
+export function drawBox(ctx, x, y, w, t, ph = x * 0.01) {
   if (w < 2) return;
   ctx.fillStyle = "rgba(255,255,255,0.28)"; ell(ctx, x, y, w * 0.72, w * 0.72);
-  const sx = 0.6 + 0.4 * Math.abs(Math.cos(t * 2.2 + x * 0.01)), s = w * 0.5;
+  const sx = 0.6 + 0.4 * Math.abs(Math.cos(t * 2.2 + ph)), s = w * 0.5;
   ctx.fillStyle = `hsl(${(t * 60) % 360}, 90%, 58%)`;   // a slow, gentle color cycle (never flashing)
   rr(ctx, x - s * sx, y - s, s * 2 * sx, s * 2, s * 0.35);
   ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, w * 0.06); ctx.stroke();

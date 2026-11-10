@@ -1,6 +1,6 @@
 // Physics both race engines share (the classic road in src/engine.js and Toy Track World in src/toy/race.js),
 // so a change to how rivals drive happens in one place. Plain math: the race simulators use it too.
-import { PACE } from "./data.js";
+import { PACE, CUPS, WORLDS } from "./data.js";
 
 export const BASE_MAX = 10000;   // the classic engine's speed unit: a starter car's top speed (world units / s)
 
@@ -15,6 +15,14 @@ export function rubberBand(gap, diffId, trackDiff = 99) {
   const full = gap > 0 ? (easy ? 0.8 : hard ? 1 : trackDiff <= 1 ? 0.93 : 0.98) : (hard ? 1.04 : 1.07);
   return 1 + (full - 1) * ease;
 }
+
+/* 🏠 home-world bonus (v1.11): a car built for a world (its shop, cup and boss cars) is a little faster there. It
+   replaces the old 4% penalty for other cars on ice and in Toy Track World. Earth cars have no home bonus. */
+export const HOME_BONUS = 0.05;
+export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
+/* what the game says about it: "🌙 Faster on Moon Base" (null for Earth cars) */
+export const homeNote = car => { const w = WORLDS.find(x => x.id === worldOf(car)); return w && w.id !== "earth" ? { icon: w.icon, text: `${w.icon} Faster in ${w.name}` } : null; };
+export const homeBonus = (car, track) => track && track.world && track.world !== "earth" && worldOf(car) === track.world ? 1 + HOME_BONUS : 1;
 
 /* a small seeded random generator (same seed, same numbers), and a seed from a track id */
 export function rng(seed) { let s = Math.abs(Math.floor(seed)) % 2147483646 + 1; return () => (s = (s * 16807) % 2147483647) / 2147483647; }

@@ -8,7 +8,7 @@
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
-import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK } from "../physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
@@ -24,7 +24,7 @@ export class ToyRace {
 
   setup(track, mode, car, stats, opts = {}) {
     const T = this.T = buildToyTrack(track);
-    this.track = track; this.mode = mode; this.stats = stats;
+    this.track = track; this.mode = mode; this.stats = stats; this.home = homeBonus(car, track);   // 🏠 v1.11
     this.phys = PHYSICS[track.world] || PHYSICS.toy;
     this.diff = diffOf(opts.diff);
     this.assist = Math.max(this.diff.assist, opts.helper || 0); this.pull = opts.helper || 0;
@@ -36,11 +36,13 @@ export class ToyRace {
     this.finishDist = track.laps * T.L;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.wallCD = 0; this.bumpCD = 0;
     this.coins = 0; this.popups = []; this.fx = []; this.order = [];
+    this.steerIn = 0; this.drafting = false; this.draftShown = false;
     this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 };
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5, x: k % 2 ? 1.7 : -1.7 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? V0 * 1.2 : 0, finished: false, air: 0, vy: 0, airT: 0, fly: false, fallT: 0, landV: 0, landN: 0, ...slot(5),
       get offset() { return this.x / LIMIT; } };   // the classic engine's -1..1 across the road, for the race bot
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = rng(strSeed(track.id) * 97 + this.raceSeq);
+    this.luck = rng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks and boss Turbo timing (v1.11)
     const d = track.diff;
     this.rivals = RIVALS.map((def, i) => ({ def, ...slot(i), speed: mode === "demo" ? V0 : 0, lane: slot(i).x, laneT: 1 + i, knockT: 0, finished: false, air: 0,
       base: V0 * rivalBase(d, i) * this.phys.rival * (mode === "demo" ? 0.8 : this.diff.rival) }));
@@ -77,7 +79,7 @@ export class ToyRace {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
     this.nitro = 0; this.nitroT = this.nitroFull = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
   }
-  topSpeed() { const S = this.stats; return S.maxSpeed / BASE_MAX * V0 * (this.player.def.toy ? 1 : 0.96); }
+  topSpeed() { const S = this.stats; return S.maxSpeed / BASE_MAX * V0 * (this.home || 1); }
 
   /* Auto Steer (the same research as everywhere): stay in the middle, later grab coins and boxes, later use Turbo */
   autoSteer(i) {
@@ -99,7 +101,7 @@ export class ToyRace {
     if (this.state === "countdown") {
       const before = Math.ceil(this.count - 0.6); this.count -= dt; const now = Math.ceil(this.count - 0.6);
       if (now !== before && now > 0) h.sfx("beep");
-      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); }
+      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.home > 1 && this.mode === "race") this.popup("🏠 HOME BONUS!", "#ffd400"); }
       h.engine(0.05, false); return;
     }
     const racing = this.state === "race";
@@ -120,10 +122,18 @@ export class ToyRace {
     this.autoTarget = null;
     if (!auto && steer === 0 && this.autoLvl > 0 && racing) steer = this.autoSteer(i) * (0.15 + 0.85 * this.autoLvl / 100);
     this.steerVis = lerp(this.steerVis || 0, steer, Math.min(1, dt * 10));
+    // the same 0.1 s ease-in on the buttons as the classic road (v1.11), so a tap is a nudge, not a jerk
+    this.steerIn += (steer - this.steerIn) * (auto ? 1 : Math.min(1, dt / 0.1));
+
+    // 💨 drafting, like the classic road (v1.11): right behind another car for 0.4 s gives a little extra speed
+    const behind = racing && !p.finished && !p.fly && this.rivals.some(c => { const g = c.dist - p.dist; return g > 3 && g < 18 && Math.abs(c.x - p.x) < 1.6 && !(c.air > 0.3); });
+    p.draftT = behind ? (p.draftT || 0) + dt : 0;
+    const was = this.drafting; this.drafting = p.draftT >= 0.4 && !fast && !auto;
+    if (this.drafting && !was) { h.sfx("draft"); if (!this.draftShown) { this.draftShown = true; this.popup("💨 DRAFT!", "#dff6ff"); } }
 
     // speed: engine up to top speed, gravity along the track (downhill and loop-down speed you up)
-    const top = auto ? V0 * (p.finished ? 0.8 : 1.2) : this.topSpeed() * (fast ? 1.25 : 1);
-    const acc = S.accel / BASE_MAX * V0 * (S.windUp || 1);
+    const top = auto ? V0 * (p.finished ? 0.8 : 1.2) : this.topSpeed() * (fast ? 1.25 : 1) * (this.drafting ? 1.06 : 1);
+    const acc = S.accel / BASE_MAX * V0 * (S.windUp || 1) * (this.home || 1) * (this.drafting ? 1.3 : 1);
     if (p.speed < top) p.speed = Math.min(top, p.speed + acc * (fast ? 3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - V0 * 0.5 * dt);
     if (!p.fly) p.speed = Math.max(V0 * 0.15, p.speed - G * T.fy[i] * dt);
@@ -142,7 +152,7 @@ export class ToyRace {
     // sideways: steer, get pushed outward on curves (banking pushes back), bump the walls
     const sp = clamp(p.speed / V0, 0, 2.4);
     const help = this.assist;
-    p.x += steer * dt * 3.2 * (auto ? 1.2 : S.handling) * (p.fly ? 0.55 * (S.airCtl || 1) : 1) * Math.min(1, 0.4 + sp * 0.5);
+    p.x += this.steerIn * dt * 3.2 * (auto ? 1.2 : S.handling) * (p.fly ? 0.55 * (S.airCtl || 1) : 1) * Math.min(1, 0.4 + sp * 0.5);
     if (!p.fly && !auto) p.x -= (p.speed * p.speed * T.k[i] - G * Math.sin(T.bank[i])) * 0.055 * (1 - S.grip) * (1 - 0.25 * help) * dt;
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.x) > LIMIT * (0.8 - 0.15 * this.pull)) p.x -= Math.sign(p.x) * dt * (1.2 + 1.6 * this.pull);
     if (Math.abs(p.x) > LIMIT) {
@@ -158,8 +168,8 @@ export class ToyRace {
     const j = sampleAt(T, p.dist);
     if (!p.fly && (T.flag[j] & 2) && !(T.flag[i] & 2)) { p.fly = true; p.air = 0.01; p.vy = p.speed * Math.max(0.12, T.fy[i]) * 1.4 + 2; p.airT = 0; p.y0 = T.py[i]; h.sfx("jump"); }
     if (p.fly) {
-      p.vy -= G * dt; p.airT += dt;
-      p.air = p.air + p.vy * dt + (T.py[i] - T.py[j]);        // height above the track below us
+      p.air = p.air + p.vy * dt - 0.5 * G * dt * dt + (T.py[i] - T.py[j]);   // height above the track below us (exact
+      p.vy -= G * dt; p.airT += dt;                                             // for any step size, v1.11)
       if (p.air <= 0 && !(T.flag[j] & 2)) this.land();
       else if (p.air < -5 && (T.flag[j] & 2)) {
         const g = T.gaps.find(g => p.dist % T.L >= g.s0 - 2 && p.dist % T.L <= g.s1 + 2);
@@ -236,7 +246,7 @@ export class ToyRace {
       if (b.until[n] > this.t || Math.abs(bx - p.x) > 1.5) return;
       b.until[n] = this.t + 6;
       if (!this.power) {
-        const r = Math.random();
+        const r = this.luck();
         this.power = r < 0.3 ? "shield" : r < 0.55 ? "coins" : r < 0.8 ? "magnet" : "turbo";
         h.onPower?.(this.power); h.sfx("chest"); this.popup("?!", "#ffffff");
       }
@@ -247,7 +257,7 @@ export class ToyRace {
     const p = this.player, T = this.T, d = this.track.diff, fast = this.nitroT > 0 || this.boostT > 0;
     for (const c of this.rivals) {
       let target = c.base;
-      if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + Math.random() * 3; } if (c.bt > 0) target *= 1.2; }
+      if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + this.luck() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
         target *= rubberBand(c.dist - p.dist, this.diff.id);
@@ -281,7 +291,13 @@ export class ToyRace {
         } else if (Math.abs(gap) < 1.2) {
           const dir = p.x >= c.x ? 1 : -1, k = stepK(dt); p.x = clamp(p.x + dir * 0.3 * k, -LIMIT, LIMIT); c.x = clamp(c.x - dir * 0.4 * k, -LIMIT, LIMIT); c.lane = c.x;
           if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; }
-        } else if (gap > 0 && p.speed > c.speed) { p.speed = c.speed * 0.9; p.dist = c.dist - 2.6; if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; } }
+        } else if (gap > 0 && p.speed > c.speed) {
+          // catching a slower car from behind: ease off (no wall), stay behind it, and slide a little to get around,
+          // like the classic road (v1.11; it used to drop to 90% of the rival's speed at once)
+          p.speed = Math.max(c.speed * 0.97, p.speed - V0 * 3 * dt); p.dist = c.dist - 2.6;
+          p.x = clamp(p.x + (p.x >= c.x ? 1 : -1) * dt * 3.2, -LIMIT, LIMIT);
+          if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; }
+        }
         else if (gap <= 0 && c.speed > p.speed) { c.speed = p.speed * 0.9; c.dist = p.dist - 2.6; }
       }
     }
