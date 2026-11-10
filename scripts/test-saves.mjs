@@ -39,6 +39,7 @@ const FIXTURES = {
   "v1.5 (word laps)": { v: 18, name: "Carter", coins: 700, owned: ["zippy"], rank: 4, school: { tickets: 3, earned: 12, skills: { focus: 2, reflex: 1, courage: 0, smarts: 0 }, log: [{ d: "2026-11-08", a: "word", m: 10, t: 3 }, { d: "2026-11-08", a: "math", m: 5, t: 2 }], readingDouble: true, capMin: 0, math: { right: 30, wrong: 4, laps: 7, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 18, wrong: 3, laps: 4, lv: 2, p: 1 }, wordMax: "4" } },
   "v1.8 (good student bonus)": { v: 20, name: "Carter", coins: 900, owned: ["zippy", "patrol"], rank: 6, school: { tickets: 0, earned: 14, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-09", a: "math", m: 10, t: 3 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 3, laps: 12, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 30, wrong: 2, laps: 9, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 1794200000000 }, { p: 10, until: 1794200500000 }] } },
   "v1.9 (more earth, bonus from a wrong clock)": { v: 21, name: "Carter", coins: 1200, owned: ["zippy", "bolt"], rank: 7, best: { fair: 1, haunted: 2 }, bestD: { "fair:normal": 1, "haunted:normal": 2 }, school: { earned: 20, log: [{ d: "2026-11-10", a: "word", m: 10, t: 2 }], math: { right: 50, wrong: 4, laps: 14, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 40, wrong: 2, laps: 11, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 9e15 }] } },
+  "v1.9.1 (tracks stay open, seasonal Haunted Hill, bank server time)": { v: 22, name: "Carter", coins: 1500, owned: ["zippy", "bolt"], rank: 7, best: { fair: 1 }, bestD: { "fair:normal": 1 }, opened: { beach: 1, haunted: 1, nope: 1 }, bank: { bal: 500, low: 500, t: 1794100000000, paid: 0, news: 0, srv: 1794150000000 }, history: [{ d: "2026-11-09", t: "fair", df: "normal", p: 1, c: 400 }, { d: "<b>x</b>", t: "sunny", df: "normal", p: 1, c: 5 }, { d: "2026-11-09", t: "sunny", df: "normal", p: "1", c: 5 }] },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
 
@@ -71,7 +72,7 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   if (Number.isFinite(raw.rank)) check(name, S.rank === Math.max(1, raw.rank), "rank lost");
   for (const k of ["stunts", "turbos", "bams", "roadCoins"]) if (raw.stats && typeof raw.stats[k] === "number") check(name, S.stats[k] === raw.stats[k], `stat ${k} lost`);
   if (raw.mastery) for (const [k, v] of Object.entries(raw.mastery)) check(name, S.mastery[k] === v, `mastery ${k} lost`);
-  if (raw.bank) check(name, JSON.stringify(S.bank) === JSON.stringify(raw.bank), "bank lost");
+  if (raw.bank) check(name, Object.entries(raw.bank).every(([k, v]) => S.bank[k] === v) && Number.isFinite(S.bank.srv), "bank lost");
   if (raw.school) { // v20 (1.8) reset lessons and tickets; v21 (1.9) drops those fields from every save
     check(name, !("tickets" in S.school) && !("skills" in S.school) && !("readingDouble" in S.school) && !("capMin" in S.school), "old lesson fields should be gone");
     check(name, S.school.earned === raw.school.earned, "earned count lost"); check(name, S.school.log.length === raw.school.log.length, "activity log lost"); if (raw.school.math) check(name, JSON.stringify(S.school.math) === JSON.stringify(raw.school.math) && S.school.mathMax === raw.school.mathMax && S.school.capT === raw.school.capT, "math school progress lost"); if (raw.school.word) check(name, JSON.stringify(S.school.word) === JSON.stringify(raw.school.word) && S.school.wordMax === raw.school.wordMax, "word lap progress lost"); }
@@ -134,6 +135,47 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   const st = { rank: 1, best: {}, bestD: { "sunny:easy": 1 }, research: {}, parent: { diffs: ["easy"] } };
   check("easy-only unlocks", trackOpen(st, beach), "an Easy win doesn't open the next track when only Easy is allowed");
   check("normal still needed", !trackOpen({ ...st, parent: { diffs: ["easy", "normal"] } }, beach), "an Easy win opened a track while Normal is allowed");
+}
+
+// Easy + Hard allowed while Hard is still rank-locked: Easy is all he can pick, so Easy wins open tracks (v1.9.1)
+{
+  const { trackOpen, TRACKS } = await import("../src/data.js");
+  const beach = TRACKS.find(t => t.id === "beach"), st = { rank: 2, best: {}, bestD: { "sunny:easy": 1 }, research: {}, parent: { diffs: ["easy", "hard"] } };
+  check("easy + locked hard", trackOpen(st, beach), "an Easy win doesn't open the next track when Hard is still locked");
+  check("easy + open hard", !trackOpen({ ...st, rank: 3 }, beach), "an Easy win opened a track once Hard could be picked");
+  const { keepOpens } = await import("../src/rules.js"), kept = { ...st, opened: {} }; keepOpens(kept); kept.rank = 3;
+  check("opened stays open", trackOpen(kept, beach), "a track opened by an Easy win closed again when Hard unlocked");
+}
+// 🍂 Haunted Hill became seasonal: a save from before keeps it if it was open then; a newer save needs the season
+{
+  const { trackOpen, TRACKS } = await import("../src/data.js"), haunted = TRACKS.find(t => t.id === "haunted");
+  const try1 = raw => { store.clear(); store.set("turbodash.save", JSON.stringify(raw)); load(); return trackOpen(saveMod.S, haunted); };
+  check("haunted: old save, pirate won", try1({ v: 21, coins: 5, best: { pirate: 1 }, bestD: { "pirate:normal": 1 } }), "lost Haunted Hill after a Pirate Port win");
+  check("haunted: old save, raced on it", try1({ v: 21, coins: 5, best: { haunted: 3 }, bestD: { "haunted:easy": 3 } }), "lost Haunted Hill after racing on it");
+  check("haunted: old save, not open", !try1({ v: 21, coins: 5, best: { desert: 1 }, bestD: { "desert:normal": 1 } }), "Haunted Hill opened for a save that never had it");
+  check("haunted: new save, pirate won", !try1({ v: 22, coins: 5, best: { pirate: 1 }, bestD: { "pirate:normal": 1 } }), "Haunted Hill opened outside its season");
+  check("haunted: new save, opened", try1({ v: 22, coins: 5, opened: { haunted: 1 } }), "an opened seasonal track closed");
+  check("opened: unknown ids dropped", !("nope" in port({ coins: 1, opened: { nope: 1, sunny: 1 } }).opened), "an unknown track id was kept in opened");
+}
+// history rows are checked field by field (Parent Corner shows them)
+{
+  const h = port({ coins: 1, history: [{ d: "2026-11-09", t: "fair", df: "normal", p: 1, c: 400 }, { d: "<img src=x>", t: "sunny", df: "normal", p: 1, c: 5 }, { d: "2026-11-09", t: 5, df: "normal", p: 1, c: 5 }, { d: "2026-11-09", t: "sunny", df: "normal", p: 9, c: 5 }] }).history;
+  check("history checked", h.length === 1 && h[0].t === "fair", `bad history rows were kept (${h.length})`);
+}
+// a backup copy that can't be written must not make the game load the older backup and then save over the good one
+{
+  store.clear(); store.set("turbodash.save", JSON.stringify({ ...base01, coins: 9999 })); store.set("turbodash.save.backup", JSON.stringify({ ...base01, coins: 100 }));
+  const set = localStorage.setItem; localStorage.setItem = (k, v) => { if (k === "turbodash.save.backup") throw new Error("QuotaExceededError"); set(k, v); };
+  try { load(); } catch (e) { check("backup write fails", false, "load threw " + e.message); }
+  check("backup write fails", saveMod.S.coins === 9999, `loaded ${saveMod.S.coins} coins, the main save has 9999`);
+  saveMod.save(); check("backup write fails", JSON.parse(store.get("turbodash.save")).coins === 9999, "the next save overwrote the good save");
+  // storage full: the backup copy is dropped to make room, and the save is tried again
+  let full = true; localStorage.setItem = (k, v) => { if (full && store.has("turbodash.save.backup")) throw new Error("QuotaExceededError"); set(k, v); };
+  store.set("turbodash.save.backup", "x"); saveMod.S.coins = 4321; saveMod.save();
+  check("storage full", JSON.parse(store.get("turbodash.save")).coins === 4321 && !store.has("turbodash.save.backup"), "a full storage didn't make room for the save");
+  let told = 0; saveMod.whenSaveFails(() => told++); localStorage.setItem = () => { throw new Error("blocked"); }; saveMod.save();
+  check("storage blocked", told === 1, "a failed save wasn't reported");
+  localStorage.setItem = set; saveMod.whenSaveFails(null);
 }
 
 // Google Save: the three-way sync decision (what changed where since the last sync)

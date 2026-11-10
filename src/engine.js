@@ -739,7 +739,7 @@ export class Race {
       if (q.c === "dust") { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fill(); }
     }
     ctx.restore(); ctx.globalAlpha = 1;
-    const dark = th.night || th.cave || this.inTunnel;
+    const dark = th.night || th.cave || th.lights || this.inTunnel;   // lights: a dark sky that needs headlights (Haunted Hill)
     if (dark) this.drawHeadlights(ctx, W / 2 + carShift, H - H * 0.02 - lift - pw * 0.25, pw, H);
     // lean into the steering, plus a little body roll from the curve pushing the car outward
     const roll = p.air > 0 ? 0 : clamp(-pseg.curve * Math.min(1, p.speed / BASE_MAX) * 0.08, -0.35, 0.35);
@@ -847,7 +847,7 @@ export class Race {
         drawCar(ctx, 0, 0, w, c.def, { t: this.t, steer, spin: c.dist / 900, flat: this.lite }); ctx.restore();
       }
       if (c.air > 30) { const gy = lerp(s.p1.screen.y, s.p2.screen.y, pct), k = Math.max(0.4, 1 - c.air / 2000); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(x, gy, w * 0.55 * k, w * 0.07 * k, 0, 0, 7); ctx.fill(); }
-      if ((this.T.theme.night || this.T.theme.cave || s.tunnel) && w > 4) {
+      if ((this.T.theme.night || this.T.theme.cave || this.T.theme.lights || s.tunnel) && w > 4) {
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,240,180,0.22)";
         ctx.beginPath(); ctx.ellipse(x, y - w * 0.05 - w * 0.6, w * 0.7, w * 0.25, 0, 0, 7); ctx.fill(); ctx.restore();
       }

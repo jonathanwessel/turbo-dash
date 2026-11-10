@@ -1,7 +1,7 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance } from "./pace.js";
-import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft } from "./rules.js";
+import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -11,7 +11,7 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
-import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
+import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
 import { carKnown, drawCarOrMystery, createGarage, lookOf } from "./garage.js";
@@ -368,7 +368,7 @@ function updateHud(dt) {
 /* ---------- tracks ---------- */
 const unlocked = i => !!TRACKS[i] && trackOpen(S, TRACKS[i]);
 const MEDAL = ["", "🏆", "🥈", "🥉"];
-const allowedDiffs = () => { const L = DIFFS.filter(d => S.parent.diffs.includes(d.id) && (!d.rank || S.rank >= d.rank)).map(d => d.id); return L.length ? L : ["normal"]; };
+const allowedDiffs = () => playableDiffs(S);   // the same rule track unlocks use (data.js)
 function paintDiffBar() {
   $("diff-bar").innerHTML = DIFFS.filter(d => S.parent.diffs.includes(d.id)).map(d => {
     const locked = d.rank && S.rank < d.rank;
@@ -432,7 +432,8 @@ $("trial-list").addEventListener("click", e => {
 });
 function showTrialResult(r) {
   const t = currentTrack, len = trackLen(t), goalsBefore = claimable().length;
-  const { time, before, oldMedal, medal, record, pay } = trialReward(S, t, r, len);
+  const { time, before, oldMedal, medal, record, pay, student } = trialReward(S, t, r, len, raceStartAt || Date.now());
+  if (student) setTimeout(() => toast(`📚 Good Student bonus: +🪙${student}`), 1200);
   if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
   save();
   mode = "result"; setRaceUi(false); engineOff();
@@ -554,11 +555,12 @@ function openTracks() {
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
-  const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !unlocked(i));   // only the next locked track shows
+  const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !t.season && !unlocked(i));   // only the next locked track shows
+  // (a locked 🍂 seasonal track always shows, with the month it opens)
   list.innerHTML = TRACKS.map((t, i) => {
     if ((t.world || "earth") !== S.world) return "";
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
-    if (!open && i !== nextLocked) return "";
+    if (!open && i !== nextLocked && !t.season) return "";
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
@@ -568,7 +570,7 @@ function openTracks() {
         return `<div class="tc-stars" title="Win here to earn stars">${MASTERY.map((n, k) => `<i class="${k < s ? "on" : ""}">★</i>`).join("")}</div>`
           + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><small>${w}/${hi}</small>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>${t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-ribbon">Bonus: tricky!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
@@ -692,6 +694,7 @@ function showResult(r) {
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
   chipToast(S.chips > chipsBefore);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
+  keepOpens(S);
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -902,23 +905,29 @@ $("math-ans").addEventListener("click", e => {
   }
   mqLock = true; b.classList.add("yes"); sfx("coin"); m.right++; mqN++;
   $("math-q").textContent = `${mq.a} ${mq.op === "+" ? "+" : "−"} ${mq.b} = ${mq.ans}`; paintLap();
-  setTimeout(() => { if (screen !== "s-math") return; mqN >= MATH_LAP ? finishLap() : nextMath(); }, 750);
+  // the lap counts the moment the last answer is right (leaving during the little pause can't lose it)
+  const done = mqN >= MATH_LAP && creditMath();
+  setTimeout(() => { if (screen !== "s-math") return; if (!done) nextMath(); else if (mqN >= MATH_LAP) showMathDone(done); }, 750);
 });
-function finishLap() {
+function finishLap() { showMathDone(creditMath()); }
+function creditMath() {
   const sc = S.school, m = sc.math, top = MATH_LEVELS[sc.mathMax] || 3, perfect = mqMiss === 0;
   m.laps++;
   // two perfect laps in a row move up a level; a lap with lots of tries moves back down
   m.p = perfect ? m.p + 1 : 0;
   if (m.p >= 2 && m.lv < top) { m.lv++; m.p = 0; } else if (mqMiss >= 4 && m.lv > 1) m.lv--;
-  lapDone("math", perfect, MATH_LAP, "math-win", "Great math");
-  $("s-math").classList.add("finished"); $("math-done").hidden = false;
+  return lapCredit("math", perfect, MATH_LAP);
 }
-/* a finished lap: the bonus, the message, and the School Resource Officer car after 20 laps */
-function lapDone(kind, perfect, questions, winId, praise) {
+function showMathDone(res) { lapShow(res, "math-win", "Great math"); $("s-math").classList.add("finished"); $("math-done").hidden = false; }
+/* a finished lap: the bonus and the School Resource Officer car after 20 laps (saved at once), then the message */
+function lapCredit(kind, perfect, questions) {
   const { pct } = lapBonus(S, kind, perfect, questions, dayKey(new Date()), Date.now()), total = goodStudentPct(S, Date.now());
   const car = lapsDone(S) >= GOOD_STUDENT.patrolLaps && grantCar(S, "patrol");
   if (car) museumAdd("🚓", "Earned the School Resource Officer car at the School");
   save();
+  return { pct, total, car, perfect };
+}
+function lapShow({ pct, total, car, perfect }, winId, praise) {
   $(winId).innerHTML = pct ? `${perfect ? "🌟 Perfect lap!" : "🏁 Lap done!"} +${pct}% 🪙<small>${perfect ? "No mistakes, " + who() + "!" : praise + ", " + who() + "!"} Races pay +${total}% coins for ${GOOD_STUDENT.mins} minutes.</small>`
     : `🏁 Lap done!<small>That's all the bonuses for today. Great practice, ${who()}!</small>`;
   sfx(pct ? "win" : "buy"); confetti(pct ? 120 : 50);
@@ -954,23 +963,25 @@ $("word-ans").addEventListener("click", e => {
   }
   wqLock = true; b.classList.add("yes"); sfx("coin"); w.right++; wqN++;
   $("word-show").className = "word-show is-both"; $("word-show").textContent = wq.pic + " " + wq.w; $("word-lap").innerHTML = lapTrack(wqN, WORD_LAP);
-  setTimeout(() => { if (screen !== "s-word") return; wqN >= WORD_LAP ? finishWord() : nextWord(); }, 900);
+  const done = wqN >= WORD_LAP && creditWord();
+  setTimeout(() => { if (screen !== "s-word") return; if (!done) nextWord(); else if (wqN >= WORD_LAP) showWordDone(done); }, 900);
 });
-function finishWord() {
+function finishWord() { showWordDone(creditWord()); }
+function creditWord() {
   const sc = S.school, w = sc.word, top = WORD_LEVELS[sc.wordMax] || 4, perfect = wqMiss === 0;
   w.laps++;
   w.p = perfect ? w.p + 1 : 0;
   if (w.p >= 2 && w.lv < top) { w.lv++; w.p = 0; } else if (wqMiss >= 4 && w.lv > 1) w.lv--;
-  lapDone("word", perfect, WORD_LAP, "word-win", "Great reading");
-  $("s-word").classList.add("finished"); $("word-done").hidden = false;
+  return lapCredit("word", perfect, WORD_LAP);
 }
+function showWordDone(res) { lapShow(res, "word-win", "Great reading"); $("s-word").classList.add("finished"); $("word-done").hidden = false; }
 $("sch-word").onclick = () => { sfx("click"); openWord(); };
 $("word-again").onclick = () => { sfx("click"); openWord(); };
 $("word-school").onclick = () => { sfx("click"); paintSchool(); show("s-school"); };
 $("word-back").onclick = () => { sfx("click"); back(); };
 
 /* ---------- 🏦 Piqua National Bank ---------- */
-function bankTick() { const paid = bankSettle(S.bank, S.rank); if (paid) { S.bank.news += paid; save(); } }
+function bankTick() { const paid = bankSettle(S.bank, S.rank); if (paid) { S.bank.news += paid; S.stats.coinsEarned += paid; save(); } }
 const big = n => Math.round(n).toLocaleString("en-US");
 function waitText(ms) { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} h ${m % 60} min` : `${m} min`; }
 function openBank() { bankTick(); paintBank(); show("s-bank"); if (S.bank.news) { sfx("chest"); confetti(90); } }
@@ -992,7 +1003,7 @@ $("s-bank").addEventListener("click", e => {
   if ((i || o).disabled) return;
   const b = S.bank, room = Math.max(0, bankMax(S.rank) - b.bal);
   if (i) { const n = [100, 500, Math.min(S.coins, room)][+i.dataset.in]; if (!(n > 0) || n > S.coins || n > room) { sfx("nope"); return; } S.coins -= n; bankDeposit(b, n); sfx("buy"); }
-  else { const n = bankWithdraw(b, [100, 500, b.bal][+o.dataset.out]); if (!n) { sfx("nope"); return; } S.coins += n; sfx("coin"); }
+  else { const n = bankWithdraw(b, [100, 500, b.bal][+o.dataset.out]); if (!n) { sfx("nope"); return; } S.coins += n; coinsSeen += n; sfx("coin"); }   // taking coins out isn't earning them
   save(); refreshCoins(); paintBank();
   const v = $("bk-bal"); v.classList.remove("bump"); void v.offsetWidth; v.classList.add("bump");
 });
@@ -1069,8 +1080,8 @@ addEventListener("resize", () => { if (screen === "s-hub") refreshHub(); });
 /* ➡️ the "Next" sign on Main Street: one thing to do next, one tap to get there */
 function nextStep() {
   if (rankReady()) return { icon: "⭐", text: "Rank up!", go: () => openRank() };
-  // a track opens when the one before it is won on Normal or Hard (or Easy, when a grown-up allows only Easy)
-  const diffs = allowedDiffs(), easyOnly = !diffs.includes("normal") && !diffs.includes("hard");
+  // a track opens when the one before it is won on Normal or Hard (or Easy, when Easy is the hardest level open)
+  const easyOnly = easyCounts(S);
   const opener = t => S.bestD[t.id + ":normal"] === 1 || S.bestD[t.id + ":hard"] === 1 || (easyOnly && S.bestD[t.id + ":easy"] === 1);
   const here = (t, k) => (t.world || "earth") === S.world && unlocked(k);
   let i = TRACKS.findIndex((t, k) => here(t, k) && !opener(t) && TRACKS.some((n, j) => n.after === t.id && !unlocked(j)));   // the key to a locked track
@@ -1129,8 +1140,11 @@ const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: 
 const PROF = () => ["Hi " + who() + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + who() + "!"];
 function openLab() { { const L = PROF(); $("prof-say").textContent = L[Math.floor(Math.random() * L.length)]; } lab.open(); show("s-lab"); }
 function goHub() {
+  const season = seasonUnlock(S); keepOpens(S); if (season.length) save();
   show("s-hub");
-  if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(() => { if (screen === "s-hub") openGift(); }, 400); }
+  // 🍂 a seasonal track just opened: one celebration (it stays open for good)
+  season.forEach((t, k) => setTimeout(() => { toast(`${t.season.icon} ${t.icon} ${t.name} is open! It's yours to keep.`); sfx("win"); confetti(140); }, 700 + 2600 * k));
+  if (giftReady() && !giftShownThisVisit) { giftShownThisVisit = true; setTimeout(() => { if (screen === "s-hub") openGift(); }, season.length ? 700 + 2600 * season.length : 400); }   // after any celebration
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("click"); back(); });
 
@@ -1161,6 +1175,9 @@ whenSaved(() => {
   if (S.coins > coinsSeen) S.stats.coinsEarned += S.coins - coinsSeen;
   coinsSeen = S.coins; cloudSaved();
 });
+// the tablet's storage is full or blocked: say so once, quietly (the game keeps playing)
+let saveFailTold = false;
+whenSaveFails(e => { console.warn("Turbo Dash: could not save", e); if (!saveFailTold) { saveFailTold = true; toast("💾 Couldn't save. The tablet's storage may be full."); } });
 /* 📲 Install as an app: a button on the title screen only, shown only when this device can install the game
    (Chrome/Edge/Android offer it through "beforeinstallprompt"; iPhone/iPad need Share → Add to Home Screen)
    and it isn't already installed (running as an app). Never on the http:// home-network address (not installable). */
@@ -1363,6 +1380,7 @@ if (VERSION !== "dev") {
   const check = async () => {
     try {
       const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
+      bankServerTime(S.bank, Date.parse(r.headers.get("Date") || ""));   // 🏦 the bank trusts the server's clock, not the tablet's
       const { version } = await r.json();
       if (version && version !== VERSION) { $("upd-v").textContent = "v" + version; updateReady = true; paintUpdate(); }
     } catch (e) { /* offline */ }

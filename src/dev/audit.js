@@ -2,6 +2,7 @@
 // their boxes or fall off the screen. In the dev server console: await __sweep() checks every screen at the current
 // window size; await __sweepAll() also tries a brand-new, a mid-game and the current save (and every garage car).
 // __audit("#s-result") checks one. Besides layout it flags broken words (null, undefined, NaN) anywhere on screen. Run it at a few sizes (e.g. 1000x448, 1024x600, 1280x800) before a release.
+import { RESEARCH } from "../data.js";
 window.__audit = (rootSel) => {
   const W = innerWidth, H = innerHeight, root = document.querySelector(rootSel);
   if (!root) return { err: "no " + rootSel };
@@ -38,6 +39,12 @@ window.__audit = (rootSel) => {
   // a screen's big green buttons must be on screen without scrolling (v1.9: Word Lap hid below the School). Small
   // Back and Done buttons at the end of the long grown-up pages (Progress, Guide, Parent Corner) are meant to be scrolled to.
   for (const e of root.querySelectorAll(".big-btn.go:not(.small)")) if (vis(e)) { const r = e.getBoundingClientRect(); if (r.bottom > H + 2 || r.right > W + 2) issues.push("NEEDS SCROLLING " + name(e)); }
+  // Turbo Lab: every open card of a research with more than one level shows its level (v1.9.1: v1.7 had hidden it)
+  for (const c of root.querySelectorAll("#lab-list .proj[data-info]")) {
+    const r = RESEARCH.find(x => x.id === c.dataset.info); if (!r || r.max <= 1 || !vis(c) || !window.__td || window.__td.S.rank < r.rank) continue;
+    const want = `${window.__td.S.research[r.id] || 0}/${r.max}`, row = c.querySelector(".plv");
+    if (!row || row.dataset.lvl !== want || !vis(row)) issues.push(`LAB CARD HIDES LEVEL ${r.id} (want ${want})`);
+  }
   const BAD =/\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));
@@ -131,6 +138,13 @@ window.__sweep = async (only) => {
   await go("s-log:painted", () => td.openLog(), "#s-log");
   await go("s-missions", hub("missions"));
   await go("s-lab", hub("lab"));
+  await go("s-lab:levels", async () => {
+    Object.assign(td.S.research, { coinBoost: 3, luckyChests: 5, headStart: 1, pitCrew: 10, superPaint: 1, autoSteer: 37 }); td.S.rank = Math.max(td.S.rank, 12);
+    td.S.lab.benches = [{ p: "coinBoost", end: Date.now() + 600e3 }, { p: null, end: 0 }, { p: null, end: 0 }]; await hub("lab")();
+  }, "#s-lab");
+  await go("s-lab:sheet", async () => { document.querySelector('#lab-list .proj[data-info="coinBoost"] .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })); }, "#lab-sheet");
+  await go("s-lab:sheet-done", async () => { document.getElementById("ls-close").click(); document.querySelector('#lab-list .proj[data-info="superPaint"] .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })); }, "#lab-sheet");
+  document.getElementById("ls-close").click();
   await go("s-gift", hub("gift"));
   await go("s-wash", hub("carwash"));
   await go("s-museum", hub("museum"));

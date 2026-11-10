@@ -7,9 +7,12 @@
 import { runRace } from "./racebot.mjs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
-import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar } from "../src/rules.js";
+import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
 const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
 const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
+// 🍂 seasonal tracks open on their calendar dates (the career starts on 1 January); "season" opens them on day 1,
+// "noseason" never: npm run career -- 12 1000 2 bank season
+const SEASON = process.argv[6] || "calendar";
 import {
   CARS, TRACKS, CUPS, DIFFS, UPGRADES, UPGRADE_MAX, GOALS, FRONTS, RESEARCH, RANK_CAP,
   upgradeCost, trackOpen, worldOpen, BOSSES, rankNeeds, diffOf, researchCost, researchTime, researchChips, researchRank, benchesFor, rankTitle,
@@ -80,7 +83,7 @@ function playCup(cup, diff) {
 /* What a kid would race next: the hardest open track without a win yet; after 3 losses in a row there, farm the best-paying win. */
 let fails = {};
 function pickRace() {
-  const main = S.rank >= 3 && TRACKS.every(t => S.bestD[t.id + ":normal"] === 1) ? "hard" : "normal";
+  const main = S.rank >= 3 && TRACKS.every(t => S.bestD[t.id + ":normal"] === 1 || (t.season && !trackOpen(S, t))) ? "hard" : "normal";
   const diffs = ["easy", "normal"].concat(S.rank >= 3 ? ["hard"] : []);
   const diff = Math.random() < 0.6 ? main : diffs[Math.floor(Math.random() * diffs.length)];
   const cup = S.rank >= 5 && CUPS.find(c => S.rank >= (c.rank || 5) && c.tracks.every(id => trackOpen(S, TRACKS.find(t => t.id === id))) && S.cups[c.id + ":" + diff] !== 1 && (fails["cup:" + c.id] || 0) < 2);
@@ -134,6 +137,8 @@ function spend() {
 
 for (day = 1; day <= MAX_DAYS; day++) {
   clock = day * 86400;
+  if (SEASON !== "noseason") for (const t of seasonUnlock(S, SEASON === "season" ? new Date(2027, 9, 1) : new Date(2027, 0, 1 + day))) gate("open:" + t.id, `Opened ${t.name} (seasonal)`);
+  keepOpens(S);
   // the bank pays overnight; he takes it all out to go shopping (put back in at the end of the day)
   if (BANK) { bankSettle(S.bank, S.rank, day * BANK_DAY); S.coins += bankWithdraw(S.bank, S.bank.bal); }
   // Main Street treats (the kid taps them every day once open)

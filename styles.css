@@ -311,8 +311,19 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .proj { background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.3); border-radius: 18px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .proj .pi { font-size: 34px; line-height: 1.1; }
 .proj b { font-size: 16px; }
-.proj small { font-size: 12px; opacity: .8; }
-.proj .plv { font-weight: 900; font-size: 13px; color: #ffd400; }
+/* the research level on a card (and, larger, in its sheet): segments up to 10 levels, a bar beyond, then "3/10" */
+.plv { display: flex; align-items: center; gap: var(--s1); width: 100%; max-width: 150px; margin: 2px 0; }
+.plv .pseg { flex: 1; display: flex; gap: 2px; }
+.plv .pseg i { flex: 1; height: 8px; border-radius: 3px; background: rgba(255,255,255,.22); }
+.plv .pseg i.on { background: var(--sign, #ffd400); }
+.plv .pseg i.next { animation: plvNext 1s ease-in-out infinite alternate; }
+@keyframes plvNext { from { background: rgba(255,255,255,.22); } to { background: var(--sign, #ffd400); } }
+.plv .pbar { flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,.22); overflow: hidden; }
+.plv .pbar i { display: block; height: 100%; background: var(--sign, #ffd400); }
+.plv em { font-style: normal; font-weight: 900; font-size: 12px; color: var(--sign, #ffd400); white-space: nowrap; }
+.ls-lv .plv { max-width: 280px; margin: 0 auto var(--s2); }
+.ls-lv .plv .pseg i, .ls-lv .plv .pbar { height: 14px; }
+.ls-lv .plv em { font-size: 16px; }
 .proj .pbtn { margin-top: 3px; font-weight: 900; font-size: 13px; padding: 5px 8px; border-radius: 12px; background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; }
 .proj .pbtn.poor { background: #5a4a7a; color: #cfc6e6; }
 .proj.locked { opacity: .5; }

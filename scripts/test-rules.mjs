@@ -1,7 +1,7 @@
 // Reward rules (src/rules.js): fixed inputs, fixed answers. The game and the career simulator both use these.
 //   node scripts/test-rules.mjs   (part of npm test)
-import { TRACKS, CUPS, BOSSES, REWARDS, prizeFor, diffOf, trialTimes } from "../src/data.js";
-import { raceReward, chestValues, bossReward, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapBonus, bonusLeft, goodStudentPct, activeBoosts, grantCar, chip } from "../src/rules.js";
+import { TRACKS, CUPS, BOSSES, REWARDS, GOALS, prizeFor, diffOf, trialTimes, trackOpen, inSeason } from "../src/data.js";
+import { raceReward, chestValues, bossReward, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapBonus, bonusLeft, goodStudentPct, activeBoosts, grantCar, chip, keepOpens, seasonUnlock } from "../src/rules.js";
 
 let fails = 0, checks = 0;
 const check = (ok, msg) => { checks++; if (!ok) { fails++; console.log("  ✖ " + msg); } };
@@ -32,6 +32,26 @@ const sunny = TRACKS[0], race = (place, extra = {}) => ({ place, coins: 12, time
   check(first.first && first.bonus === 5000 && first.car && S.owned.includes(b.car), "first boss win");
   check(!again.first && again.bonus === 1000 && !again.car && S.coins === 6000, "a repeat boss win pays 1000");
 }
+{ // a boss race that isn't won pays half its place's prize; a win pays in full, and a Hard boss win still earns the track's Hard chip
+  const L = fresh(), lost = raceReward(L, sunny, race(2), { diff: "normal", boss: true });
+  check(lost.prize === Math.round(prizeFor(sunny, 2, "normal") * 0.5) && L.coins === lost.prize + 12, `a lost boss race paid ${lost.prize}, half of 2nd is ${Math.round(prizeFor(sunny, 2, "normal") * 0.5)}`);
+  const W = fresh(), won = raceReward(W, sunny, race(1), { diff: "hard", boss: true });
+  check(won.prize === prizeFor(sunny, 1, "hard") && W.chips === 1 && W.chipLog["hard:" + sunny.id], "a Hard boss win should pay in full and earn the Hard chip");
+  const N = fresh(), not = raceReward(N, sunny, race(2), { diff: "normal" }); check(not.prize === prizeFor(sunny, 2, "normal"), "a normal 2nd place should pay in full");
+}
+{ // 🍂 seasonal tracks: open in their window (any year), then for good; never part of a goal
+  const haunted = TRACKS.find(t => t.id === "haunted"), d = (m, day, y = 2027) => new Date(y, m - 1, day);
+  check(inSeason(haunted.season, d(10, 1)) && inSeason(haunted.season, d(11, 15)) && inSeason(haunted.season, d(10, 31, 2031)), "Haunted Hill should open from 1 October to 15 November");
+  check(!inSeason(haunted.season, d(9, 30)) && !inSeason(haunted.season, d(11, 16)) && !inSeason(haunted.season, d(3, 1)), "Haunted Hill opened outside its season");
+  check(inSeason({ from: [12, 20], to: [1, 5] }, d(1, 2)) && inSeason({ from: [12, 20], to: [1, 5] }, d(12, 25)) && !inSeason({ from: [12, 20], to: [1, 5] }, d(1, 6)), "a season across New Year");
+  const S = fresh({ bestD: { "pirate:normal": 1 }, best: { pirate: 1 } });
+  check(!trackOpen(S, haunted) && seasonUnlock(S, d(3, 1)).length === 0 && !trackOpen(S, haunted), "Haunted Hill opened in March");
+  check(seasonUnlock(S, d(10, 20)).map(t => t.id).join() === "haunted" && trackOpen(S, haunted) && seasonUnlock(S, d(10, 21)).length === 0, "Haunted Hill should open once in October");
+  check(trackOpen(S, haunted), "Haunted Hill closed after its season");
+  const goal = GOALS.find(g => g.id === "tracks"); check(goal.goal === TRACKS.filter(t => !t.season).length, "a seasonal track counts toward Open every track");
+  check(!TRACKS.some(t => t.after === "haunted") && !CUPS.some(c => c.tracks.includes("haunted")), "something depends on a seasonal track");
+  const K = fresh({ bestD: { "sunny:normal": 1 } }); check(keepOpens(K).map(t => t.id).join() === "sunny,beach" && K.opened.beach === 1 && keepOpens(K).length === 0, "keepOpens should record a newly open track once");
+}
 { // cups: ties go to the player; first place gets the car and a chip once
   check(cupOrder([10, 10, 3, 3, 1, 0])[0] === 0 && cupOrder([3, 10, 10, 3, 1, 0]).indexOf(0) === 2, "cup ties go to the player");
   const S = fresh(), cup = CUPS[0], res = cupEndReward(S, cup, "normal", [30, 20, 10, 5, 1, 0]);
@@ -42,6 +62,10 @@ const sunny = TRACKS[0], race = (place, extra = {}) => ({ place, coins: 12, time
   const S = fresh(), t = TRACKS[0], L = 400000, gold = trialTimes(t, L)[2];
   const a = trialReward(S, t, { time: gold - 1, coins: 5, stats: {} }, L), b = trialReward(S, t, { time: gold, coins: 0, stats: {} }, L);
   check(a.record && a.medal === 3 && a.pay > 0 && !b.record && b.pay === 0 && S.trials[t.id] === Math.round((gold - 1) * 100) / 100, "trial medals and records");
+  // the Good Student bonus is paid on a Time Trial too (the race screen shows the badge)
+  const G = fresh(), T0 = 1e12; G.school.boosts = [{ p: 20, until: T0 + 10 * 60000 }];
+  const g = trialReward(G, t, { time: gold - 1, coins: 5, stats: {} }, L, T0);
+  check(g.student === Math.round((g.pay + 5) * 0.2) && G.coins === g.pay + 5 + g.student, `a +20% bonus on a Time Trial paid ${g.student}`);
 }
 { // rank up, gift streak, treats, missions
   const S = fresh(); const r = rankUp(S, "d"); check(S.rank === 6 && r.coins === 1200 && r.chip, "rank 6 pays 1200 and a chip");

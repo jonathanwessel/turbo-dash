@@ -62,7 +62,7 @@ export const REWARDS = {
   coinBoost: 0.05,                        // per Coin Boost research level
   sparkle: 0.1,                           // clean-car bonus: 10% of the prize (at least 5)
   chestBase: trackDiff => 30 + 25 * trackDiff, luckyChests: 0.15,
-  bossFirst: 5000, bossAgain: 1000,
+  bossFirst: 5000, bossAgain: 1000, bossLoss: 0.5,   // bossLoss: a boss race that isn't won pays half its place's prize
   cupShare: [1, 0.6, 0.4, 0.25, 0.15, 0.15],
   rankUp: rank => 200 * rank, rankChipFrom: 5,
   gift: streak => 100 + 50 * Math.min(streak, 7),
@@ -116,7 +116,7 @@ export const TRACKS = [
   { id: "fair",   name: "County Fair",    icon: "🎢", diff: 1.25, laps: 2, seed: 271, theme: "fair", world: "earth", after: "farm" },
   { id: "pirate", name: "Pirate Port",    icon: "🏴‍☠️", diff: 1.5, laps: 2, seed: 251, theme: "pirate", world: "earth", after: "desert" },
   { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
-  { id: "haunted", name: "Haunted Hill",  icon: "🦇", diff: 2.25, laps: 2, seed: 277, theme: "haunted", world: "earth", after: "pirate" },
+  { id: "haunted", name: "Haunted Hill",  icon: "🦇", diff: 2.25, laps: 2, seed: 277, theme: "haunted", world: "earth", season: { from: [10, 1], to: [11, 15], icon: "🍂", when: "October" } },
   { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
   { id: "river",  name: "Piqua River Run", icon: "🛶", diff: 2.8, laps: 2, seed: 263, theme: "river",  world: "earth", after: "autumn" },
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
@@ -143,10 +143,24 @@ export const TRACKS = [
   { id: "summit",     name: "Glacier Summit", icon: "🏔️", diff: 11.8, laps: 2, seed: 197, theme: "glacier", world: "glacier", after: "aurora" },
 ];
 // A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins,
-// unless a grown-up allows only Easy (Parent Corner): then Easy wins count too, or nothing could ever open.
-// A track already raced on stays open, so older saves never lose a track.
-const easyOnly = S => { const d = S.parent?.diffs; return Array.isArray(d) && d.length > 0 && !d.includes("normal") && !d.includes("hard"); };
-export const trackOpen = (S, t) => (t.world === "earth" || worldOpen(S, t.world)) && (!t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || (easyOnly(S) && S.bestD[t.after + ":easy"] === 1) || !!S.best[t.id]);
+// unless Easy is the hardest level the player can pick right now (a grown-up allows only Easy, or allows Easy and
+// Hard while Hard is still rank-locked): then Easy wins count too, or nothing could ever open.
+// Once open, a track stays open (S.opened, kept by keepOpens in rules.js), and a track already raced on stays open,
+// so older saves never lose a track.
+// 🍂 Seasonal tracks (season: { from: [month, day], to: [month, day] }) open when the game is played inside their
+// window on the calendar, any year, and then stay open for good. Nothing else ever depends on them (no cup, goal or
+// unlock chain), so a player who has not met the season yet is never stuck.
+export const playableDiffs = S => {
+  const want = S.parent?.diffs, L = DIFFS.filter(d => (!Array.isArray(want) || want.includes(d.id)) && (!d.rank || (S.rank || 0) >= d.rank)).map(d => d.id);
+  return L.length ? L : ["normal"];
+};
+export const easyCounts = S => { const L = playableDiffs(S); return !L.includes("normal") && !L.includes("hard"); };
+export const inSeason = (season, date = new Date()) => {
+  const md = (date.getMonth() + 1) * 100 + date.getDate(), a = season.from[0] * 100 + season.from[1], b = season.to[0] * 100 + season.to[1];
+  return a <= b ? md >= a && md <= b : md >= a || md <= b;   // a window may wrap past New Year
+};
+export const trackOpen = (S, t) => (t.world === "earth" || worldOpen(S, t.world)) && (!!S.opened?.[t.id] || !!S.best[t.id] || (!t.season &&
+  (!t.after || S.bestD[t.after + ":normal"] === 1 || S.bestD[t.after + ":hard"] === 1 || (easyCounts(S) && S.bestD[t.after + ":easy"] === 1))));
 /* A world opens at its rank once its World Kit research is done (Earth is always open). */
 export const worldOpen = (S, id) => { const w = WORLDS.find(x => x.id === id); return !!w && (!w.rank || (S.rank >= w.rank && (!w.kit || (S.research?.[w.kit] || 0) >= 1))); };
 
@@ -207,7 +221,7 @@ export const THEMES = {
   night:  { sky: ["#05081f", "#25306a"], hills: ["#1b2344", "#141a36"], grass: ["#1d3328", "#182b22"], rumble: ["#ffd400", "#2c2f3a"], road: ["#3a3e4c", "#363a47"], lane: "#ffe680", sun: "#f3f0d2", sprites: ["shop", "lamp", "tree", "shop", "house"], clouds: false, stars: true, city: "#121733", night: true, tunnels: "brick" },
   // v1.9
   fair:    { sky: ["#45b0ff", "#c8ecff"], hills: ["#62c46a", "#48a957"], grass: ["#7fd36a", "#72c65e"], rumble: ["#ffffff", "#ff3d8a"], road: ["#6f7380", "#696d7a"], lane: "#ffffff", sun: "#fff59a", sprites: ["tent", "balloons", "cottoncandy", "tree", "balloons", "hay", "tent", "flower"], clouds: true, fair: true },
-  haunted: { sky: ["#1e0f3a", "#7a3f9e"], sunY: 0.3, mountains: "#2a1840", hills: ["#3a2a52", "#2c1f42"], grass: ["#3d4a3a", "#354232"], rumble: ["#ff8a00", "#1a1424"], road: ["#3e3a48", "#3a3644"], lane: "#ffb000", sun: "#fff2c8", sprites: ["spookytree", "jackolantern", "ghost", "hauntedhouse", "spookytree", "pumpkin", "ghost", "jackolantern"], clouds: false, stars: true, haunted: true },
+  haunted: { sky: ["#1e0f3a", "#7a3f9e"], sunY: 0.3, mountains: "#2a1840", hills: ["#3a2a52", "#2c1f42"], grass: ["#3d4a3a", "#354232"], rumble: ["#ff8a00", "#1a1424"], road: ["#3e3a48", "#3a3644"], lane: "#ffb000", sun: "#fff2c8", sprites: ["spookytree", "jackolantern", "ghost", "hauntedhouse", "spookytree", "pumpkin", "ghost", "jackolantern"], clouds: false, stars: true, haunted: true, lights: true },
   factory: { sky: ["#ff8a4a", "#ffd9a0"], sunY: 0.55, hills: ["#7a7470", "#66605c"], grass: ["#a9a49c", "#9f9a92"], rumble: ["#ffd400", "#222222"], road: ["#55565c", "#505157"], lane: "#ffd400", sun: "#fff0c0", sprites: ["gear", "robot", "crate", "smokestack", "crate", "gear", "robot", "crate"], clouds: false, factory: "#5a4f4c", tunnels: "brick" },
   caves:   { sky: ["#0a0518", "#3a2470"], mountains: "#1e1438", hills: ["#2e2050", "#241840"], grass: ["#3a2d5a", "#33274f"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#2c2838", "#292535"], lane: "#3cf2ff", sun: "#ffffff", sprites: ["crystal", "stalagmite", "glowshroom", "minecart", "crystal", "glowshroom", "stalagmite", "crystal"], clouds: false, cave: true, tunnels: "crystal" },
   space:  { sky: ["#05021a", "#2a1460"], hills: ["#3b1f8a", "#2a1566"], grass: ["#10062e", "#180a40"], rumble: ["#3cf2ff", "#ff3fe5"], road: ["#1b1440", "#17113a"], lane: "#3cf2ff", sun: "#ffe8ff", sprites: ["planet", "crystal", "ufo"], clouds: false, stars: true },
@@ -242,7 +256,8 @@ export const STICKERS = [
   { id: "one", name: "Number 1", icon: "1️⃣", price: 300 },
 ];
 
-const tracksOpen = S => TRACKS.filter(t => trackOpen(S, t)).length;
+const YEAR_ROUND = TRACKS.filter(t => !t.season);   // seasonal tracks never count toward a goal
+const tracksOpen = S => YEAR_ROUND.filter(t => trackOpen(S, t)).length;
 export const GOALS = [
   { id: "win1", icon: "🏆", name: "Win a race", goal: 1, reward: 100, have: S => S.wins },
   { id: "win5", icon: "🏆", name: "Win 5 races", goal: 5, reward: 250, have: S => S.wins },
@@ -257,8 +272,8 @@ export const GOALS = [
   { id: "carall", icon: "🚗", name: "Own every car", goal: CARS.length, reward: 1500, have: S => S.owned.length },
   { id: "paint1", icon: "🎨", name: "Paint your car", goal: 1, reward: 100, have: S => S.paints.length - 1 },
   { id: "maxup", icon: "⭐", name: "Max out an upgrade", goal: UPGRADE_MAX, reward: 300, have: S => Math.max(0, ...Object.values(S.ups).flatMap(u => Object.values(u))) },
-  { id: "tracks", icon: "🗺️", name: "Open every track", goal: TRACKS.length, reward: 500, have: tracksOpen },
-  { id: "golds", icon: "🥇", name: "Win on every track", goal: TRACKS.length, reward: 1500, have: S => TRACKS.filter(t => S.best[t.id] === 1).length },
+  { id: "tracks", icon: "🗺️", name: "Open every track", goal: YEAR_ROUND.length, reward: 500, have: tracksOpen },
+  { id: "golds", icon: "🥇", name: "Win on every track", goal: YEAR_ROUND.length, reward: 1500, have: S => YEAR_ROUND.filter(t => S.best[t.id] === 1).length },
   { id: "gift3", icon: "🎁", name: "Open gifts 3 days in a row", goal: 3, reward: 300, have: S => S.giftStreak },
   { id: "lab1", icon: "🔬", name: "Finish a research", goal: 1, reward: 150, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
   { id: "lab10", icon: "🔬", name: "Finish 10 research levels", goal: 10, reward: 500, have: S => Object.values(S.research).reduce((a, b) => a + b, 0) },
@@ -379,22 +394,37 @@ export const MPH = 45;                 // the speedometer: a starter car's top s
    whole day (coins put in later than an hour into a bank day start earning the day after), and only on coins up to the bank's
    limit, which grows with rank. The first coins in an empty bank start their day right away. */
 export const BANK_RATE = 0.07, BANK_DAY = 24 * 60 * 60 * 1000, BANK_GRACE = 60 * 60 * 1000;
+/* v1.9.1, the device clock can't print money. bank.t (the start of the current bank day) never moves backwards, so
+   setting the clock back and forward again pays nothing extra. bank.srv is the latest time a web server reported
+   (the update check reads it); the bank never pays past that time plus BANK_OFFLINE, so moving the clock forward
+   pays at most that much until the game is online again, and then the real backlog pays out (up to BANK_MAX_DAYS).
+   With no server time at all, one payout covers at most BANK_UNSURE_DAYS. */
+export const BANK_OFFLINE = 3 * BANK_DAY, BANK_MAX_DAYS = 90, BANK_UNSURE_DAYS = 7;
 export const bankMax = rank => 400 * Math.max(1, rank);
 export const bankPayOn = (bank, rank) => Math.round(Math.min(bank.low, bankMax(rank)) * BANK_RATE);
+/* the latest time the bank believes: the device clock, but never past the server's time + BANK_OFFLINE */
+export const bankNow = (bank, now = Date.now()) => bank.srv > 0 ? Math.min(now, bank.srv + BANK_OFFLINE) : now;
+/* a time a server reported (ms); only ever moves forward */
+export function bankServerTime(bank, ms) { if (Number.isFinite(ms) && ms > (bank.srv || 0)) bank.srv = ms; }
 /* pays every full day since the last payday; returns the coins paid */
 export function bankSettle(bank, rank, now = Date.now()) {
-  if (!bank.bal) { bank.bal = 0; bank.low = 0; bank.t = now; return 0; }
-  if (!(now >= bank.t)) { bank.t = now; return 0; }   // the device clock went backwards: start a fresh day
-  const days = Math.floor((now - bank.t) / BANK_DAY); let paid = 0;
-  for (let i = 0; i < Math.min(days, 90); i++) { const pay = bankPayOn(bank, rank); bank.bal += pay; paid += pay; bank.low = bank.bal; }
+  const at = bankNow(bank, now);
+  if (!bank.bal) { bank.bal = 0; bank.low = 0; bank.t = at; return 0; }
+  // a bank day that starts past the server time + BANK_OFFLINE came from a wrong clock (or an older version): it
+  // restarts at the trusted time, so a tablet whose clock was wrong and then fixed doesn't freeze its bank
+  if (bank.srv > 0 && bank.t > bank.srv + BANK_OFFLINE) bank.t = at;
+  if (!(at >= bank.t)) return 0;   // the clock went backwards: nothing is paid until it passes this bank day again
+  const days = Math.floor((at - bank.t) / BANK_DAY), pays = Math.min(days, bank.srv > 0 ? BANK_MAX_DAYS : BANK_UNSURE_DAYS); let paid = 0;
+  for (let i = 0; i < pays; i++) { const pay = bankPayOn(bank, rank); bank.bal += pay; paid += pay; bank.low = bank.bal; }
   if (days > 0) bank.t += days * BANK_DAY;
   bank.paid = (bank.paid || 0) + paid;
   return paid;
 }
 export function bankDeposit(bank, n, now = Date.now()) {
   if (!(n > 0)) return;
-  if (!bank.bal) { bank.t = now; bank.low = 0; }   // an empty bank: the day starts now
-  if (now - bank.t < BANK_GRACE) bank.low += n;     // coins added in the first hour of a bank day earn that day
+  const at = bankNow(bank, now);
+  if (!bank.bal) { bank.t = at; bank.low = 0; }   // an empty bank: the day starts now
+  if (at - bank.t < BANK_GRACE && at >= bank.t) bank.low += n;     // coins added in the first hour of a bank day earn that day
   bank.bal += n;
 }
 export function bankWithdraw(bank, n) {

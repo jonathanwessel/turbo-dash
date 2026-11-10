@@ -34,7 +34,13 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
     S.research[r.id] = levelOf(r.id) + 1;
     b.p = null; b.end = 0; save();
     sfx("chest"); celebrate(); render(); onChange();
+    $("prof-say").textContent = r.max === 1 ? `${r.icon} ${r.name} is done!` : `${r.icon} ${r.name} is now level ${S.research[r.id]}!`;   // say what changed
   }
+  /* the level on a card and in the sheet: a segment per level (up to 10), or a bar for long ones; none for one-level items.
+     State stays on the card (level, working, done, locked); the sheet explains (what it does, how long it takes). */
+  const levelRow = (r, lvl, running) => r.max === 1 ? "" : `<div class="plv" data-lvl="${lvl}/${r.max}" aria-label="Level ${lvl} of ${r.max}">${
+    r.max <= 10 ? `<span class="pseg">${Array.from({ length: r.max }, (_, i) => `<i class="${i < lvl ? "on" : i === lvl && running ? "next" : ""}"></i>`).join("")}</span>`
+      : `<span class="pbar"><i style="width:${Math.round(100 * lvl / r.max)}%"></i></span>`}<em>${lvl}/${r.max}</em></div>`;
   function rush(b) {
     if (!spend(rushCost(b))) return;
     b.end = Date.now(); save(); collect(b);
@@ -49,7 +55,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
       if (!b.p) return `<div class="bench empty" aria-label="Empty bench ${i + 1}"><div class="bi">🧪</div></div>`;
       const r = RESEARCH.find(x => x.id === b.p), t = left(b), total = researchTime(r, levelOf(r.id));
       if (t <= 0) return `<button class="bench done" data-collect="${i}"><div class="bi">${r.icon}</div><b>${r.name}</b><span class="collect">✔ Tap to collect!</span></button>`;
-      return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name} ${levelOf(r.id) + 1}</b>
+      return `<div class="bench run"><div class="bi spin">${r.icon}</div><b>${r.name}${r.max > 1 ? " · Lv " + (levelOf(r.id) + 1) : ""}</b>
         <div class="bar"><i style="width:${Math.round(100 * (1 - t / total))}%"></i></div><span class="timer" data-timer="${i}">⏱ ${fmt(t)}</span>
         <button class="rush" data-rush="${i}">⚡ Rush 🪙${rushCost(b)}</button></div>`;
     }).join("") + (bs.length < 4 ? `<div class="bench locked"><div class="bi">🔒</div><small>Rank ${BENCH_RANKS[bs.length]}</small></div>` : "");
@@ -65,9 +71,9 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
         const ok = open && S.rank >= rk && !need;
         const can = ok && !max && !running && freeBench() && S.coins >= cost && S.chips >= chips;
         const short = n => n >= 10000 ? Math.round(n / 1000) + "k" : n;
-        const label = max ? "MAX!" : running ? "⏱ Working" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " 🧠" + chips : ""}`;
+        const label = max ? (r.max === 1 ? "✔ Done" : "MAX!") : running ? "⏱ Working" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " 🧠" + chips : ""}`;
         return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}" data-info="${r.id}">
-          <div class="pi">${r.icon}</div><b>${r.name}</b>
+          <div class="pi">${r.icon}</div><b>${r.name}</b>${open ? levelRow(r, lvl, running) : ""}
           <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${label}</button></div>`;
       }).join("");
     }).join("");
@@ -87,7 +93,8 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
   function openSheet(r) {
     const lvl = levelOf(r.id), max = lvl >= r.max;
     $("ls-icon").textContent = r.icon; $("ls-name").textContent = r.name; $("ls-desc").textContent = r.desc;
-    $("ls-meta").textContent = max ? `Level ${lvl} of ${r.max}: all done!` : `Level ${lvl} of ${r.max}. The next level takes ${fmt(researchTime(r, lvl))}.`;
+    $("ls-lv").innerHTML = levelRow(r, lvl, busy(r.id));
+    $("ls-meta").textContent = max ? (r.max === 1 ? "All done!" : `Level ${lvl} of ${r.max}: all done!`) : `${r.max === 1 ? "" : `Level ${lvl} of ${r.max}. `}The next level takes ${fmt(researchTime(r, lvl))}.`;
     $("ls-go").hidden = max; $("ls-go").onclick = () => { $("lab-sheet").hidden = true; start(r); };
     $("lab-sheet").hidden = false; sfx("click");
   }

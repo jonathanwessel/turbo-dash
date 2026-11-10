@@ -245,8 +245,8 @@ The race simulator showed that each car wins every time up to some track and the
 the jumps were big: Night Lights → Lava Mountain and Lava Mountain → Space Road. Farm Fields, Pirate Port and
 Night Lights also opened nothing. Four new Earth tracks fill the gaps, each opened by one of those tracks:
 - **🎢 County Fair** (after Farm Fields): a Ferris wheel on the horizon, striped tents, balloons, a cotton candy stand.
-- **🦇 Haunted Hill** (after Pirate Port): a purple evening, a big moon with bats, friendly ghosts, jack-o'-lanterns,
-  a spooky old house.
+- **🦇 Haunted Hill** (after Pirate Port; seasonal from v1.9.1): a purple evening, a big moon with bats, friendly
+  ghosts, jack-o'-lanterns, a spooky old house.
 - **🤖 Robot Factory** (after Night Lights): smokestacks, turning gears, waving robots, crates, hazard-stripe curbs.
 - **✨ Crystal Caves** (after Lava Mountain, before Space Road): a cave ceiling with hanging rocks, glowing crystals
   and mushrooms, mine carts, crystal tunnels.
@@ -254,6 +254,32 @@ Night Lights also opened nothing. Four new Earth tracks fill the gaps, each open
   checker now flags a main button you'd have to scroll to.
 - **Code review** of v1.7–v1.8 (a fresh session): the Good Student bonus is capped at 30 minutes against a wrong
   device clock, the race pays the bonus it showed, history and Google Save count laps, the lesson code is removed.
+
+### v1.9.1 🍂 Safe and correct (shipped)
+From the performance, physics and graphics review of v1.9.0, the bug-fix part plus the owner's answers:
+- **🍂 Seasonal tracks** (a new system). A track with a `season` (from/to month and day, any year, may wrap past New
+  Year) opens when the game is played inside that window and stays open for good (`S.opened`). Seasonal tracks are
+  never in a cup, a goal or an unlock chain. Haunted Hill is the first: 1 October to 15 November, now a night track
+  with headlights. Saves that had it open keep it. Later seasons slot in the same way (winter, spring, summer).
+- **Tracks stay open** once opened, whatever the difficulty settings do later.
+- **Bank clock:** the bank day never moves backwards, and the bank pays at most 3 days past the last time the
+  game's website reported (read from the update check). With no website time, one payout covers at most 7 days.
+- **Boss:** a lost boss race pays half the 2nd-place prize. A Hard boss win still earns the track's Hard chip.
+- **Turbo Lab levels are back on the cards** (segments and "3/10"; a bar for Auto Steer). Lesson kept for every
+  screen: state stays on the card (level, working, done, locked); explanation goes behind a tap.
+- **Fixes:** the save backup can no longer replace a good save when storage is full; Time Trials pay the Good
+  Student bonus they show; Easy wins count while Hard is still rank-locked; a lap counts at its last answer; bank
+  withdrawals no longer count as coins earned; history rows are checked on load.
+
+### Next: v1.10 "Smooth on every screen", then v1.11 "Feel and finish"
+From the same review. **v1.10:** first a dev-only counter of physics steps per frame, run for one race on the
+tablet; then per-step random chances made step-size safe, one physics step per screen frame (no repeated or
+skipped frames on 50, 75, 90, 120 or 144 Hz screens), skip sprites that are fully hidden, stop painting background
+the road covers, simple shapes for tiny roadside sprites, a real "Simple" effects level that can step back up, and
+fewer draw calls and a cheaper shadow pass in Toy Track World. **v1.11:** Toy World surviving a lost 3D context,
+Toy World steering that matches the classic road, star jitter, a hazed road end, tunnel exits, start line and arch
+on banked toy roads, toy corners that sink through the floor. Still open for the owner: whether late-game curves
+should need more steering, and whether Toy World should need the Toy Racer on Normal.
 
 ### Later: more worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release in the Next Gen engine, each

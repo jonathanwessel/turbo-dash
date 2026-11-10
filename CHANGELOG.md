@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.9.1 — Safe and correct 🍂
+
+- **🍂 Seasonal tracks, starting with 🦇 Haunted Hill.** A seasonal track opens when the game is played during its
+  dates on the calendar, and then stays open for good. Haunted Hill opens from 1 October to 15 November every year.
+  It is now a night track with headlights and glowing rivals. A save that already had Haunted Hill open keeps it.
+  Outside its season the track picker shows it locked with "🍂 Opens in October". Seasonal tracks never count toward
+  a goal or open another track, so nobody is stuck waiting for October.
+- **Tracks stay open.** Once a track has opened it never closes again, even if a grown-up changes the difficulty
+  settings later.
+- **The bank can't be fooled by the tablet's clock.** Setting the clock back no longer restarts the bank day, so
+  moving it back and forth pays nothing extra. The bank checks the time with the game's website and pays at most
+  3 days past that time until the game is online again; then the real backlog pays out, so a week offline still
+  earns every day. Without any website time, one payout covers at most 7 days.
+- **A lost boss race pays half the 2nd-place prize** (still something). Winning is unchanged.
+- **Turbo Lab cards show their level again** (v1.7 had moved it behind a tap). Each card has a row of segments and
+  "3/10" (a bar for Auto Steer's 100 levels); the next segment blinks while that research is on a bench; a one-level
+  research says "✔ Done" when finished. A running bench says "Lv 4", and the professor says the new level when you
+  collect it. The layout checker now fails if a Lab card hides its level.
+- **Fixes:**
+  - If the tablet's storage was full, opening the game could load the older backup copy and then save over the good
+    save. The game now reads the main save first and writes the backup copy separately. When storage is full the
+    backup is dropped to make room, and if saving still fails the game says so once.
+  - Time Trials showed the Good Student bonus but didn't pay it. They pay it now, like races.
+  - With Easy and Hard allowed but Hard still locked by rank, Easy was the only level left to pick, yet Easy wins
+    opened nothing. Easy wins now count whenever Easy is the hardest level that can be picked.
+  - Leaving a Math or Word Lap right after the last answer could lose the lap. It counts the moment the last answer
+    is right.
+  - Taking coins out of the bank counted as "coins earned" on the Progress page. Bank interest counts instead.
+  - Race history rows are checked when a save loads.
+
 ## v1.9.0 — More Earth, more wins 🎢
 
 - **Four new Earth tracks.** The race simulator showed that each car wins every time up to some track and then not

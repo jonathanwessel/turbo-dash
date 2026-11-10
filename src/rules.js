@@ -2,7 +2,7 @@
 // No page and no storage here: every function takes the save (S), changes it, and returns what happened so the
 // screen can show it. The game (src/main.js) and the career simulator (scripts/career.mjs) both use these, so the
 // simulator checks the same rules the game plays by. Numbers live in REWARDS (src/data.js).
-import { REWARDS, UPGRADES, CUP_POINTS, prizeFor, diffOf, starsFor, trialMedal, trialPay, GOOD_STUDENT } from "./data.js";
+import { REWARDS, UPGRADES, CUP_POINTS, TRACKS, prizeFor, diffOf, starsFor, trialMedal, trialPay, trackOpen, inSeason, GOOD_STUDENT } from "./data.js";
 
 export const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const coinBoost = S => 1 + REWARDS.coinBoost * (S.research.coinBoost || 0);
@@ -22,9 +22,9 @@ export function addRaceStats(S, r) {
 }
 
 /* a normal race (also each cup race and a boss race). opts: { diff, boss, cup, day, now (ms, for the Good Student bonus) }
-   returns { prize, sparkle, starUp, firstWin, student } */
+   A boss race that isn't won pays half its place's prize (still something). returns { prize, sparkle, starUp, firstWin, student } */
 export function raceReward(S, track, r, { diff = S.diff, boss = false, cup = null, day, now = 0 } = {}) {
-  const prize = Math.round(prizeFor(track, r.place, diff) * coinBoost(S)), dk = track.id + ":" + diff;
+  const prize = Math.round(prizeFor(track, r.place, diff) * coinBoost(S) * (boss && r.place !== 1 ? REWARDS.bossLoss : 1)), dk = track.id + ":" + diff;
   S.races++; if (r.place === 1) S.wins++;
   if (S.days && day) { S.days[day] = (S.days[day] || 0) + 1; for (const old of Object.keys(S.days).sort().reverse().slice(30)) delete S.days[old]; }
   const firstWin = r.place === 1 && !boss && S.best[track.id] !== 1;
@@ -61,16 +61,32 @@ export function bossReward(S, b, day) {
   const gotChip = chip(S, "boss:" + b.id);
   return { first, bonus, car, chip: gotChip };
 }
-/* a Time Trial finished (len = track length); the ghost is saved by the game, not here */
-export function trialReward(S, track, r, len) {
+/* a Time Trial finished (len = track length); the ghost is saved by the game, not here.
+   now (ms): the Good Student bonus is paid on medal coins and road coins, the same as a race. */
+export function trialReward(S, track, r, len, now = 0) {
   const time = Math.round(r.time * 100) / 100, before = S.trials[track.id], oldMedal = S.trialMedals[track.id] || 0;
   const medal = trialMedal(track, len, time), record = !before || time < before;
   let pay = 0; for (let m = oldMedal + 1; m <= medal; m++) pay += trialPay(track, m);
   if (record) S.trials[track.id] = time;
   if (medal > oldMedal) S.trialMedals[track.id] = medal;
   S.coins += pay + r.coins;
+  const gs = now ? goodStudentPct(S, now) : 0, student = Math.round((pay + r.coins) * gs / 100);
+  S.coins += student;
   addRaceStats(S, { ...r, stats: { ...r.stats, bams: 0 } });
-  return { time, before, oldMedal, medal, record, pay };
+  return { time, before, oldMedal, medal, record, pay, student };
+}
+/* every track open right now is written into S.opened, so it stays open for good (a grown-up changing the
+   difficulty settings, or a season ending, never closes a track). Returns the tracks newly recorded. */
+export function keepOpens(S) {
+  S.opened ||= {}; const added = [];
+  for (const t of TRACKS) if (!S.opened[t.id] && trackOpen(S, t)) { S.opened[t.id] = 1; added.push(t); }
+  return added;
+}
+/* 🍂 seasonal tracks whose window is on today's calendar open now (and stay open). Returns the newly opened ones. */
+export function seasonUnlock(S, date = new Date()) {
+  S.opened ||= {}; const got = [];
+  for (const t of TRACKS) if (t.season && !S.opened[t.id] && inSeason(t.season, date)) { S.opened[t.id] = 1; got.push(t); }
+  return got;
 }
 /* cup standings: most points first; on a tie the player goes ahead */
 export const cupOrder = pts => [0, 1, 2, 3, 4, 5].sort((a, b) => pts[b] - pts[a] || (a === 0 ? -1 : b === 0 ? 1 : 0));

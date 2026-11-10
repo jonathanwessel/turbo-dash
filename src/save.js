@@ -5,7 +5,7 @@
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -16,7 +16,8 @@ const DEFAULTS = () => ({
   races: 0, wins: 0, lastGift: "", giftStreak: 0, lastTrack: "sunny",
   music: true, sfx: true,
   paints: ["stock"], stickers: ["none"], look: {},   // look: carId -> { paint, sticker }
-  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 0, coinsEarned: 0 }, claimed: [], world: "earth", bosses: {}, daily: {}, bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0 },
+  stats: { roadCoins: 0, stunts: 0, turbos: 0, bams: 0, powers: 0, rings: 0, pearls: 0, drifts: 0, loops: 0, playMs: 0, coinsEarned: 0 }, claimed: [], world: "earth", bosses: {}, daily: {}, bank: { bal: 0, low: 0, t: 0, paid: 0, news: 0, srv: 0 },
+  opened: {},          // trackId -> 1: every track that has opened stays open (seasonal ones too)
   trials: {},          // trackId -> best Time Trial time (seconds)
   seen: {},            // one-time moments already shown (seen.toy: the "game levels up" card)
   days: {},            // "YYYY-MM-DD" -> races that day (last 30 days, for the Progress page)
@@ -75,7 +76,7 @@ export function port(d) {
   s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));
   s.seen = Object.fromEntries(Object.entries(obj(d.seen)).filter(([, v]) => v === true));
   // v19 (1.6): Piqua National Bank
-  s.bank = (b => { const bal = Math.round(num(b.bal, 0, 0)); return { bal, low: Math.round(num(b.low, 0, 0, bal)), t: num(b.t, 0, 0), paid: Math.round(num(b.paid, 0, 0)), news: Math.round(num(b.news, 0, 0)) }; })(obj(d.bank));
+  s.bank = (b => { const bal = Math.round(num(b.bal, 0, 0)); return { bal, low: Math.round(num(b.low, 0, 0, bal)), t: num(b.t, 0, 0), paid: Math.round(num(b.paid, 0, 0)), news: Math.round(num(b.news, 0, 0)), srv: num(b.srv, 0, 0) }; })(obj(d.bank));
   s.daily = Object.fromEntries(Object.entries(obj(d.daily)).filter(([, v]) => typeof v === "string"));
 
   // cars: always own Zippy; keep unknown ids (they may belong to a newer version) but never drive one
@@ -116,6 +117,13 @@ export function port(d) {
     helper: Math.round(num(p.helper, 0, 0, 2)), breakMin: num(p.breakMin, 0, 0, 240), volume: num(p.volume, 0.8, 0, 1),
     buzz: p.buzz !== false, autoSteer: p.autoSteer !== false, weather: p.weather !== false,
   };
+  // v22 (1.9.1): tracks stay open once opened. Haunted Hill became a seasonal track (it opened after Pirate Port
+  // before), so a save from before keeps it if it was open under the old rule or has a result on it.
+  s.opened = Object.fromEntries(Object.keys(obj(d.opened)).filter(id => TRACKS.some(t => t.id === id)).map(id => [id, 1]));
+  if (num(d.v, 0) < 22) {
+    const won = df => s.bestD["pirate:" + df] === 1, easyOnly = !s.parent.diffs.includes("normal") && !s.parent.diffs.includes("hard");
+    if (won("normal") || won("hard") || (easyOnly && won("easy")) || s.best.haunted) s.opened.haunted = 1;
+  }
   // v15 (1.0): Progress page, Car Wash, Museum, tilt steering
   const isDay = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
   s.days = Object.fromEntries(Object.entries(obj(d.days)).filter(([k, v]) => isDay(k) && typeof v === "number" && v >= 0).sort(([a], [b]) => a < b ? 1 : -1).slice(0, 30).map(([k, v]) => [k, Math.round(v)]));
@@ -141,7 +149,9 @@ export function port(d) {
   const KINDS = ["races", "wins", "podium", "coins", "jumps", "powers", "bams", "track"], fin = v => typeof v === "number" && Number.isFinite(v);
   const okM = m => m && typeof m === "object" && KINDS.includes(m.kind) && fin(m.goal) && m.goal > 0 && fin(m.have) && fin(m.reward) && m.reward >= 0 && (m.kind !== "track" || TRACKS.some(t => t.id === m.track));
   s.missions = typeof M.day === "string" && Array.isArray(M.list) && M.list.length && M.list.every(okM) ? { ...M, list: M.list.map(m => ({ ...m, claimed: m.claimed === true })) } : null;
-  s.history = arr(d.history).filter(h => h && typeof h === "object").slice(0, 30);
+  // each race history row is checked field by field (Parent Corner shows them)
+  s.history = arr(d.history).filter(h => h && typeof h === "object" && typeof h.d === "string" && isDay(h.d) && typeof h.t === "string" && typeof h.df === "string"
+    && Number.isInteger(h.p) && h.p >= 1 && h.p <= 6 && typeof h.c === "number" && Number.isFinite(h.c)).map(h => ({ d: h.d, t: h.t, df: h.df, p: h.p, c: Math.round(h.c) })).slice(0, 30);
   s.cloud = { linked: obj(d.cloud).linked === true };
   // v20 (1.8) dropped lessons and tickets, v21 (1.9) the last of their fields: tickets, skills, readingDouble, capMin
   const sc = obj(d.school), soon = Date.now() + 30 * 60000;
@@ -165,24 +175,30 @@ export function port(d) {
 /* This car's upgrade levels (created at 0 the first time). */
 export function upsOf(carId) { return S.ups[carId] || (S.ups[carId] = { ...NO_UPS }); }
 
+/* Reads the save; the backup is used only when the main save is missing or can't be read. Writing the backup copy
+   is a separate step, so a full or blocked storage can never make the game load the older backup (and then save
+   over the good one). */
 export function load() {
-  for (const key of [KEY, BACKUP]) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) continue;
-      S = port(JSON.parse(raw));
-      localStorage.setItem(BACKUP, raw);
-      if (key === BACKUP) save();
-      return S;
-    } catch (e) { console.warn(`Turbo Dash: could not read ${key}`, e); }
-  }
+  const read = key => { try { const raw = localStorage.getItem(key); return raw ? { raw, s: port(JSON.parse(raw)) } : null; } catch (e) { console.warn(`Turbo Dash: could not read ${key}`, e); return null; } };
+  const main = read(KEY), got = main || read(BACKUP);
+  if (!got) return S;
+  S = got.s;
+  if (main) { try { localStorage.setItem(BACKUP, main.raw); } catch (e) { /* no room for a backup copy: the main save is still fine */ } }
+  else save();   // the main save was broken: put the backup back in its place
   return S;
 }
-let onSaved = null;
+let onSaved = null, onSaveFail = null;
 export const whenSaved = fn => { onSaved = fn; };
+export const whenSaveFails = fn => { onSaveFail = fn; };
+/* Writes the save. If storage is full, the backup copy is dropped to make room and the write is tried once more. */
 export function save() {
   S.savedAt = Date.now();
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ }
+  const body = JSON.stringify(S);
+  try { localStorage.setItem(KEY, body); }
+  catch (e) {
+    try { localStorage.removeItem(BACKUP); localStorage.setItem(KEY, body); }
+    catch (e2) { onSaveFail?.(e2); }
+  }
   onSaved?.();
 }
 if (typeof addEventListener === "function") addEventListener("pagehide", () => save());
