@@ -271,15 +271,25 @@ From the performance, physics and graphics review of v1.9.0, the bug-fix part pl
   Student bonus they show; Easy wins count while Hard is still rank-locked; a lap counts at its last answer; bank
   withdrawals no longer count as coins earned; history rows are checked on load.
 
-### Next: v1.10 "Smooth on every screen", then v1.11 "Feel and finish"
-From the same review. **v1.10:** first a dev-only counter of physics steps per frame, run for one race on the
-tablet; then per-step random chances made step-size safe, one physics step per screen frame (no repeated or
-skipped frames on 50, 75, 90, 120 or 144 Hz screens), skip sprites that are fully hidden, stop painting background
-the road covers, simple shapes for tiny roadside sprites, a real "Simple" effects level that can step back up, and
-fewer draw calls and a cheaper shadow pass in Toy Track World. **v1.11:** Toy World surviving a lost 3D context,
-Toy World steering that matches the classic road, star jitter, a hazed road end, tunnel exits, start line and arch
-on banked toy roads, toy corners that sink through the floor. Still open for the owner: whether late-game curves
-should need more steering, and whether Toy World should need the Toy Racer on Normal.
+### v1.10.0 ✨ Smooth on every screen (shipped)
+From the same review, the performance part:
+- **One physics step per screen frame**, sized to the display (`src/pace.js`), so 50, 75, 90, 120 and 144 Hz
+  screens show no repeated or doubled frames. Per-step chances and the toy shove scale with the step first.
+  Seeded races at the old 60 Hz step are identical to v1.9.1; at 40 to 144 Hz they finish within 1%.
+- **Classic road drawing:** background stops at the road's far edge, hidden sprites skipped, small sprites and far
+  rivals from cached pictures, tints as a CSS layer. Painted area per frame 4.4–5.7 → 2.3–3.1 screens; canvas
+  calls 17–43% fewer. `npm run perf` guards it (`scripts/perf-budget.json`).
+- **A quality ladder** (`src/quality.js`) replaces the one-way auto-Simple latch.
+- **Toy Track World:** merged meshes and instanced wheels (150–180 → 80–90 draw calls), no road shadow casting
+  (shadow triangles 47–55k → 11–13k), materials shared in the safe look.
+- **No work behind rooms and menus;** the HUD writes only on change.
+- Lesson: measure before tuning. The step counter (`#steps`) shows a device's real frame pattern in one race.
+
+### Next: v1.11 "Feel and finish"
+Toy World surviving a lost 3D context, Toy World steering that matches the classic road, star jitter, a hazed road
+end, tunnel exits, start line and arch on banked toy roads, toy corners that sink through the floor, batched road
+quads, a smaller track cache. Under discussion: a home-world bonus for cars built for a world (instead of needing
+the Toy Racer on Normal), and whether late-game curves should need more steering.
 
 ### Later: more worlds
 Cloud Kingdom, Dino Jungle, Neon City and Gravity Flip, about one world per release in the Next Gen engine, each

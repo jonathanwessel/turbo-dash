@@ -8,7 +8,7 @@
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
-import { BASE_MAX, rivalBase, rubberBand, rng, strSeed } from "../physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
@@ -279,7 +279,7 @@ export class ToyRace {
         if (fast || this.shieldT > 0) {
           if (c.knockT <= 0) { c.x = clamp(c.x + (c.x >= p.x ? 1 : -1) * 2.4, -LIMIT, LIMIT); c.lane = c.x; c.knockT = 1; this.popup("BAM!", "#ff6b3d"); this.hooks.sfx("bam"); this.shake = 0.2; this.runStats.bams++; this.fx.push({ type: "spark", dist: c.dist, x: c.x, t: this.t }); }
         } else if (Math.abs(gap) < 1.2) {
-          const dir = p.x >= c.x ? 1 : -1; p.x = clamp(p.x + dir * 0.3, -LIMIT, LIMIT); c.x = clamp(c.x - dir * 0.4, -LIMIT, LIMIT); c.lane = c.x;
+          const dir = p.x >= c.x ? 1 : -1, k = stepK(dt); p.x = clamp(p.x + dir * 0.3 * k, -LIMIT, LIMIT); c.x = clamp(c.x - dir * 0.4 * k, -LIMIT, LIMIT); c.lane = c.x;
           if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; }
         } else if (gap > 0 && p.speed > c.speed) { p.speed = c.speed * 0.9; p.dist = c.dist - 2.6; if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; } }
         else if (gap <= 0 && c.speed > p.speed) { c.speed = p.speed * 0.9; c.dist = p.dist - 2.6; }

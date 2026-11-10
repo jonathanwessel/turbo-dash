@@ -1,5 +1,44 @@
 # Changelog
 
+## v1.10.0 — Smooth on every screen ✨
+
+- **One picture, one step.** The game clock now runs physics once for every frame the screen shows, sized to how
+  long that frame really lasted. Before, it ran fixed 1/60 s steps, which was only even on a screen at exactly
+  60 Hz: a 90 Hz phone repeated one picture in three, a 120 Hz tablet showed 60 new pictures a second, a 50 Hz
+  screen jumped every fifth frame. Now every frame moves the race by the same amount at 30 to 144 Hz, with the
+  browser's timer rounding smoothed out, and race time still matches real time (checked over 60 seconds).
+  Races come out the same: the same seeded races at 40, 60, 90 and 144 Hz finish within 1% of each other.
+- **Effects that spawn "a chance per step"** (drift sparks, tire smoke, dust, bubbles, Auto Steer sparkles) and the
+  side-by-side shove in Toy Track World now scale with the step, so they look the same at any frame rate.
+- **Less drawing on the classic road**, the same picture:
+  - The sky and far hills are only painted above the far end of the road (the road paints everything below).
+    Pixels painted per frame dropped by 40 to 55%.
+  - Roadside things wholly hidden behind a hill crest are skipped (up to 50 a frame on the Moon and Glacier).
+  - Small roadside things and far rival cars are drawn from little pictures made once, instead of 30 to 200 canvas
+    calls each. Things that move or blink (flames, ghosts, lights) only do that when they are tiny.
+  - The rain, underwater and tunnel tints are a see-through layer over the game instead of being painted into
+    every frame.
+  - On ice only the two nearest rivals get a reflection.
+- **Effects: Auto is a ladder now, not a one-way switch.** It used to switch to Simple after one slow moment and
+  stay there for every track until the game was restarted. Now there are three levels (full, lighter, Simple).
+  The game steps down one level when races run slowly for 2 seconds, and back up between races after two smooth
+  ones. A level that was too slow twice isn't tried again on that device. "Slow" is measured against the screen's
+  own speed, so a 50 Hz or 120 Hz screen isn't mistaken for a slow tablet. The level is remembered per device.
+  Simple now really is lighter: a smaller canvas, a shorter view, every second far roadside thing, flat cars,
+  no clouds or far mountains, fewer bits flying. Settings > Effects still pins Full or Simple.
+- **Toy Track World:** each car is drawn with 8 draw calls instead of 23 (one per material, wheels as instances),
+  the playroom and track decorations are merged the same way, and the road no longer casts a shadow (its 30,000+
+  triangles were drawn again in the shadow pass every frame). About 80 to 90 draw calls a frame instead of 150 to
+  180, and a shadow pass a quarter of the size. The road is now a plain shiny plastic instead of a clear-coated one.
+  Simple effects also lower the 3D resolution a step and give the cars soft blob shadows. The safe 3D look no longer
+  makes a new material for every part.
+- **Battery and heat:** nothing races or draws behind Main Street or inside a building; behind the track picker
+  and Settings the demo race moves 15 times a second instead of every frame; a paused race is drawn once. The race
+  HUD only touches the page when a number or a dot actually changed.
+- **For checking a device:** open the game with `#steps` at the end of its address and finish a race: a box shows
+  how the screen's frames went (frame times, refresh rate, steps per frame, and what the old clock would have done).
+  `npm run perf` measures the classic road's drawing per frame and fails if it gets 10% worse.
+
 ## v1.9.1 — Safe and correct 🍂
 
 - **🍂 Seasonal tracks, starting with 🦇 Haunted Hill.** A seasonal track opens when the game is played during its

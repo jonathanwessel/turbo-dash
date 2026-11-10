@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { toyPoint, DS, HW, WALL_H } from "./track.js";
 import { drawEmojiText } from "../emoji.js";
 
@@ -18,6 +19,44 @@ function canvasTex(w, h, paint, repeat) {
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.45, ...o });
 const plastic = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.08, ...o });
 
+/* fewer draw calls (v1.10): parts that never move on their own are merged into one mesh per material (and per
+   area of the room, so things far off screen still get skipped). Returns old material -> the material now used. */
+const matKey = m => [m.type, m.color?.getHexString(), m.roughness, m.metalness, m.clearcoat, m.map?.uuid, m.transparent, m.opacity, m.emissive?.getHexString(), m.emissiveIntensity, m.side, m.vertexColors, m.depthWrite].join("|");
+export function mergeStatic(root, skip = new Set(), cell = Infinity) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), groups = new Map(), used = new Map(), wp = V();
+  const walk = o => {
+    for (const c of [...o.children]) {
+      if (skip.has(c)) continue;
+      if (c.isMesh && !c.isInstancedMesh && !Array.isArray(c.material) && c.visible && !c.children.length) {
+        c.getWorldPosition(wp);
+        const k = matKey(c.material) + (c.castShadow ? "|c" : "") + (c.receiveShadow ? "|r" : "") + (cell < Infinity ? "|" + Math.floor(wp.x / cell) + "," + Math.floor(wp.z / cell) : "");
+        if (!groups.has(k)) groups.set(k, []); groups.get(k).push(c);
+      } else walk(c);
+    }
+  };
+  walk(root);
+  for (const list of groups.values()) {
+    const rep = list[0].material;
+    for (const m of list) used.set(m.material, rep);
+    if (list.length < 2) continue;
+    const indexed = list.every(m => m.geometry.index);
+    const geos = list.map(m => {
+      let g = m.geometry.clone(); if (!indexed && g.index) g = g.toNonIndexed();
+      for (const a of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(a)) g.deleteAttribute(a);
+      g.morphAttributes = {}; g.clearGroups();
+      return g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
+    });
+    if (!geos.every(g => !!g.attributes.uv === !!geos[0].attributes.uv)) continue;
+    const geo = mergeGeometries(geos, false); if (!geo) continue;
+    const mesh = new THREE.Mesh(geo, rep); mesh.castShadow = list[0].castShadow; mesh.receiveShadow = list[0].receiveShadow;
+    for (const m of list) m.removeFromParent();
+    root.add(mesh);
+  }
+  return used;
+}
+
+const ROOM_CELL = 250;   // the room is merged in squares this big (world units), so far-off toys can still be skipped
 let blobT = null;
 const blobTex = () => blobT ||= canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, w, w); });
 /* the graphics chip's name (to spot PowerVR, and to show in Settings), from a tiny throwaway context */
@@ -45,15 +84,15 @@ function carMesh(def) {
     add(new THREE.BoxGeometry(0.08, 0.32, 0.12), dark, -0.55, ride + 0.75, 1.35); add(new THREE.BoxGeometry(0.08, 0.32, 0.12), dark, 0.55, ride + 0.75, 1.35);
     add(new RoundedBoxGeometry(1.7, 0.08, 0.42, 2, 0.03), accent, 0, ride + 0.93, 1.38);
   }
-  const wheels = [];
-  const tire = new THREE.CylinderGeometry(wr, wr, monster ? 0.5 : 0.34, 18), hub = new THREE.CylinderGeometry(wr * 0.5, wr * 0.5, monster ? 0.52 : 0.36, 12);
-  for (const [x, z] of [[-0.86, -1.0], [0.86, -1.0], [-0.86, 1.0], [0.86, 1.0]]) {
-    const w = new THREE.Group(); w.position.set(x * (monster ? 1.08 : 1), wr, z);
-    const t = new THREE.Mesh(tire, dark); t.rotation.z = Math.PI / 2; t.castShadow = true; w.add(t);
-    const h = new THREE.Mesh(hub, silver); h.rotation.z = Math.PI / 2; w.add(h);
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.38, wr * 1.1, 0.12), silver); w.add(spoke);
-    g.add(w); wheels.push(w);
-  }
+  // the four wheels: one instanced tire mesh and one instanced hub mesh (2 draw calls, not 12), spun every frame
+  const turn = new THREE.Matrix4().makeRotationZ(Math.PI / 2);
+  const tire = new THREE.CylinderGeometry(wr, wr, monster ? 0.5 : 0.34, 18).applyMatrix4(turn);
+  const hub = mergeGeometries([new THREE.CylinderGeometry(wr * 0.5, wr * 0.5, monster ? 0.52 : 0.36, 12).applyMatrix4(turn), new THREE.BoxGeometry(0.38, wr * 1.1, 0.12)], false);
+  const wheelAt = [[-0.86, -1.0], [0.86, -1.0], [-0.86, 1.0], [0.86, 1.0]].map(([x, z]) => V(x * (monster ? 1.08 : 1), wr, z));
+  const tires = new THREE.InstancedMesh(tire, dark, 4), hubs = new THREE.InstancedMesh(hub, silver, 4);
+  tires.castShadow = true; g.add(tires, hubs);
+  const wheels = { tires, hubs, at: wheelAt, ang: 0 };
+  spinWheels(wheels, 0);
   for (const x of [-0.55, 0.55]) add(new THREE.BoxGeometry(0.36, 0.14, 0.05), std("#ff2a2a", { emissive: "#ff1010", emissiveIntensity: 0.8 }), x, ride + 0.42, 1.51);
   const extra = {};
   if (type === "rocket") for (const x of [-0.95, 0.95]) { add(new THREE.CylinderGeometry(0.2, 0.2, 1.8, 12), silver, x, ride + 0.4, 0.3, Math.PI / 2); add(new THREE.ConeGeometry(0.2, 0.4, 12), std("#e8262b"), x, ride + 0.4, -0.8, -Math.PI / 2); }
@@ -68,8 +107,16 @@ function carMesh(def) {
   // a soft round shadow right under the toy (grounds it on the plastic track)
   const blob = new THREE.Mesh(new THREE.CircleGeometry(1.7, 24), new THREE.MeshBasicMaterial({ map: blobTex(), transparent: true, depthWrite: false, opacity: 0.55 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03; blob.scale.set(1, 1.6, 1); g.add(blob);
-  g.userData = { wheels, wr, extra, paint, rainbow: !!def.rainbow, body, spring: { y: 0, v: 0, pitch: 0, pv: 0 }, blob };
+  // every part that doesn't move on its own: one mesh per material
+  const used = mergeStatic(body, new Set([...extra.flames, extra.prop, extra.red, extra.blue].filter(Boolean)));
+  g.userData = { wheels, wr, extra, paint: used.get(paint) || paint, rainbow: !!def.rainbow, body, spring: { y: 0, v: 0, pitch: 0, pv: 0 }, blob };
   return g;
+}
+const wm = new THREE.Matrix4(), wr4 = new THREE.Matrix4();
+function spinWheels(w, ang) {
+  w.ang = ang; wr4.makeRotationX(ang);
+  w.at.forEach((p, k) => { wm.makeTranslation(p.x, p.y, p.z).multiply(wr4); w.tires.setMatrixAt(k, wm); w.hubs.setMatrixAt(k, wm); });
+  w.tires.instanceMatrix.needsUpdate = w.hubs.instanceMatrix.needsUpdate = true;
 }
 
 /* ---------- the playroom: a wooden floor, a play rug, walls, a big window and giant toys ---------- */
@@ -141,6 +188,7 @@ function playroom(scene, T) {
     }
     void col;
   }
+  mergeStatic(room, new Set(), ROOM_CELL);
   scene.add(room);
   return room;
 }
@@ -169,8 +217,10 @@ function trackMeshes(T, pal) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  const road = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.35, clearcoat: 0.85, clearcoatRoughness: 0.12, side: THREE.DoubleSide }));
-  road.castShadow = road.receiveShadow = true; grp.add(road);
+  // the road only receives shadows: casting them redrew its 30,000+ triangles in the shadow pass every frame (v1.10).
+  // Shared corners are merged (an indexed mesh) and the plastic is a plain shiny material, not a clear-coated one.
+  const road = new THREE.Mesh(mergeVertices(geo), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.05, side: THREE.DoubleSide }));
+  road.castShadow = false; road.receiveShadow = true; grp.add(road);
   // stilts down to the floor (not under loops or gaps)
   const stilt = new THREE.CylinderGeometry(0.45, 0.6, 1, 10), stMat = plastic(pal[1]), list = [];
   for (let i = 0; i < N; i += Math.round(10 / DS)) {
@@ -179,7 +229,7 @@ function trackMeshes(T, pal) {
   }
   const st = new THREE.InstancedMesh(stilt, stMat, list.length), m4 = new THREE.Matrix4();
   list.forEach((p, k) => { m4.compose(V(p[0], p[1] / 2, p[2]), new THREE.Quaternion(), V(1, p[1], 1)); st.setMatrixAt(k, m4); });
-  st.castShadow = true; grp.add(st);
+  st.castShadow = false; grp.add(st);
   // loop stands: two posts beside each loop, up to its middle
   for (const lp of T.loops) {
     const mid = (lp.s0 + lp.s1) / 2, c = toyPoint(T, lp.s0, 0, 0), top = toyPoint(T, mid, 0, 0);
@@ -210,7 +260,7 @@ function trackMeshes(T, pal) {
       const tire = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.9, 20), std("#1b1b22", { roughness: 0.8 })); wheel.add(tire);
       const hubm = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.95, 12), red); wheel.add(hubm);
       for (let k = 0; k < 3; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.97, 0.25), std("#c9ced8", { metalness: 0.7, roughness: 0.3 })); sp.rotation.y = k * Math.PI / 3; wheel.add(sp); }
-      station.add(wheel); wheels.push(wheel);
+      mergeStatic(wheel); station.add(wheel); wheels.push(wheel);
     }
     const roof = new THREE.Mesh(new RoundedBoxGeometry(2 * HW + 5.6, 1.2, 5, 2, 0.3), red); roof.position.set(0, 4.1, 0); roof.castShadow = true; station.add(roof);
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.1), new THREE.MeshBasicMaterial({ map: canvasTex(256, 56, (c, w, h) => { c.fillStyle = "#ffd400"; c.fillRect(0, 0, w, h); c.fillStyle = "#e8262b"; c.font = "900 40px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; drawEmojiText(c, "⚡ BOOST ⚡", w / 2, h / 2 + 2); }) }));
@@ -224,6 +274,7 @@ function trackMeshes(T, pal) {
       ar.scale.set(1, 1, 0.05); grp.add(ar); arrows.push(ar);
     }
   }
+  mergeStatic(grp, new Set([road, st, ...wheels, ...arrows]), ROOM_CELL);
   return { grp, wheels, arrows };
 }
 
@@ -284,7 +335,7 @@ export class ToyView {
     for (const g of this.cars.values()) { this.scene.remove(g); free(g); }
     if (this.shield) { this.scene.remove(this.shield); free(this.shield); }
     this.cars = new Map();
-    const make = (key, def, ghost) => { const g = carMesh(def); if (ghost) g.traverse(m => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.4; m.castShadow = false; } }); this.scene.add(g); this.cars.set(key, g); return g; };
+    const make = (key, def, ghost) => { const g = carMesh(def); this.carShadows(g); if (ghost) g.traverse(m => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.4; m.castShadow = false; } }); this.scene.add(g); this.cars.set(key, g); return g; };
     make("p", race.player.def); race.rivals.forEach((c, k) => make("r" + k, c.def));
     if (race.trial && race.ghost) make("g", race.ghostDef, true);
     this.shield = new THREE.Mesh(new THREE.SphereGeometry(2.4, 24, 16), new THREE.MeshBasicMaterial({ color: "#3cf2ff", transparent: true, opacity: 0.18 })); this.scene.add(this.shield);
@@ -312,7 +363,10 @@ export class ToyView {
     if (this.safe) return;
     this.safe = true;
     this.scene.environment = null;
-    const swap = m => {
+    // one new material per old one, so meshes that shared a material still share one (v1.10: the safe look used to
+    // make a new material for every mesh, 193 became 335)
+    const made = new Map(), swap = m => { if (!m) return m; if (!made.has(m)) made.set(m, make(m)); return made.get(m); };
+    const make = m => {
       if (this.min && m && (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial)) {
         const l = new THREE.MeshLambertMaterial({ color: m.color, map: m.map, vertexColors: m.vertexColors, emissive: m.emissive, emissiveIntensity: m.emissiveIntensity, transparent: m.transparent, opacity: m.opacity, side: m.side });
         m.dispose(); return l;
@@ -326,13 +380,17 @@ export class ToyView {
     console.warn("Turbo Dash: Toy Track World switched to the safe 3D look (" + this.diag.why + ")");
   }
 
+  /* Simple effects (or the tablet look): a smaller shadow map, a slightly lower resolution (v1.10), and the cars
+     only keep their soft round blob shadows instead of real ones (v1.10) */
   setLite(lite) {
     lite = lite || this.light;
     if (this.lite === lite) return;
-    this.lite = lite;
+    this.lite = lite; this.cam = null;
+    for (const g of this.cars.values()) this.carShadows(g);
     if (this.min) return;   // no shadows to resize
     const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
   }
+  carShadows(g) { const on = !this.lite; g.traverse(m => { if (m.isMesh && m !== g.userData.blob && !m.material?.transparent) m.castShadow = on; }); }
 
   /* place a car on the track (s along, x sideways, h above) facing forward, tilted with the track */
   place(g, T, s, x, h, yaw = 0) {
@@ -359,7 +417,7 @@ export class ToyView {
 
   spinCar(g, speed, dt, fast, t) {
     const d = g.userData;
-    for (const w of d.wheels) w.rotation.x -= speed * dt / d.wr;
+    if (speed * dt) spinWheels(d.wheels, (d.wheels.ang - speed * dt / d.wr) % (Math.PI * 2));
     for (const fl of d.extra.flames) { fl.visible = fast; if (fast) fl.scale.set(1, 0.8 + Math.random() * 0.6, 1); }
     if (d.extra.prop) d.extra.prop.rotation.z += dt * 20;
     if (d.extra.red) { const on = Math.sin(t * 12) > 0; d.extra.red.material.emissiveIntensity = on ? 1.5 : 0.1; d.extra.blue.material.emissiveIntensity = on ? 0.1 : 1.5; }
@@ -370,7 +428,7 @@ export class ToyView {
     const T = race.T, R = this.renderer, W = this.ov.width, H = this.ov.height;
     if (!this.world || this.trackId !== T.track.id) this.reset(race);
     const key = W + "x" + H;
-    if (this.cam !== key) { const k = this.min ? 0.65 : this.light ? 0.75 : 1; R.setPixelRatio(1); R.setSize(Math.round(W * k), Math.round(H * k), false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = key; }
+    if (this.cam !== key) { const k = (this.min ? 0.65 : this.light ? 0.75 : 1) * (this.lite ? 0.85 : 1); R.setPixelRatio(1); R.setSize(Math.round(W * k), Math.round(H * k), false); this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.cam = key; }
     const t = race.t, dt = Math.min(0.05, Math.max(0, t - this.lastT)); this.lastT = t;
     const p = race.player, fast = race.nitroT > 0 || race.boostT > 0;
     // cars
@@ -391,14 +449,22 @@ export class ToyView {
     if (this.shield.visible) this.shield.position.copy(pg.position).addScaledVector(fr.up, 0.9);
     // coins and boxes
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), zero = V(0, 0, 0), one = V(1, 1, 1), e = new THREE.Euler();
+    // coins spin, but only the ones near the player are re-sent to the graphics chip (v1.10; a picked-up coin once)
+    const taken = T.coins.reduce((n, c) => n + (c.taken ? 1 : 0), 0), all = taken !== this.coinsTaken || this.coinsFor !== T;
+    this.coinsTaken = taken; this.coinsFor = T;
+    const near = c => { const d = ((c.s - p.dist) % T.L + T.L) % T.L; return d < 220 || d > T.L - 30; };
+    let lo = Infinity, hi = -1;
     T.coins.forEach((c, k) => {
+      if (!all && !near(c)) return;
+      lo = Math.min(lo, k); hi = Math.max(hi, k);
       if (c.taken) { m4.compose(zero, q, zero); this.coins.setMatrixAt(k, m4); return; }
       const ci = c.i, up = V(T.ux[ci], T.uy[ci], T.uz[ci]);
       const pos = V(...toyPoint(T, c.s, c.x, c.h + 1)); e.set(Math.PI / 2, 0, t * 3 + k); q.setFromEuler(e);
       if (Math.abs(up.y) < 0.9) q.premultiply(new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), up));
       m4.compose(pos, q, one); this.coins.setMatrixAt(k, m4);
     });
-    this.coins.instanceMatrix.needsUpdate = true;
+    const im = this.coins.instanceMatrix;
+    if (hi >= 0) { im.clearUpdateRanges(); if (!all) im.addUpdateRange(lo * 16, (hi - lo + 1) * 16); im.needsUpdate = true; }
     const col = new THREE.Color();
     T.boxes.forEach((b, k) => b.xs.forEach((bx, n) => {
       const id = k * 3 + n, gone = b.until[n] > t;
@@ -434,7 +500,9 @@ export class ToyView {
 
   /* 2D things on top: speed lines, the toy hand, Auto Steer robot, popups */
   overlay(race, W, H, t, fast, falling) {
-    const ctx = this.ctx; ctx.clearRect(0, 0, W, H);
+    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0;
+    if (!need && !this.ovHad) return;   // nothing on it now or last frame: leave the clear canvas alone (v1.10)
+    this.ovHad = need; ctx.clearRect(0, 0, W, H);
     if (fast) {
       ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = Math.max(1, H * 0.004); ctx.beginPath();
       for (let k = 0; k < 20; k++) { const a = Math.random() * Math.PI * 2, r0 = H * (0.38 + Math.random() * 0.2), r1 = r0 + H * (0.15 + Math.random() * 0.2); ctx.moveTo(W / 2 + Math.cos(a) * r0 * 1.6, H * 0.5 + Math.sin(a) * r0); ctx.lineTo(W / 2 + Math.cos(a) * r1 * 1.6, H * 0.5 + Math.sin(a) * r1); }

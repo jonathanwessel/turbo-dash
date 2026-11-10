@@ -279,6 +279,59 @@ export const SPRITES = {
   icepine: { w: 1300, collide: true }, icecrystal: { w: 1000, collide: true }, igloo: { w: 1600, collide: true }, penguin: { w: 600, collide: true }, snowfort: { w: 1500, collide: true },
 };
 
+/* how far above its base each thing draws, in units of its width (measured by drawing each one; scripts/test-draw.mjs
+   checks it). The road skips a thing whose top is still below a hill crest: it would paint nothing (v1.10). */
+const SPRITE_TOP = { tree: 1.3, bush: 0.7, flower: 1.15, cactus: 1.3, rock: 0.6, palm: 1.8, pine: 1.45, snowman: 1.45, lollipop: 1.55, candycane: 1.1, cupcake: 1.05, volcanorock: 0.75, lavaflame: 1.4, planet: 1.6, crystal: 1.1, ufo: 1.7, sign: 0.75, lamp: 2.65, shop: 0.85, house: 1.1, building: 1.5, chevronL: 1, chevronR: 1, dumptruck: 0.65, roadclosed: 0.8, cone: 0.8, trafficlight: 3, moonrock: 0.65, crater: 0.55, dish: 1.25, dome: 0.65, autumnTree: 1.3, umbrella: 1.4, sandcastle: 0.95, surfboard: 1.3, pumpkin: 0.75, hay: 0.55, mushroom: 0.95, kelp: 1.8, coral: 0.85, shellrock: 0.5, jelly: 1.9, treasure: 0.9, anemone: 0.55, barn: 0.9, cow: 0.75, windmill: 1.25, corn: 1.1, pirateship: 1.05, barrel: 0.8, parrot: 1.9, cannon: 0.4, cattail: 1.15, duck: 0.8, canoe: 0.4, coveredbridge: 0.65, tent: 1.1, balloons: 1.8, cottoncandy: 1.55, ghost: 1.4, jackolantern: 0.95, spookytree: 1.1, hauntedhouse: 1.35, gear: 1.05, robot: 1.3, crate: 0.7, smokestack: 2.7, glowshroom: 0.85, stalagmite: 1.1, minecart: 0.7, icepine: 1.45, icecrystal: 1.05, igloo: 0.55, penguin: 0.95, snowfort: 0.95 };
+for (const k in SPRITES) SPRITES[k].top = (SPRITE_TOP[k] ?? 3) + 0.05;
+export const COIN_TOP = 0.55, RING_TOP = 0.7, PEARL_TOP = 0.8, BOX_TOP = 0.78, CAR_TOP = 1.2;
+
+/* small things come from little pictures drawn once (v1.10): a tree 10 px wide costs one drawImage instead of 30
+   canvas calls. Pictures are made at 16, 32, 48, 64 or 96 px and shrunk to fit. Things that move or blink (flames, ghosts,
+   lights) only use a picture when they are tiny, where the motion can't be seen. Outside a browser (the tests and
+   simulators) there is no canvas to draw into, so everything is drawn the normal way. */
+const ANIMATED = new Set(["flower", "lavaflame", "planet", "ufo", "volcanorock", "trafficlight", "dish", "kelp", "treasure", "jelly", "anemone", "corn", "cattail", "ghost", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
+const VARIED = new Set(["shop", "building", "trafficlight", "coral", "treasure", "balloons", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
+const pics = new Map();
+let picMaker = typeof document !== "undefined" && document.createElement ? (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h }) : null;
+export const setPicMaker = f => { picMaker = f; pics.clear(); };   // for scripts/perf.mjs
+export const SPRITE_PIC_MAX = 96, CAR_PIC_MAX = 48;
+const bucket = w => w <= 16 ? 16 : w <= 32 ? 32 : w <= 48 ? 48 : w <= 64 ? 64 : 96;
+function picture(key, B, top, side, draw, bot = 0.6) {
+  let p = pics.get(key);
+  if (p === undefined) {
+    p = null;
+    if (picMaker) try {
+      const pad = 2, cw = Math.ceil(B * side * 2 + pad * 2), ch = Math.ceil(B * (top + bot) + pad * 2), c = picMaker(cw, ch), g = c.getContext("2d");
+      if (g) { draw(g, cw / 2, Math.ceil(B * top) + pad); p = { c, ox: cw / 2 / B, oy: (Math.ceil(B * top) + pad) / B, w: cw / B, h: ch / B }; }
+    } catch { p = null; }
+    if (pics.size > 600) pics.clear();
+    pics.set(key, p);
+  }
+  return p;
+}
+/* a roadside thing, from a picture when it is small enough (returns false when it was not drawn that way) */
+export function drawSpritePic(ctx, type, x, yb, w, seed, shadow) {
+  if (w > SPRITE_PIC_MAX || (ANIMATED.has(type) && w > 16) || !picMaker) return false;
+  const B = bucket(w), v = VARIED.has(type) ? seed % 4 : 0, p = picture(type + B + "." + v + (shadow ? "s" : ""), B, SPRITES[type].top, 0.9, (g, x0, y0) => {
+    if (shadow) { g.fillStyle = "rgba(0,0,0,0.16)"; g.beginPath(); g.ellipse(x0, y0, B * 0.42, B * 0.07, 0, 0, 7); g.fill(); }
+    drawSprite(g, type, x0, y0, B, 0, v);
+  });
+  if (!p) return false;
+  ctx.drawImage(p.c, x - p.ox * w, yb - p.oy * w, p.w * w, p.h * w);
+  return true;
+}
+/* a small rival car, from a picture (steering in three steps; rainbow paint always draws live) */
+const carKeys = new WeakMap(); let carN = 0;
+export function drawCarPic(ctx, x, yb, w, def, steer, flat) {
+  if (w > CAR_PIC_MAX || w < 4 || def.rainbow || !picMaker) return false;
+  let id = carKeys.get(def); if (!id) carKeys.set(def, id = "car" + ++carN);
+  const st = steer < -0.33 ? -1 : steer > 0.33 ? 1 : 0, B = w <= 16 ? 16 : w <= 28 ? 28 : 48;
+  const p = picture(id + B + "." + st + (flat ? "f" : ""), B, CAR_TOP, 0.8, (g, x0, y0) => drawCar(g, x0, y0, B, def, { t: 0, steer: st, lean: st * 0.5, flat }), 0.75);
+  if (!p) return false;
+  ctx.drawImage(p.c, x - p.ox * w, yb - p.oy * w, p.w * w, p.h * w);
+  return true;
+}
+
 export function drawSprite(ctx, type, x, yb, w, t, seed = 0) {
   // seed: this object's own number, so its colors and wobble never change as the screen moves (no flicker)
   const ph = seed * 2.39996;

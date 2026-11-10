@@ -1,6 +1,7 @@
 import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
-import { advance } from "./pace.js";
+import { advance, newClock, resetClock, stepCounter } from "./pace.js";
+import { qualityLadder, QUALITY_CAP } from "./quality.js";
 import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
@@ -32,7 +33,7 @@ const hooks = {
   // engine hum only during a real race (menus have the demo drive behind them, but only music)
   engine: (r, b, tun) => { if (mode === "race") engine(r, b, tun); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
-  onFinish: r => { clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
+  onFinish: r => { showSteps(); if (quality.raceEnd() && S.opts.fx === "auto") setLite(); clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
 };
 /* Two engines: the classic pseudo-3D road, and (from Toy Track World on) the Next Gen 3D engine. The toy engine's
    3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
@@ -79,33 +80,61 @@ function resize() {
   const vw = innerWidth, vh = innerHeight, portrait = vh > vw * 1.05;
   let cw = vw, ch = vh, top = 0;
   if (portrait && mode === "race") { ch = Math.round(Math.min(vh * 0.6, vw * 1.05)); top = Math.round(vh * 0.11); }
-  const k = Math.min(window.devicePixelRatio || 1, 2, 720 / ch);
+  const k = Math.min(window.devicePixelRatio || 1, 2, QUALITY_CAP[qLevel()] / ch);
   canvas.width = Math.round(cw * k); canvas.height = Math.round(ch * k);
   Object.assign(canvas.style, { width: cw + "px", height: ch + "px", top: top + "px" });
   Object.assign(glCanvas.style, { width: cw + "px", height: ch + "px", top: top + "px" });
+  Object.assign($("tint").style, { width: cw + "px", height: ch + "px", top: top + "px" });
 }
-addEventListener("resize", () => resize());
+const tintEl = $("tint"); let tintNow = "";
+/* the classic road's full-screen tint (tunnel, rain, sea) as a layer over the canvas: only touched when it changes */
+function paintTint(on) {
+  const v = on && race === classic ? (classic.tint || "").replace(/,$/, "") : "";
+  if (v === tintNow) return;
+  tintNow = v; tintEl.hidden = !v; tintEl.style.background = v;
+}
+addEventListener("resize", () => { resize(); trackW = 0; pauseDrawn = false; });
 
 /* ---------- game loop ---------- */
-const clock = { acc: 0 };
+const clock = newClock();
+// 📊 step counter (a measuring tool): on the dev server, or any build opened with #steps at the end of its address,
+// one race's frame timing is shown at the finish (scripts/test-pace.mjs explains the numbers)
+const STEPS_ON = import.meta.env.DEV || location.hash.includes("steps");
+let steps = null;
+const demoClock = newClock();
+let panelUp = false, panelT = 0, pauseDrawn = false;
 let mode = "menu", screen = "s-title", paused = false, last = performance.now(), goT = 0, lastReal = performance.now();
 const NOT_PLAYING = ["s-rest", "s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-grownup", "s-reset", "s-update"];
-let frameMs = 16.7, slowT = 0, autoLite = false;
+// picture quality: Settings > Effects "Auto" lets the game pick a level for this device (src/quality.js);
+// "Full" pins level 3 and "Simple" pins level 1. The level is remembered per device, not in the save.
+const quality = qualityLadder((() => { try { return JSON.parse(localStorage.getItem("turbodash.quality")) || {}; } catch (e) { return {}; } })(),
+  v => { try { localStorage.setItem("turbodash.quality", JSON.stringify(v)); } catch (e) { /* private mode */ } });
+function qLevel() { return S.opts.fx === "simple" ? 1 : S.opts.fx === "full" ? 3 : quality.level; }
+let qNow = 0;
 function setLite() {
-  const lite = S.opts.fx === "simple" || (S.opts.fx === "auto" && autoLite);
-  classic.lite = lite; toyRace?.view?.setLite?.(lite);
+  const q = qLevel(), lite = q <= 1;
+  classic.quality = q; classic.lite = lite; toyRace?.view?.setLite?.(lite);
+  if (qNow && q !== qNow) resize();
+  qNow = q;
 }
 function frame(now) {
   const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
-  if (mode === "race" && !paused && !document.hidden && raw < 120) {
-    frameMs += (raw - frameMs) * 0.05;
-    slowT = frameMs > 24 ? slowT + raw / 1000 : 0;
-    if (slowT > 3 && !autoLite) { autoLite = true; setLite(); }
+  if (!document.hidden && !paused && quality.frame(raw, mode === "race" && race.state === "race" && !race.player.finished) && S.opts.fx === "auto") setLite();
+  // physics once per screen frame, sized to the display (src/pace.js). Nothing runs on Main Street or inside a
+  // building (its room picture covers the screen); behind a menu panel the race only moves and draws 15 times a
+  // second (the panel covers 93% of it); while paused it is drawn once and then left alone (v1.10: battery and heat)
+  const seen = screen !== "s-hub" && !inRoom;
+  let draw = seen && !paused;
+  if (!seen || paused) { resetClock(clock); if (paused && seen && !pauseDrawn) { pauseDrawn = draw = true; } }
+  else if (panelUp) { panelT += dt; if (panelT >= 1 / 15) { advance(demoClock, Math.min(0.1, panelT), race); panelT = 0; } else draw = false; }
+  else {
+    const n = advance(clock, dt, race);
+    if (steps && mode === "race" && race.state === "race" && !race.player.finished && !document.hidden && raw < 120) steps.frame(raw, n);
   }
-  // one physics step per real 1/60 s; races run at PACE by slowing each step (src/pace.js)
-  if (!paused && screen !== "s-hub") advance(clock, dt, race); else clock.acc = 0;
+  if (!paused) pauseDrawn = false;
   if (race === toyRace && toyRace?.view?.lost) { lostT += dt; if (lostT > 0.6) recoverToy(); } else lostT = 0;
-  if (screen !== "s-hub" && !inRoom) race.render();
+  if (draw) race.render();
+  paintTint(seen);
   if (mode === "race") updateHud(dt);
   if (screen === "s-garage") garage.draw(dt);
   if (screen === "s-wash") drawWash(dt);
@@ -152,8 +181,8 @@ const NO_RETURN = new Set(["s-result", "s-rankup", "s-cupend", "s-pvend", "s-bos
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
-  screen = id; inRoom = !!$(id)?.dataset.room;
-  document.body.classList.toggle("on-panel", !!$(id)?.classList.contains("panel")); refreshChips();
+  screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
+  document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
   const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
@@ -308,12 +337,28 @@ function startRace(track) {
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  raceStartAt = Date.now();
+  raceStartAt = Date.now(); resetClock(clock); quality.raceStart(); steps = STEPS_ON ? stepCounter() : null;
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
   nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
+}
+
+/* 📊 the step counter's report: a plain box over the result screen, tap to close (measuring tool only) */
+function showSteps() {
+  if (!steps || !steps.frames) return;
+  const r = steps.report(); steps = null;
+  const box = document.createElement("pre");
+  box.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:9999;max-width:calc(100vw - 16px);white-space:pre-wrap;font:12px/1.35 monospace;background:#000c;color:#fff;padding:8px 10px;border-radius:8px;margin:0";
+  box.textContent = `📊 steps per frame, one race (${r.frames} frames, ~${r.hz} Hz, ${r.minMs} to ${r.maxMs} ms)
+new clock: ${r.steps}
+old clock would have run: ${r.oldSteps}
+frame times: ${r.frameMs}
+screen ${innerWidth}×${innerHeight} css px, devicePixelRatio ${devicePixelRatio}, canvas ${canvas.width}×${canvas.height}, effects ${classic.lite ? "simple" : "full"}
+(tap to close)`;
+  box.onclick = () => box.remove(); document.body.append(box);
+  console.log("Turbo Dash step counter", r);
 }
 
 /* ---------- HUD ---------- */
@@ -322,7 +367,11 @@ let dots = [], lastCount = null, hudCache = {};
 function buildProgress(n = 6) {
   const box = $("h-track"); box.innerHTML = ""; dots = [];
   for (let i = 0; i < n; i++) { const d = document.createElement("i"); box.appendChild(d); dots.push(d); }
+  trackW = 0;
 }
+let trackW = 0;
+/* write a style only when it changed (the HUD runs every frame; v1.10) */
+function setStyle(el, key, prop, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.style[prop] = v; } }
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
 /* 👆 the first race of a new save teaches the controls: hands point at ◀ and ▶ until he has steered both ways,
    then at 🚀 the first time Turbo is full, until he uses it */
@@ -352,11 +401,17 @@ function updateHud(dt) {
   const h = race.hud();
   tickCoach(dt, h);
   if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
-  h.progress.forEach((p, i) => { const d = dots[i]; d.style.left = (p.f * 100).toFixed(1) + "%"; d.style.background = p.color; d.classList.toggle("me", p.me); });
-  setText("h-mph", h.mph); $("speedo-needle").style.transform = `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(1)}deg)`;
+  // progress dots move with transform (no page layout every frame), and only when they moved a whole pixel
+  if (!trackW) trackW = $("h-track").clientWidth;
+  h.progress.forEach((p, i) => { const d = dots[i]; if (!d) return;
+    setStyle(d, "dx" + i, "transform", `translate(${Math.round(p.f * trackW)}px,0) translate(-50%,-50%)`); setStyle(d, "dc" + i, "background", p.color);
+    if (hudCache["dm" + i] !== p.me) { hudCache["dm" + i] = p.me; d.classList.toggle("me", p.me); } });
+  setText("h-mph", h.mph); setStyle($("speedo-needle"), "needle", "transform", `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(0)}deg)`);
   // the tank drains while Turbo burns it (a Super Turbo power-up leaves the tank alone)
-  $("nitro-fill").style.height = ((h.tankBurn ?? h.nitro) * 100).toFixed(0) + "%"; $("btn-nitro").classList.toggle("burning", h.nitroOn);
-  $("btn-nitro").classList.toggle("ready", h.nitro >= 1 && h.state === "race");
+  setStyle($("nitro-fill"), "tank", "transform", `scaleY(${((h.tankBurn ?? h.nitro)).toFixed(2)})`);
+  const burning = !!h.nitroOn, ready = h.nitro >= 1 && h.state === "race";
+  if (hudCache.burn !== burning) { hudCache.burn = burning; $("btn-nitro").classList.toggle("burning", burning); }
+  if (hudCache.ready !== ready) { hudCache.ready = ready; $("btn-nitro").classList.toggle("ready", ready); }
   const cd = $("countdown");
   if (h.state === "countdown") {
     if (h.count !== lastCount) { lastCount = h.count; cd.hidden = false; cd.textContent = h.count > 0 ? h.count : "GO!"; cd.classList.remove("pop"); void cd.offsetWidth; cd.classList.add("pop"); }
@@ -1151,7 +1206,7 @@ document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("c
 const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
 $("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); toyDiag.floor = 0; saveDiag(); paintToggles(); sfx("click"); };
 function paintToggles() {
-  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? (autoLite ? " (simple now)" : " (full now)") : "");
+  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? ` (${["", "simple", "lighter", "full"][quality.level]} now)` : "");
   $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
   $("set-tilt").classList.toggle("off", !S.opts.tilt); paintTiltLive();
   $("set-name-now").textContent = S.name || "Tap to add";
@@ -1393,7 +1448,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => ({ ms: +frameMs.toFixed(1), fps: Math.round(1000 / frameMs), lite: classic.lite, autoLite }), forceSlow: () => { autoLite = true; setLite(); }, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => ({ ms: +quality.allMs.toFixed(1), fps: Math.round(1000 / quality.allMs), raceMs: +quality.ms.toFixed(1), vsync: +quality.vsync.toFixed(1), level: qLevel(), lite: classic.lite }), forceSlow: () => { quality.level = Math.max(1, quality.level - 1); setLite(); }, quality, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();
