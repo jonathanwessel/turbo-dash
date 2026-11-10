@@ -1,102 +1,102 @@
 {
  "sunny:3": {
-  "ops": 5324,
+  "ops": 5358,
   "area": 2.5,
   "grads": 12
  },
  "sunny:1": {
-  "ops": 4222,
+  "ops": 4256,
   "area": 2.41,
   "grads": 1
  },
  "sunny+rain:3": {
-  "ops": 5518,
+  "ops": 5564,
   "area": 2.49,
   "grads": 12
  },
  "sunny+rain:1": {
-  "ops": 4412,
+  "ops": 4456,
   "area": 2.4,
   "grads": 1
  },
  "fair:3": {
-  "ops": 6421,
+  "ops": 6455,
   "area": 2.48,
   "grads": 12
  },
  "fair:1": {
-  "ops": 4613,
+  "ops": 4647,
   "area": 2.49,
   "grads": 1
  },
  "haunted:3": {
-  "ops": 7060,
+  "ops": 7094,
   "area": 2.63,
   "grads": 13
  },
  "haunted:1": {
-  "ops": 6094,
+  "ops": 6127,
   "area": 2.52,
   "grads": 2
  },
  "night:3": {
-  "ops": 7081,
+  "ops": 7115,
   "area": 2.84,
   "grads": 13
  },
  "night:1": {
-  "ops": 5223,
+  "ops": 5257,
   "area": 2.73,
   "grads": 2
  },
  "lava:3": {
-  "ops": 6169,
+  "ops": 6174,
   "area": 2.3,
   "grads": 12
  },
  "lava:1": {
-  "ops": 4243,
+  "ops": 4248,
   "area": 2.23,
   "grads": 1
  },
  "caves:3": {
-  "ops": 7042,
+  "ops": 7077,
   "area": 2.83,
   "grads": 13
  },
  "caves:1": {
-  "ops": 5441,
+  "ops": 5475,
   "area": 2.66,
   "grads": 2
  },
  "crater:3": {
-  "ops": 5382,
+  "ops": 5390,
   "area": 3.04,
   "grads": 18.8
  },
  "crater:1": {
-  "ops": 4318,
+  "ops": 4320,
   "area": 3.06,
   "grads": 7.8
  },
  "kelp:3": {
-  "ops": 6809,
+  "ops": 6973,
   "area": 2.49,
   "grads": 9.5
  },
  "kelp:1": {
-  "ops": 5962,
+  "ops": 6127,
   "area": 2.5,
   "grads": 2.2
  },
  "icecave:3": {
-  "ops": 8100,
-  "area": 2.74,
+  "ops": 9170,
+  "area": 2.79,
   "grads": 18.8
  },
  "icecave:1": {
-  "ops": 5670,
-  "area": 2.44,
+  "ops": 6404,
+  "area": 2.49,
   "grads": 1
  }
 }

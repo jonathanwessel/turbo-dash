@@ -135,7 +135,7 @@ function playroom(scene, T) {
     const cols = ["#4fb6ff", "#ffd400", "#ff6b9d", "#5be36a", "#b46cff", "#ff8a00"];
     for (let i = 0; i < 12; i++) { c.fillStyle = cols[i % cols.length]; c.beginPath(); c.arc(w / 2, w / 2, w / 2 * (1 - i / 12), 0, 7); c.fill(); }
   }), roughness: 0.95 }));
-  rug.rotation.x = -Math.PI / 2; rug.position.y = 0.15;   // a little higher, so it never flickers into the floor far away rug.receiveShadow = true; room.add(rug);
+  rug.rotation.x = -Math.PI / 2; rug.position.y = 0.15; rug.receiveShadow = true; room.add(rug);   // a little higher, so it never flickers into the floor far away
   // walls with star wallpaper, a baseboard and a big bright window
   const paper = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#bfe4ff"; c.fillRect(0, 0, w, h); c.fillStyle = "#e9f6ff"; for (let i = 0; i < 9; i++) { const x = (i * 83) % w, y = (i * 137) % h; c.font = "40px sans-serif"; c.fillText("★", x, y); } }, 1);
   paper.repeat.set(10, 3);

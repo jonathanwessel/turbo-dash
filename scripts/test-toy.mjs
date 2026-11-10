@@ -5,6 +5,7 @@
 //   node scripts/test-toy.mjs
 import { TRACKS } from "../src/data.js";
 import { buildToyTrack, toyPoint, startArch, startLine, HW, DS, FLOOR_GAP } from "../src/toy/track.js";
+import fs from "node:fs";
 
 let fails = 0, checks = 0;
 const check = (ok, msg) => { checks++; if (!ok) { fails++; console.log("  ✖ " + msg); } };
@@ -20,5 +21,10 @@ for (const t of TRACKS.filter(t => t.world === "toy")) {
   check(A.top - A.L[1] >= 8.9 && A.top - A.R[1] >= 8.9 && Math.abs(A.mid[1] - (A.top - 0.6)) < 1e-6, `${t.id}: the arch tops are not level above both poles`);
   check(Math.abs(A.width - Math.hypot(eR[0] - eL[0], eR[2] - eL[2]) - 0.6) < 0.05, `${t.id}: the banner doesn't span the poles`);
 }
+// 4. the playroom's rug is really added to the room (v1.11.1: a comment pasted mid-line once swallowed "room.add(rug)")
+{ const src = fs.readFileSync(new URL("../src/toy/view.js", import.meta.url), "utf8");
+  const line = src.split(String.fromCharCode(10)).find(l => l.includes("room.add(rug)")) || "", cut = line.indexOf("//");
+  check(line && (cut < 0 || line.indexOf("room.add(rug)") < cut), "the play rug is never added to the playroom (room.add(rug) is missing or inside a comment)"); }
+
 console.log(fails ? `\n✖ ${fails} of ${checks} toy checks failed` : `All ${checks} toy checks passed`);
 process.exit(fails ? 1 : 0);

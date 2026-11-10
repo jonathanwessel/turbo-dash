@@ -8,7 +8,7 @@
 globalThis.Image = class { constructor() { this.complete = true; this.naturalWidth = 72; this.naturalHeight = 72; } };
 const { SPRITES, drawSprite, drawCoin, drawRing, drawPearl, drawBox, drawCar, drawSpritePic, drawCarPic, setPicMaker, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP, picVariant, picMaxFor, SWAY_OK } = await import("../src/draw.js");
 const { Race } = await import("../src/engine.js");
-const { CARS, TRACKS, PACE } = await import("../src/data.js");
+const { CARS, TRACKS, PACE, BONUS_TRACKS } = await import("../src/data.js");
 const { statsFor } = await import("../src/stats.js");
 
 let fails = 0, checks = 0;
@@ -102,6 +102,34 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   if (sea) { race.setup(sea, "race", car, st, { diff: "normal" }); for (let i = 0; i < 200; i++) race.update(PACE / 60); race.render(); check(/rgba\(10,70,120/.test(race.tint || ""), "under the sea sets the blue tint layer"); }
   for (const q of [1, 2, 3]) { race.quality = q; race.lite = q === 1; race.render(); }
   check(race.drawn && race.drawn.sprites >= 0, "the renderer counts what it drew");
+}
+
+// 4. every road feature is still painted (v1.11.1: boost pads, puddles, currents, crosswalks, skid marks and ice shine
+//    went missing when the road started drawing in layers; their physics still acted on the car). A whole race is
+//    drawn on each track and each feature's own colour must be painted at least once.
+{
+  const W = 1152, H = 720;
+  const paints = (trackId, weather) => {
+    const seen = new Set(), ctx = new Proxy({}, { get: (_, k) => k === "font" ? "10px sans-serif" : k === "createLinearGradient" || k === "createRadialGradient" ? () => ({ addColorStop() {} }) : k === "measureText" ? () => ({ width: 5 }) : () => {},
+      set: (_, k, v) => { if (k === "fillStyle" && typeof v === "string") seen.add(v); return true; } });
+    const r = new Race({ width: W, height: H, getContext: () => null }, { sfx() {}, engine() {}, onFinish() {} }); r.ctx = ctx;
+    const t = [...TRACKS, ...BONUS_TRACKS].find(x => x.id === trackId), car = CARS[0];
+    r.setup(t, "race", car, statsFor(car, { engine: 3, turbo: 3, tires: 3, magnet: 0 }, {}), { diff: "normal", weather });
+    while (r.state === "countdown") r.update(1 / 60);
+    for (let i = 0; i < 6000 && r.state === "race"; i++) {
+      const p = r.player; r.input.left = p.offset > 0.3; r.input.right = p.offset < -0.3;   // a busy steerer: skids on curves
+      r.update(PACE / 60); if (i % 4 === 0) r.render();
+    }
+    return seen;
+  };
+  const has = (seen, test) => [...seen].some(c => typeof test === "string" ? c === test : test.test(c));
+  const sunny = paints("sunny"), rain = paints("sunny", "rain"), kelp = paints("kelp"), ice = paints("icecave"), town = paints("downtown");
+  check(has(sunny, "#ff7a00") && has(sunny, "#ffd400"), "boost pads are not drawn on Sunny Hills");
+  check(has(rain, "rgba(90,150,210,0.75)"), "puddles are not drawn in the rain");
+  check(has(kelp, "rgba(60,242,255,0.12)") && has(kelp, "rgba(220,255,255,0.75)"), "ocean currents (sheen and arrows) are not drawn on Kelp");
+  check(has(ice, "rgba(255,255,255,0.24)"), "the ice shine is not drawn on the Glacier");
+  check(has(town, "rgba(255,255,255,0.85)"), "crosswalks are not drawn Downtown");
+  check([sunny, kelp, ice, town].some(s => has(s, /^rgba\(20,20,24,/)), "skid marks are never drawn");
 }
 
 console.log(fails ? `\n✖ ${fails} of ${checks} drawing checks failed` : `All ${checks} drawing checks passed`);

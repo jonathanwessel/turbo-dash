@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.11.1 — Back on the road 🛣️
+
+- **Fix:** v1.11.0's faster road drawing left out six things painted on the road: boost pads, rain puddles, ocean
+  currents, Downtown crosswalks, skid marks and the shine on ice. They still pushed the car but couldn't be seen.
+  All six are back, exactly as in v1.10. A new drawing test races on tracks with each one and fails if its colour
+  is never painted.
+- **Fix:** Toy Track World's colourful play rug was missing (a code comment had swallowed the line that adds it).
+  It's back, with a check that it stays in the room.
+- The road drawing is still faster than v1.10, by 13 to 26% fewer canvas calls (the v1.11.0 notes said about a
+  quarter; that was measured without the six things above).
+
 ## v1.11.0 — Feel and finish 🏠
 
 - **🏠 Home-world bonus.** Every world's own cars (its shop car, cup prize and boss prize) are 5% faster, with 5%
@@ -28,7 +39,7 @@
     no longer dip through the playroom floor; rainbow paint and the coin twinkle keep working in the simpler 3D
     looks; smoother road shading; the fog matches the sky.
 - **Faster drawing:** the classic road is drawn in layers (all the grass at once, then the curbs, the road, the
-  lines), about a quarter fewer canvas calls; only the last 3 tracks are kept in memory; less garbage per frame.
+  lines), 13 to 26% fewer canvas calls (corrected in v1.11.1); only the last 3 tracks are kept in memory; less garbage per frame.
 - **Small fixes:** Effects Auto measures the screen's speed on every frame for both engines, so the first race on
   an engine is judged correctly; on a tall (portrait) screen the Main Street arrows sit in the sky above the street
   instead of over its signs.

@@ -1052,6 +1052,55 @@ export class Race {
         ctx.fillStyle = `rgba(210,250,255,${(0.05 + 0.08 * k).toFixed(3)})`;
         for (const j of [0, 1]) { const u = Math.sin(this.t * 0.7 + s.index * 1.7 + j * 2.5) * 0.7; ctx.beginPath(); ctx.ellipse(x1 + w1 * u, ym, w1 * (0.12 + 0.06 * k), hh, 0, 0, 7); ctx.fill(); }
       }
+      // on the road surface, piece by piece and in the same order as before v1.11: ice shine, currents, crosswalks,
+      // skid marks, puddles and boost pads (scripts/test-draw.mjs checks each one is still painted)
+      if (th.ice && !s.finish) {
+        // glossy ice: long soft shines down the road (the same on every segment, so no stripes) and twinkling glints
+        ctx.fillStyle = "rgba(255,255,255,0.24)";
+        quad(ctx, x1 - w1 * 0.6, yb, x1 - w1 * 0.36, yb, x2 - w2 * 0.36, y2, x2 - w2 * 0.6, y2);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        quad(ctx, x1 + w1 * 0.22, yb, x1 + w1 * 0.34, yb, x2 + w2 * 0.34, y2, x2 + w2 * 0.22, y2);
+        if (s.index % 3 === 0 && w1 > 14) {
+          const g = Math.sin(this.t * 3 + s.index * 2.3);
+          if (g > 0.55) { const gx = x1 + w1 * (((s.index * 0.618) % 1.6) - 0.8), gy = (y1 + y2) / 2, gs = Math.min(10, w1 * 0.02) * (g - 0.4) * 2; ctx.fillStyle = "#ffffff"; quad(ctx, gx - gs, gy, gx, gy - gs * 2.4, gx + gs, gy, gx, gy + gs * 2.4); }
+        }
+      }
+      if (s.current) {
+        // a current: a blue sheen with arrows sliding the way it pushes
+        ctx.fillStyle = "rgba(60,242,255,0.12)"; quad(ctx, x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2);
+        if (s.index % 4 === 0) {
+          const d = s.current, ph = (this.t * 0.9) % 0.5;
+          ctx.fillStyle = "rgba(220,255,255,0.75)";
+          for (const base of [-0.75, -0.25, 0.25]) {
+            const u = base + d * ph, ax = x1 + w1 * u, bx = x2 + w2 * u, cw = w1 * 0.09, ym = (y1 + y2) / 2;
+            if (Math.abs(u) > 0.9) continue;
+            ctx.beginPath(); ctx.moveTo(ax - d * cw, y1); ctx.lineTo((ax + bx) / 2 + d * cw, ym); ctx.lineTo(bx - d * cw * (w2 / w1), y2); ctx.lineTo((ax + bx) / 2 + d * cw * 0.2, ym); ctx.closePath(); ctx.fill();
+          }
+        }
+      }
+      if (s.crosswalk && w1 > 3) {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        for (let k = -4; k < 4; k++) { const u1 = (k + 0.15) / 4, u2 = (k + 0.65) / 4; quad(ctx, x1 + w1 * u1, y1, x1 + w1 * u2, y1, x2 + w2 * u2, y2, x2 + w2 * u1, y2); }
+      }
+      const sk = this.skids?.get(s.index);
+      if (sk && w1 > 3) {
+        const age = this.t - sk.t; ctx.fillStyle = `rgba(20,20,24,${Math.max(0, 0.45 - age * 0.02).toFixed(3)})`;
+        for (const side of [-1, 1]) { const u = sk.x + side * CAR_W * 0.38, m1 = w1 * 0.035, m2 = w2 * 0.035; quad(ctx, x1 + w1 * u - m1, y1, x1 + w1 * u + m1, y1, x2 + w2 * u + m2, y2, x2 + w2 * u - m2, y2); }
+      }
+      const pud = this.puddles?.get(s.index);
+      if (pud !== undefined && w1 > 4) {
+        // a puddle: a shiny blue patch on the road
+        const px1 = x1 + w1 * pud, px2 = x2 + w2 * pud, pw1 = w1 * 0.22, pw2 = w2 * 0.22;
+        ctx.fillStyle = "rgba(90,150,210,0.75)"; quad(ctx, px1 - pw1, y1, px1 + pw1, y1, px2 + pw2, y2, px2 - pw2, y2);
+        ctx.fillStyle = "rgba(255,255,255,0.35)"; quad(ctx, px1 - pw1 * 0.5, y1, px1 - pw1 * 0.1, y1, px2 - pw2 * 0.1, y2, px2 - pw2 * 0.5, y2);
+      }
+      if (s.boost !== null) {
+        const bx1 = x1 + w1 * s.boost, bx2 = x2 + w2 * s.boost, bw1 = w1 * 0.3, bw2 = w2 * 0.3;
+        ctx.fillStyle = s.index % 2 ? "#ffd400" : "#ff7a00";
+        quad(ctx, bx1 - bw1, y1, bx1 + bw1, y1, bx2 + bw2, y2, bx2 - bw2, y2);
+        ctx.fillStyle = s.index % 2 ? "#fff6a8" : "#ffb347";
+        quad(ctx, bx1 - bw1 * 0.15, y1, bx1 + bw1 * 0.15, y1, bx2 + bw2 * 0.15, y2, bx2 - bw2 * 0.15, y2);
+      }
     }
     // haze: up to half by 70% of the view, then nearly solid over the last 15%, so the far end of the road fades into
     // the distance instead of ending in a hard stub (v1.11). Pieces of nearly equal haze share one rectangle.
