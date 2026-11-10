@@ -33,7 +33,7 @@ const hooks = {
   // engine hum only during a real race (menus have the demo drive behind them, but only music)
   engine: (r, b, tun) => { if (mode === "race") engine(r, b, tun); },
   onPower: p => { $("btn-power").hidden = !p; if (p) $("power-icon").textContent = POWER_ICON[p]; },
-  onFinish: r => { showSteps(); if (quality.raceEnd() && S.opts.fx === "auto") setLite(); clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
+  onFinish: r => { showSteps(); if (ladder().raceEnd() && S.opts.fx === "auto") setLite(); clearTimeout(resultT); resultT = setTimeout(() => { if (mode === "race") showResult(r); }, 1300); },
 };
 /* Two engines: the classic pseudo-3D road, and (from Toy Track World on) the Next Gen 3D engine. The toy engine's
    3D picture (three.js) loads the first time it's needed, so the game still starts fast. */
@@ -68,7 +68,7 @@ function engineFor(track) {
   const toy = track.world === "toy" && !!ToyView && !toyFailed;
   if (toy) {
     toyRace ||= new ToyRace(null, hooks);
-    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { tier: toyTier() }); toyRace.view.setLite(classic.lite); toyDiag.gpu = toyRace.view.gpu; toyDiag.tier = toyRace.view.tier; saveDiag(); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
+    if (!toyRace.view) try { toyRace.view = new ToyView(glCanvas, canvas, { tier: toyTier() }); toyRace.view.setLite(qLevel(ladders.toy) <= 1); toyDiag.gpu = toyRace.view.gpu; toyDiag.tier = toyRace.view.tier; saveDiag(); } catch (e) { toyFailed = true; console.warn("Turbo Dash: no 3D on this device", e); return null; }
   }
   race = toy ? toyRace : classic;
   glCanvas.hidden = !toy; canvas.classList.toggle("over", toy);
@@ -106,20 +106,23 @@ let panelUp = false, panelT = 0, pauseDrawn = false;
 let mode = "menu", screen = "s-title", paused = false, last = performance.now(), goT = 0, lastReal = performance.now();
 const NOT_PLAYING = ["s-rest", "s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-grownup", "s-reset", "s-update"];
 // picture quality: Settings > Effects "Auto" lets the game pick a level for this device (src/quality.js);
-// "Full" pins level 3 and "Simple" pins level 1. The level is remembered per device, not in the save.
-const quality = qualityLadder((() => { try { return JSON.parse(localStorage.getItem("turbodash.quality")) || {}; } catch (e) { return {}; } })(),
-  v => { try { localStorage.setItem("turbodash.quality", JSON.stringify(v)); } catch (e) { /* private mode */ } });
-function qLevel() { return S.opts.fx === "simple" ? 1 : S.opts.fx === "full" ? 3 : quality.level; }
+// "Full" pins level 3 and "Simple" pins level 1. The level is remembered per device, not in the save. The classic
+// road and Toy Track World each have their own ladder; slow races are forgotten when the game updates.
+const qStore = (() => { try { const v = JSON.parse(localStorage.getItem("turbodash.quality")) || {}; return v.ver === VERSION ? v : { classic: { level: v.classic?.level ?? v.level }, toy: { level: v.toy?.level } }; } catch (e) { return {}; } })();
+const ladders = {};
+for (const k of ["classic", "toy"]) ladders[k] = qualityLadder(qStore[k] || {}, v => { qStore[k] = v; qStore.ver = VERSION; try { localStorage.setItem("turbodash.quality", JSON.stringify(qStore)); } catch (e) { /* private mode */ } });
+const ladder = () => race === toyRace && toyRace ? ladders.toy : ladders.classic;
+function qLevel(which = ladder()) { return S.opts.fx === "simple" ? 1 : S.opts.fx === "full" ? 3 : which.level; }
 let qNow = 0;
 function setLite() {
-  const q = qLevel(), lite = q <= 1;
-  classic.quality = q; classic.lite = lite; toyRace?.view?.setLite?.(lite);
+  const q = qLevel(), c = qLevel(ladders.classic), lite = c <= 1;
+  classic.quality = c; classic.lite = lite; toyRace?.view?.setLite?.(qLevel(ladders.toy) <= 1);
   if (qNow && q !== qNow) resize();
   qNow = q;
 }
 function frame(now) {
   const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
-  if (!document.hidden && !paused && quality.frame(raw, mode === "race" && race.state === "race" && !race.player.finished) && S.opts.fx === "auto") setLite();
+  if (!document.hidden && !paused && ladder().frame(raw, mode === "race" && race.state === "race" && !race.player.finished) && S.opts.fx === "auto") setLite();
   // physics once per screen frame, sized to the display (src/pace.js). Nothing runs on Main Street or inside a
   // building (its room picture covers the screen); behind a menu panel the race only moves and draws 15 times a
   // second (the panel covers 93% of it); while paused it is drawn once and then left alone (v1.10: battery and heat)
@@ -337,7 +340,7 @@ function startRace(track) {
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
-  raceStartAt = Date.now(); resetClock(clock); quality.raceStart(); steps = STEPS_ON ? stepCounter() : null;
+  raceStartAt = Date.now(); resetClock(clock); ladder().raceStart(); steps = STEPS_ON ? stepCounter() : null;
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
   nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
@@ -1206,7 +1209,7 @@ document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => { sfx("c
 const FX_NAMES = { auto: "Auto", full: "Full", simple: "Simple" };
 $("set-fx").onclick = () => { S.opts.fx = { auto: "full", full: "simple", simple: "auto" }[S.opts.fx] || "auto"; save(); setLite(); toyDiag.floor = 0; saveDiag(); paintToggles(); sfx("click"); };
 function paintToggles() {
-  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? ` (${["", "simple", "lighter", "full"][quality.level]} now)` : "");
+  $("set-fx-now").textContent = FX_NAMES[S.opts.fx] + (S.opts.fx === "auto" ? ` (${["", "simple", "lighter", "full"][ladders.classic.level]} now)` : "");
   $("set-tilt").hidden = !tiltSupported; $("set-flip").hidden = !tiltSupported || !S.opts.tilt;
   $("set-tilt").classList.toggle("off", !S.opts.tilt); paintTiltLive();
   $("set-name-now").textContent = S.name || "Tap to add";
@@ -1284,7 +1287,8 @@ $("btn-auto").onclick = () => {
 };
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
 $("btn-quit").onclick = () => { sfx("click"); run = RACE(); menuDemo(); show("s-hub"); };
-document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+// coming back to the game: draw the paused race again (a phone may have dropped the canvas while it was hidden)
+document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); else pauseDrawn = false; });
 
 /* ---------- parent corner: tap the version label 5 times ---------- */
 let verTaps = [];
@@ -1448,7 +1452,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => ({ ms: +quality.allMs.toFixed(1), fps: Math.round(1000 / quality.allMs), raceMs: +quality.ms.toFixed(1), vsync: +quality.vsync.toFixed(1), level: qLevel(), lite: classic.lite }), forceSlow: () => { quality.level = Math.max(1, quality.level - 1); setLite(); }, quality, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

@@ -1,32 +1,32 @@
 {
  "sunny:3": {
-  "ops": 6930,
-  "area": 2.58,
+  "ops": 6969,
+  "area": 2.55,
   "grads": 12
  },
  "sunny:1": {
-  "ops": 5876,
-  "area": 2.49,
+  "ops": 5915,
+  "area": 2.46,
   "grads": 1
  },
  "sunny+rain:3": {
-  "ops": 7139,
-  "area": 2.58,
+  "ops": 7178,
+  "area": 2.55,
   "grads": 12
  },
  "sunny+rain:1": {
-  "ops": 6082,
-  "area": 2.49,
+  "ops": 6121,
+  "area": 2.46,
   "grads": 1
  },
  "fair:3": {
-  "ops": 8346,
-  "area": 2.61,
+  "ops": 8682,
+  "area": 2.55,
   "grads": 12
  },
  "fair:1": {
-  "ops": 6083,
-  "area": 2.6,
+  "ops": 6419,
+  "area": 2.55,
   "grads": 1
  },
  "haunted:3": {
@@ -40,13 +40,13 @@
   "grads": 2
  },
  "night:3": {
-  "ops": 8148,
-  "area": 2.91,
+  "ops": 8211,
+  "area": 2.86,
   "grads": 13
  },
  "night:1": {
-  "ops": 6360,
-  "area": 2.81,
+  "ops": 6423,
+  "area": 2.76,
   "grads": 2
  },
  "lava:3": {
@@ -80,23 +80,23 @@
   "grads": 7.8
  },
  "kelp:3": {
-  "ops": 7993,
-  "area": 2.53,
+  "ops": 8051,
+  "area": 2.51,
   "grads": 9.5
  },
  "kelp:1": {
-  "ops": 7240,
-  "area": 2.55,
+  "ops": 7299,
+  "area": 2.53,
   "grads": 2.2
  },
  "icecave:3": {
-  "ops": 10580,
-  "area": 2.84,
+  "ops": 10623,
+  "area": 2.82,
   "grads": 18.8
  },
  "icecave:1": {
-  "ops": 7081,
-  "area": 2.52,
+  "ops": 7125,
+  "area": 2.5,
   "grads": 1
  }
 }

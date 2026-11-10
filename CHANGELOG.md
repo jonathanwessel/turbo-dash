@@ -15,15 +15,17 @@
     Pixels painted per frame dropped by 40 to 55%.
   - Roadside things wholly hidden behind a hill crest are skipped (up to 50 a frame on the Moon and Glacier).
   - Small roadside things and far rival cars are drawn from little pictures made once, instead of 30 to 200 canvas
-    calls each. Things that move or blink (flames, ghosts, lights) only do that when they are tiny.
+    calls each. Things that move or blink (flames, ghosts, lights, windmills, balloons) only do that when they are
+    tiny, and every picture keeps the colours of the thing it shows.
   - The rain, underwater and tunnel tints are a see-through layer over the game instead of being painted into
     every frame.
   - On ice only the two nearest rivals get a reflection.
 - **Effects: Auto is a ladder now, not a one-way switch.** It used to switch to Simple after one slow moment and
   stay there for every track until the game was restarted. Now there are three levels (full, lighter, Simple).
   The game steps down one level when races run slowly for 2 seconds, and back up between races after two smooth
-  ones. A level that was too slow twice isn't tried again on that device. "Slow" is measured against the screen's
-  own speed, so a 50 Hz or 120 Hz screen isn't mistaken for a slow tablet. The level is remembered per device.
+  ones. A level that was too slow twice in two weeks waits until those slow races are older (or the game updates).
+  The classic road and Toy Track World each keep their own level. "Slow" is measured against the screen's own
+  speed, so a 50 Hz or 120 Hz screen isn't mistaken for a slow tablet. The level is remembered per device.
   Simple now really is lighter: a smaller canvas, a shorter view, every second far roadside thing, flat cars,
   no clouds or far mountains, fewer bits flying. Settings > Effects still pins Full or Simple.
 - **Toy Track World:** each car is drawn with 8 draw calls instead of 23 (one per material, wheels as instances),

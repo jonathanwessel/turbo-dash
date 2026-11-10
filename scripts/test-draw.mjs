@@ -6,7 +6,7 @@
 // 3. The sky and hills stop where the road starts, and full-screen tints are a layer (engine.tint), not canvas fills.
 //   node scripts/test-draw.mjs
 globalThis.Image = class { constructor() { this.complete = true; this.naturalWidth = 72; this.naturalHeight = 72; } };
-const { SPRITES, drawSprite, drawCoin, drawRing, drawPearl, drawBox, drawCar, drawSpritePic, drawCarPic, setPicMaker, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } = await import("../src/draw.js");
+const { SPRITES, drawSprite, drawCoin, drawRing, drawPearl, drawBox, drawCar, drawSpritePic, drawCarPic, setPicMaker, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP, picVariant, picMaxFor, SWAY_OK } = await import("../src/draw.js");
 const { Race } = await import("../src/engine.js");
 const { CARS, TRACKS, PACE } = await import("../src/data.js");
 const { statsFor } = await import("../src/stats.js");
@@ -61,6 +61,27 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   check(drawCarPic(c.ctx, 0, 0, 20, CARS[1], 0, false) === true, "a small rival car comes from a picture");
   check(drawCarPic(c.ctx, 0, 0, 20, { ...CARS[1], rainbow: true }, 0, false) === false, "rainbow paint always draws live");
   setPicMaker(null);
+}
+
+// 2b. a picture must look like the live drawing: the same colours for every seed (things that take their colour from
+//     their own number), and nothing that moves may be frozen in a picture bigger than 16 px. Things that move or
+//     blink (their blink timing also comes from their number) use a picture only up to 16 px, so they are left out.
+{
+  const rec = () => { const cols = [], nums = [], props = { font: "10px sans-serif" };
+    const ctx = new Proxy({}, { get: (_, k) => k in props ? props[k] : k === "createLinearGradient" || k === "createRadialGradient" ? () => ({ addColorStop(o, c) { cols.push(c); } }) : k === "measureText" ? () => ({ width: 5 }) : (...a) => { for (const v of a) if (typeof v === "number") nums.push(v); },
+      set: (_, k, v) => { props[k] = v; if ((k === "fillStyle" || k === "strokeStyle") && typeof v === "string") cols.push(v); return true; } });
+    return { ctx, cols, nums }; };
+  const draw = (type, t, seed) => { const r = rec(); drawSprite(r.ctx, type, 0, 0, 100, t, seed); return r; };
+  for (const type of Object.keys(SPRITES)) {
+    if (picMaxFor(type) <= 16) continue;
+    let bad = 0; for (let s = 0; s < 60; s++) if (draw(type, 0, s).cols.join() !== draw(type, 0, picVariant(type, s)).cols.join()) bad++;
+    check(bad === 0, `${type}: its picture has other colours than the live drawing for ${bad} of 60 seeds`);
+    if (!SWAY_OK.has(type)) {
+      const a = draw(type, 0, 0); let moved = 0;
+      for (const t of [0.4, 1.7, 2.6, 4.3]) { const b = draw(type, t, 0); if (b.nums.length !== a.nums.length || b.cols.join() !== a.cols.join()) moved = Infinity; else for (let i = 0; i < a.nums.length; i++) moved = Math.max(moved, Math.abs(a.nums[i] - b.nums[i])); }
+      check(moved <= 0.5, `${type} moves or blinks (by ${moved}) but uses a still picture up to ${picMaxFor(type)} px`);
+    }
+  }
 }
 
 // 3. the background stops at the road, and tints are a layer

@@ -83,7 +83,17 @@ for (const [hz, q, j] of SCREENS) {
   const fast = qualityLadder(); drive(fast, 8.33, 120, false); fast.raceStart();
   check(drive(fast, 12, 900) === 0, "a 120 Hz screen drawing at 80 fps is fine");
   const back = qualityLadder({ level: 1, fails: { 2: 2 } });
-  check(back.level === 1 && back.fails[2] === 2, "the saved level and failures are kept");
+  check(back.level === 1 && back.recentFails(2) === 0, "a saved level is kept; an old-style failure count starts fresh");
+  // failures are forgotten after 14 days: two slow races, then two weeks later the level can be tried again
+  let clockNow = 0; const later = qualityLadder({}, () => {}, () => clockNow);
+  drive(later, 16.7, 120, false);
+  for (let k = 0; k < 2; k++) { later.raceStart(); drive(later, 16.7, 300); drive(later, 33.4, 90); later.raceEnd(); later.level = 3; }
+  later.level = 2;
+  for (let r = 0; r < 2; r++) { later.raceStart(); drive(later, 16.7, 900); later.raceEnd(); }
+  check(later.level === 2, `right after two slow races level 3 stays off (level ${later.level})`);
+  clockNow += 15 * 864e5;
+  for (let r = 0; r < 2; r++) { later.raceStart(); drive(later, 16.7, 900); later.raceEnd(); }
+  check(later.level === 3, `15 days later level 3 is tried again (level ${later.level})`);
   const bad = qualityLadder({ level: 7 }); check(bad.level === 3, "a broken saved level falls back to full");
   check(fifty.frame(500, true) === false && fifty.frame(NaN, true) === false, "a stall or broken frame time changes nothing");
 }

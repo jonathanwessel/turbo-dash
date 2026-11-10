@@ -289,12 +289,19 @@ export const COIN_TOP = 0.55, RING_TOP = 0.7, PEARL_TOP = 0.8, BOX_TOP = 0.78, C
    canvas calls. Pictures are made at 16, 32, 48, 64 or 96 px and shrunk to fit. Things that move or blink (flames, ghosts,
    lights) only use a picture when they are tiny, where the motion can't be seen. Outside a browser (the tests and
    simulators) there is no canvas to draw into, so everything is drawn the normal way. */
-const ANIMATED = new Set(["flower", "lavaflame", "planet", "ufo", "volcanorock", "trafficlight", "dish", "kelp", "treasure", "jelly", "anemone", "corn", "cattail", "ghost", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
+const ANIMATED = new Set(["windmill", "gear", "parrot", "duck", "balloons", "flower", "lavaflame", "planet", "ufo", "volcanorock", "trafficlight", "dish", "kelp", "treasure", "jelly", "anemone", "corn", "cattail", "ghost", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
+// VARIED things take colours from their own number (seed): their picture is made per seed % 30, which keeps every
+// pattern the drawers use (% 2, % 3, % 5, (>> 1) % 3), and only up to 48 px so 30 variants stay small.
+// SWAY_OK things sway a few percent of their width: a still picture up to 48 px (at most a 2 px sway) is fine.
+export const SWAY_OK = new Set(["tree", "autumnTree", "cow", "snowfort", "tent"]);
 const VARIED = new Set(["shop", "building", "trafficlight", "coral", "treasure", "balloons", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
 const pics = new Map();
 let picMaker = typeof document !== "undefined" && document.createElement ? (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h }) : null;
 export const setPicMaker = f => { picMaker = f; pics.clear(); };   // for scripts/perf.mjs
 export const SPRITE_PIC_MAX = 96, CAR_PIC_MAX = 48;
+/* the seed a thing's picture is drawn with, and the largest width it uses a picture at (for scripts/test-draw.mjs) */
+export const picVariant = (type, seed) => VARIED.has(type) ? Math.abs(seed | 0) % 30 : 0;
+export const picMaxFor = type => ANIMATED.has(type) ? 16 : VARIED.has(type) || SWAY_OK.has(type) ? 48 : SPRITE_PIC_MAX;
 const bucket = w => w <= 16 ? 16 : w <= 32 ? 32 : w <= 48 ? 48 : w <= 64 ? 64 : 96;
 function picture(key, B, top, side, draw, bot = 0.6) {
   let p = pics.get(key);
@@ -304,15 +311,15 @@ function picture(key, B, top, side, draw, bot = 0.6) {
       const pad = 2, cw = Math.ceil(B * side * 2 + pad * 2), ch = Math.ceil(B * (top + bot) + pad * 2), c = picMaker(cw, ch), g = c.getContext("2d");
       if (g) { draw(g, cw / 2, Math.ceil(B * top) + pad); p = { c, ox: cw / 2 / B, oy: (Math.ceil(B * top) + pad) / B, w: cw / B, h: ch / B }; }
     } catch { p = null; }
-    if (pics.size > 600) pics.clear();
+    if (pics.size > 1500) pics.clear();
     pics.set(key, p);
   }
   return p;
 }
 /* a roadside thing, from a picture when it is small enough (returns false when it was not drawn that way) */
 export function drawSpritePic(ctx, type, x, yb, w, seed, shadow) {
-  if (w > SPRITE_PIC_MAX || (ANIMATED.has(type) && w > 16) || !picMaker) return false;
-  const B = bucket(w), v = VARIED.has(type) ? seed % 4 : 0, p = picture(type + B + "." + v + (shadow ? "s" : ""), B, SPRITES[type].top, 0.9, (g, x0, y0) => {
+  if (w > picMaxFor(type) || !picMaker) return false;
+  const B = bucket(w), v = picVariant(type, seed), p = picture(type + B + "." + v + (shadow ? "s" : ""), B, SPRITES[type].top, 0.9, (g, x0, y0) => {
     if (shadow) { g.fillStyle = "rgba(0,0,0,0.16)"; g.beginPath(); g.ellipse(x0, y0, B * 0.42, B * 0.07, 0, 0, 7); g.fill(); }
     drawSprite(g, type, x0, y0, B, 0, v);
   });
