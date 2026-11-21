@@ -324,6 +324,12 @@ A horn button (the closest rivals honk back, only for fun), Turbo Lab cards in p
 a dark rim for snow and pastel tracks. The first release that moves the game forward after four tool releases.
 - Lesson: a fun button needs no reward. Keeping the horn out of the race rules meant no sim or career change.
 
+### v1.12.1 🔍 Clearer screens (shipped)
+Main Street fills an upright screen, the Toy Track World camera keeps the player's car big and makes a rival in the
+way see-through, Lab benches shrink to tiles, small word fixes, and rivals no longer wait for a car on the grass.
+- Lesson: a camera that smooths its place in the world trails further behind the faster the car goes. Smooth the
+  offset from the car instead.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

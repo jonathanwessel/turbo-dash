@@ -142,7 +142,10 @@ every test green.
 - [ ] **The sweep sees what a playing child sees.** Its race frames use a brand-new save, so every race picture
   shows the first-race lesson and hides the horn; take them from the Rank 16 save instead (one brand-new race frame
   stays, for the lesson). It also never opens a card's sheet (the Lab sheet's colon in v1.12.0 was found by reading
-  code): open one sheet or pop-up per screen (Lab project, Garage upgrade, track card) and audit it.
+  code): open one sheet or pop-up per screen (Lab project, Garage upgrade, track card) and audit it. Also save one
+  Toy Track World frame mid-race on the first sharp curve with a rival close behind the player
+  (`scripts/probes/toy-curve.js`, from v1.12.1): the start-line frame could never show the camera problem that
+  review found.
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
 - [ ] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
@@ -165,26 +168,65 @@ every test green.
   world (one look everywhere), with the fill darkened after the picture review found the right arrow pale on snow
   and Moon gray. Looked at on Glacier and Toy World at 1280x800 in headless Edge. Not checked on a
   real tablet.
-- [ ] **Main Street in portrait** fills the screen (v1.11.3 review: at 800x1280 the town sits in the bottom
+- [x] **Main Street in portrait** fills the screen (v1.11.3 review: at 800x1280 the town sits in the bottom
   quarter under empty sky and its labels are tiny). The game is played in landscape, so this rides along with any
   M1 release, not on its own.
-- [ ] **Lab layout on small screens** (v1.12.0 review): the empty bench slots fill half the screen at 740x360
+  Notes: v1.12.1. In portrait the town is sized by the screen's height (`min(75vh, 100vh - 140px)`), not its
+  width, and its box has the drawing's own shape (2930:900), so at 800x1280 the drawing is 960 px tall (it was 376
+  px). The sky above it is the drawing's top blue: the picture review found a hard seam where the page's gradient
+  met the drawing's sky. The street scrolls sideways as in landscape. The arrows went back down onto the road (the road band is now taller than they are), with a height
+  of at most 6.5vh so they fit the road on a short upright phone too. Looked at in headless Edge at 800x1280 with
+  the Rank 16 save. Decision: rode along with other fix boxes in a fix release, see the roadmap note.
+- [x] **Lab layout on small screens** (v1.12.0 review): the empty bench slots fill half the screen at 740x360
   and 800x1280 and push the project cards down. Shrink empty benches to a thin row, or put the cards first.
-- [ ] **Toy World camera on curves** (v1.12.0 review): on the first curve a rival can fill the front of the
+  Notes: v1.12.1. Busy and finished benches keep a full row. Empty and locked benches are 64x56 tiles that wrap in
+  one row after them (CSS `order`, so the markup order that collect and rush use by index is unchanged). At
+  800x1280 the first row of cards now starts right under the bench row. At 740x360 the left column keeps its width
+  for the robot and the benches, with the tiles in one line.
+- [x] **Toy World camera on curves** (v1.12.0 review): on the first curve a rival can fill the front of the
   picture and the player's car looks small in the middle. Check the chase camera keeps the player's car big and low.
-- [ ] **Small word polish** from the v1.11.3 review: "Upgrades for Champion X" repeats the car name; "Grip" could be
+  Notes: v1.12.1. Found the cause with a probe picture on the first sharp curve: the camera smoothed its place in
+  the room, so at race speed it trailed several steps further back than set, and a rival 3 steps behind the player
+  filled the front. Now the camera smooths its offset from the car (no speed lag), rides 7 steps back (was 8.5) and
+  3.0 up (was 3.4), and looks 8 ahead and 1.0 up, so the car is about 230 px wide near the bottom of a 1280x800
+  picture (it was about 130 px in the middle). A rival in the gap between the camera and the player fades to
+  see-through (each car has its own materials, so only that car changes). Pictures before and after with
+  `node scripts/sweep.mjs 1280x800 --probe` and a script that moves the cars onto the curve. Not checked on a
+  real tablet: the closer camera on loops and jumps needs the owner's eyes.
+- [x] **Small word polish** from the v1.11.3 review: "Upgrades for Champion X" repeats the car name; "Grip" could be
   "Turning"; tiny "19/25" star counts on track cards have no picture; "Point a phone camera here" on the title
   sounds like a manual; "Beach Boardwalk" wraps and its "11/25" touches the bar at 740x360.
-- [ ] **Hands-off is last again at +2 and +3.** Found by `npm run check` (v1.11.2): driving hands-off with the
+  Notes: v1.12.1. The line over the upgrade cards is gone for an owned car (the picture check found "🔧 Upgrades" under the Upgrades tab said it twice; the Paint tab already worked this way), "Turning" (it matches the Tires card's "Turn better"), the star bar ends in a ⭐
+  picture (the numbers moved to the bar's hover title; decision: a bar filling toward a star reads without numbers
+  for a young player), and the share box says only "Scan to share!". "Beach Boardwalk" still wraps onto two lines,
+  which is fine now that nothing sits right under it.
+- [x] **Hands-off is last again at +2 and +3.** Found by `npm run check` (v1.11.2): driving hands-off with the
   starter car at +2 or +3 sometimes passes one or two rivals on Sunny Hills, because rivals ahead ease off to 0.93
   to wait. Rivals should not wait for a car that is not steering (for example, no easing while the player is off
   the road). Then make `npm run sim -- start` strict again: last at every level.
+  Notes: v1.12.1. Rivals ahead do not ease off for 3 s after the player's car was on the grass (`wildT` in
+  engine.js; rivals behind still catch up). A physics test proves it, and fails on the old engine. Found while
+  measuring: the sim's "none" driver never steers but presses Turbo and power-ups at random, and Turbo bumps that
+  knock a rival aside cause the passes that are left. Over 60 races at +3: 7 not last on the old engine, 3 on the
+  new one, 0 with no Turbo presses, and +2 was 0 on both. Decision, in the open: the target "last at every level"
+  is gated on a new "hands" driver that touches nothing (the real hands-off), 12 races per level, strict. The
+  "none" driver keeps its gate (never on the podium, last at +0 and +1, a printed warning at +2 and +3), because a
+  child who presses Turbo is playing, and a Turbo bump is meant to knock rivals aside. Career on this commit: Rank 40
+  on day 552, Moon 108, Ocean 189, Glacier 285, Toy 415 (no real change).
 - [ ] **Rival of the week.** The named rivals take turns. This week's rival is in every race, and gets a little
   faster each time the player beats them, within a cap. A new week resets it.
 - [ ] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
   they win, grumpy when they lose. Pictures only.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
+- [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
+  World start: the player's car blends into a pack of look-alike cars with navy roofs (a marker or a brighter
+  outline for the player's car). Turbo Lab: the pip bar and "10/10" say the same thing twice, "MAX!" chips and card
+  lines are about 11 px, and "Research makes EVERY car better!" sounds like a narrator. Main Street: "16" shows on
+  the tower and in "16 Pro", and the red "!" on Gifts covers the Missions board. At 360x740 the coin counter
+  touches the "16 Pro" badge (add 360x740 to the sweep). Garage: "Earth 13/13" has no picture for what it counts.
+  Track cards: "Beach Boardwalk" wraps onto the trophy, and 1280x800 has an empty band over the cards. Portrait
+  title: the QR box covers the car. The toy power-up boxes show "¿" when they spin upside down.
 - [x] **A horn button.** It honks. Rivals nearby honk back.
   Notes: v1.12.0, taken ahead of its turn: v1.12.0 had to move the game forward (four tool releases in a row) and
   this is the smallest new thing to use. Rules in `src/horn.js`, used by both engines: the two closest rivals
@@ -290,3 +332,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   in `turbodash.tips`, not the save, so it needs no save port. Next: Main Street in portrait or small word polish
   can ride along, but the next release's main piece is Faces and reactions or Rival of the week (after the
   hands-off fix), so the game keeps moving forward.
+- 2026-11-21 (v1.12.1): a fix release from the M1 boxes in order: portrait Main Street, Lab benches, the Toy Track
+  World camera, small words, and hands-off last at every level. The run started late: the scheduled run stopped
+  at its very first command on a permission prompt nobody was there to answer. The owner asked for a lasting fix:
+  `.claude/settings.local.json` (git-ignored) in the games folder and each game repo now allows the tools a run
+  needs and denies force pushes and hard resets. Rule learned (seen with both the hands-off gate and the camera):
+  first check that a tool measures what its name says. The "hands-off" bot pressed Turbo, and the camera's
+  "8.5 steps back" was really about 12 at race speed. A probe picture of the exact moment (`--probe` with a script
+  that moves the cars) found the camera cause in two tries. Keep such probes in `scripts/probes/`, and the sweep
+  box above now asks for the curve frame. Pacing: v1.12.1 is one fix release, so the next release must move the
+  game forward. Its main piece is **Rival of the week** (now unblocked by the hands-off fix), with **Faces and
+  reactions** if it fits. The M0 picture guard and the sweep box keep riding along one per release.

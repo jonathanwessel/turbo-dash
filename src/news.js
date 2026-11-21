@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.12.1",
+    pics: [["🧸", "Cars in the way turn see-through"], ["🏙️", "A bigger town on a tall screen"]],
+    notes: [
+      "In Toy Track World the camera stays closer behind your car, and a rival in the way turns see-through.",
+      "Main Street fills the screen when the tablet is held upright, and Lab benches take less room.",
+      "Small word fixes in the Garage and on the track cards.",
+      "Rivals no longer slow down to wait for a car that drives on the grass.",
+      "Not checked on a real tablet yet, so please look at the Toy Track World camera on loops and jumps.",
+    ],
+  },
+  {
     v: "1.12.0",
     pics: [["📯", "Tap the horn. Rivals honk back!"], ["🔬", "Lab cards say what they do"]],
     notes: [

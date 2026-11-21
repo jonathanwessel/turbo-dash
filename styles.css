@@ -1130,3 +1130,20 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
   #s-boss #bi-car { width: auto; height: 22vh; }
   #s-boss .boss-card h1 { margin: 2px 0; }
 }
+/* v1.13 Turbo Lab: busy benches take a full row; empty and locked benches are small tiles in one row after them,
+   so they never push the project cards off a short or tall screen (the DOM order stays: collect and rush use it) */
+.benches { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
+.bench { flex: 1 1 100%; }
+.bench.empty, .bench.locked { flex: 0 0 auto; order: 1; width: 64px; min-height: 0; height: 56px; padding: 4px;
+  grid-template-columns: 1fr; justify-items: center; align-content: center; row-gap: 0; }
+.bench.empty .bi, .bench.locked .bi { grid-row: auto; font-size: 26px; line-height: 1.1; }
+.bench.locked small { font-size: 11px; font-weight: 900; white-space: nowrap; line-height: 1; }
+/* v1.13 Main Street in portrait: the town is sized by the screen's height, so it fills the screen under the top bar
+   instead of a thin band under empty sky; the street scrolls sideways as in landscape, and the arrows sit on the road */
+@media (orientation: portrait) {
+  /* the box has the drawing's own shape, so the drawing fills it, and the sky above it is the drawing's top color: no seam */
+  #town-wrap { background: #4fb6ff; }
+  #town { width: auto; height: min(75vh, calc(100vh - 140px)); aspect-ratio: 2930 / 900; }
+  .town-arrow { top: auto; bottom: max(4px, 1.2vh); height: min(70px, 6.5vh); width: 64px; font-size: min(34px, 4vh); border-radius: 18px; }
+}
+.track-card .tc-goal { font-size: clamp(13px, 3.2vmin, 18px); line-height: 1.2; }

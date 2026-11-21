@@ -87,7 +87,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     return [
       ["Speed", (car.speed + 0.06 * u.engine) / 0.57],
       ["Power", (car.accel + 0.04 * u.engine) / 0.45],
-      ["Grip", (car.grip + 0.07 * u.tires) / 0.6],
+      ["Turning", (car.grip + 0.07 * u.tires) / 0.6],
       ["Turbo", u.turbo / UPGRADE_MAX],
     ];
   }
@@ -118,7 +118,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
 
   function renderUps(car, owned) {
     const ups = upsOf(car.id);
-    $("g-ups").innerHTML = `<div class="g-note ${owned ? "mine" : ""}">${owned ? "Upgrades for " + car.name : carKnown(car) ? "Buy " + car.name + " to upgrade it!" : "This car is still a mystery!"}</div>` + UPGRADES.map(u => {
+    $("g-ups").innerHTML = (owned ? "" : `<div class="g-note">${carKnown(car) ? "Buy " + car.name + " to upgrade it!" : "This car is still a mystery!"}</div>`) + UPGRADES.map(u => {
       const lvl = ups[u.id], max = lvl >= UPGRADE_MAX, cost = max ? 0 : upgradeCost(car.id, lvl, S.research.pitCrew || 0);
       return `<div class="up-card" data-up="${u.id}"><div class="up-icon">${u.icon}</div><b>${u.name}</b><small>${u.desc}</small>
         <div class="pips">${Array.from({ length: UPGRADE_MAX }, (_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>

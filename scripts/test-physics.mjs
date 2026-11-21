@@ -37,6 +37,19 @@ function quietStretch(trackId, n = 70) {
 }
 const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(STEP); each?.(r); } };
 
+/* ---------- 🐢 rivals far ahead wait for a player on the road, not for one on the grass (v1.13) ---------- */
+{
+  const at = quietStretch("sunny"), speedAfter = grass => {
+    const r = scene("sunny", { from: at }), c = r.rivals[0], top = r.stats.maxSpeed;
+    Object.assign(c, { dist: at + 90 * SEG, offset: 0, lane: 0, speed: top, base: top, laneT: 99 });
+    run(r, 2, () => { if (grass) r.player.offset = 1.4; });
+    return c.speed / top;
+  };
+  const road = speedAfter(false), wild = speedAfter(true);
+  check("rivals ease off for a player on the road", road < 0.97, `rival at ${road.toFixed(3)} of its speed`);
+  check("rivals don't wait for a player on the grass", wild > 0.99, `rival at ${wild.toFixed(3)} of its speed`);
+}
+
 /* ---------- 💨 drafting ---------- */
 {
   const at = quietStretch("sunny"), top = scene("sunny").stats.maxSpeed;

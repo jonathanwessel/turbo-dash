@@ -666,7 +666,7 @@ function openTracks() {
         // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
         if (!w) return "";   // stars and the bar appear after the first win here
         return `<div class="tc-stars" title="Win here to earn stars">${MASTERY.map((n, k) => `<i class="${k < s ? "on" : ""}">★</i>`).join("")}</div>`
-          + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><small>${w}/${hi}</small>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
+          + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar" title="${w} of ${hi} wins"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><b class="tc-goal">⭐</b>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];

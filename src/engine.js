@@ -225,7 +225,7 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false; this.quality = this.quality || 3;
-    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centered on the car
+    this.driftT = 0; this.wildT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centered on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     this.luck = seededRng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks, boss Turbo timing, puddle shoves (v1.11)
     const d = track.diff;
@@ -363,6 +363,8 @@ export class Race {
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
     if (!flying && !auto) { const hill = slopeOf(seg) * HILL * dt; if (hill) p.speed = Math.max(Math.min(p.speed, BASE_MAX * 0.2), p.speed - hill); }
     // off the road: grass slows you (scraping along a rail is the rail's own cost, not grass)
+    // rivals ahead don't wait for a car that keeps leaving the road (v1.13): 3 s after the last time on the grass
+    this.wildT = !flying && Math.abs(p.offset) > 1 ? 3 : Math.max(0, this.wildT - dt);
     if (!flying && Math.abs(p.offset) > (seg.rail ? RAIL_IN + 0.01 : 1) && p.speed > BASE_MAX * 0.35) p.speed = Math.max(BASE_MAX * 0.35, p.speed - BASE_MAX * 1.2 * dt);
     const sp = Math.min(1.4, p.speed / BASE_MAX), dx = dt * 2.2 * sp;
     // steering still bites when slow (after a bump); the input eases in over 0.1 s so taps aren't twitchy
@@ -482,7 +484,8 @@ export class Race {
       if (c.boss) { c.btT -= dt; c.bt -= dt; if (c.btT <= 0) { c.bt = 2; c.btT = 8 + this.luck() * 3; } if (c.bt > 0) target *= 1.2; }
       else if (this.state === "demo") target = c.base * 0.95;
       else {
-        target *= rubberBand((c.dist - p.dist) / SEG, this.diff.id, d);
+        const gap = (c.dist - p.dist) / SEG;
+        target *= gap > 0 && this.wildT > 0 ? 1 : rubberBand(gap, this.diff.id, d);
       }
       c.knockT -= dt; c.wobT -= dt;
       if (this.track.layout === "blocks" && this.state !== "demo") { const cs = this.segAt(c.dist + 6 * SEG); if (Math.abs(cs.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(c.dist).curve) > BLOCK_CURVE * 0.5) target *= 0.92; }

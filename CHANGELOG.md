@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.12.1 — Clearer screens 🔍
+
+- **🏙️ Main Street on a tall screen.** Held upright, the town now fills most of the screen instead of sitting in a
+  thin strip under empty sky, so the signs are big enough to read. The street scrolls sideways like it does in
+  landscape, and the ◀ ▶ arrows sit on the road.
+- **🧸 Toy Track World camera.** The camera rides closer behind the car and a little lower, so the player's car is big
+  near the bottom of the picture. It also no longer falls further behind the faster the car goes. A rival in the gap
+  between the camera and the player turns see-through, so it never fills the front of the picture on a curve.
+- **🔬 Turbo Lab on small screens.** Empty and locked benches are small tiles in one row after the busy ones, so the
+  project cards get the room (they were pushed down or squeezed on phones and upright tablets).
+- **🔤 Small words.** The Garage gauge "Grip" is now "Turning" (it matches the Tires card, "Turn better"). The Garage no
+  longer repeats the car's name over its upgrade cards (like the Paint tab, the line is gone for a car you own). A track card's star bar ends in a ⭐ instead of tiny numbers
+  like "19/25". The title screen's share box just says "Scan to share!".
+- **🐢 Rivals don't wait for a car on the grass.** Rivals far ahead ease off a little so a player can catch up. They
+  no longer do that for 3 seconds after the player's car was off the road, so letting go of the screen loses.
+- A helper that saw only the pictures reviewed this build. From it: the Garage line that said "🔧 Upgrades" twice is gone, the
+  upright town lost a seam in its sky and grew a little, and a rival in the way fades further. The rest of its list
+  was already on screen before this release and is a box in PLAN.md.
+- Polish: the see-through rival in Toy Track World is the new thing to see. This is a fix release: every change
+  comes from the picture reviews and the hands-off check, so there is no new button.
+- For the grown-ups: `npm run sim -- start` has a "hands" driver that touches nothing, and it must finish last at
+  every upgrade level (12 races each). The old "none" driver never steers but presses Turbo at random; a Turbo bump
+  can knock a rival aside, so at +2 and +3 it may still pass one, and that stays a printed warning. A physics test
+  proves rivals ease off for a player on the road and not for one on the grass. No save change.
+
 ## v1.12.0 — Honk! 📯
 
 - **📯 A horn.** A new button sits just above the left arrow. Tap it and the car honks, and the two closest rivals

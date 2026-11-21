@@ -57,6 +57,7 @@ export function mergeStatic(root, skip = new Set(), cell = Infinity) {
   return used;
 }
 
+const CAM_BACK = 7;      // how far behind the player the chase camera rides along the track
 const ROOM_CELL = 250;   // the room is merged in squares this big (world units), so far-off toys can still be skipped
 let blobT = null;
 const blobTex = () => blobT ||= canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, w, w); });
@@ -412,6 +413,22 @@ export class ToyView {
     if (this.min) return;   // no shadows to resize
     const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
   }
+  /* fade a whole car toward an opacity (1 = solid). Each car has its own materials, so only this car changes. */
+  fadeCar(g, to, dt) {
+    const d = g.userData, was = d.fade ?? 1;
+    const now = Math.abs(to - was) < 0.02 ? to : was + (to - was) * (1 - Math.exp(-dt * 10));
+    if (now === was && d.fadeSet) return;
+    d.fade = now; d.fadeSet = true;
+    g.traverse(m => {
+      if (!m.material || m === d.blob) return;
+      for (const x of Array.isArray(m.material) ? m.material : [m.material]) {
+        const o = x.userData.o0 ||= { t: x.transparent, o: x.opacity };
+        const tr = o.t || now < 0.99;
+        if (x.transparent !== tr) { x.transparent = tr; x.needsUpdate = true; }
+        x.opacity = o.o * now;
+      }
+    });
+  }
   carShadows(g) { const on = !this.lite; g.traverse(m => { if (m.isMesh && m !== g.userData.blob && !m.material?.transparent) m.castShadow = on; }); }
 
   /* place a car on the track (s along, x sideways, h above) facing forward, tilted with the track */
@@ -461,6 +478,8 @@ export class ToyView {
     this.bounce(pg, dt, kick, p.speed, race.steerVis || 0);
     race.rivals.forEach((c, k) => {
       const g = this.cars.get("r" + k); if (!g) return; this.place(g, T, c.dist, c.x, c.air || 0, c.knockT > 0 ? Math.sin(t * 30) * 0.4 : 0); this.spinCar(g, c.speed, dt, false, t);
+      // a rival in the gap between the camera and the player turns see-through, so it never fills the picture (v1.13)
+      const gap = p.dist - c.dist; this.fadeCar(g, gap > 0.4 && gap < CAM_BACK + 1.5 && p.fallT <= 0 ? 0.2 : 1, dt);
       const up = g.userData.wasAir > 0.3 && !(c.air > 0.3); g.userData.wasAir = c.air || 0;
       this.bounce(g, dt, up ? 8 : 0, c.speed, 0);
     });
@@ -503,11 +522,15 @@ export class ToyView {
     const falling = p.fallT > 0;
     if (!falling) {
       // the camera rides the track itself a few steps behind the car, so it stays on the inside of loops and curves
-      const back = this.place(this.camProbe ||= new THREE.Object3D(), T, p.dist - 8.5, p.x * 0.6, 0);
-      const want = this.camProbe.position.clone().addScaledVector(back.up, 3.4 + Math.max(0, p.air) * 0.6);
+      // (v1.13: closer and a little lower than before, so the player's car is big and low in the picture)
+      const back = this.place(this.camProbe ||= new THREE.Object3D(), T, p.dist - CAM_BACK, p.x * 0.6, 0);
+      const want = this.camProbe.position.clone().addScaledVector(back.up, 3.0 + Math.max(0, p.air) * 0.6);
       const k = this.snapCam ? 1 : 1 - Math.exp(-dt * 7);
-      this.camPos.lerp(want, k); this.camUp.lerp(fr.up, this.snapCam ? 1 : 1 - Math.exp(-dt * 5)).normalize(); this.snapCam = false;
-      this.look = pg.position.clone().addScaledVector(fr.fw, 5).addScaledVector(fr.up, 1.4);
+      // smooth the camera's offset from the car, not its place in the room: smoothing the place made it trail
+      // further behind the faster the car went (v1.13), so the car looked small at race speed
+      const off = want.sub(pg.position); if (this.snapCam || !this.camOff) this.camOff = off.clone(); else this.camOff.lerp(off, k);
+      this.camPos.copy(pg.position).add(this.camOff); this.camUp.lerp(fr.up, this.snapCam ? 1 : 1 - Math.exp(-dt * 5)).normalize(); this.snapCam = false;
+      this.look = pg.position.clone().addScaledVector(fr.fw, 8).addScaledVector(fr.up, 1.0);
     }
     const shake = race.shake > 0 ? race.shake * 0.4 : 0;
     this.camera.position.copy(this.camPos).add(V((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0));
