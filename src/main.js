@@ -190,13 +190,19 @@ $("btn-nitro").addEventListener("pointerdown", e => {
 });
 let nitroToldAt = 0;
 $("btn-power").addEventListener("pointerdown", e => { e.preventDefault(); race.usePower(); });
+// 📯 the horn: just for fun, the closest rivals honk back (src/horn.js)
+$("btn-horn").addEventListener("pointerdown", e => {
+  e.preventDefault(); if (mode !== "race" || !race.honk?.()) return;
+  const b = $("btn-horn"); b.classList.add("on"); setTimeout(() => b.classList.remove("on"), 140); buzz(15);
+  if (coach?.stage === "horn") { coach.stage = "done"; paintCoach(); }
+});
 // Touching the left or right half of the race picture also steers.
 const touches = new Map();
 const touchSteer = () => { let l = false, r = false; for (const v of touches.values()) v ? (r = true) : (l = true); race.input.left = l; race.input.right = r; };
 canvas.addEventListener("pointerdown", e => { if (mode !== "race") return; touches.set(e.pointerId, e.clientX > innerWidth / 2); touchSteer(); });
 for (const ev of ["pointerup", "pointercancel", "pointerleave"]) canvas.addEventListener(ev, e => { if (touches.delete(e.pointerId)) touchSteer(); });
 const keys = { ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
-addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = true; if ((e.key === " " || e.key === "ArrowUp") && mode === "race") race.useNitro(); if ((e.key === "Enter" || e.key === "ArrowDown") && mode === "race") race.usePower(); if (e.key === "Escape" && mode === "race") pause(); });
+addEventListener("keydown", e => { if (keys[e.key]) race.input[keys[e.key]] = true; if ((e.key === " " || e.key === "ArrowUp") && mode === "race") race.useNitro(); if ((e.key === "Enter" || e.key === "ArrowDown") && mode === "race") race.usePower(); if (e.key === "h" && mode === "race" && !e.repeat) race.honk?.(); if (e.key === "Escape" && mode === "race") pause(); });
 addEventListener("keyup", e => { if (keys[e.key]) race.input[keys[e.key]] = false; });
 
 /* ---------- screens ---------- */
@@ -366,7 +372,7 @@ function startRace(track) {
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   raceStartAt = Date.now(); resetClock(clock); ladder().raceStart(); steps = STEPS_ON ? stepCounter() : null;
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
-  nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : null; paintCoach();
+  nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : !isPreview() && !tipSeen("horn") ? { t: 0, stage: "hwait" } : null; paintCoach();
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
@@ -403,14 +409,22 @@ function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).text
 /* 👆 the first race of a new save teaches the controls: hands point at ◀ and ▶ until he has steered both ways,
    then at 🚀 the first time Turbo is full, until he uses it */
 let coach = null;
+/* tips shown once per device (kept under turbodash.tips, not in the save, so the save's shape does not change).
+   v1.12: the first race after the horn arrives, a hand points at 📯 (a brand-new player learns to steer first) */
+const TIPS_KEY = "turbodash.tips";
+const tips = () => { try { return JSON.parse(localStorage.getItem(TIPS_KEY)) || {}; } catch (e) { return {}; } };
+const tipSeen = id => !!tips()[id];
+const markTip = id => { try { localStorage.setItem(TIPS_KEY, JSON.stringify({ ...tips(), [id]: 1 })); } catch (e) { /* storage blocked */ } };
 function paintCoach() {
-  const el = $("coach-tips"); el.hidden = !coach || coach.stage === "done";
+  // a brand-new player's first race shows only the arrows and Turbo: the horn waits until that lesson is done
+  $("btn-horn").hidden = !!coach && ["steer", "wait", "turbo"].includes(coach.stage);
+  const el = $("coach-tips"); el.hidden = !coach || coach.stage === "done" || coach.stage === "hwait";
   if (el.hidden) return;
-  const steer = coach.stage === "steer", turbo = coach.stage === "turbo";
-  $("ct-l").hidden = $("ct-r").hidden = !steer; $("ct-t").hidden = !turbo;
-  $("ct-say").innerHTML = steer ? "Hold ◀ or ▶ to steer!" : "Tap 🚀 for a Turbo boost!";
+  const steer = coach.stage === "steer", turbo = coach.stage === "turbo", horn = coach.stage === "horn";
+  $("ct-l").hidden = $("ct-r").hidden = !steer; $("ct-t").hidden = !turbo; $("ct-h").hidden = !horn;
+  $("ct-say").innerHTML = steer ? "Hold ◀ or ▶ to steer!" : horn ? "Tap 📯 to honk!" : "Tap 🚀 for a Turbo boost!";
   // each hand sits just above its button, wherever the buttons are on this screen
-  for (const [hand, btn] of [["ct-l", "btn-left"], ["ct-r", "btn-right"], ["ct-t", "btn-nitro"]]) {
+  for (const [hand, btn] of [["ct-l", "btn-left"], ["ct-r", "btn-right"], ["ct-t", "btn-nitro"], ["ct-h", "btn-horn"]]) {
     const b = $(btn).getBoundingClientRect(), hEl = $(hand); if (!b.width) continue;
     hEl.style.left = (b.left + b.width / 2) + "px"; hEl.style.top = (b.top - 8) + "px";
   }
@@ -422,6 +436,8 @@ function tickCoach(dt, h) {
   if (coach.stage === "steer" && ((coach.l > 0.3 && coach.r > 0.3) || coach.t > 25)) { coach.stage = "wait"; if (coach.t <= 25) toast("👍 Great steering!"); paintCoach(); }
   if (coach.stage === "wait" && h.nitro >= 1 && h.state === "race") { coach.stage = "turbo"; coach.tt = 0; paintCoach(); }
   if (coach.stage === "turbo") { coach.tt += dt; if (h.nitroOn || coach.tt > 12) { coach.stage = "done"; paintCoach(); } }
+  if (coach.stage === "hwait" && h.state === "race" && coach.t > 4) { coach.stage = "horn"; coach.ht = 0; markTip("horn"); paintCoach(); }
+  if (coach.stage === "horn") { coach.ht += dt; if (coach.ht > 10) { coach.stage = "done"; paintCoach(); } }
   if (h.state === "done") { coach.stage = "done"; paintCoach(); }
 }
 function updateHud(dt) {

@@ -5,7 +5,7 @@
 //   node scripts/test-words.mjs   (part of npm test)
 import { readFileSync } from "node:fs";
 import { resolve, join } from "node:path";
-import { UPGRADES, TRACKS, BONUS_TRACKS, winsStep } from "../src/data.js";
+import { UPGRADES, TRACKS, BONUS_TRACKS, RESEARCH, winsStep } from "../src/data.js";
 
 const root = resolve(import.meta.dirname, "..");
 let fails = 0, checks = 0;
@@ -30,6 +30,13 @@ check(winsStep(574, 640) === 6, `574 of 640 wins should ask for 6 more (got ${wi
 check(winsStep(0, 640) === 10 && winsStep(630, 640) === 10 && winsStep(635, 640) === 5 && winsStep(8, 10) === 2 && winsStep(0, 3) === 3, "winsStep small steps");
 for (let need = 1; need < 700; need += 7) for (let have = 0; have < need; have += 3) {
   const s = winsStep(have, need); if (s < 1 || s > 10 || have + s > need) { check(false, `winsStep(${have}, ${need}) = ${s}`); break; }
+}
+// 5. Turbo Lab (v1.12): every card has a short line of one or two words, no grown-up "tier", no "39k" prices,
+//    and finished cards all say MAX! like the Garage
+for (const r of RESEARCH) check(typeof r.tag === "string" && r.tag.split(/ +/).length <= 2 && r.tag.length <= 16 && !/[:;]/.test(r.tag), `lab card ${r.name} needs a one- or two-word line (got "${r.tag}")`);
+{
+  const lab = readFileSync(join(root, "src/lab.js"), "utf8");
+  check(!/Lab tier|"k"|✔ Done/.test(lab), "src/lab.js still says Lab tier, writes prices as 39k, or says Done on a finished card");
 }
 console.log(fails ? `\n✖ ${fails} of ${checks} word checks failed` : `All ${checks} word checks passed`);
 process.exit(fails ? 1 : 0);

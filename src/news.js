@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.12.0",
+    pics: [["📯", "Tap the horn. Rivals honk back!"], ["🔬", "Lab cards say what they do"]],
+    notes: [
+      "A new horn button sits above the left arrow. Tap it and the closest rivals honk back.",
+      "Turbo Lab cards have a short line that says what each one does, full prices, and MAX! when finished.",
+      "The steering arrows have a dark rim, so they show on snow and in Toy Track World.",
+      "Not checked on a real tablet yet, so please look at the horn button next to the left arrow.",
+    ],
+  },
+  {
     v: "1.11.4",
     pics: [["✨", "This card shows what is new"]],
     notes: [

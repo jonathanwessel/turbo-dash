@@ -1,6 +1,7 @@
 // Pseudo-3D racing engine: a looping road of short segments (with curves and hills) projected onto the screen.
 import { THEMES, RIVALS, PHYSICS, diffOf, MPH } from "./data.js";
 import { drawEmojiText } from "./emoji.js";
+import { honk, tickHonks, drawHornBubble } from "./horn.js";
 import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
@@ -218,6 +219,7 @@ export class Race {
     this.startZ = START * SEG + SEG * 0.5;
     this.finishDist = track.laps * this.T.length;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.bonkCD = 0; this.bumpCD = 0;
+    this.honks = []; this.hornAt = undefined;
     this.coins = 0; this.popups = []; this.order = []; this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0 }; this.skyX = 0; this.hillX = 0; this.steerVis = 0;
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5 * SEG, offset: k % 2 ? 0.45 : -0.45 });
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
@@ -312,6 +314,7 @@ export class Race {
     for (let k = 0; k < 10; k++) this.parts.push({ x: 0.5 + side * (0.1 + Math.random() * 0.05), y: 0.9 + Math.random() * 0.05, vx: -side * (0.2 + Math.random() * 0.5), vy: -0.3 - Math.random() * 0.5, life: 0.35 + Math.random() * 0.2, c: Math.random() < 0.5 ? "#ffb020" : "#fff3a0", r: 0.004 + Math.random() * 0.004 });
   }
 
+  honk() { return honk(this, BASE_MAX); }   // 📯 rivals within about a second of driving honk back
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
     this.nitro = 0; this.nitroT = this.nitroFull = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
@@ -320,6 +323,7 @@ export class Race {
   update(dt) {
     this.t += dt;
     const p = this.player, S = this.stats, h = this.hooks;
+    tickHonks(this, dt);
     for (const q of this.popups) q.age += dt;
     this.popups = this.popups.filter(q => q.age < 1);
     this.shake = Math.max(0, this.shake - dt);
@@ -875,6 +879,11 @@ export class Race {
       }
       if (c.air > 30 || ghost || !drawCarPic(ctx, x, y, w, c.def, steer, this.lite))
         drawCar(ctx, x, y, w, c.def, { t: this.t, steer, spin: c.dist / 900, noShadow: c.air > 30, lean: clamp(steer, -1, 1) * 0.5, flat: this.lite });
+      // 📯 it honked back: a little horn in a bubble pops up over the car (only when the whole car is on screen)
+      if (c.honkT > 0 && !ghost && w > 8 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
+        const k = Math.min(1, (0.9 - c.honkT) * 8), r = Math.max(14, Math.min(40, w * 0.28)) * (0.6 + 0.4 * k);
+        ctx.save(); ctx.globalAlpha *= Math.min(1, c.honkT * 4); drawHornBubble(ctx, x, y - w * CAR_TOP - 4, r, drawEmojiText); ctx.restore();
+      }
     });
   }
 

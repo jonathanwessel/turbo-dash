@@ -319,6 +319,11 @@ The release pipeline Copper Gulch has: a What's new card, a GitHub release from 
 update test in `npm run check`, and maskable icons with a manifest id.
 - Lesson: keep the release notes in one place. The card, the tag and the release page all read `src/news.js`.
 
+### v1.12.0 📯 Honk! (shipped)
+A horn button (the closest rivals honk back, only for fun), Turbo Lab cards in plain words, and steering arrows with
+a dark rim for snow and pastel tracks. The first release that moves the game forward after four tool releases.
+- Lesson: a fun button needs no reward. Keeping the horn out of the race rules meant no sim or career change.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

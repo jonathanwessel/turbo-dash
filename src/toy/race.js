@@ -10,6 +10,7 @@
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
 import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
+import { honk, tickHonks } from "../horn.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
 const G = 30;                    // gravity
@@ -35,7 +36,7 @@ export class ToyRace {
     this.state = mode === "demo" ? "demo" : "countdown"; this.count = 3.6; this.raceTime = 0;
     this.finishDist = track.laps * T.L;
     this.nitro = Math.min(1, 0.35 + (stats.startNitro || 0)); this.nitroT = 0; this.boostT = 0; this.wallCD = 0; this.bumpCD = 0;
-    this.coins = 0; this.popups = []; this.fx = []; this.order = [];
+    this.coins = 0; this.popups = []; this.fx = []; this.order = []; this.honks = []; this.hornAt = undefined;
     this.steerIn = 0; this.drafting = false; this.draftShown = false;
     this.runStats = { stunts: 0, turbos: 0, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 };
     const slot = k => ({ dist: -(Math.floor(k / 2) + 1) * 5, x: k % 2 ? 1.7 : -1.7 });
@@ -75,6 +76,7 @@ export class ToyRace {
       this.popup("SUPER TURBO!", "#ff7a00"); this.hooks.sfx("nitro"); }
     return true;
   }
+  honk() { return honk(this, V0); }   // 📯 rivals within about a second of driving honk back
   useNitro() {
     if (this.state !== "race" || this.player.finished || this.nitro < 1) return false;
     this.nitro = 0; this.nitroT = this.nitroFull = this.stats.nitroTime; this.hooks.sfx("nitro"); this.runStats.turbos++; this.popup("TURBO!", "#ffd400"); return true;
@@ -95,6 +97,7 @@ export class ToyRace {
   update(dt) {
     this.t += dt;
     const p = this.player, S = this.stats, h = this.hooks, T = this.T, N = T.N;
+    tickHonks(this, dt);
     for (const q of this.popups) q.age += dt;
     this.popups = this.popups.filter(q => q.age < 1);
     this.shake = Math.max(0, this.shake - dt);

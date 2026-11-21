@@ -61,6 +61,7 @@ function noise(dur, vol = 0.3, freq = 1000, when = 0, sweep = 0) {
 }
 
 let lastCoin = 0, coinPitch = 0;
+const HORNS = [{ f: 330, n: 2, w: "square" }, { f: 587, n: 1, w: "square" }, { f: 247, n: 1, w: "sawtooth" }, { f: 698, n: 3, w: "triangle" }, { f: 440, n: 2, w: "sawtooth" }, { f: 196, n: 2, w: "square" }];
 export function sfx(name) {
   if (!ac || !opts.sfx) return;
   switch (name) {
@@ -86,6 +87,11 @@ export function sfx(name) {
     case "chest": noise(0.4, 0.3, 2000, 0, 0.5); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0.1 + i * 0.08)); break;
     case "win": [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i === 5 ? 0.6 : 0.18, "square", 0.12, i * 0.14)); break;
     case "lose": [392, 349, 330, 262].forEach((f, i) => tone(f, 0.25, "triangle", 0.14, i * 0.18)); break;
+    case "horn": tone(392, 0.32, "square", 0.11); tone(494, 0.32, "square", 0.09); break;   // 📯 the player's horn: two notes at once
+    default: if (name.startsWith("horn")) {                                                  // horn1..horn6: each rival's own voice
+      const v = HORNS[(+name.slice(4) - 1) % HORNS.length] || HORNS[0];
+      for (let k = 0; k < v.n; k++) { tone(v.f, 0.16, v.w, 0.08, k * 0.2); tone(v.f * 1.26, 0.16, v.w, 0.06, k * 0.2); }
+    }
   }
 }
 

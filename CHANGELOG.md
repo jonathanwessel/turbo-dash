@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.12.0 — Honk! 📯
+
+- **📯 A horn.** A new button sits just above the left arrow. Tap it and the car honks, and the two closest rivals
+  honk back a moment later, each in its own voice, with a little horn in a white bubble over their car. It works on every world,
+  Toy Track World too, and on the keyboard with H. It is only for fun: speed, places and prizes do not change.
+  The first race after the update, a hand points at it once ("Tap 📯 to honk!"). A brand-new player's first race
+  still teaches only the arrows and Turbo, and the horn appears after that.
+- **🔬 Turbo Lab in plain words.** Every card has a short line that says what it does ("Start faster",
+  "Cheaper upgrades", "Know curves"), like the Garage cards. Prices are the full number, written like the coin
+  counter (39080, not 39k). Each row has a number badge instead of "Lab tier", and every finished card shows a
+  green MAX! badge (it no longer looks like a gray button that does nothing). The card's sheet no longer has a colon ("All done!").
+- **◀ ▶ Steering arrows you can see on snow.** A dark rim around the white ring and a dark edge on the arrow, so
+  they stand out on Glacier Rink's snow and Toy Track World's pale colors.
+- Polish: the horn bubble over a rival is the new thing to see, the horn button the new thing to use.
+- A helper that saw only the pictures reviewed this build. From it: the horn bubble got a white background and
+  shows only over a car that is fully on screen, the horn button is navy with a yellow rim so the horn shows, the
+  arrows' fill is a little darker, and three Lab lines changed ("Glow paint", "Bigger magnet", "Robot plug").
+- For the grown-ups: the horn's rules live in `src/horn.js` with a test (`scripts/test-horn.mjs`) that proves it
+  never changes the race. The word test now checks every Lab card has a one- or two-word line. The one-time tip is
+  remembered under `turbodash.tips`, outside the save, so the save's shape does not change.
+
 ## v1.11.4 — What's new ✨
 
 - **✨ What's new card.** After an update, the title screen shows what changed since this tablet last played: one

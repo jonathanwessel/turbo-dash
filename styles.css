@@ -28,10 +28,20 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 /* ---------- touch controls ---------- */
 #controls { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
 .steer, .nitro { position: absolute; pointer-events: auto; border-radius: 50%; display: grid; place-items: center; font-weight: 900; }
+/* v1.12: a dark rim around a white ring, and a dark outline on the arrow, so the buttons show on snow and on Toy
+   Track World's pale colors as well as on dark roads */
 .steer { bottom: max(14px, env(safe-area-inset-bottom)); width: clamp(84px, 24vmin, 150px); height: clamp(84px, 24vmin, 150px);
-  background: rgba(255,255,255,.28); border: 4px solid rgba(255,255,255,.75); font-size: clamp(36px, 10vmin, 64px); color: #fff;
-  box-shadow: 0 6px 0 rgba(0,0,0,.25); }
-.steer.on { background: rgba(255,212,0,.6); transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  background: rgba(20,26,48,.45); border: 4px solid rgba(255,255,255,.9); font-size: clamp(36px, 10vmin, 64px); color: #fff;
+  box-shadow: 0 0 0 3px rgba(16,20,36,.8), 0 6px 0 3px rgba(0,0,0,.3); text-shadow: 0 0 3px #10142a, 0 2px 0 #10142a; }
+.steer.on { background: rgba(255,212,0,.7); transform: translateY(3px); box-shadow: 0 0 0 3px rgba(16,20,36,.8), 0 3px 0 3px rgba(0,0,0,.3); }
+/* 📯 the horn sits just above the left arrow */
+.horn { position: absolute; pointer-events: auto; border-radius: 50%; display: grid; place-items: center;
+  --st: clamp(84px, 24vmin, 150px); --hn: clamp(56px, 14vmin, 90px);
+  left: calc(max(14px, env(safe-area-inset-left)) + (var(--st) - var(--hn)) / 2); bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--st) + 12px);
+  width: var(--hn); height: var(--hn); font-size: clamp(28px, 7vmin, 48px); background: #1f2a4d; border: 4px solid #ffd84d;
+  box-shadow: 0 0 0 3px rgba(16,20,36,.8), 0 5px 0 3px rgba(0,0,0,.3); }
+.horn.on { transform: translateY(3px) scale(.94); background: #34457a; }
+.horn[hidden] { display: none; }
 #btn-left { left: max(14px, env(safe-area-inset-left)); }
 #btn-right { right: max(14px, env(safe-area-inset-right)); }
 .nitro { right: calc(max(14px, env(safe-area-inset-right)) + clamp(90px, 26vmin, 160px)); bottom: calc(max(14px, env(safe-area-inset-bottom)) + clamp(30px, 9vmin, 60px));
@@ -46,6 +56,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
   .steer { width: 30vw; height: 30vw; bottom: max(24px, env(safe-area-inset-bottom)); }
   .nitro { right: 50%; transform: translateX(50%); bottom: calc(max(24px, env(safe-area-inset-bottom)) + 4vw); width: 26vw; height: 26vw; }
   .nitro.ready { animation: none; box-shadow: 0 0 24px 6px #ffd400; }
+  .horn { left: auto; right: 6vw; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 34vw); width: 18vw; height: 18vw; font-size: 9vw; }
 }
 
 /* ---------- screens ---------- */
@@ -313,6 +324,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .proj { background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.3); border-radius: 18px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .proj .pi { font-size: 34px; line-height: 1.1; }
 .proj b { font-size: 16px; }
+.proj .ptag { font-size: 13px; font-weight: 700; opacity: .85; line-height: 1.15; }
+.tier-head { display: flex; align-items: center; gap: var(--s2, 8px); }
+.tier-n { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 50%; background: #ffd400; color: #1a1d2e; font-size: 18px; border: 2px solid #1a1d2e; }
 /* the research level on a card (and, larger, in its sheet): segments up to 10 levels, a bar beyond, then "3/10" */
 .plv { display: flex; align-items: center; gap: var(--s1); width: 100%; max-width: 150px; margin: 2px 0; }
 .plv .pseg { flex: 1; display: flex; gap: 2px; }
@@ -330,6 +344,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .proj .pbtn.poor { background: #5a4a7a; color: #cfc6e6; }
 .proj.locked { opacity: .5; }
 .proj.maxed { border-color: #5be36a; }
+.proj.maxed .pbtn, .proj.maxed .pbtn.poor { background: #5be36a; color: #10301a; box-shadow: none; border-color: #10301a; cursor: default; }   /* MAX! is a green badge, not a gray button (v1.12) */
 .proj.teaser.big { grid-column: span 2; border-color: #ff3fe5; background: linear-gradient(135deg, rgba(255,63,229,.2), rgba(60,242,255,.2)); opacity: .8; }
 .proj.teaser.big .pi { font-size: 50px; }
 #town .bubbling rect:nth-child(even) { animation: fill2 1.4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }

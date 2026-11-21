@@ -65,15 +65,16 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
     const nextTier = tiers.find(t => S.rank < RESEARCH.find(r => r.tier === t).rank);
     $("lab-list").innerHTML = tiers.filter(t => S.rank >= RESEARCH.find(r => r.tier === t).rank || t === nextTier).map(tier => {
       const items = RESEARCH.filter(r => r.tier === tier), needRank = items[0].rank, open = S.rank >= needRank;
-      return `<div class="tier-head">${open ? `Lab tier ${tier}` : `🔒 Lab tier ${tier}: Rank ${needRank}`}</div>` + items.map(r => {
+      // each row of projects gets a number badge (no grown-up word); a locked row says which Rank opens it
+      return `<div class="tier-head"><span class="tier-n">${tier}</span>${open ? "" : `🔒 Rank ${needRank}`}</div>` + items.map(r => {
         const lvl = levelOf(r.id), max = lvl >= r.max, running = busy(r.id), cost = max ? 0 : researchCost(r, lvl), chips = max ? 0 : researchChips(r, lvl);
         const rk = researchRank(r, lvl), need = (r.needs || []).find(id => levelOf(id) < 1), needR = need && RESEARCH.find(x => x.id === need);
         const ok = open && S.rank >= rk && !need;
         const can = ok && !max && !running && freeBench() && S.coins >= cost && S.chips >= chips;
-        const short = n => n >= 10000 ? Math.round(n / 1000) + "k" : n;
-        const label = max ? (r.max === 1 ? "✔ Done" : "MAX!") : running ? "⏱ Working" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${short(cost)}${chips ? " 🧠" + chips : ""}`;
+        // the full price, written like the coin counter (v1.12: "39k" did not match it); finished reads MAX! like the Garage
+        const label = max ? "MAX!" : running ? "⏱ Working" : S.rank < rk ? "🔒 Rank " + rk : need ? `🔒 ${needR.icon} first` : `🪙${cost}${chips ? " 🧠" + chips : ""}`;
         return `<div class="proj ${ok ? "" : "locked"} ${max ? "maxed" : ""} ${r.big ? "teaser big" : ""}" data-info="${r.id}">
-          <div class="pi">${r.icon}</div><b>${r.name}</b>${open ? levelRow(r, lvl, running) : ""}
+          <div class="pi">${r.icon}</div><b>${r.name}</b><small class="ptag">${r.tag}</small>${open ? levelRow(r, lvl, running) : ""}
           <button class="pbtn ${can ? "" : "poor"}" data-start="${r.id}">${label}</button></div>`;
       }).join("");
     }).join("");
@@ -94,7 +95,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
     const lvl = levelOf(r.id), max = lvl >= r.max;
     $("ls-icon").textContent = r.icon; $("ls-name").textContent = r.name; $("ls-desc").textContent = r.desc;
     $("ls-lv").innerHTML = levelRow(r, lvl, busy(r.id));
-    $("ls-meta").textContent = max ? (r.max === 1 ? "All done!" : `Level ${lvl} of ${r.max}: all done!`) : `${r.max === 1 ? "" : `Level ${lvl} of ${r.max}. `}The next level takes ${fmt(researchTime(r, lvl))}.`;
+    $("ls-meta").textContent = max ? "All done!" : `${r.max === 1 ? "" : `Level ${lvl} of ${r.max}. `}The next level takes ${fmt(researchTime(r, lvl))}.`;
     $("ls-go").hidden = max; $("ls-go").onclick = () => { $("lab-sheet").hidden = true; start(r); };
     $("lab-sheet").hidden = false; sfx("click");
   }

@@ -139,19 +139,39 @@ every test green.
   Gulch). The update test builds the same code as v99.0.0 (`TD_VERSION`), so it also proves the card, the single
   cache and offline start. `npm run icons` redraws the maskable icons from `public/icon.svg`. Not checked on a
   real Android device: the icon crop and the install prompt there still need the owner's eyes.
+- [ ] **The sweep sees what a playing child sees.** Its race frames use a brand-new save, so every race picture
+  shows the first-race lesson and hides the horn; take them from the Rank 16 save instead (one brand-new race frame
+  stays, for the lesson). It also never opens a card's sheet (the Lab sheet's colon in v1.12.0 was found by reading
+  code): open one sheet or pop-up per screen (Lab project, Garage upgrade, track card) and audit it.
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
 - [ ] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
 
 ### M1. Rivals with character (v1.12)
-- [ ] **Turbo Lab in plain words** (v1.11.3 picture review). "Lab tier 1/2/3" is a grown-up word (use a number
+- [x] **Turbo Lab in plain words** (v1.11.3 picture review). "Lab tier 1/2/3" is a grown-up word (use a number
   badge or "Row"). Prices like "39k" don't match the coin counter: show the full number. Projects such as Pit Crew,
   Head Start, Reflexes, Map Memory and Brain Chip Socket need a two-word line like the Garage cards ("Start
   faster"). Finished cards say "MAX!" on some and "Done" on others: pick one.
-- [ ] **Steering arrows stay visible** on snow (Glacier) and on Toy World's pastel colors: a darker rim.
+  Notes: v1.12.0. Each project has a `tag` in data.js (one or two words, shown under its name; the longer `desc`
+  stays in the card's sheet). Each row shows a round number badge, and a locked row says "🔒 Rank 6". Prices are
+  the full number like the coin counter. Decision: finished cards all say MAX!, because the Garage already does.
+  Picture review: finished cards looked like gray buttons, so MAX! is now a green badge; "Neon paint", "Grab more"
+  and "Robot ready" became "Glow paint", "Bigger magnet" and "Robot plug". The row badges stay (the box asked for
+  them). The sheet's "Level 3 of 10: all done!" (a colon the sweep never saw, the sheet is closed in its pictures) is now
+  "All done!". `scripts/test-words.mjs` checks every card has a short line and lab.js has no "Lab tier", "k" or
+  "Done".
+- [x] **Steering arrows stay visible** on snow (Glacier) and on Toy World's pastel colors: a darker rim.
+  Notes: v1.12.0. A dark outer rim, a whiter ring, a faint dark fill and a dark edge on the arrow itself, on every
+  world (one look everywhere), with the fill darkened after the picture review found the right arrow pale on snow
+  and Moon gray. Looked at on Glacier and Toy World at 1280x800 in headless Edge. Not checked on a
+  real tablet.
 - [ ] **Main Street in portrait** fills the screen (v1.11.3 review: at 800x1280 the town sits in the bottom
   quarter under empty sky and its labels are tiny). The game is played in landscape, so this rides along with any
   M1 release, not on its own.
+- [ ] **Lab layout on small screens** (v1.12.0 review): the empty bench slots fill half the screen at 740x360
+  and 800x1280 and push the project cards down. Shrink empty benches to a thin row, or put the cards first.
+- [ ] **Toy World camera on curves** (v1.12.0 review): on the first curve a rival can fill the front of the
+  picture and the player's car looks small in the middle. Check the chase camera keeps the player's car big and low.
 - [ ] **Small word polish** from the v1.11.3 review: "Upgrades for Champion X" repeats the car name; "Grip" could be
   "Turning"; tiny "19/25" star counts on track cards have no picture; "Point a phone camera here" on the title
   sounds like a manual; "Beach Boardwalk" wraps and its "11/25" touches the bar at 740x360.
@@ -165,7 +185,18 @@ every test green.
   they win, grumpy when they lose. Pictures only.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
-- [ ] **A horn button.** It honks. Rivals nearby honk back.
+- [x] **A horn button.** It honks. Rivals nearby honk back.
+  Notes: v1.12.0, taken ahead of its turn: v1.12.0 had to move the game forward (four tool releases in a row) and
+  this is the smallest new thing to use. Rules in `src/horn.js`, used by both engines: the two closest rivals
+  within about one second of driving answer 0.35 to 0.95 s later in their own voice, with a 📯 over their car
+  in a white bubble with a dark rim (drawn on the classic road and on the 3D view's overlay, only over a car fully
+  on screen: the picture review saw a bare horn float at the screen's edge over a car that was off it, and an
+  orange horn lost on the orange toy track). The button is navy with a yellow rim (the orange horn on yellow was
+  hard to see). Rivals wait 1.2 s before answering again, but the
+  button always honks (never lock a button). It changes nothing in the race, proved by `scripts/test-horn.mjs`, so
+  no sim or career change. It sits above the left arrow; a brand-new player's first race hides it until the arrows
+  and Turbo lesson is done, and the next race shows a hand on it once (remembered under `turbodash.tips`, outside
+  the save). Not checked on a real tablet: the thumb reach to the horn above the left arrow needs the owner's eyes.
 - [ ] **Target:** the race sim shows every track still has a result the "kid" driver can reach with the car
   one step above the starter, with the rival of the week at its cap. The career run reaches Rank 40 within 5% of
   the day it does today.
@@ -249,3 +280,11 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   a screen gains its one action line, add it to that check.
   Seen once: a sweep run alongside `npm run check` timed out loading the page at its 4th size; the same commit
   swept clean alone. If it happens again, give `load()` in sweep.mjs one retry and never run the two together.
+- 2026-11-21 (v1.12.0): the first release that moves the game forward after four tool releases: a horn button
+  (taken ahead of its turn as the smallest new thing to use), Turbo Lab in plain words and darker steering rims.
+  The rest of M0 still rides along, one box per M1 release. Added an M0 box so the sweep's race pictures come from
+  a played save and the sweep opens one sheet per screen: two v1.12.0 finds (the hidden horn in every race picture,
+  a colon in a closed sheet) were things the pictures could never show. Rule kept from v1.11.3: a one-time tip goes
+  in `turbodash.tips`, not the save, so it needs no save port. Next: Main Street in portrait or small word polish
+  can ride along, but the next release's main piece is Faces and reactions or Rival of the week (after the
+  hands-off fix), so the game keeps moving forward.

@@ -7,6 +7,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { toyPoint, DS, HW, WALL_H, startArch, startLine } from "./track.js";
 import { drawEmojiText } from "../emoji.js";
+import { drawHornBubble } from "../horn.js";
 
 const V = (a = 0, b = 0, c = 0) => new THREE.Vector3(a, b, c);
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -521,7 +522,8 @@ export class ToyView {
 
   /* 2D things on top: speed lines, the toy hand, Auto Steer robot, popups */
   overlay(race, W, H, t, fast, falling) {
-    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0;
+    const honking = race.rivals.some(c => c.honkT > 0);
+    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0 || honking;
     if (!need && !this.ovHad) return;   // nothing on it now or last frame: leave the clear canvas alone (v1.10)
     this.ovHad = need; ctx.clearRect(0, 0, W, H);
     if (fast) {
@@ -535,6 +537,14 @@ export class ToyView {
     }
     if (race.autoTarget !== null && Math.sin(t * 6) > -0.6) { ctx.font = `${Math.round(H * 0.06)}px system-ui`; ctx.textAlign = "center"; drawEmojiText(ctx, "🤖", W * 0.58, H * 0.72); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (honking) race.rivals.forEach((c, k) => {   // 📯 a rival that honked back: a little horn over its car
+      const g = c.honkT > 0 && this.cars.get("r" + k); if (!g) return;
+      const v = g.position.clone().add(V(0, 1.6, 0)).project(this.camera); if (v.z > 1 || Math.abs(v.x) > 0.85 || Math.abs(v.y) > 0.9) return;
+      const r = H * 0.035 * (0.6 + 0.4 * Math.min(1, (0.9 - c.honkT) * 8));
+      ctx.globalAlpha = Math.min(1, c.honkT * 4); drawHornBubble(ctx, (v.x + 1) / 2 * W, (1 - v.y) / 2 * H, r, drawEmojiText);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    });
+    ctx.globalAlpha = 1;
     for (const q of race.popups) {
       const s = 1 + Math.min(0.3, q.age * 2); ctx.globalAlpha = 1 - q.age;
       ctx.font = `900 ${Math.round(H * 0.08 * s)}px system-ui,sans-serif`; ctx.lineWidth = H * 0.012; ctx.strokeStyle = "rgba(0,0,0,0.6)";
