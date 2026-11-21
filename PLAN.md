@@ -175,7 +175,7 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   with the check run again on the release commit (the release script now insists). Added the M1 box "Hands-off is
   last again", found when the sim had to pass or fail instead of print. Rule learned: a check that only prints is
   not a check; every script in the checklist exits non-zero when its target is missed.
-  Also: British spellings had come back in the changelog, roadmap and comments (colour, centre, grey), so
+  Also: British spellings had come back in the changelog, roadmap and comments (the -our and -re forms), so
   `npm test` now runs `scripts/test-spelling.mjs`, which fails on them. The sweep's first full run left 28 headless
   Edge processes behind and was cut short by a source file saved during it; the script now closes the browser and
   everything using its profile, and says so when the page reloads under it. Never edit files under `src/`,
