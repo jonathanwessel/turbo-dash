@@ -37,8 +37,9 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 - **Every release has one thing to see and one thing to use that is new,** listed under "Polish" in the
   changelog. Fix-only releases are for things that are broken right now.
 - **No two players on one tablet.** The owner turned this idea down (2026-11-20).
-- **No new personal details.** Do not add names, places or family stories to code, docs or commits. What is
-  already in the game stays until the owner decides (see "Waiting for the owner").
+- **The player's name and the home town stay** (owner decision, 2026-11-20). They are part of this game, and
+  this rule wins over the "no personal details" rule for every game. Do not remove or rename them. Do not add
+  anything new: no other names, addresses, network addresses or family stories in code, docs or commits.
 - Nothing is ever for real money. Timers can only be rushed with in-game coins.
 
 ## Release checklist (every release; stop and fix on any failure)
@@ -141,9 +142,8 @@ Each new track adds one new thing to see. Each release re-checks the career run.
 - [ ] Holiday decorations on Main Street by the calendar.
 
 ## Waiting for the owner (do not act on these)
-- **The player's name and the home town in the public repo.** They were kept on purpose earlier. The rules for
-  every game now say no personal details. The owner decides whether anything changes.
-- **Google Save** talks to another host. Keep it behind Parent Corner as it is, or remove it?
+- **Saves across devices, for every game** (owner, 2026-11-20: wanted at some point, not now). Google Save
+  stays as it is, behind Parent Corner, until the owner picks this up. Do not remove it and do not extend it.
 - **Play Store.** The developer account, the site repository that lets Android trust the game, the signing key
   and the 12 testers are the owner's steps. `android/ANDROID.md` has the walk-through.
 - **A real tablet check.** No release has been checked on a real device by the task. Say so in each release note
