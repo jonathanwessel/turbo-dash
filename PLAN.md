@@ -197,6 +197,8 @@ every test green.
   no sim or career change. It sits above the left arrow; a brand-new player's first race hides it until the arrows
   and Turbo lesson is done, and the next race shows a hand on it once (remembered under `turbodash.tips`, outside
   the save). Not checked on a real tablet: the thumb reach to the horn above the left arrow needs the owner's eyes.
+  Check on the release commit: career Rank 40 on day 552, Moon 107, Ocean 188, Glacier 283, Toy 413 (no rule
+  changed). Sweep clean at 7 sizes, and again at 740x360 and 800x1280 after the picture review fixes.
 - [ ] **Target:** the race sim shows every track still has a result the "kid" driver can reach with the car
   one step above the starter, with the rival of the week at its cap. The career run reaches Rank 40 within 5% of
   the day it does today.
