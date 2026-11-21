@@ -87,6 +87,16 @@ every test green.
   DASH lines' text boxes overlap (the letters do not), and the red "!" badge sits outside Main Street's arrow.
   The checker now skips exactly those two (spans of one `.logo`, absolutely placed badges up to 32 px), after
   looking at the pictures. About 140 s per size.
+- [ ] **Fix the words the v1.11.2 picture review flagged** (all already live, none new in v1.11.2, so that
+  release shipped and this box comes next). School: "lap = +10% for 30 min" becomes a picture line a child gets
+  ("Do a lap. Get more coins!"). Colons in game text: "Bonus: tricky!", "Next: Rank 17", "Good Student bonus: +71".
+  Garage: "More nitro" is jargon. Tracks: "Opens in October" (a month a young child can't read; use a picture).
+  Rank: big totals like "Win 640 more races!" (show the next small step). Look again at: Lab tier 3 colored blocks
+  over the project names, the Races / Cups / Boss / Trials row at 740x360, the toast covering the Next pill and
+  the logo, the "6th" on the checkered banner in Deep Blue, and the Toy World camera at the start. Some flags came
+  from the sweep's own made-up save (rank 16 with 0 wins, school laps that pop the bonus toast): fix the sweep's
+  pictures first so they show a real-looking save with no toasts, then judge the rest. The player's name and the
+  home town stay (owner decision).
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
 - [ ] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
