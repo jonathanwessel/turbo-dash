@@ -11,3 +11,5 @@ live/
 .release-tmp/
 .staging/
 .work-lock
+.check-pass
+.sweep/

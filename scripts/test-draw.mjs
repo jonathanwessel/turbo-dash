@@ -63,7 +63,7 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   setPicMaker(null);
 }
 
-// 2b. a picture must look like the live drawing: the same colours for every seed (things that take their colour from
+// 2b. a picture must look like the live drawing: the same colors for every seed (things that take their color from
 //     their own number), and nothing that moves may be frozen in a picture bigger than 16 px. Things that move or
 //     blink (their blink timing also comes from their number) use a picture only up to 16 px, so they are left out.
 {
@@ -75,7 +75,7 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   for (const type of Object.keys(SPRITES)) {
     if (picMaxFor(type) <= 16) continue;
     let bad = 0; for (let s = 0; s < 60; s++) if (draw(type, 0, s).cols.join() !== draw(type, 0, picVariant(type, s)).cols.join()) bad++;
-    check(bad === 0, `${type}: its picture has other colours than the live drawing for ${bad} of 60 seeds`);
+    check(bad === 0, `${type}: its picture has other colors than the live drawing for ${bad} of 60 seeds`);
     if (!SWAY_OK.has(type)) {
       const a = draw(type, 0, 0); let moved = 0;
       for (const t of [0.4, 1.7, 2.6, 4.3]) { const b = draw(type, t, 0); if (b.nums.length !== a.nums.length || b.cols.join() !== a.cols.join()) moved = Infinity; else for (let i = 0; i < a.nums.length; i++) moved = Math.max(moved, Math.abs(a.nums[i] - b.nums[i])); }
@@ -95,7 +95,7 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   for (let i = 0; i < 300; i++) race.update(PACE / 60);
   race.render();
   check(race.bgBottom > H * 0.3 && race.bgBottom < H * 0.75, `the sky should stop near the far end of the road (stopped at ${race.bgBottom} of ${H})`);
-  check(/rgba\(40,60,90/.test(race.tint || ""), `rain should set the grey tint layer (tint "${race.tint}")`);
+  check(/rgba\(40,60,90/.test(race.tint || ""), `rain should set the gray tint layer (tint "${race.tint}")`);
   const full = fills.filter(([x, y, w, h]) => x <= 0 && y <= 0 && w >= W && h >= H).length;
   check(full === 1, `only the sky (clipped at the road) may fill the whole canvas; tints are a layer now (${full} full fills)`);
   const sea = TRACKS.find(t => race.T && t.world === "ocean");
@@ -106,7 +106,7 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
 
 // 4. every road feature is still painted (v1.11.1: boost pads, puddles, currents, crosswalks, skid marks and ice shine
 //    went missing when the road started drawing in layers; their physics still acted on the car). A whole race is
-//    drawn on each track and each feature's own colour must be painted at least once.
+//    drawn on each track and each feature's own color must be painted at least once.
 {
   const W = 1152, H = 720;
   const paints = (trackId, weather) => {

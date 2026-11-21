@@ -1,7 +1,7 @@
 {
   "name": "turbo-dash",
   "private": true,
-  "version": "1.11.1",
+  "version": "1.11.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5184 --strictPort",
@@ -12,8 +12,10 @@
     "sim": "node scripts/sim.mjs",
     "career": "node scripts/career.mjs",
     "perf": "node scripts/perf.mjs",
-    "test": "node scripts/test-saves.mjs && node scripts/test-school.mjs && node scripts/test-bank.mjs && node scripts/test-rules.mjs && node scripts/test-physics.mjs && node scripts/test-pace.mjs && node scripts/test-draw.mjs && node scripts/test-toy.mjs && node scripts/emoji.mjs --check",
-    "emoji": "node scripts/emoji.mjs"
+    "test": "node scripts/test-saves.mjs && node scripts/test-school.mjs && node scripts/test-bank.mjs && node scripts/test-rules.mjs && node scripts/test-physics.mjs && node scripts/test-pace.mjs && node scripts/test-draw.mjs && node scripts/test-toy.mjs && node scripts/test-spelling.mjs && node scripts/emoji.mjs --check",
+    "emoji": "node scripts/emoji.mjs",
+    "check": "node scripts/check.mjs",
+    "sweep": "node scripts/sweep.mjs"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

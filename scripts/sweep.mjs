@@ -1,0 +1,121 @@
+// 📐 The screen sweep as one command (v1.11.2). It starts the dev server on port 5184, opens headless Edge with a
+// throwaway profile (a brand-new test save, never a real one), runs `await __sweepAll()` from src/dev/audit.js at
+// every size below, saves a screenshot of the main screens at each size and one race frame per world, then stops
+// the browser and the server. Any overlap, spill, off-screen button or "null" fails the run (exit 1).
+//   npm run sweep                       -> all 7 sizes, pictures in .sweep/ (git-ignored)
+//   npm run sweep -- 1280x800 740x360   -> only these sizes
+//   npm run sweep -- --out <folder>     -> pictures somewhere else
+//   npm run sweep -- --no-race          -> skip the race frames
+// Never point this at the play server (port 5183): it serves the family's real game and save.
+import { spawn, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+const root = resolve(import.meta.dirname, "..");
+const args = process.argv.slice(2);
+const ALL = ["740x360", "915x412", "1000x448", "1024x600", "1280x800", "1920x1080", "800x1280"];
+const sizes = args.filter(a => /^\d+x\d+$/.test(a)).length ? args.filter(a => /^\d+x\d+$/.test(a)) : ALL;
+const outArg = args.indexOf("--out"), out = resolve(root, outArg >= 0 ? args[outArg + 1] : ".sweep");
+const RACES = !args.includes("--no-race");
+const DEV = 5184, CDP = 9334, URL0 = `http://127.0.0.1:${DEV}/`;
+const EDGE = process.env.EDGE || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const SHOTS = ["s-title", "s-hub", "s-garage", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+const kids = [];
+let profile = null;
+// Edge hands its work to child processes, so killing the one we started is not enough: close the browser over CDP,
+// kill each started process tree and wait for it, then stop anything still using the throwaway profile.
+async function cleanup() {
+  try { const v = await (await fetch(`http://127.0.0.1:${CDP}/json/version`)).json(); const b = cdp(v.webSocketDebuggerUrl); await b.ready; b.send("Browser.close").catch(() => {}); await wait(1500); } catch {}
+  for (const k of kids) { try { process.platform === "win32" ? spawnSync("taskkill", ["/pid", String(k.pid), "/T", "/F"], { stdio: "ignore" }) : k.kill("SIGKILL"); } catch {} }
+  if (process.platform === "win32" && profile) spawnSync("powershell", ["-NoProfile", "-Command",
+    `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${profile.replace(/'/g, "''")}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`], { stdio: "ignore" });
+}
+process.on("SIGINT", async () => { await cleanup(); process.exit(130); });
+
+async function until(what, fn, ms = 60000) {
+  const t = Date.now();
+  for (;;) { try { const v = await fn(); if (v) return v; } catch {} if (Date.now() - t > ms) throw new Error("timed out waiting for " + what); await wait(250); }
+}
+
+/* a tiny CDP client over Node's built-in WebSocket */
+function cdp(wsUrl) {
+  const ws = new WebSocket(wsUrl), pending = new Map(); let id = 0;
+  ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.no(new Error(m.error.message)) : p.ok(m.result); } };
+  const ready = new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
+  const send = (method, params = {}) => new Promise((ok, no) => { const n = ++id; pending.set(n, { ok, no }); ws.send(JSON.stringify({ id: n, method, params })); });
+  return { ready, send, close: () => ws.close() };
+}
+
+async function main() {
+  mkdirSync(out, { recursive: true });
+  // 1. the dev server, on 127.0.0.1 only
+  const vite = spawn(process.execPath, [join(root, "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(DEV), "--strictPort"], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+  kids.push(vite);
+  let viteLog = ""; vite.stdout.on("data", d => viteLog += d); vite.stderr.on("data", d => viteLog += d);
+  await until("the dev server", async () => (await fetch(URL0)).ok, 60000).catch(e => { throw new Error(e.message + "\n" + viteLog); });
+  // 2. headless Edge with a throwaway profile
+  profile = mkdtempSync(join(tmpdir(), "turbodash-sweep-"));
+  const edge = spawn(EDGE, ["--headless=new", `--remote-debugging-port=${CDP}`, `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--mute-audio", "about:blank"], { stdio: "ignore" });
+  kids.push(edge);
+  const page = await until("headless Edge", async () => (await (await fetch(`http://127.0.0.1:${CDP}/json/list`)).json()).find(t => t.type === "page"));
+  const c = cdp(page.webSocketDebuggerUrl); await c.ready;
+  await c.send("Page.enable"); await c.send("Runtime.enable");
+  const js = async (expr, ms = 600000) => {
+    const r = await Promise.race([c.send("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true }), wait(ms).then(() => { throw new Error("timed out: " + expr.slice(0, 60)); })]);
+    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+    return r.result.value;
+  };
+  const shot = async name => { const r = await c.send("Page.captureScreenshot", { format: "png" }); writeFileSync(join(out, name + ".png"), Buffer.from(r.data, "base64")); };
+  const load = async () => { await c.send("Page.navigate", { url: URL0 }); await wait(500); await until("the game", () => js("!!(window.__td && window.__sweepAll && document.readyState === 'complete')", 5000), 60000); await js("document.fonts.ready.then(() => true)", 20000); await wait(800); };
+
+  const probe = args.indexOf("--probe");
+  if (probe >= 0) {
+    const [w, h] = sizes[0].split("x").map(Number);
+    await c.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+    await load(); console.log(JSON.stringify(await js(args[probe + 1]), null, 1)); await shot("probe"); c.close(); return 0;
+  }
+  const report = {}, t0 = Date.now();
+  for (const size of sizes) {
+    const [w, h] = size.split("x").map(Number), t = Date.now();
+    await c.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+    await load();
+    const issues = await js("__sweepAll()");
+    report[size] = issues;
+    // the main screens with a mid-game save, so most of Main Street and the menus are open
+    await js("Object.assign(__td.S, { rank: 16, world: 'earth' }); true");
+    for (const s of SHOTS) { await js(`(${s === "s-hub" ? "__td.goHub()" : `__td.show(${JSON.stringify(s)})`}, true)`); await wait(500); await shot(`${size}-${s}`); }
+    const n = Object.keys(issues).length;
+    console.log(`${size.padEnd(10)} ${n ? "✖ " + n + " screens with problems" : "✔ every screen fits"}  (${((Date.now() - t) / 1000).toFixed(0)}s)`);
+    for (const [k, v] of Object.entries(issues)) console.log(`   ${k}: ${[].concat(v).slice(0, 4).join(" | ")}`);
+  }
+  // one race frame per world, at tablet size
+  if (RACES) {
+    await c.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    for (const world of ["earth", "moon", "ocean", "glacier", "toy"]) {
+      await load();
+      await js(`(() => { const t = __td.TRACKS.find(x => x.world === ${JSON.stringify(world)}); __td.S.rank = 40; __td.show("s-tracks"); __td.startRace(t); return true; })()`);
+      await wait(world === "toy" ? 9000 : 6000);   // the countdown, and the 3D engine loading for Toy World
+      const on = await js("!!__td.race && document.getElementById('hud') && !document.getElementById('hud').hidden");
+      await shot(`race-${world}`);
+      console.log(`race ${world.padEnd(8)} ${on ? "✔ picture saved" : "✖ the race did not start"}`);
+      if (!on) report["race " + world] = { start: ["the race did not start"] };
+    }
+  }
+  c.close();
+  writeFileSync(join(out, "report.json"), JSON.stringify(report, null, 1) + "\n");
+  const bad = Object.values(report).reduce((a, r) => a + Object.keys(r).length, 0);
+  console.log(`\n${bad ? `✖ ${bad} problems` : "✔ Sweep clean"} at ${sizes.length} sizes in ${((Date.now() - t0) / 1000).toFixed(0)}s. Pictures and report.json in ${out}`);
+  return bad ? 1 : 0;
+}
+
+let code = 1;
+try { code = await main(); }
+catch (e) { console.error("✖ sweep failed: " + e.message + (/navigated|closed/.test(e.message) ? "\n  (the page reloaded: was a source file saved while the sweep ran? The dev server reloads on every save.)" : "")); }
+finally {
+  await cleanup(); await wait(1000);
+  if (profile && existsSync(profile)) try { rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 }); } catch {}
+}
+process.exit(code);

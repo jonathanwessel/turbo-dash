@@ -1,12 +1,30 @@
 # Changelog
 
+## v1.11.2 — Checks that can't be skipped 🧰
+
+Nothing changes in the game itself. This release is for the grown-ups who build it.
+
+- **`npm run check`** runs the save and drawing tests, the drawing budget, the hands-off race sim and the whole
+  career run, one after another. The first failure stops it. `npm run release` now refuses to build a new release
+  unless the check passed on that exact commit.
+- **The race sim and the career run now fail loudly.** `npm run sim -- start` fails if driving hands-off ever
+  reaches the podium (or isn't last with the starter car at +0 and +1), or if the starter car wins the first race.
+  `npm run career` fails on a rank that stays stuck for 60 days or a rank cap it never reaches, and prints the day
+  each world opens.
+- **`npm run sweep`** checks every screen at all 7 sizes by itself: it starts the dev server, drives a headless
+  browser with a throwaway save, saves pictures of the main screens and one race per world, and cleans up.
+- The layout checker no longer flags the TURBO / DASH title (drawn tight on purpose) or the red "!" badge on Main
+  Street's arrows.
+- American spelling everywhere: a few British spellings in the notes and code comments are fixed, and `npm test`
+  now fails if one comes back.
+
 ## v1.11.1 — Back on the road 🛣️
 
 - **Fix:** v1.11.0's faster road drawing left out six things painted on the road: boost pads, rain puddles, ocean
   currents, Downtown crosswalks, skid marks and the shine on ice. They still pushed the car but couldn't be seen.
-  All six are back, exactly as in v1.10. A new drawing test races on tracks with each one and fails if its colour
+  All six are back, exactly as in v1.10. A new drawing test races on tracks with each one and fails if its color
   is never painted.
-- **Fix:** Toy Track World's colourful play rug was missing (a code comment had swallowed the line that adds it).
+- **Fix:** Toy Track World's colorful play rug was missing (a code comment had swallowed the line that adds it).
   It's back, with a check that it stays in the room.
 - The road drawing is still faster than v1.10, by 13 to 26% fewer canvas calls (the v1.11.0 notes said about a
   quarter; that was measured without the six things above).
@@ -31,7 +49,7 @@
 - **Graphics:**
   - Stars stay put when the horizon moves (they used to jitter and wrap).
   - The far end of the road fades into the haze instead of ending in a hard stub; Lava and the Caves have their own
-    haze colour (it was orange and purple).
+    haze color (it was orange and purple).
   - Tunnels have a rocky rim around the way out, and far-off tunnels are solid, not see-through.
   - Snow always falls on Snowy Peaks.
   - Coins, pearls, boxes and lava flames keep their own sparkle instead of flickering as they slide sideways.
@@ -60,7 +78,7 @@
   - Roadside things wholly hidden behind a hill crest are skipped (up to 50 a frame on the Moon and Glacier).
   - Small roadside things and far rival cars are drawn from little pictures made once, instead of 30 to 200 canvas
     calls each. Things that move or blink (flames, ghosts, lights, windmills, balloons) only do that when they are
-    tiny, and every picture keeps the colours of the thing it shows.
+    tiny, and every picture keeps the colors of the thing it shows.
   - The rain, underwater and tunnel tints are a see-through layer over the game instead of being painted into
     every frame.
   - On ice only the two nearest rivals get a reflection.
@@ -175,7 +193,7 @@
   "Hold ◀ or ▶ to steer!" until both have been used, then at 🚀 the first time Turbo is full, until it's used.
 - **Turbo always answers.** Tapping 🚀 before the meter is full used to do nothing; now the button shakes, a
   "nope" sounds and "Turbo is filling up!" shows, so it never feels broken.
-- **Fixed:** at the start of a race the view could sit off to one side (the car drawn right of centre) because the
+- **Fixed:** at the start of a race the view could sit off to one side (the car drawn right of center) because the
   camera kept its position from the race before. It now starts on the car every race.
 
 ## v1.7.0 — Clean screens, real road 🛣️
@@ -199,7 +217,7 @@
 **Screens**
 - **The back button is top-left** on every screen and goes back to where you came from (it used to always go to
   Main Street). Coins sit top-right on those screens.
-- **Content sits in the middle** of each screen instead of hugging the top; Settings tiles are centred in rows.
+- **Content sits in the middle** of each screen instead of hugging the top; Settings tiles are centered in rows.
 - **Less to read:** the track picker shows the open tracks plus only the next locked one (stars appear after the
   first win); race tabs appear one rank before they open; Turbo Lab cards show just the picture, name and price,
   with the details on a tap; the bank's fine print moved to Parent Progress.
@@ -385,7 +403,7 @@ The 1.0 milestone: everything from the roadmap's 1.0 plan in one big release, th
   barns and a windmill; a pirate ship, parrots and cannons; covered bridges, ducks and the Great Miami River).
   They branch off Beach Boardwalk, Desert Dash and Autumn Forest, so no track an older save had open closes.
 - **🌾 Country Cup** (Farm, Pirate, River) with a new prize car, the 🚜 **Barnstormer**.
-- **🌧️ Weather:** about one Earth race in four is rainy (grey sky, rain streaks, puddles that splash and nudge
+- **🌧️ Weather:** about one Earth race in four is rainy (gray sky, rain streaks, puddles that splash and nudge
   you sideways, a soft rain sound) or snowy on Snowy Peaks. Parent Corner can switch it off.
 - **🧼 Car Wash** (Rank 4): cars get a little muddier every race (you can see the splats). Rub the car clean with
   your finger; a freshly washed car earns a ✨ sparkly bonus on its next race (once a day).
@@ -422,7 +440,7 @@ The 1.0 milestone: everything from the roadmap's 1.0 plan in one big release, th
 - Museum text from a save code is always shown as text; worlds an older save already raced don't get a new "first
   race" entry; the Fire Station's truck goes in the Museum.
 - The sparkle bonus shows on the result card instead of a toast that another toast could replace.
-- The name screen has a Back button when opened from Settings; re-pasting this tablet's own save code is recognised.
+- The name screen has a Back button when opened from Settings; re-pasting this tablet's own save code is recognized.
 - The splash can never block the game (a fail-safe removes it), and a tap that skips it doesn't press PLAY.
 - Emoji icons get room on the garage, Settings, trophy and cup cards at large sizes; Main Street's arrows fit inside
   the road at any height; locked track cards in portrait.

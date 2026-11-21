@@ -1,5 +1,5 @@
-// Build a tagged release into live/, which `npm run play` serves on port 5173.
-// Usage: npm run release            -> tags v<package.json version> at HEAD (tree must be clean) and builds it
+// Build a tagged release into live/, which `npm run play` serves on port 5183.
+// Usage: npm run check, then npm run release -> tags v<package.json version> at HEAD (tree must be clean) and builds it
 //        npm run release -- v0.2.0  -> rebuilds an existing tag
 // Only committed, tagged code ever reaches the play server, so work in progress can't break a running game.
 import { execSync } from "node:child_process";
@@ -10,13 +10,17 @@ import { build } from "vite";
 const root = resolve(import.meta.dirname, "..");
 const sh = cmd => execSync(cmd, { cwd: root, encoding: "utf8" }).trim();
 
-// Never ship a release that can't load an older save.
-try { execSync("npm test", { cwd: root, stdio: "inherit" }); }
-catch (e) { console.error("Save test failed: release stopped."); process.exit(1); }
-
 let tag = process.argv[2];
 if (!tag) {
   if (sh("git status --porcelain")) { console.error("Working tree has uncommitted changes. Commit first."); process.exit(1); }
+  // v1.11.2: a new release only after `npm run check` (tests, drawing budget, hands-off sim, career) passed on
+  // this very commit. Rebuilding an existing tag (npm run release -- v1.2.3) is a rollback to code that shipped
+  // before, so it skips this.
+  const pass = (() => { try { return JSON.parse(readFileSync(join(root, ".check-pass"), "utf8")); } catch { return null; } })();
+  if (pass?.head !== sh("git rev-parse HEAD")) {
+    console.error(pass ? `npm run check passed on ${pass.head.slice(0, 7)}, not on this commit. Run npm run check first.` : "npm run check has not passed on this commit. Run it first.");
+    process.exit(1);
+  }
   tag = "v" + JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
   const exists = sh(`git tag --list ${tag}`);
   if (exists && sh(`git rev-list -n1 ${tag}`) !== sh("git rev-parse HEAD")) { console.error(`${tag} already exists on another commit. Bump the version.`); process.exit(1); }

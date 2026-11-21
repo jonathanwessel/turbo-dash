@@ -287,7 +287,7 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
     }
     check("chevrons before sharp curves", curves > 10 && missing === 0 && solid === 0, `${curves} curves, ${missing} without chevrons on the outside, ${solid} solid`);
   }
-  // the rubber band fades in: no jump bigger than 0.5% between neighbouring gaps
+  // the rubber band fades in: no jump bigger than 0.5% between neighboring gaps
   {
     let worst = 0;
     for (const df of ["easy", "normal", "hard"]) for (let g = -120; g < 120; g += 0.25) worst = Math.max(worst, Math.abs(rubberBand(g + 0.25, df, 2) - rubberBand(g, df, 2)));

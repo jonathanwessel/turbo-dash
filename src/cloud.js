@@ -36,7 +36,7 @@ function getToken(quiet) {
     client = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID, scope: SCOPE,
       callback: r => { if (r.error) return rej(new Error(r.error)); token = r.access_token; tokenUntil = Date.now() + (r.expires_in - 60) * 1000; res(); },
-      error_callback: e => rej(new Error(e.type || "cancelled")),
+      error_callback: e => rej(new Error(e.type || "canceled")),
     });
     client.requestAccessToken({ prompt: quiet ? "" : "consent" });
   }));

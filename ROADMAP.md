@@ -162,7 +162,7 @@ supported by the engine) and its own cars, lab kit and boss:
 ### v0.15.0 🌙 Moon Base (shipped)
 The first new world: four low-gravity tracks, gaps to jump, boost rings, Thrusters part, Moon Tires research, two
 moon cars, a Moon boss rival. Rank cap 25.
-- **Graphics:** a full moon art set: grey crater roadsides, Earth in the sky, stars, little dust puffs.
+- **Graphics:** a full moon art set: gray crater roadsides, Earth in the sky, stars, little dust puffs.
 - **Interface:** the world picker becomes a world map.
 
 ### v0.16.0 Main Street Grows & Bosses (shipped)
@@ -230,7 +230,7 @@ Races at three-quarter speed with an mph speedometer; Piqua National Bank (7% a 
 rank); every building's menus show the inside of that building.
 
 ### v1.7.0 🛣️ Clean screens, real road (shipped)
-The evaluation of v1.6: one panel template (back top-left, centred content), less text on the busiest screens, a
+The evaluation of v1.6: one panel template (back top-left, centered content), less text on the busiest screens, a
 Next sign and at most two badges on Main Street; shared reward rules for the game and the career simulator; curve
 chevrons, friendlier bumps, a smooth rubber band, hills that move the background, cheaper drawing.
 Still to do from it: rewriting the remaining ~55 repeated stylesheet rules by hand (they override each other on
@@ -296,8 +296,17 @@ The rest of the same review, plus the owner's answer on world cars:
   (rebuilds the picture, keeps the race); start line and arch on the banked road; never below the floor.
 - **Step-independent jumps, seeded race luck, stars, haze, tunnel exits, Snowy Peaks snow, no shimmer.**
 - **Road drawn in layers** (P8), 3 cached tracks (P10), less per-frame garbage (P11), view lifecycle fixes (T5).
-- Lesson: a balance target written as "the previous car can win" only works if the cars of neighbouring worlds are
+- Lesson: a balance target written as "the previous car can win" only works if the cars of neighboring worlds are
   close in stats; check both ends (Normal for the old car, Hard for the new one) before tuning.
+
+### v1.11.1 🛣️ Back on the road (shipped)
+The six road features and the play rug lost in v1.11.0, back, with a drawing test per feature.
+
+### v1.11.2 🧰 Checks that can't be skipped (shipped)
+`npm run check` (tests, drawing budget, hands-off sim, career; stops at the first failure, and `npm run release`
+needs a pass on the same commit) and `npm run sweep` (all 7 sizes in headless Edge, pictures in `.sweep/`).
+- Lesson: a check that only prints a table is not a check. The hands-off sim had been printing 4th and 5th places
+  at +2/+3 (rivals easing off to wait) for a while; nobody saw it until the script had to decide pass or fail.
 
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers

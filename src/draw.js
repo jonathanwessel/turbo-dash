@@ -290,7 +290,7 @@ export const COIN_TOP = 0.55, RING_TOP = 0.7, PEARL_TOP = 0.8, BOX_TOP = 0.78, C
    lights) only use a picture when they are tiny, where the motion can't be seen. Outside a browser (the tests and
    simulators) there is no canvas to draw into, so everything is drawn the normal way. */
 const ANIMATED = new Set(["windmill", "gear", "parrot", "duck", "balloons", "flower", "lavaflame", "planet", "ufo", "volcanorock", "trafficlight", "dish", "kelp", "treasure", "jelly", "anemone", "corn", "cattail", "ghost", "jackolantern", "spookytree", "hauntedhouse", "robot", "smokestack", "glowshroom", "icecrystal"]);
-// VARIED things take colours from their own number (seed): their picture is made per seed % 30, which keeps every
+// VARIED things take colors from their own number (seed): their picture is made per seed % 30, which keeps every
 // pattern the drawers use (% 2, % 3, % 5, (>> 1) % 3), and only up to 48 px so 30 variants stay small.
 // SWAY_OK things sway a few percent of their width: a still picture up to 48 px (at most a 2 px sway) is fine.
 export const SWAY_OK = new Set(["tree", "autumnTree", "cow", "snowfort", "tent"]);

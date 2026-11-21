@@ -43,23 +43,23 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 - Nothing is ever for real money. Timers can only be rushed with in-game coins.
 
 ## Release checklist (every release; stop and fix on any failure)
-1. `npm test` passes.
-2. `npm run perf` prints `All drawing budgets met`. Re-record the budget only when the picture gained something
-   on purpose, and say so in the changelog.
-3. `npm run sim -- start`: hands-off finishes last. Run the sim for any track, car or physics you changed.
-4. `npm run career`: no gate that never opens. Write the day of Rank 40 (and of each world opening) in the notes.
-5. The screen sweep at all 7 sizes, in a headless browser with a throwaway profile against the dev server on
-   port 5184 (`await __sweepAll()` from `src/dev/audit.js`). After M0 this is `npm run sweep`. No overlap, no
-   spill, no "null".
-6. Screenshots of every screen you changed, plus one race frame per world. Look at each one. Then a helper that
-   sees only the screenshots reads every visible line and flags anything a young player could not follow.
-7. Bump the version in `package.json`, add the `CHANGELOG.md` entry and the "What's new" entry (after M0), and a
+1. `npm run check` passes: `npm test`, the drawing budget (`npm run perf`), the hands-off sim
+   (`npm run sim -- start`) and the whole career run (`npm run career`), stopping at the first failure. It takes
+   about 2 minutes. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
+   something on purpose, and say so in the changelog. Run the full sim for any track, car or physics you changed.
+   Write the day of Rank 40 and of each world opening (the career run's last line) in the notes.
+2. `npm run sweep`: every screen at all 7 sizes in headless Edge with a throwaway save, about 20 minutes (run it in
+   the background, and save no source file while it runs: the dev server reloads the page). No overlap, no spill,
+   no "null". Pictures land in `.sweep/`.
+3. Look at the sweep's pictures of every screen you changed, plus its race frame per world. Then a helper that sees
+   only the pictures reads every visible line and flags anything a young player could not follow.
+4. Bump the version in `package.json`, add the `CHANGELOG.md` entry and the "What's new" entry (after M0), and a
    one-line "shipped" entry in `ROADMAP.md`.
-8. Commit, then `npm run release` (it runs the tests, tags and builds the home copy). Then
-   `git push origin main --tags`.
-9. Wait for the Pages build to pass. Confirm the live `version.json` shows the new version. After M0, run the
+5. Commit. Run `npm run check` again on that commit (`npm run release` refuses a commit the check has not passed
+   on), then `npm run release` (it tags and builds the home copy). Then `git push origin main --tags`.
+6. Wait for the Pages build to pass. Confirm the live `version.json` shows the new version. After M0, run the
    install test and the update test against the live site.
-10. Tell the owner: the pushed tag makes a GitHub release (after M0), plus one push notification, best effort.
+7. Tell the owner: the pushed tag makes a GitHub release (after M0), plus one push notification, best effort.
 
 Until a tool exists, the box that creates it is the first to use it. Skip the steps for tools that do not exist yet.
 
@@ -68,10 +68,25 @@ Until a tool exists, the box that creates it is the first to use it. Skip the st
 ### M0. Safety net (no visible change except "What's new")
 Unattended releases need checks that cannot be skipped. v1.11.0 shipped with six road features missing and
 every test green.
-- [ ] **One command for the checks.** `npm run check` runs steps 1 to 4 with `set -o pipefail` behavior: any
+- [x] **One command for the checks.** `npm run check` runs steps 1 to 4 with `set -o pipefail` behavior: any
   failure stops it with a non-zero exit. `npm run release` refuses to run unless the check passed on this commit.
-- [ ] **The sweep as a script.** `npm run sweep`: starts the dev server, drives a headless browser over CDP with
+  Notes: v1.11.2. `scripts/check.mjs` writes `.check-pass` (git-ignored) with the commit, only on a clean tree;
+  `release.mjs` compares it with HEAD (it no longer runs `npm test` itself). Rebuilding an existing tag
+  (`npm run release -- v1.2.3`) skips the check: it is a rollback to code that already shipped. The sim and the
+  career run had only printed tables; both now exit 1 on failure. Decision: the hands-off sim was found placing
+  4th or 5th at +2 and +3 in some runs (rivals ease off to 0.93 to wait on the first track), so "finishes last" is
+  gated as: never on the podium at any level, always last at +0 and +1, a printed warning at +2 and +3. The
+  stricter rule has its own fix box in M1. Proved: a broken drawing budget stops the check at step 2 and no pass
+  is written. Career at this commit: Rank 40 on day 550, Moon day 111, Ocean 194, Glacier 285, Toy 413.
+- [x] **The sweep as a script.** `npm run sweep`: starts the dev server, drives a headless browser over CDP with
   a throwaway profile, runs `__sweepAll()` at all 7 sizes, saves screenshots, stops the server and the browser.
+  Notes: v1.11.2. `scripts/sweep.mjs`: vite on 127.0.0.1:5184, Edge with a temp profile on CDP port 9334, waits
+  for the fonts before measuring, 8 main screens per size and one race frame per world at 1280x800, a report.json,
+  exit 1 on any problem. `-- 1280x800` runs one size; `--probe "<js>"` evaluates one expression and saves
+  probe.png (for chasing a flag). Its first run flagged two things that are drawn that way on purpose: the TURBO /
+  DASH lines' text boxes overlap (the letters do not), and the red "!" badge sits outside Main Street's arrow.
+  The checker now skips exactly those two (spans of one `.logo`, absolutely placed badges up to 32 px), after
+  looking at the pictures. About 140 s per size.
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
 - [ ] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
@@ -84,6 +99,10 @@ every test green.
   red. Put it back and it is green.
 
 ### M1. Rivals with character (v1.12)
+- [ ] **Hands-off is last again at +2 and +3.** Found by `npm run check` (v1.11.2): driving hands-off with the
+  starter car at +2 or +3 sometimes passes one or two rivals on Sunny Hills, because rivals ahead ease off to 0.93
+  to wait. Rivals should not wait for a car that is not steering (for example, no easing while the player is off
+  the road). Then make `npm run sim -- start` strict again: last at every level.
 - [ ] **Rival of the week.** The named rivals take turns. This week's rival is in every race, and gets a little
   faster each time the player beats them, within a cap. A new week resets it.
 - [ ] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
@@ -152,3 +171,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
 ## Roadmap notes
 - 2026-11-20: plan written from the owner's review of enhancement ideas. "Race together on one tablet" was
   turned down. Pace set to one run every 4 hours.
+- 2026-11-20 (v1.11.2): M0 boxes 1 and 2 done. Checklist rewritten around `npm run check` and `npm run sweep`,
+  with the check run again on the release commit (the release script now insists). Added the M1 box "Hands-off is
+  last again", found when the sim had to pass or fail instead of print. Rule learned: a check that only prints is
+  not a check; every script in the checklist exits non-zero when its target is missed.
+  Also: British spellings had come back in the changelog, roadmap and comments (colour, centre, grey), so
+  `npm test` now runs `scripts/test-spelling.mjs`, which fails on them. The sweep's first full run left 28 headless
+  Edge processes behind and was cut short by a source file saved during it; the script now closes the browser and
+  everything using its profile, and says so when the page reloads under it. Never edit files under `src/`,
+  `index.html` or `styles.css` while a sweep runs. Pacing: v1.11.1 and v1.11.2 were fix and tool releases. At most
+  one more M0 release (v1.11.3, the picture guard plus "What's new" and the release workflow) before the next
+  release must move the game forward; if M0 is not finished by then, the rest of M0 rides along with M1 work.

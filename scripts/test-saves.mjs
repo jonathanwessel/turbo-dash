@@ -1,5 +1,5 @@
 // Save test: a save from EVERY past release must load into the current version with nothing lost.
-//   npm test        (also runs automatically before `npm run release`)
+//   npm test        (also the first step of `npm run check`, which must pass before `npm run release`)
 // Add a new fixture here whenever a release changes what the save looks like.
 
 // the save module touches a few browser globals; give it a tiny stand-in

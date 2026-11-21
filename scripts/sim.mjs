@@ -2,7 +2,7 @@
 //   npm run sim             -> finishing places per car tier, track and difficulty
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
 //   npm run sim -- ladder   -> wins per car on every Earth track, easiest first (finds difficulty gaps)
-import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
+import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { race, runRace } from "./racebot.mjs";
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });
@@ -66,11 +66,21 @@ if (mode === "journey") journey(process.argv[3] || "normal");
 else if (mode === "auto") auto();
 else if (mode === "start") {
   // first races of a brand-new save: hands off must never place; a kid with the starter car should not win yet
-  const z = CARS[0], t = TRACKS[0];
+  // v1.11.2: exits 1 (so `npm run check` stops) if hands-off ever reaches the podium (a podium opens the next
+  // track), is not last at +0 or +1, or the kid driver wins with the starter car at +0. At +2 and +3 hands-off
+  // sometimes passes one or two rivals that ease off to wait (soft catch-up); that is printed as a warning and has
+  // its own box in PLAN.md (M1). The "good" driver at +0 is only printed: it is a skilled player.
+  const z = CARS[0], t = TRACKS[0], last = RIVALS.length + 1, bad = [], warn = [];
   for (const bot of ["none", "kid", "good"]) for (const up of [0, 1, 2, 3]) {
-    const places = Array.from({ length: 6 }, () => runRace(t, z, lvl(up), "normal", bot).place);
+    const places = Array.from({ length: 6 }, () => runRace(t, z, lvl(up), "normal", bot).place), best = Math.min(...places);
     console.log(`  ${bot.padEnd(5)} Zippy +${up} on Sunny Hills: ${places.join(" ")}`);
+    if (bot === "none" && best <= 3) bad.push(`hands-off Zippy +${up} reached place ${best}`);
+    else if (bot === "none" && best < last) (up <= 1 ? bad : warn).push(`hands-off Zippy +${up} placed ${best}, not last (${last})`);
+    if (bot === "kid" && up === 0 && places.includes(1)) bad.push("the kid driver won the first race with the starter car at +0");
   }
+  if (warn.length) console.log("\n! " + warn.join("\n! "));
+  if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
+  console.log("\n✔ Hands-off never reaches the podium and the starter car does not win the first race");
 }
 else if (mode === "ladder") {
   // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.

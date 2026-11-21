@@ -190,3 +190,16 @@ console.log(`\nCareer: ${RACES_PER_DAY} races a day (${Math.round(RACES_PER_DAY 
 for (const g of gates) console.log(`  ${months(g.day).padEnd(24)} race ${String(g.race).padStart(5)}  ${g.text}`);
 console.log(`\nAfter ${Math.min(day, MAX_DAYS)} days: rank ${S.rank}, Auto Steer ${lv("autoSteer")}, coins ${S.coins}, chips ${S.chips}, research levels ${Object.values(S.research).reduce((a, b) => a + b, 0)}, cars ${S.owned.length}/${CARS.length}`);
 const need = rankNeeds(S.rank, S); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
+
+// v1.11.2: a gate that never opens fails the run (exit 1), so `npm run check` stops: a STUCK rank, or the rank
+// cap not reached within the days played. A short run (npm run career -- 12 100) fails on purpose: the cap is
+// out of reach in 100 days.
+const stuck = gates.filter(g => g.key.startsWith("stuck"));
+if (stuck.length || S.rank < RANK_CAP) {
+  console.log("\n✖ " + [...stuck.map(g => g.text), ...(S.rank < RANK_CAP ? [`Rank cap ${RANK_CAP} not reached in ${MAX_DAYS} days (rank ${S.rank})`] : [])].join("\n✖ "));
+  process.exit(1);
+}
+const at = key => gates.find(g => g.key === key)?.day;
+const worlds = [...new Set(TRACKS.map(t => t.world))].filter(w => w !== "earth");
+const opened = w => Math.min(...gates.filter(g => g.key.startsWith("open:") && TRACKS.find(t => "open:" + t.id === g.key)?.world === w).map(g => g.day));
+console.log(`\n✔ No stuck gate. Rank ${RANK_CAP} on day ${at("cap")}. Worlds open on day: ` + worlds.map(w => `${w} ${opened(w)}`).join(", "));

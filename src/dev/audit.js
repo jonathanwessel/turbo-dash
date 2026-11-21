@@ -69,11 +69,19 @@ window.__audit = (rootSel) => {
     if (!it.scrolled && (it.r.left < -2 || it.r.top < -2 || it.r.right > W + 2 || it.r.bottom > H + 2)) issues.push("OFF-SCREEN " + name(it.e) + ` [${Math.round(it.r.left)},${Math.round(it.r.top)},${Math.round(it.r.right)},${Math.round(it.r.bottom)}]`);
     if (it.clipped) issues.push("CUT OFF " + name(it.e) + " by " + it.clipped);
     const e = it.e;
-    if (e.tagName === "BUTTON" && (e.scrollWidth > e.clientWidth + 3 || e.scrollHeight > e.clientHeight + 3)) issues.push("TEXT SPILLS " + name(e));
+    const spills = () => e.scrollWidth > e.clientWidth + 3 || e.scrollHeight > e.clientHeight + 3;
+    if (e.tagName === "BUTTON" && spills()) {
+      // v1.11.2: a small corner badge placed outside the button on purpose (the red "!" on Main Street's arrows)
+      // is not spilled text: measure again without absolutely placed badges of at most 32 px
+      const badges = [...e.querySelectorAll("*")].filter(c => getComputedStyle(c).position === "absolute" && c.offsetWidth <= 32 && c.offsetHeight <= 32);
+      const was = badges.map(c => c.style.display); badges.forEach(c => c.style.display = "none"); const still = spills(); badges.forEach((c, i) => c.style.display = was[i]);
+      if (still) issues.push("TEXT SPILLS " + name(e));
+    }
   }
   for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
     const A = items[i], B = items[j];
     if (A.e.contains(B.e) || B.e.contains(A.e)) continue;
+    if (A.e.parentElement === B.e.parentElement && A.e.parentElement?.classList.contains("logo")) continue;   // the TURBO / DASH lockup is drawn tight on purpose
     const ix = Math.min(A.r.right, B.r.right) - Math.max(A.r.left, B.r.left), iy = Math.min(A.r.bottom, B.r.bottom) - Math.max(A.r.top, B.r.top);
     if (ix > 3 && iy > 3) {
       const small = Math.min((A.r.right - A.r.left) * (A.r.bottom - A.r.top), (B.r.right - B.r.left) * (B.r.bottom - B.r.top));

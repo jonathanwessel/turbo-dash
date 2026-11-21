@@ -223,7 +223,7 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false; this.quality = this.quality || 3;
-    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centred on the car
+    this.driftT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centered on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     this.luck = seededRng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks, boss Turbo timing, puddle shoves (v1.11)
     const d = track.diff;
@@ -663,7 +663,7 @@ export class Race {
     // of the road nothing of the sky or the hills would ever be seen. The background is only painted above it.
     let maxy = H, x = 0, dx = -(base.curve * basePct), low = 0;
     const camOff = this.camOff ?? p.offset, camX = camOff * ROAD_W, camY = playerY + CAM_H + p.air * 0.55;
-    const carShift = (p.offset - camOff) * H;   // how far the car sits from the screen centre (road half-width at the car is H px)
+    const carShift = (p.offset - camOff) * H;   // how far the car sits from the screen center (road half-width at the car is H px)
     const shown = this.shown || (this.shown = []); shown.length = 0;
     const drawn = this.drawn || (this.drawn = { sprites: 0, pics: 0, skipped: 0 }); drawn.sprites = drawn.pics = drawn.skipped = 0;   // for scripts/perf.mjs
     for (let n = 0; n < DRAW_DIST; n++) {
@@ -805,7 +805,7 @@ export class Race {
       ctx.stroke();
     }
 
-    // full-screen tints (tunnel shade, rain grey, sea blue) are a see-through layer over the canvas, which the
+    // full-screen tints (tunnel shade, rain gray, sea blue) are a see-through layer over the canvas, which the
     // browser blends for free, instead of one more canvas-full of pixels every frame (v1.10). main.js shows it.
     this.tint = (this.inTunnel ? "linear-gradient(rgba(10,8,20,0.28),rgba(10,8,20,0.28))," : "") + (this.weather === "rain" ? "linear-gradient(rgba(40,60,90,0.18),rgba(40,60,90,0.18))," : "")
       + (th.water ? "linear-gradient(rgba(20,120,170,0.04),rgba(10,70,120,0.16))," : "");
@@ -815,7 +815,7 @@ export class Race {
       ctx.stroke();
     }
     if (this.weather === "rain") {
-      // rain: streaks falling at a slant that follows the curves (the grey tint is the layer above)
+      // rain: streaks falling at a slant that follows the curves (the gray tint is the layer above)
       ctx.strokeStyle = "rgba(220,235,255,0.55)"; ctx.lineWidth = Math.max(1, H * 0.003); ctx.beginPath();
       const slant = 0.25;
       for (let i = 0; i < 90; i++) {

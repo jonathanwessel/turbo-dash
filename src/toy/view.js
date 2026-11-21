@@ -221,7 +221,7 @@ function trackMeshes(T, pal) {
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
   // the road only receives shadows: casting them redrew its 30,000+ triangles in the shadow pass every frame (v1.10).
   // Shared corners are merged (an indexed mesh) and the plastic is a plain shiny material, not a clear-coated one.
-  // smooth shading along each piece (v1.11): shared corners of the same colour are merged, then normals are averaged
+  // smooth shading along each piece (v1.11): shared corners of the same color are merged, then normals are averaged
   geo.deleteAttribute("normal"); const roadGeo = mergeVertices(geo); roadGeo.computeVertexNormals();
   const road = new THREE.Mesh(roadGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.05, side: THREE.DoubleSide }));
   road.castShadow = false; road.receiveShadow = true; grp.add(road);
@@ -302,7 +302,7 @@ export class ToyView {
     this.tier = tier; this.light = tier !== "full"; this.min = tier === "min";
     const R = this.renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !this.light, powerPreference: this.min ? "default" : "high-performance" });
     R.shadowMap.enabled = !this.min; R.shadowMap.type = this.light ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; R.toneMapping = this.min ? THREE.NoToneMapping : THREE.NeutralToneMapping; R.toneMappingExposure = 1.0;
-    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#bfe4ff", 260, 900);   // the same colour as the sky behind it (v1.11)
+    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color("#bfe4ff"); this.scene.fog = new THREE.Fog("#bfe4ff", 260, 900);   // the same color as the sky behind it (v1.11)
     // Shiny reflections need a room "environment map", which needs half-float render targets. Many tablets can't
     // render to those, and a broken map blows the whole picture out to white. No support: no map (safe look).
     this.diag = { why: "" };
