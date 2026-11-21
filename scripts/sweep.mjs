@@ -84,9 +84,15 @@ async function main() {
     await load();
     const issues = await js("__sweepAll()");
     report[size] = issues;
-    // the main screens with a mid-game save, so most of Main Street and the menus are open
-    await js("Object.assign(__td.S, { rank: 16, world: 'earth' }); true");
-    for (const s of SHOTS) { await js(`(${s === "s-hub" ? "__td.goHub()" : `__td.show(${JSON.stringify(s)})`}, true)`); await wait(500); await shot(`${size}-${s}`); }
+    // the main screens with a real mid-game save (the career bot's Rank 16), so most of Main Street and the menus
+    // are open. Toasts are hidden: a pop-up left over from the sweep (a School lap's bonus) is not part of a screen.
+    await js("Object.assign(__td.S, __mid()); __td.refreshCoins(); document.head.insertAdjacentHTML('beforeend', '<style>#toast{display:none!important}</style>'); true");
+    // each screen opened the way the player opens it (its Main Street button), so it is painted from this save
+    const GO = { "s-garage": "garage", "s-tracks": "race", "s-rank": "rank", "s-school": "school", "s-lab": "lab", "s-trophies": "trophy" };
+    for (const s of SHOTS) {
+      await js(s === "s-title" ? "(__td.show('s-title'), true)" : `(__td.goHub(), ${GO[s] ? `document.querySelector('[data-go="${GO[s]}"]').dispatchEvent(new MouseEvent("click", { bubbles: true })), ` : ""}true)`);
+      await wait(500); await shot(`${size}-${s}`);
+    }
     const n = Object.keys(issues).length;
     console.log(`${size.padEnd(10)} ${n ? "✖ " + n + " screens with problems" : "✔ every screen fits"}  (${((Date.now() - t) / 1000).toFixed(0)}s)`);
     for (const [k, v] of Object.entries(issues)) console.log(`   ${k}: ${[].concat(v).slice(0, 4).join(" | ")}`);

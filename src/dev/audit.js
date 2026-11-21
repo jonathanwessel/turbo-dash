@@ -3,6 +3,11 @@
 // window size; await __sweepAll() also tries a brand-new, a mid-game and the current save (and every garage car).
 // __audit("#s-result") checks one. Besides layout it flags broken words (null, undefined, NaN) anywhere on screen. Run it at a few sizes (e.g. 1000x448, 1024x600, 1280x800) before a release.
 import { RESEARCH } from "../data.js";
+import { port } from "../save.js";
+// a save the career bot really reached (Rank 16, day 62: npm run career with CAREER_SNAP=16:src/dev/mid-save.json),
+// so the sweep's pictures show numbers a real player could have, not a made-up rank with 0 wins
+import MID from "./mid-save.json";
+window.__mid = () => port(JSON.parse(JSON.stringify(MID)));
 window.__audit = (rootSel) => {
   const W = innerWidth, H = innerHeight, root = document.querySelector(rootSel);
   if (!root) return { err: "no " + rootSel };
@@ -38,7 +43,8 @@ window.__audit = (rootSel) => {
   const issues = unreachable.map(u => "CAN'T SCROLL TO " + u);
   // a screen's big green buttons must be on screen without scrolling (v1.9: Word Lap hid below the School). Small
   // Back and Done buttons at the end of the long grown-up pages (Progress, Guide, Parent Corner) are meant to be scrolled to.
-  for (const e of root.querySelectorAll(".big-btn.go:not(.small)")) if (vis(e)) { const r = e.getBoundingClientRect(); if (r.bottom > H + 2 || r.right > W + 2) issues.push("NEEDS SCROLLING " + name(e)); }
+  // v1.11.3: the Racer Rank hint and its Rank up button too (the hint sat below the gauges, off a 360 px screen)
+  for (const e of root.querySelectorAll(".big-btn.go:not(.small), .rank-up-btn, .rk-hint")) if (vis(e)) { const r = e.getBoundingClientRect(); if (r.bottom > H + 2 || r.right > W + 2) issues.push("NEEDS SCROLLING " + name(e)); }
   // Turbo Lab: every open card of a research with more than one level shows its level (v1.9.1: v1.7 had hidden it)
   for (const c of root.querySelectorAll("#lab-list .proj[data-info]")) {
     const r = RESEARCH.find(x => x.id === c.dataset.info); if (!r || r.max <= 1 || !vis(c) || !window.__td || window.__td.S.rank < r.rank) continue;
@@ -51,6 +57,11 @@ window.__audit = (rootSel) => {
   const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker2.nextNode());) if (BAD.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("BAD TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
   for (const el of root.querySelectorAll("[title],[aria-label]")) for (const a of ["title", "aria-label"]) if (BAD.test(el.getAttribute(a) || "")) issues.push("BAD TEXT in " + a + " of " + name(el));
+  // v1.11.3: game text has no colons or semicolons (games/CLAUDE.md "Words players see"). The grown-up pages behind
+  // the grown-up check are written for a parent and may use them. Clock times (1:05) are fine.
+  const GROWN = "#s-parent, #s-progress, #s-guide, #s-log, #s-grownup, #s-reset";
+  const walker3 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n; (n = walker3.nextNode());) if (/[^\d\s][:;](\s|$)/.test(n.textContent) && n.parentElement && vis(n.parentElement) && !n.parentElement.closest(GROWN)) issues.push("COLON IN GAME TEXT " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 40));
   // 🖼️ pictures drawn as SVG (Main Street): every label must fit on its sign board, and no button may sit on a label
   const svgVis = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const st = getComputedStyle(e); if (st.display === "none" || st.visibility === "hidden" || e.getAttribute?.("style")?.includes("display:none")) return false; } return true; };
   const svgTexts = [...root.querySelectorAll("svg text")].filter(t => t.textContent.trim() && svgVis(t));
@@ -70,7 +81,7 @@ window.__audit = (rootSel) => {
     if (it.clipped) issues.push("CUT OFF " + name(it.e) + " by " + it.clipped);
     const e = it.e;
     const spills = () => e.scrollWidth > e.clientWidth + 3 || e.scrollHeight > e.clientHeight + 3;
-    if (e.tagName === "BUTTON" && spills()) {
+    if ((e.tagName === "BUTTON" || e.classList.contains("rk-hint")) && spills()) {   // v1.11.3: the Rank hint was squashed
       // v1.11.2: a small corner badge placed outside the button on purpose (the red "!" on Main Street's arrows)
       // is not spilled text: measure again without absolutely placed badges of at most 32 px
       const badges = [...e.querySelectorAll("*")].filter(c => getComputedStyle(c).position === "absolute" && c.offsetWidth <= 32 && c.offsetHeight <= 32);
@@ -95,7 +106,7 @@ window.__sweepAll = async () => {
   const keep = JSON.stringify(window.__td.S), out = {};
   const as = async (label, patch) => { Object.assign(window.__td.S, JSON.parse(keep), patch); const r = await window.__sweep(); for (const [k, v] of Object.entries(r)) out[label + " " + k] = v; };
   await as("new", { rank: 1, wins: 0, owned: ["zippy"], car: "zippy", world: "earth", best: {}, bestD: {}, research: {}, cups: {}, bosses: {} });
-  await as("mid", { rank: 16, world: "earth" });
+  await as("mid", window.__mid());
   await as("now", {});
   Object.assign(window.__td.S, JSON.parse(keep)); window.__td.goHub();
   return out;

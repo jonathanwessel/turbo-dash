@@ -5,6 +5,7 @@
 // missions, the Math/Word Lap Good Student bonus) and races with the real engine. Bank interest is modelled too.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
+import { writeFileSync } from "node:fs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
 import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
@@ -19,6 +20,7 @@ import {
 } from "../src/data.js";
 
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
+const SNAP = process.env.CAREER_SNAP ? { rank: +process.env.CAREER_SNAP.split(":")[0], file: process.env.CAREER_SNAP.split(":").slice(1).join(":") } : null;
 const NO_UPS = () => ({ engine: 0, turbo: 0, tires: 0, magnet: 0 });
 
 // a save-shaped state, so the game's own FRONTS/GOALS functions work on it
@@ -178,6 +180,9 @@ for (day = 1; day <= MAX_DAYS; day++) {
   // whatever wasn't spent goes in the bank, up to its limit
   if (BANK) { const n = Math.min(S.coins, Math.max(0, bankMax(S.rank) - S.bank.bal)); bankDeposit(S.bank, n, day * BANK_DAY); S.coins -= n; }
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
+  // CAREER_SNAP=16:src/dev/mid-save.json writes the bot's save the evening it first reaches Rank 16 (the sweep's
+  // pictures use it, so they show a save a real player could have, not made-up numbers)
+  if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 22, name: "Racer", world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
   if (day - lastRankDay > 60 && S.rank < RANK_CAP && !gates.some(g => g.key === "stuck" + S.rank)) {
     const need = rankNeeds(S.rank, S);
     gate("stuck" + S.rank, `⚠ STUCK at Rank ${S.rank} for 60 days: ` + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));

@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.11.3 — Plain words 🔤
+
+Small fixes to the words on screen, found by a helper reading the pictures of every screen.
+
+- **School:** the hard line "lap = +10% for 30 min" is gone. The big card just says "Do a lap. Get more coins!"
+- **No more colons in game words:** "Tricky bonus!", "Next is Rank 17", "Rank 12 opens Ice Cream Shop",
+  "School bonus +71", "You got 53!", and the rank-up card now says "You are a Pro!"
+- **Racer Rank** asks for a small next step ("Win 6 more races!") instead of a far total like "Win 66 more races!"
+- **Garage:** the Turbo upgrade says "Longer turbo", not "More nitro".
+- **Tracks:** Haunted Hill "Opens in fall" with its leaf picture, not "Opens in October". "Preview worlds" is now
+  "More worlds".
+- **Racer Rank:** the "Win 6 more races!" line and the Rank up button sit above the gauges, so a small screen shows
+  them without scrolling.
+- **Main Street:** the plate under the rank just says what to do ("Win more races ▶"). The School coach no longer
+  repeats the card.
+- For the grown-ups: the screen sweep now flags any colon or semicolon in game words (the grown-up pages may use
+  them), a new word test checks toasts and race pop-ups, and the sweep's pictures use a save the career bot really
+  reached at Rank 16 instead of made-up numbers, with no pop-ups over them.
+
 ## v1.11.2 — Checks that can't be skipped 🧰
 
 Nothing changes in the game itself. This release is for the grown-ups who build it.

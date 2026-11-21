@@ -87,7 +87,7 @@ every test green.
   DASH lines' text boxes overlap (the letters do not), and the red "!" badge sits outside Main Street's arrow.
   The checker now skips exactly those two (spans of one `.logo`, absolutely placed badges up to 32 px), after
   looking at the pictures. About 140 s per size.
-- [ ] **Fix the words the v1.11.2 picture review flagged** (all already live, none new in v1.11.2, so that
+- [x] **Fix the words the v1.11.2 picture review flagged** (all already live, none new in v1.11.2, so that
   release shipped and this box comes next). School: "lap = +10% for 30 min" becomes a picture line a child gets
   ("Do a lap. Get more coins!"). Colons in game text: "Bonus: tricky!", "Next: Rank 17", "Good Student bonus: +71".
   Garage: "More nitro" is jargon. Tracks: "Opens in October" (a month a young child can't read; use a picture).
@@ -97,6 +97,23 @@ every test green.
   from the sweep's own made-up save (rank 16 with 0 wins, school laps that pop the bonus toast): fix the sweep's
   pictures first so they show a real-looking save with no toasts, then judge the rest. The player's name and the
   home town stay (owner decision).
+  Notes: v1.11.3. Sweep pictures first: `src/dev/mid-save.json` is the career bot's own save on the evening it
+  reached Rank 16 (day 62, 574 wins, 13 cars; `CAREER_SNAP=16:src/dev/mid-save.json npm run career -- 12 200`
+  writes it again). The sweep's "mid" pass and its screenshots use it, open each screen by its Main Street button so
+  it is painted from that save, refresh the coin counter, and hide toasts. Words: School card "Do a lap. Get more
+  coins!" with the "lap = +10% for 30 min" line removed (it repeated the card), and the two coach lines that said it
+  a third time replaced. Colons gone: "Tricky bonus!", "Next is Rank 17", "Rank 12 opens 🍦 Ice Cream Shop", "School
+  bonus +🪙71", "You got 🪙53!", ice cream and picnic toasts, the bank's payday line, and the rank-up card now says
+  "You are a Pro!". The Main Street plate drops its "Next" word. Rank hint: the wins to the next multiple of 10
+  (`winsStep` in data.js), so 574 of 640 reads "Win 6 more races!". "Longer turbo", "Opens in fall" (the season
+  word, with the leaf picture; decision: a season a child knows beats a month name), "More worlds" for "Preview
+  worlds". Guards: the sweep's audit flags any colon or semicolon in game text (grown-up pages exempt), and
+  `scripts/test-words.mjs` (in `npm test`) checks toasts and race pop-ups, month names, upgrade words and
+  `winsStep`. The picture review of this build also found the Rank hint below the gauges on a 360 px screen: the
+  hint and the Rank up button now sit above the gauges, and the audit's "must be on screen" check covers them.
+  Looked again: Lab tier 3 blocks, the Races / Cups / Boss / Trials row at 740x360, "6th" in Deep Blue (the start
+  place) and the Toy World start camera all look right with the real save. The toast over the Next plate is a
+  2.6-second pop-up, left as is. The rest of that review became the boxes below and in M1.
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
 - [ ] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
@@ -109,6 +126,17 @@ every test green.
   red. Put it back and it is green.
 
 ### M1. Rivals with character (v1.12)
+- [ ] **Turbo Lab in plain words** (v1.11.3 picture review). "Lab tier 1/2/3" is a grown-up word (use a number
+  badge or "Row"). Prices like "39k" don't match the coin counter: show the full number. Projects such as Pit Crew,
+  Head Start, Reflexes, Map Memory and Brain Chip Socket need a two-word line like the Garage cards ("Start
+  faster"). Finished cards say "MAX!" on some and "Done" on others: pick one.
+- [ ] **Steering arrows stay visible** on snow (Glacier) and on Toy World's pastel colors: a darker rim.
+- [ ] **Main Street in portrait** fills the screen (v1.11.3 review: at 800x1280 the town sits in the bottom
+  quarter under empty sky and its labels are tiny). The game is played in landscape, so this rides along with any
+  M1 release, not on its own.
+- [ ] **Small word polish** from the v1.11.3 review: "Upgrades for Champion X" repeats the car name; "Grip" could be
+  "Turning"; tiny "19/25" star counts on track cards have no picture; "Point a phone camera here" on the title
+  sounds like a manual; "Beach Boardwalk" wraps and its "11/25" touches the bar at 740x360.
 - [ ] **Hands-off is last again at +2 and +3.** Found by `npm run check` (v1.11.2): driving hands-off with the
   starter car at +2 or +3 sometimes passes one or two rivals on Sunny Hills, because rivals ahead ease off to 0.93
   to wait. Rivals should not wait for a car that is not steering (for example, no easing while the player is off
@@ -192,3 +220,12 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   `index.html` or `styles.css` while a sweep runs. Pacing: v1.11.1 and v1.11.2 were fix and tool releases. At most
   one more M0 release (v1.11.3, the picture guard plus "What's new" and the release workflow) before the next
   release must move the game forward; if M0 is not finished by then, the rest of M0 rides along with M1 work.
+- 2026-11-20 (v1.11.3): the words box shipped as v1.11.3. That makes three fix or tool releases in a row (v1.11.1,
+  v1.11.2, v1.11.3), so **the next release must move the game forward (v1.12.0)**: the rest of M0 (picture guard,
+  release workflow and "What's new", install and update tests, back button) now rides along with M1 boxes, one
+  or two per release. Added four boxes from this build's picture review at the top of M1 (Lab words, steering
+  arrows, portrait Main Street, small word polish). Rule learned, seen twice (v1.11.2's flags from a made-up save,
+  and pictures taken with `show()` that never repainted the screen): pictures for review come from a real save
+  and open each screen the way the player does. Also: the audit's "must be on screen" check only knew green
+  buttons, so the Rank hint could fall off a short screen; it now names the hint and the Rank up button too. When
+  a screen gains its one action line, add it to that check.

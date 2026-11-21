@@ -1,0 +1,1273 @@
+{
+ "coins": 39390,
+ "owned": [
+  "zippy",
+  "bolt",
+  "monster",
+  "greenMachine",
+  "patrol",
+  "shark",
+  "barnstormer",
+  "champX",
+  "goldRush",
+  "thunder",
+  "rocket",
+  "galaxy",
+  "firetruck"
+ ],
+ "car": "champX",
+ "ups": {
+  "zippy": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "bolt": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "monster": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "greenMachine": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "patrol": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "shark": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "barnstormer": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "champX": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "goldRush": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "thunder": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "rocket": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "galaxy": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  },
+  "firetruck": {
+   "engine": 5,
+   "turbo": 5,
+   "tires": 5,
+   "magnet": 5
+  }
+ },
+ "best": {
+  "sunny": 1,
+  "beach": 1,
+  "desert": 1,
+  "snow": 1,
+  "pirate": 1,
+  "farm": 1,
+  "candy": 1,
+  "autumn": 1,
+  "lava": 1,
+  "night": 1,
+  "space": 1,
+  "caves": 1,
+  "factory": 1,
+  "river": 1,
+  "fair": 1
+ },
+ "bestD": {
+  "sunny:easy": 1,
+  "sunny:normal": 1,
+  "beach:normal": 1,
+  "desert:normal": 1,
+  "snow:normal": 1,
+  "snow:easy": 1,
+  "pirate:easy": 1,
+  "desert:easy": 1,
+  "snow:hard": 1,
+  "farm:easy": 1,
+  "candy:normal": 1,
+  "candy:easy": 1,
+  "autumn:easy": 1,
+  "beach:easy": 1,
+  "candy:hard": 1,
+  "lava:normal": 1,
+  "lava:hard": 1,
+  "lava:easy": 1,
+  "night:easy": 1,
+  "sunny:hard": 1,
+  "desert:hard": 1,
+  "space:normal": 1,
+  "space:hard": 1,
+  "space:easy": 1,
+  "caves:easy": 1,
+  "caves:normal": 1,
+  "night:normal": 1,
+  "factory:normal": 1,
+  "autumn:normal": 1,
+  "farm:hard": 1,
+  "pirate:hard": 1,
+  "river:hard": 1,
+  "river:normal": 1,
+  "pirate:normal": 1,
+  "farm:normal": 1,
+  "fair:normal": 1,
+  "factory:easy": 1,
+  "river:easy": 1,
+  "fair:easy": 1,
+  "caves:hard": 1,
+  "factory:hard": 1,
+  "night:hard": 1,
+  "autumn:hard": 1,
+  "fair:hard": 1,
+  "beach:hard": 1
+ },
+ "research": {
+  "coinBoost": 10,
+  "headStart": 5,
+  "pitCrew": 10,
+  "luckyChests": 5,
+  "turboTanks": 8,
+  "magnetField": 7,
+  "bumper": 5,
+  "bigRamps": 5,
+  "superPaint": 1,
+  "rbEyes": 1,
+  "rbEars": 1,
+  "rbMap": 1,
+  "rbReflex": 1,
+  "rbSocket": 1
+ },
+ "lab": {
+  "benches": []
+ },
+ "cups": {
+  "green:normal": 1,
+  "green:hard": 1,
+  "gold:normal": 1,
+  "country:hard": 1,
+  "champ:normal": 1,
+  "country:normal": 1,
+  "champ:hard": 1,
+  "gold:hard": 1,
+  "green:easy": 1,
+  "gold:easy": 1,
+  "champ:easy": 1,
+  "country:easy": 1
+ },
+ "chips": 91,
+ "chipLog": {
+  "gift7:2027-01-08": 1,
+  "rank:5": 1,
+  "cup:green:normal": 1,
+  "hard:sunny": 1,
+  "hard:desert": 1,
+  "hard:snow": 1,
+  "cup:green:hard": 1,
+  "rank:6": 1,
+  "gift7:2027-01-15": 1,
+  "hard:farm": 1,
+  "hard:pirate": 1,
+  "hard:river": 1,
+  "cup:country:hard": 1,
+  "rank:7": 1,
+  "missions:2027-01-20": 1,
+  "cup:champ:normal": 1,
+  "cup:country:normal": 1,
+  "missions:2027-01-21": 1,
+  "hard:lava": 1,
+  "gift7:2027-01-22": 1,
+  "missions:2027-01-22": 1,
+  "hard:candy": 1,
+  "cup:gold:normal": 1,
+  "missions:2027-01-23": 1,
+  "rank:8": 1,
+  "missions:2027-01-24": 1,
+  "missions:2027-01-25": 1,
+  "missions:2027-01-26": 1,
+  "cup:green:easy": 1,
+  "missions:2027-01-27": 1,
+  "hard:space": 1,
+  "missions:2027-01-28": 1,
+  "rank:9": 1,
+  "boss:bruno": 1,
+  "cup:champ:hard": 1,
+  "gift7:2027-01-29": 1,
+  "missions:2027-01-29": 1,
+  "hard:caves": 1,
+  "missions:2027-01-30": 1,
+  "cup:gold:hard": 1,
+  "missions:2027-01-31": 1,
+  "hard:factory": 1,
+  "hard:night": 1,
+  "rank:10": 1,
+  "missions:2027-02-01": 1,
+  "hard:autumn": 1,
+  "missions:2027-02-02": 1,
+  "missions:2027-02-03": 1,
+  "hard:fair": 1,
+  "missions:2027-02-04": 1,
+  "hard:beach": 1,
+  "cup:gold:easy": 1,
+  "gift7:2027-02-05": 1,
+  "missions:2027-02-05": 1,
+  "rank:11": 1,
+  "cup:champ:easy": 1,
+  "missions:2027-02-06": 1,
+  "missions:2027-02-07": 1,
+  "missions:2027-02-08": 1,
+  "cup:country:easy": 1,
+  "missions:2027-02-09": 1,
+  "rank:12": 1,
+  "missions:2027-02-10": 1,
+  "missions:2027-02-11": 1,
+  "gift7:2027-02-12": 1,
+  "missions:2027-02-12": 1,
+  "missions:2027-02-13": 1,
+  "missions:2027-02-14": 1,
+  "missions:2027-02-15": 1,
+  "rank:13": 1,
+  "missions:2027-02-16": 1,
+  "missions:2027-02-17": 1,
+  "missions:2027-02-18": 1,
+  "gift7:2027-02-19": 1,
+  "missions:2027-02-19": 1,
+  "missions:2027-02-20": 1,
+  "rank:14": 1,
+  "missions:2027-02-21": 1,
+  "missions:2027-02-22": 1,
+  "missions:2027-02-23": 1,
+  "missions:2027-02-24": 1,
+  "missions:2027-02-25": 1,
+  "rank:15": 1,
+  "gift7:2027-02-26": 1,
+  "missions:2027-02-26": 1,
+  "missions:2027-02-27": 1,
+  "missions:2027-02-28": 1,
+  "missions:2027-03-01": 1,
+  "missions:2027-03-02": 1,
+  "missions:2027-03-03": 1,
+  "missions:2027-03-04": 1,
+  "rank:16": 1
+ },
+ "claimed": [
+  "win1",
+  "jump10",
+  "school1",
+  "power10",
+  "coin300",
+  "trial1",
+  "turbo25",
+  "bam10",
+  "lab1",
+  "power100",
+  "jump100",
+  "car2",
+  "win5",
+  "coin2000",
+  "gift3",
+  "lab10",
+  "win25",
+  "maxup",
+  "rank5",
+  "cup1",
+  "chips3",
+  "license3",
+  "lab30",
+  "cupall",
+  "boss1",
+  "rank10",
+  "trialGold5"
+ ],
+ "stats": {
+  "roadCoins": 150420,
+  "stunts": 8532,
+  "turbos": 4178,
+  "bams": 1464,
+  "powers": 8471,
+  "rings": 0,
+  "pearls": 0,
+  "drifts": 0,
+  "loops": 0
+ },
+ "trials": {
+  "beach": 33.35,
+  "snow": 33.66,
+  "candy": 35.56,
+  "lava": 38.75,
+  "space": 39.36,
+  "caves": 37.93,
+  "factory": 38.08,
+  "night": 39.89,
+  "river": 34.44,
+  "autumn": 37.79,
+  "pirate": 34.37,
+  "fair": 34.6,
+  "desert": 32.62,
+  "farm": 33.37,
+  "sunny": 30.97
+ },
+ "trialMedals": {
+  "beach": 3,
+  "snow": 3,
+  "candy": 3,
+  "lava": 3,
+  "space": 3,
+  "caves": 3,
+  "factory": 3,
+  "night": 3,
+  "river": 3,
+  "autumn": 3,
+  "pirate": 3,
+  "fair": 3,
+  "desert": 3,
+  "farm": 3,
+  "sunny": 3
+ },
+ "bosses": {
+  "bruno": true
+ },
+ "wins": 574,
+ "races": 706,
+ "rank": 16,
+ "giftStreak": 62,
+ "diff": "normal",
+ "paints": [
+  "stock"
+ ],
+ "stickers": [
+  "none"
+ ],
+ "mastery": {
+  "sunny:easy": 4,
+  "sunny:normal": 19,
+  "beach:normal": 11,
+  "desert:normal": 25,
+  "snow:easy": 6,
+  "pirate:easy": 3,
+  "desert:easy": 6,
+  "farm:easy": 7,
+  "snow:normal": 16,
+  "candy:easy": 7,
+  "autumn:easy": 3,
+  "beach:easy": 7,
+  "candy:normal": 25,
+  "lava:easy": 10,
+  "night:easy": 3,
+  "sunny:hard": 4,
+  "desert:hard": 5,
+  "snow:hard": 5,
+  "lava:normal": 18,
+  "space:easy": 29,
+  "caves:easy": 1,
+  "space:normal": 173,
+  "caves:normal": 12,
+  "night:normal": 18,
+  "factory:normal": 15,
+  "autumn:normal": 12,
+  "farm:hard": 4,
+  "pirate:hard": 2,
+  "river:hard": 2,
+  "river:normal": 14,
+  "pirate:normal": 12,
+  "farm:normal": 13,
+  "fair:normal": 12,
+  "lava:hard": 9,
+  "factory:easy": 3,
+  "river:easy": 4,
+  "fair:easy": 4,
+  "candy:hard": 5,
+  "space:hard": 31,
+  "caves:hard": 3,
+  "factory:hard": 1,
+  "night:hard": 2,
+  "autumn:hard": 1,
+  "fair:hard": 4,
+  "beach:hard": 3
+ },
+ "school": {
+  "earned": 197,
+  "log": [
+   {
+    "d": "2027-03-04",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-03-04",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-03-03",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-03-03",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-03-02",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-03-02",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-03-01",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-03-01",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-28",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-28",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-27",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-27",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-26",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-26",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-25",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-25",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-24",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-24",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-23",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-23",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-22",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-22",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-21",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-21",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-20",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-20",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-19",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-19",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-18",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-18",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-17",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-17",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-16",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-16",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-15",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-15",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-14",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-14",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-13",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-13",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-12",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-12",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-11",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-11",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-10",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-10",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-09",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-09",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-08",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-08",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-07",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-07",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-06",
+    "a": "word",
+    "m": 5,
+    "t": 1
+   },
+   {
+    "d": "2027-02-06",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-05",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-05",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-04",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-04",
+    "a": "math",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-03",
+    "a": "word",
+    "m": 5,
+    "t": 2
+   },
+   {
+    "d": "2027-02-03",
+    "a": "math",
+    "m": 5,
+    "t": 1
+   }
+  ],
+  "capT": 6,
+  "boosts": [
+   {
+    "p": 20,
+    "until": 5358600000
+   },
+   {
+    "p": 10,
+    "until": 5358600000
+   }
+  ],
+  "math": {
+   "laps": 62
+  },
+  "word": {
+   "laps": 62
+  }
+ },
+ "parent": {},
+ "museum": [
+  {
+   "d": "2027-03-04",
+   "icon": "⭐",
+   "text": "Reached Rank 16, Pro"
+  },
+  {
+   "d": "2027-02-26",
+   "icon": "🚒",
+   "text": "Got Fire Dash from the firefighters"
+  },
+  {
+   "d": "2027-02-25",
+   "icon": "⭐",
+   "text": "Reached Rank 15, Pro"
+  },
+  {
+   "d": "2027-02-20",
+   "icon": "⭐",
+   "text": "Reached Rank 14, Pro"
+  },
+  {
+   "d": "2027-02-15",
+   "icon": "⭐",
+   "text": "Reached Rank 13, Pro"
+  },
+  {
+   "d": "2027-02-09",
+   "icon": "⭐",
+   "text": "Reached Rank 12, Pro"
+  },
+  {
+   "d": "2027-02-05",
+   "icon": "⭐",
+   "text": "Reached Rank 11, Pro"
+  },
+  {
+   "d": "2027-01-31",
+   "icon": "⭐",
+   "text": "Reached Rank 10, Pro"
+  },
+  {
+   "d": "2027-01-28",
+   "icon": "🦏",
+   "text": "Beat Big Bruno"
+  },
+  {
+   "d": "2027-01-28",
+   "icon": "⭐",
+   "text": "Reached Rank 9, Racer"
+  },
+  {
+   "d": "2027-01-23",
+   "icon": "⭐",
+   "text": "Reached Rank 8, Racer"
+  },
+  {
+   "d": "2027-01-22",
+   "icon": "🏆",
+   "text": "Won the Gold Cup"
+  },
+  {
+   "d": "2027-01-20",
+   "icon": "🎢",
+   "text": "First win on County Fair"
+  },
+  {
+   "d": "2027-01-20",
+   "icon": "🏆",
+   "text": "Won the Champion Cup"
+  },
+  {
+   "d": "2027-01-19",
+   "icon": "⭐",
+   "text": "Reached Rank 7, Racer"
+  },
+  {
+   "d": "2027-01-19",
+   "icon": "🏆",
+   "text": "Won the Country Cup"
+  },
+  {
+   "d": "2027-01-19",
+   "icon": "🛶",
+   "text": "First win on Piqua River Run"
+  },
+  {
+   "d": "2027-01-19",
+   "icon": "🤖",
+   "text": "First win on Robot Factory"
+  },
+  {
+   "d": "2027-01-17",
+   "icon": "✨",
+   "text": "First win on Crystal Caves"
+  },
+  {
+   "d": "2027-01-17",
+   "icon": "🪐",
+   "text": "First win on Space Road"
+  },
+  {
+   "d": "2027-01-14",
+   "icon": "⭐",
+   "text": "Reached Rank 6, Racer"
+  },
+  {
+   "d": "2027-01-10",
+   "icon": "🏆",
+   "text": "Won the Green Cup"
+  },
+  {
+   "d": "2027-01-10",
+   "icon": "⭐",
+   "text": "Reached Rank 5, Racer"
+  },
+  {
+   "d": "2027-01-10",
+   "icon": "🌃",
+   "text": "First win on Piqua Night Lights"
+  },
+  {
+   "d": "2027-01-08",
+   "icon": "🌋",
+   "text": "First win on Lava Mountain"
+  },
+  {
+   "d": "2027-01-06",
+   "icon": "⭐",
+   "text": "Reached Rank 4, Rookie"
+  },
+  {
+   "d": "2027-01-05",
+   "icon": "🍂",
+   "text": "First win on Autumn Forest"
+  },
+  {
+   "d": "2027-01-05",
+   "icon": "🍭",
+   "text": "First win on Candy Land"
+  },
+  {
+   "d": "2027-01-04",
+   "icon": "🚜",
+   "text": "First win on Farm Fields"
+  },
+  {
+   "d": "2027-01-03",
+   "icon": "⭐",
+   "text": "Reached Rank 3, Rookie"
+  },
+  {
+   "d": "2027-01-03",
+   "icon": "🏴‍☠️",
+   "text": "First win on Pirate Port"
+  },
+  {
+   "d": "2027-01-03",
+   "icon": "⛄",
+   "text": "First win on Snowy Peaks"
+  },
+  {
+   "d": "2027-01-02",
+   "icon": "🌵",
+   "text": "First win on Desert Dash"
+  },
+  {
+   "d": "2027-01-02",
+   "icon": "⭐",
+   "text": "Reached Rank 2, Rookie"
+  },
+  {
+   "d": "2027-01-02",
+   "icon": "🏖️",
+   "text": "First win on Beach Boardwalk"
+  },
+  {
+   "d": "2027-01-02",
+   "icon": "🌳",
+   "text": "First win on Sunny Hills"
+  }
+ ],
+ "days": {
+  "2027-02-03": 11,
+  "2027-02-04": 11,
+  "2027-02-05": 11,
+  "2027-02-06": 11,
+  "2027-02-07": 11,
+  "2027-02-08": 11,
+  "2027-02-09": 11,
+  "2027-02-10": 11,
+  "2027-02-11": 11,
+  "2027-02-12": 11,
+  "2027-02-13": 11,
+  "2027-02-14": 11,
+  "2027-02-15": 12,
+  "2027-02-16": 12,
+  "2027-02-17": 12,
+  "2027-02-18": 12,
+  "2027-02-19": 12,
+  "2027-02-20": 12,
+  "2027-02-21": 12,
+  "2027-02-22": 12,
+  "2027-02-23": 12,
+  "2027-02-24": 12,
+  "2027-02-25": 12,
+  "2027-02-26": 12,
+  "2027-02-27": 12,
+  "2027-02-28": 12,
+  "2027-03-01": 12,
+  "2027-03-02": 12,
+  "2027-03-03": 12,
+  "2027-03-04": 12
+ },
+ "history": [
+  {
+   "d": "2027-03-04",
+   "t": "snow",
+   "df": "normal",
+   "p": 1,
+   "c": 984
+  },
+  {
+   "d": "2027-03-04",
+   "t": "autumn",
+   "df": "normal",
+   "p": 1,
+   "c": 1119
+  },
+  {
+   "d": "2027-03-04",
+   "t": "space",
+   "df": "hard",
+   "p": 1,
+   "c": 2473
+  },
+  {
+   "d": "2027-03-04",
+   "t": "fair",
+   "df": "easy",
+   "p": 1,
+   "c": 679
+  },
+  {
+   "d": "2027-03-04",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1726
+  },
+  {
+   "d": "2027-03-04",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1717
+  },
+  {
+   "d": "2027-03-04",
+   "t": "fair",
+   "df": "hard",
+   "p": 1,
+   "c": 1117
+  },
+  {
+   "d": "2027-03-04",
+   "t": "sunny",
+   "df": "normal",
+   "p": 1,
+   "c": 498
+  },
+  {
+   "d": "2027-03-04",
+   "t": "space",
+   "df": "easy",
+   "p": 1,
+   "c": 1368
+  },
+  {
+   "d": "2027-03-04",
+   "t": "fair",
+   "df": "normal",
+   "p": 1,
+   "c": 845
+  },
+  {
+   "d": "2027-03-04",
+   "t": "desert",
+   "df": "normal",
+   "p": 1,
+   "c": 753
+  },
+  {
+   "d": "2027-03-04",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1747
+  },
+  {
+   "d": "2027-03-03",
+   "t": "fair",
+   "df": "normal",
+   "p": 1,
+   "c": 803
+  },
+  {
+   "d": "2027-03-03",
+   "t": "lava",
+   "df": "easy",
+   "p": 1,
+   "c": 1178
+  },
+  {
+   "d": "2027-03-03",
+   "t": "caves",
+   "df": "normal",
+   "p": 1,
+   "c": 1600
+  },
+  {
+   "d": "2027-03-03",
+   "t": "lava",
+   "df": "normal",
+   "p": 1,
+   "c": 1465
+  },
+  {
+   "d": "2027-03-03",
+   "t": "space",
+   "df": "hard",
+   "p": 1,
+   "c": 2467
+  },
+  {
+   "d": "2027-03-03",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1738
+  },
+  {
+   "d": "2027-03-03",
+   "t": "lava",
+   "df": "easy",
+   "p": 1,
+   "c": 1184
+  },
+  {
+   "d": "2027-03-03",
+   "t": "candy",
+   "df": "normal",
+   "p": 1,
+   "c": 1255
+  },
+  {
+   "d": "2027-03-03",
+   "t": "lava",
+   "df": "easy",
+   "p": 1,
+   "c": 1190
+  },
+  {
+   "d": "2027-03-03",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1733
+  },
+  {
+   "d": "2027-03-03",
+   "t": "beach",
+   "df": "easy",
+   "p": 1,
+   "c": 562
+  },
+  {
+   "d": "2027-03-03",
+   "t": "river",
+   "df": "easy",
+   "p": 1,
+   "c": 952
+  },
+  {
+   "d": "2027-03-02",
+   "t": "fair",
+   "df": "normal",
+   "p": 1,
+   "c": 761
+  },
+  {
+   "d": "2027-03-02",
+   "t": "farm",
+   "df": "normal",
+   "p": 1,
+   "c": 636
+  },
+  {
+   "d": "2027-03-02",
+   "t": "beach",
+   "df": "normal",
+   "p": 1,
+   "c": 593
+  },
+  {
+   "d": "2027-03-02",
+   "t": "factory",
+   "df": "normal",
+   "p": 1,
+   "c": 1322
+  },
+  {
+   "d": "2027-03-02",
+   "t": "snow",
+   "df": "normal",
+   "p": 1,
+   "c": 910
+  },
+  {
+   "d": "2027-03-02",
+   "t": "space",
+   "df": "normal",
+   "p": 1,
+   "c": 1596
+  }
+ ],
+ "dirt": {
+  "zippy": 5,
+  "shark": 5,
+  "champX": 5
+ },
+ "sparkle": "",
+ "daily": {
+  "icecream": "2027-03-04"
+ },
+ "lastGift": "2027-03-04",
+ "bank": {
+  "bal": 6400,
+  "low": 6400,
+  "t": 5356800000,
+  "paid": 15750,
+  "news": 0
+ },
+ "opened": {
+  "sunny": 1,
+  "beach": 1,
+  "farm": 1,
+  "desert": 1,
+  "pirate": 1,
+  "snow": 1,
+  "autumn": 1,
+  "candy": 1,
+  "night": 1,
+  "lava": 1,
+  "caves": 1,
+  "space": 1,
+  "fair": 1,
+  "river": 1,
+  "factory": 1
+ },
+ "v": 22,
+ "name": "Racer",
+ "world": "earth",
+ "savedAt": 0
+}

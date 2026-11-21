@@ -308,6 +308,12 @@ needs a pass on the same commit) and `npm run sweep` (all 7 sizes in headless Ed
 - Lesson: a check that only prints a table is not a check. The hands-off sim had been printing 4th and 5th places
   at +2/+3 (rivals easing off to wait) for a while; nobody saw it until the script had to decide pass or fail.
 
+### v1.11.3 🔤 Plain words (shipped)
+The words a picture review flagged: no colons in game text, a small next step on Racer Rank, "Longer turbo",
+"Opens in fall", and a simpler School card. The sweep flags colons itself and its pictures use a real bot save.
+- Lesson: a sweep save with made-up numbers (Rank 16 with 0 wins) produces made-up problems. Pictures for review
+  come from a save the career bot really reached.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

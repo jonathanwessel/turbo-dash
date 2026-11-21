@@ -93,7 +93,7 @@ export const buildingOpen = (S, id) => S.rank >= (BUILDINGS.find(b => b.id === i
 
 export const UPGRADES = [
   { id: "engine", name: "Engine", icon: "🔥", desc: "Go faster" },
-  { id: "turbo",  name: "Turbo",  icon: "🚀", desc: "More nitro" },
+  { id: "turbo",  name: "Turbo",  icon: "🚀", desc: "Longer turbo" },
   { id: "tires",  name: "Tires",  icon: "🛞", desc: "Turn better" },
   { id: "magnet", name: "Magnet", icon: "🧲", desc: "Grab coins" },
 ];
@@ -116,7 +116,7 @@ export const TRACKS = [
   { id: "fair",   name: "County Fair",    icon: "🎢", diff: 1.25, laps: 2, seed: 271, theme: "fair", world: "earth", after: "farm" },
   { id: "pirate", name: "Pirate Port",    icon: "🏴‍☠️", diff: 1.5, laps: 2, seed: 251, theme: "pirate", world: "earth", after: "desert" },
   { id: "snow",   name: "Snowy Peaks",    icon: "⛄", diff: 2,   laps: 2, seed: 37, theme: "snow",   world: "earth", after: "desert" },
-  { id: "haunted", name: "Haunted Hill",  icon: "🦇", diff: 2.25, laps: 2, seed: 277, theme: "haunted", world: "earth", season: { from: [10, 1], to: [11, 15], icon: "🍂", when: "October" } },
+  { id: "haunted", name: "Haunted Hill",  icon: "🦇", diff: 2.25, laps: 2, seed: 277, theme: "haunted", world: "earth", season: { from: [10, 1], to: [11, 15], icon: "🍂", when: "fall" } },
   { id: "autumn", name: "Autumn Forest",  icon: "🍂", diff: 2.5, laps: 2, seed: 97, theme: "autumn", world: "earth", after: "snow" },
   { id: "river",  name: "Piqua River Run", icon: "🛶", diff: 2.8, laps: 2, seed: 263, theme: "river",  world: "earth", after: "autumn" },
   { id: "candy",  name: "Candy Land",     icon: "🍭", diff: 3,   laps: 2, seed: 41, theme: "candy",  world: "earth", after: "snow" },
@@ -341,6 +341,9 @@ const MEDAL_PTS = [0, 3, 2, 1], CUP_PTS = [0, 8, 5, 3];
 /* Track Mastery: keep winning a track on a difficulty to earn up to 5 stars (each one is a trophy point). */
 export const MASTERY = [3, 10, 25, 50, 100];
 export const starsFor = wins => MASTERY.filter(n => wins >= n).length;
+/* The Racer Rank hint names a small next step: the wins left to the next multiple of 10 (or to the gauge, if that
+   is closer), so a player at 574 of 640 sees "Win 6 more races!", not a far total. */
+export const winsStep = (have, need) => Math.max(1, Math.min(need, (Math.floor(have / 10) + 1) * 10) - have);
 export const FRONTS = [
   { id: "wins", icon: "🏁", name: "Wins", hint: "Win races!", have: S => S.wins },
   { id: "trophies", icon: "🏆", name: "Trophies", hint: "Get medals on every track and claim goals!",

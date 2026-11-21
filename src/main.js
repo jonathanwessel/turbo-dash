@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance, newClock, resetClock, stepCounter } from "./pace.js";
 import { qualityLadder, QUALITY_CAP } from "./quality.js";
@@ -514,7 +514,7 @@ $("trial-list").addEventListener("click", e => {
 function showTrialResult(r) {
   const t = currentTrack, len = trackLen(t), goalsBefore = claimable().length;
   const { time, before, oldMedal, medal, record, pay, student } = trialReward(S, t, r, len, raceStartAt || Date.now());
-  if (student) setTimeout(() => toast(`📚 Good Student bonus: +🪙${student}`), 1200);
+  if (student) setTimeout(() => toast(`📚 School bonus +🪙${student}`), 1200);
   if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
   save();
   mode = "result"; setRaceUi(false); engineOff();
@@ -576,11 +576,11 @@ $("cup-list").addEventListener("click", e => {
 });
 function paintWorlds() {
   if (!worldOpen(S, S.world)) S.world = "earth";
-  // the open worlds, then a "Preview worlds" button for every world still to come (it opens a preview card)
+  // the open worlds, then a "More worlds" button for every world still to come (it opens a preview card)
   const open = WORLDS.filter(w => !w.soon && worldOpen(S, w.id)), later = lockedWorlds();
   $("world-bar").hidden = open.length + (later.length ? 1 : 0) < 2;
   $("world-bar").innerHTML = open.map(w => `<button data-world="${w.id}" class="${S.world === w.id ? "on" : ""}">${w.name}</button>`).join("")
-    + (later.length ? `<button data-peek class="peek">Preview worlds</button>` : "");
+    + (later.length ? `<button data-peek class="peek">More worlds</button>` : "");
 }
 $("world-bar").addEventListener("click", e => {
   if (e.target.closest("[data-peek]")) { sfx("click"); openPreview(lockedWorlds()[0].id); return; }
@@ -654,7 +654,7 @@ function openTracks() {
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-ribbon">Bonus: tricky!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-ribbon">Tricky bonus!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
   show("s-tracks");
@@ -771,7 +771,7 @@ function showResult(r) {
   const bossRace = run.kind === "boss", chipsBefore = S.chips;
   const { prize, sparkle, starUp, student } = raceReward(S, currentTrack, r, { diff: S.diff, boss: bossRace, cup: run.kind === "cup" ? run : null, day: dayKey(new Date()), now: raceStartAt || Date.now() });
   if (starUp) setTimeout(() => toast(`⭐ Mastery star ${starUp} on ${currentTrack.name}!`), 1800);
-  if (student) setTimeout(() => toast(`📚 Good Student bonus: +🪙${student}`), starUp ? 3400 : 1200);
+  if (student) setTimeout(() => toast(`📚 School bonus +🪙${student}`), starUp ? 3400 : 1200);
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
   chipToast(S.chips > chipsBefore);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
@@ -822,7 +822,7 @@ document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () 
   sfx("chest");
   const rect = c.getBoundingClientRect();
   earn(chestValues[i], rect.left + rect.width / 2, rect.top + rect.height / 2);
-  $("r-pick").textContent = `🎁 Treasure: 🪙${chestValues[i]}!`;
+  $("r-pick").textContent = `🎁 You got 🪙${chestValues[i]}!`;
   setTimeout(() => { $("r-btns").hidden = false; }, 600);
 }));
 $("btn-again").onclick = () => { sfx("click"); run = lastRun ? { ...lastRun } : RACE(); startRace(currentTrack); };
@@ -895,7 +895,7 @@ function openRank() {
   const fr = frontsNow(), ready = rankReady(), maxed = S.rank >= RANK_CAP;
   $("rk-num").textContent = S.rank; $("rk-title").textContent = rankTitle(S.rank);
   const un = RANK_UNLOCKS[S.rank + 1];
-  $("rk-next").textContent = maxed ? "Top rank for now! More ranks are coming in new versions." : un ? `Next rank opens: ${un.icon} ${un.text}` : `Next: Rank ${S.rank + 1}`;
+  $("rk-next").textContent = maxed ? "Top rank for now! More ranks are coming in new versions." : un ? `Rank ${S.rank + 1} opens ${un.icon} ${un.text}` : `Next is Rank ${S.rank + 1}`;
   const todo = fr.filter(f => f.need > 0 && f.have < f.need);   // gauges still to fill (a 0 / 0 gauge is already full)
   const lowest = todo.length ? todo.reduce((a, f) => (f.have / f.need < a.have / a.need ? f : a)) : null;
   $("fronts").innerHTML = fr.map(f => {
@@ -904,15 +904,15 @@ function openRank() {
       <div class="gauge"><i style="width:${pct}%"></i></div><small>${full ? "✔ " : ""}${Math.min(f.have, f.need)} / ${f.need}</small></div>`;
   }).join("");
   $("rk-up").hidden = !ready;
-  const left = lowest ? lowest.need - lowest.have : 0;
-  $("rk-hint").textContent = ready || maxed || !lowest ? "" : lowest.id === "wins" ? `🏁 Win ${left} more race${left === 1 ? "" : "s"}!` : `${lowest.icon} ${lowest.hint}`;
+  const step = lowest?.id === "wins" ? winsStep(lowest.have, lowest.need) : 0;
+  $("rk-hint").textContent = ready || maxed || !lowest ? "" : lowest.id === "wins" ? `🏁 Win ${step} more race${step === 1 ? "" : "s"}!` : `${lowest.icon} ${lowest.hint}`;
   show("s-rank");
 }
 $("rk-up").onclick = () => {
   if (!rankReady()) return;
   const { coins: reward, chip: gotChip } = rankUp(S, dayKey(new Date()), rankTitle(S.rank + 1));
   save(); chipToast(gotChip);
-  $("ru-num").textContent = S.rank; $("ru-title").textContent = `Rank ${S.rank}: ${rankTitle(S.rank)}`;
+  $("ru-num").textContent = S.rank; $("ru-title").textContent = `You are a ${rankTitle(S.rank)}!`;
   const un = RANK_UNLOCKS[S.rank];
   $("ru-unlock").textContent = un ? `${un.icon} ${un.text} unlocked!` : "";
   $("ru-coins").textContent = reward;
@@ -922,7 +922,7 @@ $("ru-take").onclick = () => { sfx("buy"); refreshCoins(); openRank(); };
 $("rank-pill").onclick = () => { sfx("click"); openRank(); };
 
 /* ---------- 🚦 School (Math Laps and Word Laps) ---------- */
-const COACH = () => ["Hi " + who() + "! Ready for a lap?", "Math makes great drivers!", "Every lap gives you bonus coins!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!", "Reading makes great drivers too!", "More laps, more bonus coins!"];
+const COACH = () => ["Hi " + who() + "! Ready for a lap?", "Math makes great drivers!", "Buckle up, let's learn!", "You're a math racer, " + who() + "!", "Reading makes great drivers too!", "You can do it, " + who() + "!"];
 function openSchool() {
   { const L = COACH(); $("coach-say").textContent = L[Math.floor(Math.random() * L.length)]; }
   paintSchool(); show("s-school");
@@ -932,8 +932,8 @@ const minsLeft = until => Math.max(1, Math.ceil((until - Date.now()) / 60000));
 function paintSchool() {
   const now = Date.now(), pct = goodStudentPct(S, now), boosts = activeBoosts(S, now).sort((a, b) => a.until - b.until);
   const left = bonusLeft(S, dayKey(new Date())), laps = lapsDone(S), need = GOOD_STUDENT.patrolLaps;
-  $("gs-panel").innerHTML = `<div class="gs-big ${pct ? "on" : ""}"><b>${pct ? "+" + pct + "%" : "No bonus yet"}</b><small>${pct ? "more coins from every race" : "Do a lap for bonus coins!"}</small></div>
-    <div class="gs-list">${boosts.map(b => `<span>📚 +${b.p}% <small>${minsLeft(b.until)} min</small></span>`).join("") || `<span class="gs-how">🧮 or 📚 lap = <b>+${GOOD_STUDENT.pct}%</b> for ${GOOD_STUDENT.mins} min</span>`}</div>
+  $("gs-panel").innerHTML = `<div class="gs-big ${pct ? "on" : ""}"><b>${pct ? "+" + pct + "%" : "No bonus yet"}</b><small>${pct ? "more coins from every race" : "Do a lap. Get more coins!"}</small></div>
+    <div class="gs-list">${boosts.map(b => `<span>📚 +${b.p}% <small>${minsLeft(b.until)} min</small></span>`).join("")}</div>
     ${left === 0 ? `<div class="gs-done">That's all the bonuses for today. Great work, ${who()}!</div>` : ""}
     ${S.owned.includes("patrol") ? "" : `<div class="gs-patrol">🚓 <div class="bar"><i style="width:${Math.min(100, Math.round(100 * laps / need))}%"></i></div><small>${Math.min(laps, need)} / ${need} laps</small></div>`}`;
 }
@@ -1071,7 +1071,7 @@ function paintBank() {
   $("bk-bal").textContent = big(b.bal);
   $("bk-news").hidden = !b.news;
   if (b.news) { $("bk-news").innerHTML = `The bank paid you <b>+${big(b.news)} 🪙</b> while you were away!`; b.news = 0; save(); }
-  $("bk-pay").innerHTML = b.bal ? (pay ? `Next payday in ${waitText(b.t + BANK_DAY - Date.now())}: <b>+${big(pay)} 🪙</b>` : `New coins start earning at the next payday, in ${waitText(b.t + BANK_DAY - Date.now())}.`)
+  $("bk-pay").innerHTML = b.bal ? (pay ? `<b>+${big(pay)} 🪙</b> on payday, in ${waitText(b.t + BANK_DAY - Date.now())}` : `New coins start earning at the next payday, in ${waitText(b.t + BANK_DAY - Date.now())}.`)
     : `Put coins in the bank. Every day it adds <b>7 for every 100</b>!`;
   $("bk-new").hidden = !(b.bal > b.low && pay);
   const ins = [100, 500, Math.min(S.coins, room)], outs = [100, 500, b.bal];
@@ -1202,12 +1202,12 @@ $("town-wrap").addEventListener("click", e => {
     if (go === "icecream") {
       const got = treat(S, "icecream", today());
       if (!got) { sfx("click"); toast("🍦 Come back tomorrow for more ice cream!"); return; }
-      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🍦 Yum! Free ice cream: +🪙${got.coins}`);
+      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🍦 Yum! Free ice cream +🪙${got.coins}`);
     } else if (go === "park") {
       const nd = new Date(), dn = Math.floor(Date.UTC(nd.getFullYear(), nd.getMonth(), nd.getDate()) / 86400000);
       const got = treat(S, "park", today(), dn);
       if (!got) { sfx("click"); toast("🧺 The picnic is packed up. Come back tomorrow!"); return; }
-      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🧺 Picnic in the park: +🪙${got.coins}`); chipToast(got.chip);
+      save(); refreshCoins(); coinBurst(x, y); sfx("chest"); toast(`🧺 Picnic in the park +🪙${got.coins}`); chipToast(got.chip);
     } else if (go === "fire") {
       if (!treat(S, "fire", today())) { sfx("click"); toast("🚒 Fire Dash is waiting in your garage!"); return; }
       save(); sfx("win"); confetti(150); toast("🚒 The firefighters gave you Fire Dash!");
@@ -1475,7 +1475,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

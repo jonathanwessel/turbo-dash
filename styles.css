@@ -914,6 +914,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; color: #fff; user-select
 .front .gauge { grid-area: gauge; margin: 0; height: 16px; }
 .rk-hint { font-size: clamp(15px, 4vmin, 20px); text-align: center; min-height: 1.2em; background: var(--sign); color: var(--ink); border-radius: 12px; padding: 6px 14px; font-weight: 900; }
 .rk-hint:empty { display: none; }
+.rk-hint, .rank-up-btn { flex-shrink: 0; }   /* v1.11.3: above the gauges, they must keep their height on a short screen */
 
 /* track and cup cards keep their scenery, framed like stickers */
 .track-card, .cup-card { border: 5px solid var(--lane); box-shadow: 0 0 0 3px var(--ink), 0 7px 0 3px var(--ink); }
