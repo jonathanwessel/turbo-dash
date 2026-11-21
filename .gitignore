@@ -10,3 +10,4 @@ Thumbs.db
 live/
 .release-tmp/
 .staging/
+.work-lock
