@@ -1,0 +1,24 @@
+# Makes the GitHub release page when a version tag is pushed.
+# The release comes from github-actions, so watchers get an email and a GitHub app push.
+# (GitHub never notifies people about releases they made themselves.)
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release from the tag message
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -o pipefail
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          git for-each-ref "refs/tags/$TAG" --format='%(contents)' > notes.txt
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release $TAG already exists"; exit 0; fi
+          gh release create "$TAG" --title "${TAG#v}" --notes-file notes.txt --verify-tag

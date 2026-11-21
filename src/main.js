@@ -11,6 +11,7 @@ import { townSVG, SITE_PIPS } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
+import { unseen } from "./news.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
@@ -1276,6 +1277,21 @@ $("btn-install").onclick = async () => {
 };
 $("install-ok").onclick = () => { sfx("click"); $("install-help").hidden = true; };
 paintInstall();
+/* ✨ What's new: after an update, the title screen shows a card with every change since this device last played,
+   as pictures and a few words (src/news.js). One tap closes it. A brand-new player never sees it. The version
+   last seen is kept under its own key, turbodash.news, so the save's shape does not change. */
+if (VERSION !== "dev") {
+  const NEWS_KEY = "turbodash.news";
+  let seen = null; try { seen = localStorage.getItem(NEWS_KEY); } catch (e) { /* storage blocked */ }
+  const mark = () => { try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) { /* storage blocked */ } };
+  const list = unseen(seen, VERSION, S.races > 0);
+  if (!list.length) mark();
+  else {
+    $("news-list").innerHTML = list.flatMap(n => n.pics).map(([pic, words]) => `<div class="news-row"><span class="news-pic">${pic}</span><span>${words}</span></div>`).join("");
+    $("news").hidden = false;
+    $("news-ok").onclick = () => { sfx("click"); mark(); $("news").hidden = true; };
+  }
+}
 /* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
 function askName(from = "s-hub") {
   $("name-in").value = S.name || ""; paintNameOk(); $("name-back").hidden = from === "s-hub"; show("s-name");
@@ -1468,6 +1484,7 @@ if (VERSION !== "dev") {
     } catch (e) { /* offline */ }
   };
   setInterval(check, 60000); setTimeout(check, 5000);
+  window.__tdCheckUpdate = check;   // the update test asks for a check right away (scripts/update-test.mjs)
   $("update").onclick = doUpdate;
 }
 if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureContext) {

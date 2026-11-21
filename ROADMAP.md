@@ -314,6 +314,11 @@ The words a picture review flagged: no colons in game text, a small next step on
 - Lesson: a sweep save with made-up numbers (Rank 16 with 0 wins) produces made-up problems. Pictures for review
   come from a save the career bot really reached.
 
+### v1.11.4 ✨ What's new (shipped)
+The release pipeline Copper Gulch has: a What's new card, a GitHub release from each tag, an install test and an
+update test in `npm run check`, and maskable icons with a manifest id.
+- Lesson: keep the release notes in one place. The card, the tag and the release page all read `src/news.js`.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

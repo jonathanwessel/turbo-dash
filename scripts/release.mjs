@@ -3,9 +3,10 @@
 //        npm run release -- v0.2.0  -> rebuilds an existing tag
 // Only committed, tagged code ever reaches the play server, so work in progress can't break a running game.
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { build } from "vite";
+import { NEWS } from "../src/news.js";
 
 const root = resolve(import.meta.dirname, "..");
 const sh = cmd => execSync(cmd, { cwd: root, encoding: "utf8" }).trim();
@@ -24,7 +25,15 @@ if (!tag) {
   tag = "v" + JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
   const exists = sh(`git tag --list ${tag}`);
   if (exists && sh(`git rev-list -n1 ${tag}`) !== sh("git rev-parse HEAD")) { console.error(`${tag} already exists on another commit. Bump the version.`); process.exit(1); }
-  if (!exists) sh(`git tag -a ${tag} -m "Turbo Dash ${tag}"`);
+  if (!exists) {
+    // The tag message is the release note: 2 to 5 plain lines from this version's entry in src/news.js.
+    // Pushing the tag makes the GitHub release from it (.github/workflows/release.yml), which emails the owner.
+    const entry = NEWS.find(n => "v" + n.v === tag);
+    if (!entry?.notes?.length) { console.error(`No What's new entry for ${tag} in src/news.js. Add it first.`); process.exit(1); }
+    const msg = join(root, ".release-notes.tmp");
+    writeFileSync(msg, entry.notes.join(String.fromCharCode(10)) + String.fromCharCode(10));
+    try { sh(`git tag -a ${tag} --cleanup=verbatim -F "${msg}"`); } finally { rmSync(msg, { force: true }); }
+  }
 }
 
 // Stage inside the repo (gitignored) so the checkout resolves vite from our node_modules.

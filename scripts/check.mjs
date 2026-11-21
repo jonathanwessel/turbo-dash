@@ -1,8 +1,9 @@
-// ✅ One command for the release checks (v1.11.2): npm test, npm run perf, npm run sim -- start, npm run career.
+// ✅ One command for the release checks (v1.11.2): npm test, npm run perf, npm run sim -- start, npm run career,
+// then the install test and the update test (headless browser, throwaway profile).
 // Each step must pass before the next one runs; the first failure stops the check with a non-zero exit.
 // A full pass on a clean, committed tree writes .check-pass (git-ignored) with the commit it passed on, and
 // `npm run release` refuses to build a new release unless that file names the commit being released.
-//   npm run check            -> all four steps
+//   npm run check            -> all six steps
 import { spawnSync, execSync } from "node:child_process";
 import { writeFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -18,6 +19,8 @@ const STEPS = [
   ["drawing budget", "node scripts/perf.mjs"],
   ["hands-off start", "node scripts/sim.mjs start"],
   ["career", "node scripts/career.mjs"],
+  ["install test", "node scripts/install-test.mjs"],
+  ["update test", "node scripts/update-test.mjs"],
 ];
 const t0 = Date.now(), times = [];
 for (const [name, cmd] of STEPS) {

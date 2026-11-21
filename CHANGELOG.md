@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.11.4 — What's new ✨
+
+- **✨ What's new card.** After an update, the title screen shows what changed since this tablet last played: one
+  picture and a few words for each thing. One tap on OK! closes it. A brand-new player never sees it.
+- **📲 A proper Android app icon.** The car sits in the middle of its own icon, so a round or rounded home-screen
+  icon no longer cuts it off.
+- For the grown-ups:
+  - Every release now makes a GitHub release page from its tag, so the owner gets an email for each one. The notes
+    come from that version's entry in `src/news.js`, and `npm run release` refuses a version with no entry.
+  - `npm run install-test` asks the browser itself whether the game can be installed, and checks the manifest and
+    every icon. Give it a web address to check the live site.
+  - `npm run update-test` installs this version, publishes a newer one, taps Update, and checks the What's new
+    card, the single cache and offline start.
+  - Both are part of `npm run check`, with a test that the release in `package.json` has its What's new entry.
+
 ## v1.11.3 — Plain words 🔤
 
 Small fixes to the words on screen, found by a helper reading the pictures of every screen.

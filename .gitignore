@@ -13,3 +13,4 @@ live/
 .work-lock
 .check-pass
 .sweep/
+.pwa-test/

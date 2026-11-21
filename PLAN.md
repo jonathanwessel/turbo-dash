@@ -44,8 +44,8 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 
 ## Release checklist (every release; stop and fix on any failure)
 1. `npm run check` passes: `npm test`, the drawing budget (`npm run perf`), the hands-off sim
-   (`npm run sim -- start`) and the whole career run (`npm run career`), stopping at the first failure. It takes
-   about 2 minutes. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
+   (`npm run sim -- start`), the whole career run (`npm run career`), the install test and the update test,
+   stopping at the first failure. It takes about 3 minutes. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
    something on purpose, and say so in the changelog. Run the full sim for any track, car or physics you changed.
    Write the day of Rank 40 and of each world opening (the career run's last line) in the notes.
 2. `npm run sweep`: every screen at all 7 sizes in headless Edge with a throwaway save, about 20 minutes (run it in
@@ -53,13 +53,18 @@ Turbo Dash's own rules on top, and they win where the two disagree.
    no "null". Pictures land in `.sweep/`.
 3. Look at the sweep's pictures of every screen you changed, plus its race frame per world. Then a helper that sees
    only the pictures reads every visible line and flags anything a young player could not follow.
-4. Bump the version in `package.json`, add the `CHANGELOG.md` entry and the "What's new" entry (after M0), and a
-   one-line "shipped" entry in `ROADMAP.md`.
+4. Bump the version in `package.json`. Add this version's entry at the top of `src/news.js`: `pics` for the
+   in-game card (one picture and a few words each, or empty when the player sees no change) and `notes` for the
+   owner (2 to 5 plain lines, no quote marks). Add the `CHANGELOG.md` entry and a one-line "shipped" entry in
+   `ROADMAP.md`. Look at `.pwa-test/news.png` after the update test when the card changed.
 5. Commit. Run `npm run check` again on that commit (`npm run release` refuses a commit the check has not passed
-   on), then `npm run release` (it tags and builds the home copy). Then `git push origin main --tags`.
-6. Wait for the Pages build to pass. Confirm the live `version.json` shows the new version. After M0, run the
-   install test and the update test against the live site.
-7. Tell the owner: the pushed tag makes a GitHub release (after M0), plus one push notification, best effort.
+   on), then `npm run release` (it writes the tag from the `notes` in `src/news.js` and builds the home copy). Do
+   not make the tag by hand. Then `git push origin main --tags`.
+6. Wait for the Pages build to pass. Confirm the live `version.json` shows the new version. Then
+   `npm run install-test -- https://jonathanwessel.github.io/turbo-dash/` prints ok.
+7. Tell the owner: the pushed tag makes a GitHub release (`.github/workflows/release.yml`, which emails the
+   owner). Check it with `gh release view v<version> -R jonathanwessel/turbo-dash`. Do not run
+   `gh release create`. Then one push notification, best effort.
 
 Until a tool exists, the box that creates it is the first to use it. Skip the steps for tools that do not exist yet.
 
@@ -118,11 +123,22 @@ every test green.
   changed; the bot's luck moves these a few days). Sweep clean at 7 sizes. Not checked on a real tablet.
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
-- [ ] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
+- [x] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
   the tag message (2 to 5 plain lines). An in-game "What's new" card lists every change since this device last
   played, in pictures and a few words, and closes with one tap.
-- [ ] **Install and update tests.** Separate maskable icons, a manifest `id`, and two scripts: one checks the
+  Notes: v1.11.4, built by the owner's main session at the owner's request (2026-11-20), ahead of the picture
+  guard. `src/news.js` holds one entry per version: `pics` for the card, `notes` for the tag. `release.mjs`
+  writes the tag from the notes and refuses a version with no entry. `scripts/test-news.mjs` (in `npm test`)
+  fails when `package.json` names a version with no entry, and checks the card's words. The card is on the title
+  screen, remembers the version under `turbodash.news` (not in the save, so no save change), shows at most the
+  newest three versions, and never shows to a brand-new player.
+- [x] **Install and update tests.** Separate maskable icons, a manifest `id`, and two scripts: one checks the
   browser offers "Install app" with no errors, one proves an installed copy picks up a new version.
+  Notes: v1.11.4. `npm run install-test` (also takes the live address) and `npm run update-test`, both in
+  `npm run check`, both in headless Edge with a throwaway profile over `scripts/cdp.mjs` (shared with Copper
+  Gulch). The update test builds the same code as v99.0.0 (`TD_VERSION`), so it also proves the card, the single
+  cache and offline start. `npm run icons` redraws the maskable icons from `public/icon.svg`. Not checked on a
+  real Android device: the icon crop and the install prompt there still need the owner's eyes.
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
 - [ ] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
