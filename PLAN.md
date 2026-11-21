@@ -114,6 +114,8 @@ every test green.
   Looked again: Lab tier 3 blocks, the Races / Cups / Boss / Trials row at 740x360, "6th" in Deep Blue (the start
   place) and the Toy World start camera all look right with the real save. The toast over the Next plate is a
   2.6-second pop-up, left as is. The rest of that review became the boxes below and in M1.
+  Check on the release commit: career Rank 40 on day 547, Moon 107, Ocean 187, Glacier 283, Toy 410 (no rule
+  changed; the bot's luck moves these a few days). Sweep clean at 7 sizes. Not checked on a real tablet.
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
 - [ ] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
@@ -229,3 +231,5 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   and open each screen the way the player does. Also: the audit's "must be on screen" check only knew green
   buttons, so the Rank hint could fall off a short screen; it now names the hint and the Rank up button too. When
   a screen gains its one action line, add it to that check.
+  Seen once: a sweep run alongside `npm run check` timed out loading the page at its 4th size; the same commit
+  swept clean alone. If it happens again, give `load()` in sweep.mjs one retry and never run the two together.
