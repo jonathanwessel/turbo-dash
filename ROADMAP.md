@@ -336,6 +336,12 @@ them a little faster, up to five times a week, held under the player's own top s
 - Lesson: a difficulty bump has to be measured against the car ladder before it ships. A plain 1.5% boost walled
   off Space Road; tying the cap to the player's top speed keeps every track winnable.
 
+### v1.14.0 😄 Faces (shipped)
+Every rival has a face: over their car on the start grid, and in a row on the result card in finishing order.
+Rivals ahead of the player smile, rivals behind frown, and tapping a face makes that rival honk.
+- Lesson: a picture-only feature still needs a "same race" test. Faces ride on the rival objects both engines move,
+  so the test plays one race with and without them and compares every distance.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

@@ -7,7 +7,8 @@
 // Plain rules and drawing, no page: both engines and the game (src/main.js) use these.
 
 export const FACES = {
-  fade: 0.6,   // seconds after GO! that the start grid faces take to fade away
+  hold: 1.4,   // seconds after GO! that the start grid faces stay (the big 3, 2, 1 and GO! cover the middle cars' faces)
+  fade: 0.6,   // seconds they then take to fade away
 };
 export const MOODS = ["ready", "happy", "grumpy"];
 
@@ -27,11 +28,11 @@ export function faceRow(standings, n) {
   const m = raceMoods(standings, n);
   return standings.map(k => ({ k, mood: k === 0 ? "me" : m[k - 1] }));
 }
-/* how much of the start grid faces shows: all of it in the countdown, fading for a moment after GO!, then none */
+/* how much of the start grid faces shows: all of it in the countdown and a moment past GO!, then fading, then none */
 export function faceShow(race) {
   if (race.mode === "demo") return 0;
   if (race.state === "countdown") return 1;
-  return race.state === "race" ? Math.max(0, 1 - race.raceTime / FACES.fade) : 0;
+  return race.state === "race" ? Math.max(0, Math.min(1, 1 - (race.raceTime - FACES.hold) / FACES.fade)) : 0;
 }
 
 /* ---------- drawing (shared by the classic road, the Toy Track World overlay and the result card) ---------- */

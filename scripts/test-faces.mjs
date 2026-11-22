@@ -22,10 +22,12 @@ check("grid junk", same(gridMoods(["sad", 7, "happy"], 3), ["ready", "ready", "h
 // the result card's row keeps the finishing order, with the player in its place
 { const row = faceRow([3, 1, 0, 2, 4, 5], 5);
   check("row", same(row.map(o => o.k), [3, 1, 0, 2, 4, 5]) && same(row.map(o => o.mood), ["happy", "happy", "me", "grumpy", "grumpy", "grumpy"]), JSON.stringify(row)); }
-// the start grid faces show for the countdown, fade right after GO!, and never in the menu demo
+// the start grid faces show for the countdown and past GO! (whose big letters cover the middle faces), then fade, and
+// never in the menu demo
 check("show countdown", faceShow({ mode: "race", state: "countdown", raceTime: 0 }) === 1, "");
-check("show fade", Math.abs(faceShow({ mode: "race", state: "race", raceTime: FACES.fade / 2 }) - 0.5) < 1e-9, "");
-check("show gone", faceShow({ mode: "race", state: "race", raceTime: FACES.fade + 0.01 }) === 0 && faceShow({ mode: "race", state: "done", raceTime: 0.1 }) === 0, "");
+check("show hold", FACES.hold >= 1 && faceShow({ mode: "race", state: "race", raceTime: 1.0 }) === 1, "the faces go before GO! has left the screen (0.9 s)");
+check("show fade", Math.abs(faceShow({ mode: "race", state: "race", raceTime: FACES.hold + FACES.fade / 2 }) - 0.5) < 1e-9, "");
+check("show gone", faceShow({ mode: "race", state: "race", raceTime: FACES.hold + FACES.fade + 0.01 }) === 0 && faceShow({ mode: "race", state: "done", raceTime: 0.1 }) === 0, "");
 check("show demo", faceShow({ mode: "demo", state: "demo", raceTime: 0 }) === 0, "");
 
 // every face, for every rival, draws inside its circle (and the bubble's tail ends at its tip)

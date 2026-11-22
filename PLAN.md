@@ -234,8 +234,22 @@ every test green.
   carries it), the coin amount is left out (it changes per track), the chip keeps the badge's red rim, and the
   Toy Track World "GO!" over the start grid is a one-second countdown, left as is.
   Not checked on a real tablet: the badge size in Toy Track World needs the owner's eyes.
-- [ ] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
+- [x] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
   they win, grumpy when they lose. Pictures only.
+  Notes: v1.14.0. Rules and drawing in `src/faces.js`, shared by both engines and the result card: a round face
+  under a helmet in the rival's car colors, three moods (ready, happy, grumpy). A rival who finished ahead of the
+  player is happy, one behind is grumpy. During the countdown a face in a white bubble pops up over every rival's
+  car (classic road, and the Toy Track World overlay) and fades 0.6 s after GO!; the target badge of the rival of
+  the week waits until the faces are gone. The next start grid shows the last race's moods. Decision: the moods
+  are kept for the play time only (not in the save), so no save change and a new play time starts "ready". The
+  result card has a row of faces in finishing order with the player's car in a gold ring, not in boss races or
+  Time Trials; tapping a rival's face honks in that rival's own horn voice (the thing to use; the faces over the
+  cars are the thing to see). Found while building: a Time Trial's result card could keep the "Beat Rosie" line
+  from the race before, now hidden. `scripts/test-faces.mjs` (in `npm test`) checks moods, the grid, the row,
+  that every face draws inside its circle, and that a race with and without faces gives the same places, time and
+  distances on both engines, so no sim or career change. `scripts/probes/faces.js` shoots the grid and the row.
+  The run that built this stopped during its sweep after committing (the commit-early rule worked); the next run
+  released it.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
 - [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track

@@ -730,7 +730,7 @@ function paintFaces(standings, big = -1) {
       ctx.fillStyle = "#10142a"; ctx.beginPath(); ctx.arc(x, y, 52, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#ffd400"; ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#fff7c2"; ctx.beginPath(); ctx.arc(x, y, 38, 0, Math.PI * 2); ctx.fill();
-      drawCar(ctx, x, y + 26, 66, lookOf(CARS.find(c => c.id === S.car) || CARS[0]), { t: 0 });
+      drawCar(ctx, x, y + 27, 76, lookOf(CARS.find(c => c.id === S.car) || CARS[0]), { t: 0 });
     } else drawFace(ctx, x, y, n === big ? 58 : 48, mood, RIVALS[k - 1]);
   });
 }
@@ -879,7 +879,7 @@ function showResult(r) {
   chestValues = rollChests(S, currentTrack, S.diff);
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
-  $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a treasure chest!";
+  $("r-chests").hidden = false; $("r-btns").hidden = true; $("r-pick").textContent = "Pick a gift!";
   $("r-cup").hidden = true;
   if (bossRace) {
     const b = run.boss, car = CARS.find(c => c.id === b.car);

@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.14.0 — Faces 😄
+
+- **😄 Rivals with faces.** Rosie, Splash, Sunny, Rocky and Snowball each have a little face under a helmet in their
+  car's colors. During the countdown a face pops up over every rival's car, on the classic road and in Toy Track
+  World, and stays a moment past GO! (the big countdown numbers cover the middle cars) before it fades. The rival of the week's target waits until the faces are gone.
+- **😠 Happy or grumpy.** A rival who finished ahead of the player smiles, and one who finished behind frowns. The
+  next start grid shows the same faces, so a rival the player just beat lines up grumpy. Before the first race of
+  a play time they all look ready.
+- **📯 A row of faces on the result card,** in finishing order, with the player's own car in a gold ring in its
+  place. Tap a rival's face and that rival honks in their own horn voice while the face pops up. Not in boss races
+  or Time Trials.
+- Fix: a Time Trial's result card could still show the "Beat Rosie" coin line from the race before it.
+- Polish: the faces over the cars are the new thing to see, and tapping a face on the result card is the new thing
+  to use.
+- For the grown-ups: `src/faces.js` holds the moods and the drawing, shared by both engines and the result card.
+  `scripts/test-faces.mjs` (in `npm test`) covers the moods, the start grid, the row, that every face draws inside
+  its circle, and that a race with faces plays exactly like one without on both engines. The moods are kept for
+  the play time only, so the save did not change. `scripts/probes/faces.js` takes pictures of the start grid and
+  the result row.
+
 ## v1.13.0 — Rival of the week 🎯
 
 - **🎯 A rival of the week.** From Racer Rank 3, one of the five named rivals (Rosie, Splash, Sunny, Rocky and

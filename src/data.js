@@ -492,7 +492,7 @@ export const lapsDone = S => (S.school?.math?.laps || 0) + (S.school?.word?.laps
 // tag: the two-word line on the Lab card (like the Garage cards); desc: the longer line in the card's sheet
 export const RESEARCH = [
   { id: "coinBoost", tier: 1, rank: 2, max: 10, icon: "🪙", name: "Coin Boost", desc: "+5% race prizes", tag: "More coins", c0: 600, t0: 300 },
-  { id: "luckyChests", tier: 1, rank: 2, max: 5, icon: "🎁", name: "Lucky Chests", desc: "Bigger treasure chests", tag: "Bigger chests", c0: 750, t0: 400 },
+  { id: "luckyChests", tier: 1, rank: 2, max: 5, icon: "🎁", name: "Lucky Gifts", desc: "Bigger gifts after a race", tag: "Bigger gifts", c0: 750, t0: 400 },
   { id: "headStart", tier: 1, rank: 2, max: 5, icon: "🚦", name: "Head Start", desc: "Start races with Turbo", tag: "Start faster", c0: 900, t0: 450 },
   { id: "pitCrew", tier: 1, rank: 2, max: 10, icon: "🔧", name: "Pit Crew", desc: "Upgrades 3% cheaper", tag: "Cheaper upgrades", c0: 750, t0: 400 },
   { id: "turboTanks", tier: 2, rank: 6, max: 10, icon: "🚀", name: "Turbo Tanks", desc: "Turbo lasts longer", tag: "Longer turbo", c0: 2000, t0: 1200 },
