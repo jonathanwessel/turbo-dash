@@ -2,6 +2,7 @@
 import { THEMES, RIVALS, PHYSICS, diffOf, MPH } from "./data.js";
 import { drawEmojiText } from "./emoji.js";
 import { honk, tickHonks, drawHornBubble } from "./horn.js";
+import { drawTargetBadge, weekBase } from "./rival-week.js";
 import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
@@ -240,6 +241,10 @@ export class Race {
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
     this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none", dirt: 0 };
     if (this.trial) this.rivals = [];
+    // 🎯 the rival of the week (src/rival-week.js): a little faster for every time the player beat them this week, but
+    // never past the player's own top speed
+    const wk = mode === "race" && !opts.boss && !this.trial && opts.weekRival, wr = wk && this.rivals[wk.i];
+    if (wr) { wr.base = weekBase(wr.base, wk.boost, stats.maxSpeed * this.home * this.phys.top); wr.week = true; }
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
     this.lastPad = null; this.beamT = 0; this.snowHit = null; this.driftT = 0;
@@ -646,7 +651,7 @@ export class Race {
       state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.length) + 1, 1, this.track.laps), laps: this.track.laps,
       coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, tankBurn: this.nitroT > 0 && this.nitroFull ? Math.min(1, this.nitroT / this.nitroFull) : null, speed: Math.round(p.speed / 50), mph: Math.max(0, Math.round(p.speed / BASE_MAX * MPH)),
-      progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
+      progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p, wk: !!r.week })),
     };
   }
 
@@ -886,6 +891,10 @@ export class Race {
       if (c.honkT > 0 && !ghost && w > 8 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
         const k = Math.min(1, (0.9 - c.honkT) * 8), r = Math.max(14, Math.min(40, w * 0.28)) * (0.6 + 0.4 * k);
         ctx.save(); ctx.globalAlpha *= Math.min(1, c.honkT * 4); drawHornBubble(ctx, x, y - w * CAR_TOP - 4, r, drawEmojiText); ctx.restore();
+      } else if (c.week && !ghost && w > 10 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
+        // 🎯 the rival of the week wears a target badge (the horn bubble takes its place while it honks). Its tail
+        // touches the roof (CAR_TOP leaves room for tall trucks and left it floating over a low car)
+        drawTargetBadge(ctx, x, y - w * 0.6 - 2, Math.max(11, Math.min(28, w * 0.22)));
       }
     });
   }

@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.13.0",
+    pics: [["🎯", "Beat the rival of the week"], ["🪙", "Win extra coins when you pass them"]],
+    notes: [
+      "A rival of the week. One of the five named rivals races in every race and cup, with a target over the car.",
+      "Finishing ahead of them pays extra coins and makes them a little faster, up to five times a week.",
+      "A new week brings the next rival. The rival never outgrows a car that can win the track.",
+      "Not checked on a real tablet yet, so please look at the target over the rival and the new rival card.",
+    ],
+  },
+  {
     v: "1.12.1",
     pics: [["🧸", "Cars in the way turn see-through"], ["🏙️", "A bigger town on a tall screen"]],
     notes: [

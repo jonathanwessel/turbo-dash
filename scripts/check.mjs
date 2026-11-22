@@ -3,7 +3,7 @@
 // Each step must pass before the next one runs; the first failure stops the check with a non-zero exit.
 // A full pass on a clean, committed tree writes .check-pass (git-ignored) with the commit it passed on, and
 // `npm run release` refuses to build a new release unless that file names the commit being released.
-//   npm run check            -> all six steps
+//   npm run check            -> all seven steps
 import { spawnSync, execSync } from "node:child_process";
 import { writeFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -18,6 +18,7 @@ const STEPS = [
   ["tests", "npm test"],
   ["drawing budget", "node scripts/perf.mjs"],
   ["hands-off start", "node scripts/sim.mjs start"],
+  ["rival of the week", "node scripts/sim.mjs rival"],   // v1.13: the rival at its cap never walls a track off
   ["career", "node scripts/career.mjs"],
   ["install test", "node scripts/install-test.mjs"],
   ["update test", "node scripts/update-test.mjs"],

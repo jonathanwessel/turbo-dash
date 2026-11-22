@@ -12,6 +12,7 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { unseen } from "./news.js";
+import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL } from "./rival-week.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
@@ -210,7 +211,7 @@ const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 /* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
    One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
-const NO_RETURN = new Set(["s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+const NO_RETURN = new Set(["s-rival", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
@@ -324,7 +325,7 @@ function menuDemo() {
   (engineFor(track) || engineFor(track = TRACKS[0])).setup(track, "demo", car, stats);
 }
 
-let currentTrack = TRACKS[0], raceStartAt = 0;
+let currentTrack = TRACKS[0], raceStartAt = 0, raceWeek = null;
 /* Break reminder: after the parent's set play time, the next race start shows a 10-minute rest screen. */
 let playMs = 0;
 function restDue() {
@@ -368,7 +369,8 @@ function startRace(track) {
   const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"];
   const weather = track.world === "earth" && S.parent.weather && S.rank >= OPEN_RANK.weather && !trial && !boss && Math.random() < 0.25
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
-  race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
+  raceWeek = isPreview() ? null : weekRivalRace(S, run.kind);   // 🎯 the rival of the week (races and cups)
+  race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weekRival: raceWeek, weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   raceStartAt = Date.now(); resetClock(clock); ladder().raceStart(); steps = STEPS_ON ? stepCounter() : null;
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
@@ -448,7 +450,8 @@ function updateHud(dt) {
   if (!trackW) trackW = $("h-track").clientWidth;
   h.progress.forEach((p, i) => { const d = dots[i]; if (!d) return;
     setStyle(d, "dx" + i, "transform", `translate(${Math.round(p.f * trackW)}px,0) translate(-50%,-50%)`); setStyle(d, "dc" + i, "background", p.color);
-    if (hudCache["dm" + i] !== p.me) { hudCache["dm" + i] = p.me; d.classList.toggle("me", p.me); } });
+    if (hudCache["dm" + i] !== p.me) { hudCache["dm" + i] = p.me; d.classList.toggle("me", p.me); }
+    if (hudCache["dw" + i] !== p.wk) { hudCache["dw" + i] = p.wk; d.classList.toggle("wk", !!p.wk); } });
   setText("h-mph", h.mph); setStyle($("speedo-needle"), "needle", "transform", `rotate(${(Math.min(h.mph, 140) / 140 * 180 - 90).toFixed(0)}deg)`);
   // the tank drains while Turbo burns it (a Super Turbo power-up leaves the tank alone)
   setStyle($("nitro-fill"), "tank", "transform", `scaleY(${((h.tankBurn ?? h.nitro)).toFixed(2)})`);
@@ -650,7 +653,9 @@ function levelUpCard() {
   $("lu-go").onclick = () => { sfx("click"); el.hidden = true; };
 }
 function openTracks() {
+  if (weekCardDue(S)) { weekCardSeen(S); save(); openRivalCard(); return; }   // 🎯 a new rival of the week says hi once
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
+  paintRivalChip();
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !t.season && !unlocked(i));   // only the next locked track shows
@@ -685,6 +690,30 @@ $("track-list").addEventListener("click", e => {
   if (!unlocked(i)) { sfx("nope"); c.animate([{ transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "none" }], { duration: 300 }); return; }
   sfx("click"); run = RACE(); startRace(TRACKS[i]);
 });
+
+/* ---------- 🎯 rival of the week (rules in src/rival-week.js) ---------- */
+const pipsHtml = (lvl, color) => Array.from({ length: WEEK_RIVAL.cap }, (_, k) => `<i class="${k < lvl ? "on" : ""}" style="--rc:${color}"></i>`).join("");
+function drawRivalCar(cv, def) { const cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCar(cx, cv.width / 2, cv.height - 6, cv.width * 0.62, def, { t: 0 }); }
+function paintRivalChip() {
+  const el = $("rw-chip"), on = weekRivalOpen(S); el.hidden = !on; if (!on) return;
+  const w = weekRival(S);
+  drawRivalCar($("rw-chip-car"), w.def); $("rw-chip-pips").innerHTML = pipsHtml(w.lvl, w.def.body);
+}
+function openRivalCard() {
+  const w = weekRival(S);
+  $("rw-name").textContent = w.name; $("rw-says").textContent = `"${w.def.says}"`;
+  $("rw-pips").innerHTML = pipsHtml(w.lvl, w.def.body);
+  $("rw-info").textContent = w.max ? `${w.name} is at top speed!` : `Beat ${w.name}. Win 🪙!`;
+  drawRivalCar($("rw-car"), w.def);
+  sfx("chest"); show("s-rival");
+}
+$("rw-ok").onclick = () => { sfx("click"); openTracks(); };
+$("rw-chip").onclick = () => { sfx("click"); openRivalCard(); };
+function paintRivalRow(wk) {
+  $("r-rival").hidden = !(wk && wk.up); if (!wk || !wk.up) return;
+  $("r-rival-name").textContent = wk.name; $("r-rival-dot").style.background = RIVALS[wk.i].body;
+  countUp($("r-rival-n"), wk.bonus);
+}
 
 /* ---------- cups ---------- */
 function startCup(cup) { run = { kind: "cup", cup, i: 0, pts: [0, 0, 0, 0, 0, 0], diff: S.diff }; startRace(TRACKS.find(t => t.id === cup.tracks[0])); }
@@ -791,6 +820,9 @@ function showResult(r) {
   if (student) setTimeout(() => toast(`📚 School bonus +🪙${student}`), starUp ? 3400 : 1200);
   const sparkleMsg = sparkle ? `✨ Sparkly car bonus +🪙${sparkle}` : "";
   chipToast(S.chips > chipsBefore);
+  // 🎯 finished ahead of the rival of the week: they get faster, and the first beats of the week pay a bonus
+  const wk = raceWeek && r.standings ? weekRivalResult(S, currentTrack, r.standings, S.diff, new Date(raceStartAt || Date.now())) : null;
+  paintRivalRow(wk);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   keepOpens(S);
   save();
@@ -807,7 +839,7 @@ function showResult(r) {
   nextTrack = next;
   $("r-unlock").hidden = !fresh.length;
   if (sparkleMsg) setTimeout(() => toast(sparkleMsg), 1400);   // the result card keeps one "what changed" line
-  if (fresh.length) $("r-unlock").textContent = `🔓 New track${fresh.length > 1 ? "s" : ""}: ${fresh.map(t => t.icon + " " + t.name).join(", ")}!`;
+  if (fresh.length) $("r-unlock").textContent = `🔓 ${fresh.map(t => t.icon + " " + t.name).join(" and ")} ${fresh.length > 1 ? "are" : "is"} open!`;
   chestValues = rollChests(S, currentTrack, S.diff);
   chestDone = false;
   document.querySelectorAll(".chest").forEach(c => { c.className = "chest"; c.textContent = "🎁"; });
@@ -1508,7 +1540,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
+if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); } };
 
 refreshCoins(false); refreshChips();
 menuDemo();

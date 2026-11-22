@@ -4,8 +4,9 @@
 // A second copy (the last save that loaded fine) protects against a bad write; a save code lets a parent copy
 // progress to another device; Google Save (cloud.js) keeps a copy in the parent's Google Drive.
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
+import { WEEK_RIVAL } from "./rival-week.js";
 
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 23;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -35,6 +36,7 @@ const DEFAULTS = () => ({
   chips: 0, chipLog: {}, // Brain Chips (earned only) and which one-time chip rewards were already given
   parent: { diffs: ["easy", "normal", "hard"], helper: 0, breakMin: 0, volume: 0.8, buzz: true, autoSteer: true, weather: true },  // helper: 0 off, 1 a little, 2 lots
   autoOn: false,
+  rivalWeek: { w: -1, lvl: 0, seen: -1 },   // 🎯 v23 (1.13): this week's number, how often the rival of the week was beaten, the week whose card was shown
   missions: null, history: [], restUntil: 0,
   cloud: { linked: false },   // Google Save
   // School: Math and Word Laps; each adds a Good Student bonus (earned counts all the +10% steps ever given)
@@ -70,6 +72,8 @@ export function port(d) {
   s.chips = Math.round(num(d.chips, 0, 0));
   s.restUntil = num(d.restUntil, 0, 0);
   s.autoOn = d.autoOn === true;
+  // v23 (1.13): the rival of the week
+  s.rivalWeek = (r => ({ w: Math.round(num(r.w, -1, -1, 1e6)), lvl: Math.round(num(r.lvl, 0, 0, WEEK_RIVAL.cap)), seen: Math.round(num(r.seen, -1, -1, 1e6)) }))(obj(d.rivalWeek));
   s.world = WORLDS.some(w => w.id === d.world && !w.soon) ? d.world : "earth";
   s.trials = Object.fromEntries(Object.entries(obj(d.trials)).filter(([, v]) => typeof v === "number" && v > 0 && v < 3600).map(([k, v]) => [k, Math.round(v * 100) / 100]));
   s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));

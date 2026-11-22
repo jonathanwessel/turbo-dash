@@ -87,6 +87,7 @@
       <div class="r-lines">
         <div>Prize <b>🪙 <span id="r-prize">0</span></b></div>
         <div>Road coins <b>🪙 <span id="r-road">0</span></b></div>
+        <div id="r-rival" hidden><span class="rr-dot" id="r-rival-dot"></span>🎯 Beat <span id="r-rival-name">Rosie</span> <b>🪙 <span id="r-rival-n">0</span></b></div>
       </div>
       <div id="r-unlock" class="r-unlock" hidden></div>
       <div id="r-cup" class="r-cup" hidden></div>
@@ -162,6 +163,7 @@
       <div class="world-bar" id="world-bar"></div>
       <div class="race-tabs"><button data-rtab="races" class="on">🏁 Races</button><button data-rtab="cups">🏆 Cups</button><button data-rtab="boss">👑 Boss</button><button data-rtab="trial">⏱️ Trials</button></div>
       <div class="diff-bar" id="diff-bar"></div>
+      <button id="rw-chip" class="rw-chip" aria-label="Rival of the week" hidden><span class="rw-t">🎯</span><canvas id="rw-chip-car" width="96" height="54"></canvas><span class="rw-pips" id="rw-chip-pips"></span></button>
     </div>
     <div class="track-list" id="track-list"></div>
     <div class="track-list cup-list" id="cup-list" hidden></div>
@@ -342,6 +344,18 @@
       <canvas id="bi-car" width="320" height="170"></canvas>
       <div class="gift-day" id="bi-info"></div>
       <div class="row"><button id="bi-go" class="big-btn go">🏁 Race the boss!</button><button id="bi-back" class="big-btn small">Not yet</button></div>
+    </div>
+  </section>
+
+  <section id="s-rival" class="screen dim" hidden>
+    <div class="card boss-card rival-card">
+      <h1>🎯 Rival of the week</h1>
+      <canvas id="rw-car" width="320" height="170"></canvas>
+      <div class="gift-day" id="rw-name">Rosie</div>
+      <div class="boss-says" id="rw-says"></div>
+      <div class="rw-pips big" id="rw-pips"></div>
+      <div class="rw-info" id="rw-info"></div>
+      <div class="row"><button id="rw-ok" class="big-btn go">OK!</button></div>
     </div>
   </section>
 

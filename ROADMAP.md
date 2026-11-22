@@ -330,6 +330,12 @@ way see-through, Lab benches shrink to tiles, small word fixes, and rivals no lo
 - Lesson: a camera that smooths its place in the world trails further behind the faster the car goes. Smooth the
   offset from the car instead.
 
+### v1.13.0 🎯 Rival of the week (shipped)
+One named rival a week races in every race and cup with a target over the car. Beating them pays coins and makes
+them a little faster, up to five times a week, held under the player's own top speed.
+- Lesson: a difficulty bump has to be measured against the car ladder before it ships. A plain 1.5% boost walled
+  off Space Road; tying the cap to the player's top speed keeps every track winnable.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

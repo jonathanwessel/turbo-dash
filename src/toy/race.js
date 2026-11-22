@@ -11,6 +11,7 @@ import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
 import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 import { honk, tickHonks } from "../horn.js";
+import { weekBase } from "../rival-week.js";
 
 export const V0 = 26;            // toy-world speed of a starter car (track units per second)
 const G = 30;                    // gravity
@@ -52,6 +53,10 @@ export class ToyRace {
     this.trial = !!opts.trial; this.ghost = opts.ghost || null; this.rec = { d: [], o: [], a: [] }; this.recT = 0;
     this.ghostDef = { ...car, body: "#cfefff", accent: "#ffffff", rainbow: false, shiny: false, sticker: "none", dirt: 0 };
     if (this.trial) this.rivals = [];
+    // 🎯 the rival of the week (src/rival-week.js): a little faster for every time the player beat them this week, but
+    // never past the player's own top speed
+    const wk = mode === "race" && !opts.boss && !this.trial && opts.weekRival, wr = wk && this.rivals[wk.i];
+    if (wr) { wr.base = weekBase(wr.base, wk.boost, this.topSpeed()); wr.week = true; }
     if (mode === "demo") this.player.dist = 2;
     this.prevIdx = sampleAt(T, this.player.dist);
     this.lastPad = null;
@@ -313,7 +318,7 @@ export class ToyRace {
       state: this.state, count: Math.ceil(this.count - 0.6), pos, total: all.length, trial: this.trial, time: this.raceTime,
       lap: clamp(Math.floor(Math.max(0, p.dist) / this.T.L) + 1, 1, this.track.laps), laps: this.track.laps,
       coins: this.coins, nitro: this.nitro, nitroOn: this.nitroT > 0, tankBurn: this.nitroT > 0 && this.nitroFull ? Math.min(1, this.nitroT / this.nitroFull) : null, speed: Math.round(p.speed * 10), mph: Math.max(0, Math.round(p.speed / V0 * MPH)),
-      progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p })),
+      progress: all.map(r => ({ f: clamp(r.dist / this.finishDist, 0, 1), color: r.def.body, me: r === p, wk: !!r.week })),
     };
   }
 

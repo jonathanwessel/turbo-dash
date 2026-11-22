@@ -213,8 +213,20 @@ every test green.
   "none" driver keeps its gate (never on the podium, last at +0 and +1, a printed warning at +2 and +3), because a
   child who presses Turbo is playing, and a Turbo bump is meant to knock rivals aside. Career on this commit: Rank 40
   on day 552, Moon 108, Ocean 189, Glacier 285, Toy 415 (no real change).
-- [ ] **Rival of the week.** The named rivals take turns. This week's rival is in every race, and gets a little
+- [x] **Rival of the week.** The named rivals take turns. This week's rival is in every race, and gets a little
   faster each time the player beats them, within a cap. A new week resets it.
+  Notes: v1.13.0. Rules in `src/rival-week.js`, used by both engines, the game, the sim and the career run. Calendar
+  weeks from Monday (local date), the five rivals in turn, from Rank 3, in races and cup races only (never boss,
+  Time Trial, preview or the menu demo). Each finish ahead of the rival (any place) adds 1% speed and pays half the
+  track's 1st place prize, up to 5 a week. Decision, found by `npm run sim -- rival` in the run that started this
+  box: a plain boost walls tracks off (Space Road went from 8 wins of 8 to 0 with +1.5%), so the boost is held
+  under 95% of the player's own top speed and never lowers a rival already faster. A target badge over the car
+  (classic road and a sprite in Toy Track World), a red ring on its race-bar dot, a card the first visit of the
+  week to the track list (car, shout, five dots), a chip above the track list that opens it again, and a "Beat
+  Rosie" coin line on the result card. Save v23 `rivalWeek` with a port and a broken-save fixture. The sweep
+  shoots the card (`s-rival`, `s-rival:max`) and the result line. This box was started by a run that stopped
+  before releasing (its lock went stale); the next run carried on from its uncommitted work, as the task says.
+  Not checked on a real tablet: the badge size in Toy Track World needs the owner's eyes.
 - [ ] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
   they win, grumpy when they lose. Pictures only.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
@@ -244,6 +256,11 @@ every test green.
 - [ ] **Target:** the race sim shows every track still has a result the "kid" driver can reach with the car
   one step above the starter, with the rival of the week at its cap. The career run reaches Rank 40 within 5% of
   the day it does today.
+  Notes (v1.13.0, progress): `npm run sim -- rival` is in `npm run check` and passes: for each track, the car one
+  step above the slowest car that wins it still wins at least 3 of 8 with Rosie at the cap (32 tracks, lowest 5 of
+  8 on Earthrise and 6 of 8 on Moonbase). Career with the rival in: Rank 40 on day 550 (552 before, inside 5%),
+  Moon 107, Ocean 188, Glacier 284, Toy 412, the rival beaten below the cap 401 times for 215,975 bonus coins.
+  Stays open until the rest of M1 (faces, boss rematches) ships, since it gates the whole milestone.
 
 ### M2. Cars that feel different (v1.13)
 - [ ] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
@@ -343,3 +360,9 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   box above now asks for the curve frame. Pacing: v1.12.1 is one fix release, so the next release must move the
   game forward. Its main piece is **Rival of the week** (now unblocked by the hands-off fix), with **Faces and
   reactions** if it fits. The M0 picture guard and the sweep box keep riding along one per release.
+- 2026-11-22 (v1.13.0): Rival of the week shipped, the main piece the last note asked for, so the game moved
+  forward after one fix release. It came from a run that wrote the whole box, sim gate included, and then stopped
+  before committing or releasing; its lock went stale and this run found the work uncommitted. Seen twice now (the
+  v1.12.1 run stopped on a permission prompt): **commit each working step locally as soon as `npm test` passes**, so
+  a run that stops leaves a commit with notes, not a dirty tree the next run has to judge. Next: **Faces and
+  reactions** as the main piece (it reuses the rival card's car drawing), with the M0 sweep box riding along.

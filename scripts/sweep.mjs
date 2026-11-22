@@ -20,7 +20,7 @@ const outArg = args.indexOf("--out"), out = resolve(root, outArg >= 0 ? args[out
 const RACES = !args.includes("--no-race");
 const DEV = 5184, CDP = 9334, URL0 = `http://127.0.0.1:${DEV}/`;
 const EDGE = process.env.EDGE || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const SHOTS = ["s-title", "s-hub", "s-garage", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
+const SHOTS = ["s-title", "s-hub", "s-garage", "s-rival", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 const kids = [];
@@ -87,8 +87,9 @@ async function main() {
     // the main screens with a real mid-game save (the career bot's Rank 16), so most of Main Street and the menus
     // are open. Toasts are hidden: a pop-up left over from the sweep (a School lap's bonus) is not part of a screen.
     await js("Object.assign(__td.S, __mid()); __td.refreshCoins(); document.head.insertAdjacentHTML('beforeend', '<style>#toast{display:none!important}</style>'); true");
-    // each screen opened the way the player opens it (its Main Street button), so it is painted from this save
-    const GO = { "s-garage": "garage", "s-tracks": "race", "s-rank": "rank", "s-school": "school", "s-lab": "lab", "s-trophies": "trophy" };
+    // each screen opened the way the player opens it (its Main Street button), so it is painted from this save. The
+    // first tap on Race shows the rival of the week's card (s-rival), the second the track list.
+    const GO = { "s-garage": "garage", "s-rival": "race", "s-tracks": "race", "s-rank": "rank", "s-school": "school", "s-lab": "lab", "s-trophies": "trophy" };
     for (const s of SHOTS) {
       await js(s === "s-title" ? "(__td.show('s-title'), true)" : `(__td.goHub(), ${GO[s] ? `document.querySelector('[data-go="${GO[s]}"]').dispatchEvent(new MouseEvent("click", { bubbles: true })), ` : ""}true)`);
       await wait(500); await shot(`${size}-${s}`);

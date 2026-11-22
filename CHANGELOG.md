@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.13.0 — Rival of the week 🎯
+
+- **🎯 A rival of the week.** From Racer Rank 3, one of the five named rivals (Rosie, Splash, Sunny, Rocky and
+  Snowball) takes a turn each calendar week, Monday to Sunday. They race in every race and cup race (never a boss
+  race or a Time Trial) and wear a red and white target over their car, on the classic road and in Toy Track World.
+  Their dot on the race bar has a red ring.
+- **🪙 Beat them for coins.** Finishing ahead of the rival of the week pays half of that track's 1st place prize
+  and makes them 1% faster, up to five times a week (five dots on their card). A new week brings the next rival
+  back to their normal speed.
+- **🃏 A rival card.** The first visit to the track list each week shows the rival's car, their shout and their
+  five dots. A button with their car and dots above the track list opens the card again.
+- **Never a wall.** The boost never takes the rival past 95% of the player's own top speed, and a rival already
+  faster than the player's car stays as it is. `npm run sim -- rival` (now in `npm run check`) proves every track
+  can still be won 3 times in 8 with the next faster car and the fastest rival at the cap.
+- Polish: the target badge is the new thing to see, and the rival card's button is the new thing to use.
+- For the grown-ups: save version 23 adds `rivalWeek` (the week number, the level, the week whose card was shown),
+  with a port and a broken-save fixture in `scripts/test-saves.mjs`. `scripts/test-rival-week.mjs` covers the
+  weeks, the turns, the cap, the bonus, the reset and both race engines.
+
 ## v1.12.1 — Clearer screens 🔍
 
 - **🏙️ Main Street on a tall screen.** Held upright, the town now fills most of the screen instead of sitting in a

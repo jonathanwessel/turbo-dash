@@ -135,6 +135,9 @@ window.__sweep = async (only) => {
   await go("s-garage:grid", () => document.getElementById("g-gridbtn").click(), "#s-garage");
   await go("s-garage:grid-end", async () => { const g = document.getElementById("g-grid"); g.scrollTop = g.scrollHeight; await wait(100); }, "#s-garage");
   document.getElementById("g-gridbtn").click();
+  // 🎯 v1.13: from Rank 3 the first visit of the week to the track list shows the rival of the week's card
+  await go("s-rival", async () => { if (td.S.rivalWeek) td.S.rivalWeek.seen = -1; await hub("race")(); }, "#s-rival");
+  await go("s-rival:max", async () => { if (td.S.rivalWeek) Object.assign(td.S.rivalWeek, { seen: -1, lvl: 5 }); await hub("race")(); }, "#s-rival");
   await go("s-tracks", hub("race"));
   await go("s-tracks:bonus", async () => { const l = document.getElementById("track-list"); l.scrollLeft = l.scrollWidth; l.scrollTop = l.scrollHeight; await wait(150); }, "#s-tracks");
   document.getElementById("track-list").scrollLeft = document.getElementById("track-list").scrollTop = 0;
@@ -176,6 +179,7 @@ window.__sweep = async (only) => {
   for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
   await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
+  await go("s-result:rival", async () => { td.showResult({ place: 1, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [0, 1, 2, 3, 4, 5] }); td.rivalRow({ up: true, name: "Snowball", i: 4, bonus: 1250 }); await wait(900); }, "#s-result");
   td.show("s-title");
   return out;
 };

@@ -3,6 +3,8 @@
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
 //   npm run sim -- ladder   -> wins per car on every Earth track, easiest first (finds difficulty gaps)
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
+import { rivalBoost, WEEK_RIVAL } from "../src/rival-week.js";
+import { rng } from "../src/physics-common.js";
 import { race, runRace } from "./racebot.mjs";
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });
@@ -85,6 +87,28 @@ else if (mode === "start") {
   if (warn.length) console.log("\n! " + warn.join("\n! "));
   if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
   console.log("\n✔ Hands-off is last at every level, Turbo without steering never reaches the podium, and the starter car does not win the first race");
+}
+else if (mode === "rival") {
+  // 🎯 v1.13 target (PLAN.md M1): the rival of the week at its cap never walls a track off. Every car, fully
+  // upgraded, sorted by speed is a ladder. For each track, "today's car" is the slowest one the kid driver wins
+  // with (half of 8 races on Normal). The next faster car must still win 3 of 8 with the fastest rival (Rosie) as
+  // the rival of the week at the cap. Exits 1 if any track fails. RIVAL_BOOST=1.03 tries another cap, RIVAL_SEED=n
+  // another seed: the bot's random numbers are seeded, so the gate gives the same answer every run.
+  { const r = rng(+(process.env.RIVAL_SEED || 1)); Math.random = r; }
+  const ladder = [...CARS].sort((a, b) => a.speed - b.speed), ups = lvl(UPGRADE_MAX), N = 8, PASS = 3;
+  const cap = { i: 0, boost: process.env.RIVAL_BOOST ? +process.env.RIVAL_BOOST : rivalBoost(WEEK_RIVAL.cap) };
+  const wins = (t, car, week, n = N) => { let w = 0; for (let k = 0; k < n; k++) w += runRace(t, car, ups, "normal", "kid", {}, 0, null, false, null, week).place === 1; return w; };
+  const bad = [];
+  for (const t of TRACKS) {
+    const k = ladder.findIndex(c => wins(t, c, null, 2) >= 1 && wins(t, c, null) >= N / 2);
+    if (k < 0) { console.log(`  ${t.id.padEnd(12)} no car wins it today (not a rival of the week problem)`); continue; }
+    const up = ladder.find(c => c.speed > ladder[k].speed) || ladder[k], w = wins(t, up, cap), base = wins(t, up, null);
+    console.log(`  ${t.id.padEnd(12)} today ${ladder[k].name.padEnd(24)} one up ${up.name.padEnd(16)} wins ${base}/${N}, with Rosie at the cap ${w}/${N}`);
+    if (w < PASS) bad.push(`${t.name}: ${up.name} wins ${w} of ${N} with the rival of the week at the cap`);
+  }
+  if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
+  console.log(`
+✔ Every track can still be won with the next faster car, with the rival of the week up to ${Math.round((cap.boost - 1) * 1000) / 10}% faster (held under ${Math.round(WEEK_RIVAL.room * 100)}% of the player's top speed)`);
 }
 else if (mode === "ladder") {
   // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.

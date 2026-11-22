@@ -8,6 +8,7 @@ import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferG
 import { toyPoint, DS, HW, WALL_H, startArch, startLine } from "./track.js";
 import { drawEmojiText } from "../emoji.js";
 import { drawHornBubble } from "../horn.js";
+import { drawTargetBadge } from "../rival-week.js";
 
 const V = (a = 0, b = 0, c = 0) => new THREE.Vector3(a, b, c);
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -348,7 +349,7 @@ export class ToyView {
     if (this.shield) { this.scene.remove(this.shield); free(this.shield); }
     this.cars = new Map();
     const make = (key, def, ghost) => { const g = carMesh(def); this.carShadows(g); if (ghost) g.traverse(m => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.4; m.castShadow = false; } }); this.scene.add(g); this.cars.set(key, g); return g; };
-    make("p", race.player.def); race.rivals.forEach((c, k) => make("r" + k, c.def));
+    make("p", race.player.def); race.rivals.forEach((c, k) => { const g = make("r" + k, c.def); if (c.week) g.add(this.targetBadge()); });
     if (race.trial && race.ghost) make("g", race.ghostDef, true);
     this.shield = new THREE.Mesh(new THREE.SphereGeometry(2.4, 24, 16), new THREE.MeshBasicMaterial({ color: "#3cf2ff", transparent: true, opacity: 0.18 })); this.scene.add(this.shield);
     this.snapCam = true;
@@ -412,6 +413,14 @@ export class ToyView {
     for (const g of this.cars.values()) this.carShadows(g);
     if (this.min) return;   // no shadows to resize
     const n = lite ? 512 : 1024; this.sun.shadow.mapSize.set(n, n); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
+  }
+  /* 🎯 the rival of the week's target badge: a sprite that rides above its car (one texture for the whole view; the
+     sprite's own material is freed with the car, the texture stays) */
+  targetBadge() {
+    this.badgeTex ||= canvasTex(128, 160, (x, w) => drawTargetBadge(x, w / 2, 154, 46));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.badgeTex, transparent: true, depthWrite: false }));
+    s.scale.set(1.3, 1.625, 1); s.position.set(0, 3.1, 0); s.renderOrder = 2; s.userData.badge = true;
+    return s;
   }
   /* fade a whole car toward an opacity (1 = solid). Each car has its own materials, so only this car changes. */
   fadeCar(g, to, dt) {

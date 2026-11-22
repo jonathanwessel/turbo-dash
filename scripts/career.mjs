@@ -8,6 +8,7 @@ import { runRace } from "./racebot.mjs";
 import { writeFileSync } from "node:fs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
+import { weekRivalRace, weekRivalResult } from "../src/rival-week.js";
 import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
 const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
 const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
@@ -56,7 +57,15 @@ function reward(track, r, diff, opts = {}) {
 const carOf = () => CARS.find(c => c.id === S.car);
 // weather like the game: about a quarter of Earth races (from Rank 2) have rain or snow
 const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"].includes(t.theme) ? "rain" : null) : null;
-const race = (track, diff) => runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), null, false, weatherFor(track));
+// 🎯 the rival of the week (v1.13) is in every race and cup race, on the career's own calendar
+const date = () => new Date(2027, 0, 1 + day, 12);
+let weekBonus = 0, weekBeats = 0;
+const race = (track, diff) => {
+  const week = weekRivalRace(S, "race", date());
+  const r = runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), null, false, weatherFor(track), week);
+  if (week && r.standings) { const w = weekRivalResult(S, track, r.standings, diff, date()); weekBonus += w.bonus; weekBeats += w.up; }
+  return r;
+};
 
 function playBoss(b) {
   const car = carOf(), t = TRACKS.find(x => x.id === b.track);
@@ -182,7 +191,7 @@ for (day = 1; day <= MAX_DAYS; day++) {
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
   // CAREER_SNAP=16:src/dev/mid-save.json writes the bot's save the evening it first reaches Rank 16 (the sweep's
   // pictures use it, so they show a save a real player could have, not made-up numbers)
-  if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 22, name: "Racer", world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
+  if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 23, name: "Racer", rivalWeek: { w: -1, lvl: 0, seen: -1 }, world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
   if (day - lastRankDay > 60 && S.rank < RANK_CAP && !gates.some(g => g.key === "stuck" + S.rank)) {
     const need = rankNeeds(S.rank, S);
     gate("stuck" + S.rank, `⚠ STUCK at Rank ${S.rank} for 60 days: ` + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
@@ -194,6 +203,7 @@ const months = d => d < 60 ? `day ${d}` : `day ${d} (~${(d / 30).toFixed(1)} mon
 console.log(`\nCareer: ${RACES_PER_DAY} races a day (${Math.round(RACES_PER_DAY * 75 / 60)} min), rank cap ${RANK_CAP}\n`);
 for (const g of gates) console.log(`  ${months(g.day).padEnd(24)} race ${String(g.race).padStart(5)}  ${g.text}`);
 console.log(`\nAfter ${Math.min(day, MAX_DAYS)} days: rank ${S.rank}, Auto Steer ${lv("autoSteer")}, coins ${S.coins}, chips ${S.chips}, research levels ${Object.values(S.research).reduce((a, b) => a + b, 0)}, cars ${S.owned.length}/${CARS.length}`);
+console.log(`Rival of the week: beaten ${weekBeats} times below the cap, bonus coins ${weekBonus}`);
 const need = rankNeeds(S.rank, S); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
 
 // v1.11.2: a gate that never opens fails the run (exit 1), so `npm run check` stops: a STUCK rank, or the rank

@@ -36,13 +36,14 @@ export const CARS = [
   { id: "barnstormer", name: "Barnstormer", price: null, cup: "country", tier: 4, body: "#2fbf3a", accent: "#ffd400", type: "monster", speed: 0.18, accel: 0.22, grip: 0.18 },
 ];
 
-// Opponent looks (they race with their own speeds, set by the track).
+// Opponent looks (they race with their own speeds, set by the track). says: what they shout as the rival of the
+// week (src/rival-week.js).
 export const RIVALS = [
-  { name: "Rosie", body: "#ff3fa4", accent: "#ffffff", type: "sport" },
-  { name: "Splash", body: "#14c8c8", accent: "#003b5c", type: "racer" },
-  { name: "Sunny", body: "#ffcc00", accent: "#222222", type: "racer" },
-  { name: "Rocky", body: "#8a5a2b", accent: "#ffd27f", type: "monster" },
-  { name: "Snowball", body: "#ffffff", accent: "#e8262b", type: "sport" },
+  { name: "Rosie", body: "#ff3fa4", accent: "#ffffff", type: "sport", says: "Catch me if you can!" },
+  { name: "Splash", body: "#14c8c8", accent: "#003b5c", type: "racer", says: "Splish splash, I'm too fast!" },
+  { name: "Sunny", body: "#ffcc00", accent: "#222222", type: "racer", says: "Sunny days are racing days!" },
+  { name: "Rocky", body: "#8a5a2b", accent: "#ffd27f", type: "monster", says: "Rocky rolls over everyone!" },
+  { name: "Snowball", body: "#ffffff", accent: "#e8262b", type: "sport", says: "Brrr! I'm cool and quick!" },
 ];
 
 /* ---------- Cups: three races, points for every place, a prize car for the winner ---------- */
