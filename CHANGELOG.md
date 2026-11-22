@@ -7,10 +7,13 @@
   stays at its fastest and a win pays 1000, like a repeat win before.
 - **🎨 A boss paint.** Winning Round 2 gives that boss's own shiny paint: Bronze, Starlight, Sea Glass, Ice Wolf
   and Gumball. They are never sold, and the Paint tab shows a 👑 on each one until it is won.
-- **The boss card** shows a crown for each round won, a red "Round 2" pill and the next prize, with a dot of the
-  paint when the paint is next. The intro says the boss is back, has a new line for each boss, shows a 💪 for each
-  step faster, and in Round 2 draws the boss's car in the paint the player can win.
+- **The boss card** shows a crown for each round won, a red "Round 2" pill and the next prize, with a 🎨 when the
+  paint is next. The intro has a new line for each boss and names the paint, and in Round 2 it draws the boss's car
+  in the paint the player can win. A win says "ROUND 2 WON!".
 - Old saves: every boss already beaten is ready for Round 2.
+- Fixes: on a short screen the buttons after picking a gift could hide under the result card's bottom edge (the
+  opened gifts now fold away there, "You got 🪙60!" stays). Boss result lines are shorter so they stay on the card,
+  and the boss intro's Race button fits a 360 px tall screen.
 - Polish: the boss's car in its prize paint is the new thing to see, and the rematch is the new thing to use.
 - For the grown-ups: save v24 counts boss wins (a v23 `true` is one win). `npm run sim -- boss` is in
   `npm run check` and fails when any round of any boss has no car that wins it. The career run tries a rematch now

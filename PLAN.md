@@ -140,13 +140,25 @@ every test green.
   Gulch). The update test builds the same code as v99.0.0 (`TD_VERSION`), so it also proves the card, the single
   cache and offline start. `npm run icons` redraws the maskable icons from `public/icon.svg`. Not checked on a
   real Android device: the icon crop and the install prompt there still need the owner's eyes.
-- [ ] **The sweep sees what a playing child sees.** Its race frames use a brand-new save, so every race picture
+- [x] **The sweep sees what a playing child sees.** Its race frames use a brand-new save, so every race picture
   shows the first-race lesson and hides the horn; take them from the Rank 16 save instead (one brand-new race frame
   stays, for the lesson). It also never opens a card's sheet (the Lab sheet's colon in v1.12.0 was found by reading
   code): open one sheet or pop-up per screen (Lab project, Garage upgrade, track card) and audit it. Also save one
   Toy Track World frame mid-race on the first sharp curve with a rival close behind the player
   (`scripts/probes/toy-curve.js`, from v1.12.1): the start-line frame could never show the camera problem that
   review found.
+  Notes: v1.15.0, rode along with Boss rematches. Race frames now come from the Rank 16 save with the horn tip seen
+  (`race-earth` ... `race-toy`), the sweep fails a played-save frame whose horn is hidden, `race-earth-new` keeps the
+  brand-new lesson, and `race-toy-curve` runs the curve probe. Each size also saves pictures of cards that only open
+  on a tap: the boss tab, a boss rematch intro, a boss result card and a Lab sheet. The audit opens boss intros (first
+  meeting, Round 2, after the last round) and boss result cards (won and lost); the Lab sheet was already audited
+  (since v1.12.0). Decision: the Garage and the track cards have no sheet (a tap on a track card starts the race,
+  a Garage card buys), so the cards that open on a tap are the Lab sheet, the rival card, the boss intro and the
+  result card, and all four are now audited filled in. What it found right away, all older than this release:
+  the boss result line ran off the card, the tilted title box ran into the line under it on wide cards, the
+  boss intro's Race button sat under the card's bottom edge at 740x360 for Major Wind-Up, and after a gift pick
+  Next hid under the result card's edge on landscape screens from 360 to 600 px tall (the audit's "needs scrolling"
+  check only looked at the screen's edge, now it looks at the card's edge too). All fixed.
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
 - [ ] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
@@ -271,8 +283,15 @@ every test green.
   beaten by the boss's own car or the next world's (`npm run sim -- boss`, now in `npm run check`, fails if any
   round of any boss has no car that wins 3 of 6). "Round 2" is the word on screen (a child knows rounds; "rematch"
   is a grown-up word). The boss card shows a crown per round won (up to 4), a red "Round N" pill and the next prize,
-  with a dot of the paint when the paint is next. The intro says "Big Bruno is back!", the boss's own rematch line,
-  a 💪 per step faster in the corner, and in Round 2 the boss's car is drawn in the paint the player can win.
+  with a 🎨 when the paint is next. The intro shows the boss's own rematch line and "Round 2! Win Bronze paint and
+  🪙 2000!", and in Round 2 the boss's car is drawn in the paint the player can win. A win's result card says
+  "ROUND 2 WON!" with only the prize on the line under it ("🎨 Bronze paint! +🪙2000"), the first win's line is
+  "🚗 Thunder King! +🪙5000", and a loss says "Big Bruno wins!". Decisions: the title stays the boss's plain name
+  ("Fang the Ice Wolf is back!" was too long for a short screen, and the rematch line already says it). The picture
+  review (a helper that saw only the sweep pictures) found the paint dot on the boss card unclear (now 🎨), a lone
+  💪 in the intro's corner that said nothing on its own (removed), "a new paint" that did not say which (now the
+  paint's name) and a prize line that touched the card's edge at 740 and 800 px wide (shorter). Its other finds
+  were already on screen before this release and went to the leftovers box below.
   Save v24: `bosses` counts wins (a v23 `true` is one win, so an old save gets Round 2 right away), with a port and
   two fixtures. The Museum keeps "Won Round N against ..." for Rounds 2 to 4 (its boss count still counts only
   "Beat ..."). The career bot now tries a rematch now and then on the world it races in: it won Rounds 2 to 4 of
@@ -288,6 +307,10 @@ every test green.
   title: the QR box covers the car. The toy power-up boxes show "¿" when they spin upside down. From the v1.14.0
   review: on the result card at 740x360 the coin counter runs over the card's top corner, "Road coins" is a grown-up
   word, and the "Beat Rosie" line has only a small colored dot where Rosie's face (`drawFace`) would say who it is.
+  From the v1.15.0 review: the result card shows three coin amounts (Prize, Road coins and a boss bonus) where one
+  total would do; the rival of the week chip shows on the Boss and Cups tabs, where that rival never races; the
+  green "MAX!" pill in the Garage looks like a button; in Toy Track World "BAM!" and "BOOSTER!" stack on top of each
+  other; and the boss intro's car has a small white speed line beside it.
 - [x] **A horn button.** It honks. Rivals nearby honk back.
   Notes: v1.12.0, taken ahead of its turn: v1.12.0 had to move the game forward (four tool releases in a row) and
   this is the smallest new thing to use. Rules in `src/horn.js`, used by both engines: the two closest rivals

@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.15.0",
+    pics: [["👑", "Beaten bosses come back faster"], ["🎨", "Win Round 2 for a new paint"], ["🪙", "More coins each round"]],
+    notes: [
+      "Beaten bosses come back for Round 2, 3 and 4, a little faster each time and for more coins.",
+      "Winning Round 2 against a boss gives that boss's own shiny paint for the garage.",
+      "Every boss already beaten in an old save is ready for Round 2.",
+      "On short screens the buttons after picking a gift no longer hide under the card.",
+      "Not checked on a real tablet yet, so please look at the boss card and the boss rematch on the tablet.",
+    ],
+  },
+  {
     v: "1.14.0",
     pics: [["😄", "Rivals smile when they beat you"], ["😠", "They frown when you beat them"], ["📯", "Tap a face. It honks!"]],
     notes: [

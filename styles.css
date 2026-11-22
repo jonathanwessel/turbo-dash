@@ -1182,13 +1182,9 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
   .rw-pips i { width: 12px; height: 12px; }
 }
 
-/* 👑 boss rematches (v1.15): the round under the crowns, the paint swatch in the prize line, and a 💪 per step
-   faster in the intro card's top corner (beside the checkered band, so the card gets no taller) */
+/* 👑 boss rematches (v1.15): the round under the crowns */
 .cup-card .cc-round { font-size: clamp(14px, 3.8vmin, 18px); font-weight: 900; color: #fff; background: #e8262b; border: 2px solid var(--ink); border-radius: 999px; padding: 0 10px; }
-.cup-card .cc-car .bc-paint { display: inline-block; width: 1em; height: 1em; border-radius: 50%; border: 2px solid #fff; vertical-align: -0.15em; box-shadow: inset -3px -3px 0 rgba(0,0,0,.25); }
-.boss-card { position: relative; }
-.bi-round { position: absolute; top: 26px; right: 14px; font-size: clamp(18px, 5vmin, 28px); line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,.5)); }
-@media (max-height: 430px) and (orientation: landscape) { .bi-round { top: 20px; font-size: 18px; } .cup-card .cc-round { font-size: 13px; } }
+@media (max-height: 430px) and (orientation: landscape) { .cup-card .cc-round { font-size: 13px; } }
 /* v1.15: the result title is tilted (rotate -1.5deg), so a box as wide as the card grows taller with the card and
    ran into the line under it on a wide boss result card. The box now hugs its words. */
 .card.result h1 { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }

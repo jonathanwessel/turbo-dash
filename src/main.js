@@ -567,7 +567,7 @@ function paintBosses() {
   $("boss-list").innerHTML = bosses.filter(b => bossOpen(b) || b === nextBoss).map(b => {
     const open = bossOpen(b), wins = S.bosses[b.id] || 0, car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track), paint = bossPaintNext(S, b);
     // 👑 one crown per round won (up to 4), then what the next win gives: the car, the boss's paint, or coins
-    const prize = !S.owned.includes(car.id) ? "Win: 🎁 a mystery car" : (paint ? `<i class="bc-paint" style="background:${paint.color}"></i> ` : "") + `🪙 ${bossPrize(S, b)}`;
+    const prize = !S.owned.includes(car.id) ? "Win: 🎁 a mystery car" : (paint ? "🎨 " : "") + `🪙 ${bossPrize(S, b)}`;
     return `<button class="cup-card boss ${open ? "" : "locked"}" data-boss="${b.id}" style="border-color:#ffd400">
       <div class="cc-cup">${b.icon}</div><div class="cc-name" style="color:#ffd400">${b.name}</div>
       <div class="cc-tracks">${t.icon}</div><div class="cc-best">${"👑".repeat(Math.min(wins, BOSS_ROUNDS.max + 1))}</div>
@@ -583,13 +583,12 @@ $("boss-list").addEventListener("click", e => {
 });
 function openBossIntro(b) {
   const car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
-  // 👑 a rematch (v1.15): "Round N", the boss's rematch line, a 💪 per step faster, and in Round 2 the boss's car
+  // 👑 a rematch (v1.15): "Round N", the boss's rematch line, and in Round 2 the boss's car
   // wears the paint the player can win, so the prize is a picture
   const wins = S.bosses[b.id] || 0, paint = bossPaintNext(S, b);
   $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${wins ? b.again : b.says}"`;
   $("bi-info").textContent = !wins ? `${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`
-    : `Round ${bossRound(S, b)}! Win ${paint ? "a new paint and " : ""}🪙 ${bossPrize(S, b)}!`;
-  $("bi-round").textContent = "💪".repeat(bossLevel(S, b)); $("bi-round").hidden = !wins;
+    : `Round ${bossRound(S, b)}! Win ${paint ? paint.name + " paint and " : ""}🪙 ${bossPrize(S, b)}!`;
   const shown = paint && carKnown(car) ? { ...car, body: paint.color, shiny: true, rainbow: false } : car;
   const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, shown, { t: 0 });
   $("bi-go").onclick = () => { sfx("click"); run = { kind: "boss", boss: b }; startRace(t); };
@@ -896,7 +895,7 @@ function showResult(r) {
       if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
       save(); chipToast(gotChip);
       // v1.15: the round is in the title and the line under it is only the prize (a longer line ran off the card)
-      const msg = first ? `🚗 ${car.name} is yours! +🪙${bonus}` : paint ? `🎨 ${paint.name} paint is yours! +🪙${bonus}` : `👑 +🪙${bonus}`;
+      const msg = first ? `🚗 ${car.name}! +🪙${bonus}` : paint ? `🎨 ${paint.name} paint! +🪙${bonus}` : `👑 +🪙${bonus}`;
       $("r-unlock").textContent = msg; $("r-unlock").hidden = false;
       $("r-title").textContent = first ? "BOSS BEATEN!" : `ROUND ${round} WON!`;
     } else { $("r-title").textContent = `${b.name} wins!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }
