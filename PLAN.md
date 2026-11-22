@@ -256,8 +256,8 @@ every test green.
   the small cheer line under the title: with both, a re-sweep found Next 2 px off a 360 px screen); the player's car in the gold ring was a smudge, now
   drawn bigger; "Pick a treasure chest!" named gift boxes, now "Pick a gift!" (and the Lab's "Lucky Gifts").
   Decisions: no place numbers under the faces (the order reads from happy, the gold ring, then grumpy), and the
-  older things it found went to the leftovers box below. Check on the release commit: career Rank 40 on day 547,
-  Moon 108, Ocean 188, Glacier 281, Toy 412 (no rule changed). Sweep clean at 7 sizes. Not checked on a real
+  older things it found went to the leftovers box below. Check on the release commit: career Rank 40 on day 548,
+  Moon 106, Ocean 186, Glacier 282, Toy 411 (no rule changed). Sweep clean at 7 sizes. Not checked on a real
   tablet: the size of the faces over the cars needs the owner's eyes.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
