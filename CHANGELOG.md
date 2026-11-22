@@ -12,13 +12,16 @@
   place. Tap a rival's face and that rival honks in their own horn voice while the face pops up. Not in boss races
   or Time Trials.
 - Fix: a Time Trial's result card could still show the "Beat Rosie" coin line from the race before it.
+- Words: "Pick a gift!" under the gift boxes after a race (it said treasure chest), and the Lab's Lucky Chests is
+  now Lucky Gifts.
 - Polish: the faces over the cars are the new thing to see, and tapping a face on the result card is the new thing
   to use.
 - For the grown-ups: `src/faces.js` holds the moods and the drawing, shared by both engines and the result card.
   `scripts/test-faces.mjs` (in `npm test`) covers the moods, the start grid, the row, that every face draws inside
   its circle, and that a race with faces plays exactly like one without on both engines. The moods are kept for
   the play time only, so the save did not change. `scripts/probes/faces.js` takes pictures of the start grid and
-  the result row.
+  the result row. `npm run sweep` now waits for other headless browsers on the machine before it starts (a busy
+  machine made one size time out).
 
 ## v1.13.0 — Rival of the week 🎯
 

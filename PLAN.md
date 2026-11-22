@@ -249,7 +249,14 @@ every test green.
   that every face draws inside its circle, and that a race with and without faces gives the same places, time and
   distances on both engines, so no sim or career change. `scripts/probes/faces.js` shoots the grid and the row.
   The run that built this stopped during its sweep after committing (the commit-early rule worked); the next run
-  released it.
+  released it. Picture review (a helper that saw only the probe pictures): the big 3, 2, 1 and GO! covered the
+  middle cars' faces, so the faces now stay 1.4 s past GO! (GO! shows for 0.9 s) and then fade over 0.6 s; the
+  face taps on a short screen were 22 px, now 36 px slots; the player's car in the gold ring was a smudge, now
+  drawn bigger; "Pick a treasure chest!" named gift boxes, now "Pick a gift!" (and the Lab's "Lucky Gifts").
+  Decisions: no place numbers under the faces (the order reads from happy, the gold ring, then grumpy), and the
+  older things it found went to the leftovers box below. Check on the release commit: career Rank 40 on day 547,
+  Moon 108, Ocean 188, Glacier 281, Toy 412 (no rule changed). Sweep clean at 7 sizes. Not checked on a real
+  tablet: the size of the faces over the cars needs the owner's eyes.
 - [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
 - [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
@@ -259,7 +266,9 @@ every test green.
   the tower and in "16 Pro", and the red "!" on Gifts covers the Missions board. At 360x740 the coin counter
   touches the "16 Pro" badge (add 360x740 to the sweep). Garage: "Earth 13/13" has no picture for what it counts.
   Track cards: "Beach Boardwalk" wraps onto the trophy, and 1280x800 has an empty band over the cards. Portrait
-  title: the QR box covers the car. The toy power-up boxes show "¿" when they spin upside down.
+  title: the QR box covers the car. The toy power-up boxes show "¿" when they spin upside down. From the v1.14.0
+  review: on the result card at 740x360 the coin counter runs over the card's top corner, "Road coins" is a grown-up
+  word, and the "Beat Rosie" line has only a small colored dot where Rosie's face (`drawFace`) would say who it is.
 - [x] **A horn button.** It honks. Rivals nearby honk back.
   Notes: v1.12.0, taken ahead of its turn: v1.12.0 had to move the game forward (four tool releases in a row) and
   this is the smallest new thing to use. Rules in `src/horn.js`, used by both engines: the two closest rivals
@@ -387,3 +396,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   v1.12.1 run stopped on a permission prompt): **commit each working step locally as soon as `npm test` passes**, so
   a run that stops leaves a commit with notes, not a dirty tree the next run has to judge. Next: **Faces and
   reactions** as the main piece (it reuses the rival card's car drawing), with the M0 sweep box riding along.
+- 2026-11-22 (v1.14.0): Faces and reactions shipped, the second release in a row that moves the game forward. The
+  run that built it committed its work and then stopped in its sweep, so this run only had to check, review and
+  release (the commit-early rule paid off). This run's sweep timed out at 1280x800 while another game's headless
+  smoke test was running; the same sizes swept clean right after. That is the second sweep timeout from a busy
+  machine (2026-11-20 was the first), so `npm run sweep` now waits, up to 20 minutes, until no other headless Edge
+  runs, and says so (probes do not wait). Rule: **a sweep or check timeout is first checked against other
+  headless browsers on the machine, never "fixed" in the game.** The picture review again found a thing only a
+  moving picture shows (the countdown covering faces): probes for a new on-screen thing take one frame in the
+  countdown and one just after GO!. The M0 sweep box did not ride along this time (the run went into finishing
+  v1.14.0); the next release takes **Boss rematches** as its main piece and the M0 sweep box with it, since the
+  sweep still opens no sheets and shoots no result card.

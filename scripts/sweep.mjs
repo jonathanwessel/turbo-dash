@@ -49,8 +49,28 @@ function cdp(wsUrl) {
   return { ready, send, close: () => ws.close() };
 }
 
+/* Another game's headless browser test (each game in this folder has its own scheduled task) can slow the machine
+   so much that one size takes over 10 minutes (v1.14.0: a sweep timed out at 1280x800 while another game's smoke
+   test ran, and the same sizes swept clean right after). So a full sweep first waits, up to 20 minutes, until no
+   other headless Edge runs, and says so. A probe is short and does not wait. */
+function otherHeadless() {
+  if (process.platform !== "win32") return 0;
+  const r = spawnSync("powershell", ["-NoProfile", "-Command",
+    `(Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*--headless*' -and $_.CommandLine -notlike '*--type=*' }).Count`], { encoding: "utf8" });
+  return parseInt(r.stdout, 10) || 0;
+}
+async function waitForQuiet() {
+  const t = Date.now();
+  for (let n = otherHeadless(), said = false; n > 0; n = otherHeadless()) {
+    if (!said) { console.log(`… ${n} other headless browser(s) running (another game's test?). Waiting for them, up to 20 minutes.`); said = true; }
+    if (Date.now() - t > 20 * 60000) { console.log("… still running after 20 minutes. Sweeping anyway: a timeout now may be the machine, not the game."); return; }
+    await wait(15000);
+  }
+}
+
 async function main() {
   mkdirSync(out, { recursive: true });
+  if (args.indexOf("--probe") < 0) await waitForQuiet();
   // 1. the dev server, on 127.0.0.1 only
   const vite = spawn(process.execPath, [join(root, "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(DEV), "--strictPort"], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
   kids.push(vite);
