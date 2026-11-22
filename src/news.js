@@ -8,7 +8,7 @@
 export const NEWS = [
   {
     v: "1.13.0",
-    pics: [["🎯", "Beat the rival of the week"], ["🪙", "Win extra coins when you pass them"]],
+    pics: [["🎯", "Beat the rival of the week"], ["🪙", "Beat them for more coins"]],
     notes: [
       "A rival of the week. One of the five named rivals races in every race and cup, with a target over the car.",
       "Finishing ahead of them pays extra coins and makes them a little faster, up to five times a week.",
