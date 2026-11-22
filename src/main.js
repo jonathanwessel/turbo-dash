@@ -13,6 +13,7 @@ import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { unseen } from "./news.js";
 import { raceMoods, gridMoods, faceRow, drawFace } from "./faces.js";
+import { HORN } from "./horn.js";
 import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL, drawTargetBadge } from "./rival-week.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
@@ -715,21 +716,32 @@ $("rw-ok").onclick = () => { sfx("click"); openTracks(); };
 $("rw-chip").onclick = () => { sfx("click"); openRivalCard(); };
 /* ---------- faces and reactions (rules and drawing in src/faces.js) ---------- */
 let lastMoods = null;   // how the last race went for each rival: their faces on the next start grid (this play time only)
-/* the result card's row of faces in finishing order, the player's own car in a gold ring in its place */
-function paintFaces(standings) {
-  const cv = $("r-faces"), show = !!standings && standings.length === RIVALS.length + 1; cv.hidden = !show; if (!show) return;
-  const row = faceRow(standings, RIVALS.length), D = 120; cv.width = row.length * D; cv.height = D;
+/* the result card's row of faces in finishing order, the player's own car in a gold ring in its place. A tapped
+   face pops up bigger for a moment (big: its place in the row). */
+let faceRowNow = [], faceBigT = 0;
+function paintFaces(standings, big = -1) {
+  const cv = $("r-faces");
+  if (standings !== undefined) { const show = !!standings && standings.length === RIVALS.length + 1; cv.hidden = !show; faceRowNow = show ? faceRow(standings, RIVALS.length) : []; if (!show) return; }
+  const D = 120; cv.width = faceRowNow.length * D; cv.height = D;
   const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
-  row.forEach(({ k, mood }, n) => {
+  faceRowNow.forEach(({ k, mood }, n) => {
     const x = n * D + D / 2, y = D / 2;
     if (k === 0) {
       ctx.fillStyle = "#10142a"; ctx.beginPath(); ctx.arc(x, y, 52, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#ffd400"; ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#fff7c2"; ctx.beginPath(); ctx.arc(x, y, 38, 0, Math.PI * 2); ctx.fill();
       drawCar(ctx, x, y + 26, 66, lookOf(CARS.find(c => c.id === S.car) || CARS[0]), { t: 0 });
-    } else drawFace(ctx, x, y, 48, mood, RIVALS[k - 1]);
+    } else drawFace(ctx, x, y, n === big ? 58 : 48, mood, RIVALS[k - 1]);
   });
 }
+/* tap a rival's face: they honk in their own voice (the same voice as in a race) and their face pops up */
+$("r-faces").addEventListener("click", e => {
+  const r = $("r-faces").getBoundingClientRect(), n = Math.floor((e.clientX - r.left) / r.width * faceRowNow.length), f = faceRowNow[n];
+  if (!f) return;
+  if (f.k === 0) { sfx("horn"); return; }
+  sfx("horn" + ((f.k - 1) % HORN.voices + 1)); buzz(10);
+  paintFaces(undefined, n); clearTimeout(faceBigT); faceBigT = setTimeout(() => paintFaces(undefined), 260);
+});
 function paintRivalRow(wk) {
   $("r-rival").hidden = !(wk && wk.up); if (!wk || !wk.up) return;
   $("r-rival-name").textContent = wk.name; $("r-rival-dot").style.background = RIVALS[wk.i].body;

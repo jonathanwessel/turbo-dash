@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.14.0",
+    pics: [["😄", "Rivals smile when they beat you"], ["😠", "They frown when you beat them"], ["📯", "Tap a face. It honks!"]],
+    notes: [
+      "The rivals have faces. Each one pops up over their car before a race starts.",
+      "After a race a row of faces shows who finished where. Rivals ahead smile and rivals behind frown.",
+      "Tap a face on that row and that rival honks back.",
+      "Not checked on a real tablet yet, so please look at the faces over the cars at the start.",
+    ],
+  },
+  {
     v: "1.13.0",
     pics: [["🎯", "Beat the rival of the week"], ["🪙", "Beat them for more coins"]],
     notes: [
