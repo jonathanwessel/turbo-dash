@@ -111,7 +111,15 @@ async function main() {
     const [w, h] = size.split("x").map(Number), t = Date.now();
     await c.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false });
     await load();
-    const issues = await js("__sweepAll()");
+    // v1.15: another game's headless test can also start after the sweep did (twice in the v1.15.0 run, both sizes
+    // then swept clean on a quiet machine), so a size that times out waits for a quiet machine and runs once more
+    let issues;
+    try { issues = await js("__sweepAll()"); }
+    catch (e) {
+      if (!/timed out/.test(e.message)) throw e;
+      console.log(`… ${size} timed out with ${otherHeadless()} other headless browser(s) running. Waiting for a quiet machine, then this size once more.`);
+      await waitForQuiet(); await load(); issues = await js("__sweepAll()");
+    }
     report[size] = issues;
     // the main screens with a real mid-game save (the career bot's Rank 16), so most of Main Street and the menus
     // are open. Toasts are hidden: a pop-up left over from the sweep (a School lap's bonus) is not part of a screen.

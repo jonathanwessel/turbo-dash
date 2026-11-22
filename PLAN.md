@@ -333,6 +333,8 @@ every test green.
   8 on Earthrise and 6 of 8 on Moonbase). Career with the rival in: Rank 40 on day 550 (552 before, inside 5%),
   Moon 107, Ocean 188, Glacier 284, Toy 412, the rival beaten below the cap 401 times for 215,975 bonus coins.
   Stays open until the rest of M1 (faces, boss rematches) ships, since it gates the whole milestone.
+  Notes (v1.15.0, progress): career Rank 40 on day 542 (548 before), inside 5%. Faces and boss rematches have
+  shipped; the leftovers box is the last M1 box before this target is judged.
 
 ### M2. Cars that feel different (v1.13)
 - [ ] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
@@ -451,3 +453,17 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   sweep is swept again at the sizes it touches before the release commit.** The M0 sweep box did not ride along this time (the run went into finishing
   v1.14.0); the next release takes **Boss rematches** as its main piece and the M0 sweep box with it, since the
   sweep still opens no sheets and shoots no result card.
+- 2026-11-22 (v1.15.0): Boss rematches shipped as the main piece, with the M0 sweep box riding along, as the last
+  note asked. Third release in a row that moves the game forward. The sweep's new pictures of cards that open on a
+  tap found four layout problems that were already live (a boss line off the card, a tilted title box into the
+  line under it, Wind-Up's Race button under the card's edge, Next under the result card's edge after a gift pick
+  on screens 360 to 600 px tall). Rule learned, seen twice now (the rival card in v1.13.0 and these): **a card that
+  opens on a tap is not checked until the sweep opens it filled in**, so every new card gets a sweep step with real
+  content the release it appears. The audit's "needs scrolling" check also only looked at the screen's edge; it now
+  looks at the edge of a card that scrolls. Two sweeps timed out mid-run when another game's headless test started
+  after the sweep had checked for a quiet machine (the third and fourth sweep timeouts from a busy machine, after
+  2026-11-20 and v1.14.0); the same sizes then swept clean. `npm run sweep` now waits for a quiet machine and runs a
+  timed-out size once more, instead of failing the whole run. Also, this run once saved a source file while a sweep
+  was running (the existing rule says never): the sweep was already red, but the rule stands. Next: the
+  **v1.12.1 picture review leftovers** box (it now also lists the v1.15.0 review's older finds), which closes M1
+  with its target, and the M0 picture guard riding along.
