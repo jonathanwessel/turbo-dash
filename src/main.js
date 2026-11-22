@@ -586,9 +586,9 @@ function openBossIntro(b) {
   // 👑 a rematch (v1.15): "Round N", the boss's rematch line, a 💪 per step faster, and in Round 2 the boss's car
   // wears the paint the player can win, so the prize is a picture
   const wins = S.bosses[b.id] || 0, paint = bossPaintNext(S, b);
-  $("bi-face").textContent = b.icon; $("bi-name").textContent = wins ? `${b.name} is back!` : b.name; $("bi-says").textContent = `"${wins ? b.again : b.says}"`;
-  $("bi-info").textContent = !wins ? `One on one on ${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`
-    : `Round ${bossRound(S, b)} on ${t.icon} ${t.name}. Win ${paint ? paint.name + " paint and " : ""}🪙 ${bossPrize(S, b)}!`;
+  $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${wins ? b.again : b.says}"`;
+  $("bi-info").textContent = !wins ? `${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`
+    : `Round ${bossRound(S, b)}! Win ${paint ? "a new paint and " : ""}🪙 ${bossPrize(S, b)}!`;
   $("bi-round").textContent = "💪".repeat(bossLevel(S, b)); $("bi-round").hidden = !wins;
   const shown = paint && carKnown(car) ? { ...car, body: paint.color, shiny: true, rainbow: false } : car;
   const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, shown, { t: 0 });
@@ -1588,7 +1588,7 @@ if (import.meta.env.DEV) import("./dev/audit.js");
 if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
   // 👑 v1.15 sweep: a boss's intro after `wins` wins, and a boss race's result card (the sweep and probes only)
   bossIntro: (id, wins) => { const b = BOSSES.find(x => x.id === id); if (wins) { S.bosses[id] = wins; if (!S.owned.includes(b.car)) grantCar(S, b.car); } else delete S.bosses[id]; openBossIntro(b); },
-  bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id); run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); } };
+  bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id), keep = currentTrack; run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); currentTrack = keep; } };   // the track goes back, so later sweep cards are not on the boss's track
 
 refreshCoins(false); refreshChips();
 menuDemo();

@@ -44,7 +44,12 @@ window.__audit = (rootSel) => {
   // a screen's big green buttons must be on screen without scrolling (v1.9: Word Lap hid below the School). Small
   // Back and Done buttons at the end of the long grown-up pages (Progress, Guide, Parent Corner) are meant to be scrolled to.
   // v1.11.3: the Racer Rank hint and its Rank up button too (the hint sat below the gauges, off a 360 px screen)
-  for (const e of root.querySelectorAll(".big-btn.go:not(.small), .rank-up-btn, .rk-hint")) if (vis(e)) { const r = e.getBoundingClientRect(); if (r.bottom > H + 2 || r.right > W + 2) issues.push("NEEDS SCROLLING " + name(e)); }
+  // v1.15: also inside a card that scrolls (the boss card's Race button sat under its bottom edge on a 360 px screen,
+  // still inside the screen, so the old check missed it). Lists meant to scroll sideways or long pages are not cards.
+  for (const e of root.querySelectorAll(".big-btn.go:not(.small), .rank-up-btn, .rk-hint")) if (vis(e)) {
+    const r = e.getBoundingClientRect(), card = e.closest(".card"), cr = card && /(auto|scroll)/.test(getComputedStyle(card).overflowY) ? card.getBoundingClientRect() : null;
+    if (r.bottom > H + 2 || r.right > W + 2 || (cr && r.bottom > cr.bottom + 2)) issues.push("NEEDS SCROLLING " + name(e));
+  }
   // Turbo Lab: every open card of a research with more than one level shows its level (v1.9.1: v1.7 had hidden it)
   for (const c of root.querySelectorAll("#lab-list .proj[data-info]")) {
     const r = RESEARCH.find(x => x.id === c.dataset.info); if (!r || r.max <= 1 || !vis(c) || !window.__td || window.__td.S.rank < r.rank) continue;
@@ -177,7 +182,10 @@ window.__sweep = async (only) => {
   await go("s-preview", () => { td.show("s-tracks"); td.openPreview("moon"); });
   await go("s-preview:toy", () => td.openPreview("toy"), "#s-preview");
   for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
-  // 👑 v1.15: the boss intro the first time, in Round 2 (with the paint to win) and after the last round, the boss tab
+  await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
+  await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
+  await go("s-result:rival", async () => { td.showResult({ place: 1, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [0, 1, 2, 3, 4, 5] }); td.rivalRow({ up: true, name: "Snowball", i: 4, bonus: 1250 }); await wait(900); }, "#s-result");
+  // 👑 v1.15 (last, so the boss's track never leaks into the result cards above): the boss intro the first time, in Round 2 (with the paint to win) and after the last round, the boss tab
   // with crowns, and a boss result card (each filled in, not the empty placeholder td.show gives)
   const bossKeep = JSON.stringify(td.S.bosses), ownKeep = JSON.stringify(td.S.owned), paintKeep = JSON.stringify(td.S.paints);
   await go("s-boss:first", () => td.bossIntro("bruno", 0), "#s-boss");
@@ -188,9 +196,6 @@ window.__sweep = async (only) => {
   await go("s-result:boss", async () => { td.S.bosses.bruno = 1; td.bossResult("bruno", 1); await wait(300); }, "#s-result");
   await go("s-result:boss-lost", async () => { td.bossResult("bruno", 2); await wait(300); }, "#s-result");
   Object.assign(td.S, { bosses: JSON.parse(bossKeep), owned: JSON.parse(ownKeep), paints: JSON.parse(paintKeep) });
-  await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
-  await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
-  await go("s-result:rival", async () => { td.showResult({ place: 1, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [0, 1, 2, 3, 4, 5] }); td.rivalRow({ up: true, name: "Snowball", i: 4, bonus: 1250 }); await wait(900); }, "#s-result");
   td.show("s-title");
   return out;
 };

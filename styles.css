@@ -1194,3 +1194,12 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .card.result h1 { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
 .card.result h1 + .r-sub { padding-top: 6px; }   /* the display font's text box reaches below its line */
 .card.result { overflow-x: hidden; }   /* the prize line's bump (cbump) grows past the card for a moment: no sideways scrollbar */
+/* v1.15: the boss intro's tilted title ("Big Bruno is back!") ran into the boss's line on a 360 px screen */
+.boss-card h1 { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+.boss-card h1 + .boss-says { padding-top: 4px; }
+/* On a short screen the faces row and an "is open!" line pushed Again / Next / Home below the card after a gift
+   was picked (found by the v1.15 sweep). Once those buttons show, the opened gifts fold away there; "You got 🪙60!"
+   stays. */
+@media (max-height: 430px) and (orientation: landscape) { .r-chests:has(~ #r-btns:not([hidden])) .row { display: none; } }
+#s-boss .boss-card h1 { margin-left: auto; margin-right: auto; }   /* centered */
+@media (min-height: 431px) { #s-boss .boss-card h1 { margin-top: 6px; } }   /* clear of the face where the face is big */
