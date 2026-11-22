@@ -52,7 +52,8 @@ Turbo Dash's own rules on top, and they win where the two disagree.
    the background, and save no source file while it runs: the dev server reloads the page). No overlap, no spill,
    no "null". Pictures land in `.sweep/`.
 3. Look at the sweep's pictures of every screen you changed, plus its race frame per world. Then a helper that sees
-   only the pictures reads every visible line and flags anything a young player could not follow.
+   only the pictures reads every visible line and flags anything a young player could not follow. Fixes made after
+   the sweep are swept again at every size they can touch (`npm run sweep -- 740x360 ...`) before the commit.
 4. Bump the version in `package.json`. Add this version's entry at the top of `src/news.js`: `pics` for the
    in-game card (one picture and a few words each, or empty when the player sees no change) and `notes` for the
    owner (2 to 5 plain lines, no quote marks). Add the `CHANGELOG.md` entry and a one-line "shipped" entry in
@@ -251,7 +252,8 @@ every test green.
   The run that built this stopped during its sweep after committing (the commit-early rule worked); the next run
   released it. Picture review (a helper that saw only the probe pictures): the big 3, 2, 1 and GO! covered the
   middle cars' faces, so the faces now stay 1.4 s past GO! (GO! shows for 0.9 s) and then fade over 0.6 s; the
-  face taps on a short screen were 22 px, now 36 px slots; the player's car in the gold ring was a smudge, now
+  face taps on a short screen were 22 px, now 36 px slots (on screens under 430 px tall the row takes the place of
+  the small cheer line under the title: with both, a re-sweep found Next 2 px off a 360 px screen); the player's car in the gold ring was a smudge, now
   drawn bigger; "Pick a treasure chest!" named gift boxes, now "Pick a gift!" (and the Lab's "Lucky Gifts").
   Decisions: no place numbers under the faces (the order reads from happy, the gold ring, then grumpy), and the
   older things it found went to the leftovers box below. Check on the release commit: career Rank 40 on day 547,
@@ -404,6 +406,8 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   runs, and says so (probes do not wait). Rule: **a sweep or check timeout is first checked against other
   headless browsers on the machine, never "fixed" in the game.** The picture review again found a thing only a
   moving picture shows (the countdown covering faces): probes for a new on-screen thing take one frame in the
-  countdown and one just after GO!. The M0 sweep box did not ride along this time (the run went into finishing
+  countdown and one just after GO!. Also seen in this run: a review fix (a taller face row) was checked with a probe
+  picture only, and the next sweep found it pushed Next off a short screen. Rule: **every change made after the
+  sweep is swept again at the sizes it touches before the release commit.** The M0 sweep box did not ride along this time (the run went into finishing
   v1.14.0); the next release takes **Boss rematches** as its main piece and the M0 sweep box with it, since the
   sweep still opens no sheets and shoots no result card.
