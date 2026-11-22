@@ -296,7 +296,9 @@ every test green.
   two fixtures. The Museum keeps "Won Round N against ..." for Rounds 2 to 4 (its boss count still counts only
   "Beat ..."). The career bot now tries a rematch now and then on the world it races in: it won Rounds 2 to 4 of
   four bosses (Major Wind-Up's rounds are left for after Rank 40 in that run). Career on this build: Rank 40 on day
-  542 (548 before, inside 5%), Moon 102, Ocean 184, Glacier 278, Toy 406.
+  542 (548 before, inside 5%), Moon 102, Ocean 184, Glacier 278, Toy 406. Check on the release commit: Rank 40 on
+  day 552, Moon 107, Ocean 187, Glacier 281, Toy 413 (the bot's luck moves these a few days). Sweep clean at 7
+  sizes, and again after the picture review fixes. Not checked on a real tablet.
 - [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
   World start: the player's car blends into a pack of look-alike cars with navy roofs (a marker or a brighter
   outline for the player's car). Turbo Lab: the pip bar and "10/10" say the same thing twice, "MAX!" chips and card
@@ -333,7 +335,7 @@ every test green.
   8 on Earthrise and 6 of 8 on Moonbase). Career with the rival in: Rank 40 on day 550 (552 before, inside 5%),
   Moon 107, Ocean 188, Glacier 284, Toy 412, the rival beaten below the cap 401 times for 215,975 bonus coins.
   Stays open until the rest of M1 (faces, boss rematches) ships, since it gates the whole milestone.
-  Notes (v1.15.0, progress): career Rank 40 on day 542 (548 before), inside 5%. Faces and boss rematches have
+  Notes (v1.15.0, progress): career Rank 40 on day 552 on the release commit (548 before), inside 5%. Faces and boss rematches have
   shipped; the leftovers box is the last M1 box before this target is judged.
 
 ### M2. Cars that feel different (v1.13)
