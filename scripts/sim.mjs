@@ -2,7 +2,9 @@
 //   npm run sim             -> finishing places per car tier, track and difficulty
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
 //   npm run sim -- ladder   -> wins per car on every Earth track, easiest first (finds difficulty gaps)
-import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
+//   npm run sim -- boss     -> the slowest car that beats each boss in each round (in npm run check)
+import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, BOSSES, BOSS_ROUNDS, RESEARCH, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
+import { bossSpeed } from "../src/rules.js";
 import { rivalBoost, WEEK_RIVAL } from "../src/rival-week.js";
 import { rng } from "../src/physics-common.js";
 import { race, runRace } from "./racebot.mjs";
@@ -109,6 +111,32 @@ else if (mode === "rival") {
   if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
   console.log(`
 ✔ Every track can still be won with the next faster car, with the rival of the week up to ${Math.round((cap.boost - 1) * 1000) / 10}% faster (held under ${Math.round(WEEK_RIVAL.room * 100)}% of the player's top speed)`);
+}
+else if (mode === "boss") {
+  // 👑 v1.15 boss rematches: every round of every boss can be won. Every car, fully upgraded, with the Turbo Lab's
+  // world kits done (no Auto Steer: it is off in boss races), sorted by speed is a ladder. For each boss and each
+  // round (1 is the first race, 2 to 4 are 4% faster each), the slowest car the kid driver wins with (3 of 6) is
+  // printed. Exits 1 if a round has no such car. BOSS_SEED=n tries another seed.
+  { const r = rng(+(process.env.BOSS_SEED || 1)); Math.random = r; }
+  const ladder = [...CARS].sort((a, b) => a.speed - b.speed), ups = lvl(UPGRADE_MAX), N = 6, PASS = 3;
+  const lab = Object.fromEntries(RESEARCH.filter(r => r.id !== "autoSteer").map(r => [r.id, r.max]));
+  const bad = [];
+  for (const b of BOSSES) {
+    const t = TRACKS.find(x => x.id === b.track), row = [];
+    for (let level = 0; level <= BOSS_ROUNDS.max; level++) {
+      const boss = { ...b, speed: bossSpeed(b, level), def: CARS.find(c => c.id === b.car) };
+      let hit = null;
+      for (const c of ladder) {
+        let w = 0; for (let k = 0; k < N && w < PASS && w + N - k >= PASS; k++) w += runRace(t, c, ups, "normal", "kid", lab, 0, boss).place === 1;
+        if (w >= PASS) { hit = c; break; }
+      }
+      row.push(`Round ${level + 1} ${(hit ? hit.name : "nobody").padEnd(16)}`);
+      if (!hit) bad.push(`${b.name} Round ${level + 1}: no car wins ${PASS} of ${N}`);
+    }
+    console.log(`  ${b.name.padEnd(18)} ${row.join(" ")}`);
+  }
+  if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
+  console.log(`\n✔ Every boss can be beaten in every round (up to ${Math.round(BOSS_ROUNDS.speed * BOSS_ROUNDS.max * 100)}% faster)`);
 }
 else if (mode === "ladder") {
   // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.

@@ -1,7 +1,7 @@
 // Reward rules (src/rules.js): fixed inputs, fixed answers. The game and the career simulator both use these.
 //   node scripts/test-rules.mjs   (part of npm test)
-import { TRACKS, CUPS, BOSSES, REWARDS, GOALS, prizeFor, diffOf, trialTimes, trackOpen, inSeason } from "../src/data.js";
-import { raceReward, chestValues, bossReward, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapBonus, bonusLeft, goodStudentPct, activeBoosts, grantCar, chip, keepOpens, seasonUnlock } from "../src/rules.js";
+import { TRACKS, CUPS, BOSSES, BOSS_ROUNDS, PAINTS, REWARDS, GOALS, prizeFor, diffOf, trialTimes, trackOpen, inSeason } from "../src/data.js";
+import { raceReward, chestValues, bossReward, bossRound, bossLevel, bossSpeed, bossPrize, bossPaint, bossPaintNext, trialReward, cupOrder, cupEndReward, rankUp, claimGift, giftInfo, treat, claimMission, missionsBonus, lapBonus, bonusLeft, goodStudentPct, activeBoosts, grantCar, chip, keepOpens, seasonUnlock } from "../src/rules.js";
 
 let fails = 0, checks = 0;
 const check = (ok, msg) => { checks++; if (!ok) { fails++; console.log("  ✖ " + msg); } };
@@ -27,10 +27,25 @@ const sunny = TRACKS[0], race = (place, extra = {}) => ({ place, coins: 12, time
   const v = chestValues(fresh(), sunny, "normal", () => 0.3).sort((a, b) => a - b), b = Math.round(REWARDS.chestBase(sunny.diff) * diffOf("normal").pay);
   check(v[0] === b && v[1] === 2 * b && v[2] === 4 * b, `chests ${v}`);
 }
-{ // bosses: 5000 the first time, 1000 after; the car once
-  const S = fresh(), b = BOSSES[0], first = bossReward(S, b), again = bossReward(S, b);
-  check(first.first && first.bonus === 5000 && first.car && S.owned.includes(b.car), "first boss win");
-  check(!again.first && again.bonus === 1000 && !again.car && S.coins === 6000, "a repeat boss win pays 1000");
+{ // 👑 boss rounds (v1.15): 5000 and the car the first time, then Rounds 2 to 4 pay 2000, 3000, 4000 and get 4% faster
+  // each time, Round 2 gives the boss's own paint once, and after Round 4 the boss stays at its fastest and pays 1000
+  const S = fresh({ paints: ["stock"] }), b = BOSSES[0], paint = bossPaint(b);
+  check(paint && paint.price == null && PAINTS.filter(p => p.boss === b.id).length === 1, "each boss has one paint that is never sold");
+  check(BOSSES.every(x => bossPaint(x) && x.again), "every boss has a paint and a rematch line");
+  check(bossRound(S, b) === 1 && bossLevel(S, b) === 0 && bossSpeed(b, 0) === b.speed && bossPrize(S, b) === 5000, "the first race is Round 1 at the boss's own speed");
+  const first = bossReward(S, b);
+  check(first.first && first.round === 1 && first.bonus === 5000 && first.car && S.owned.includes(b.car) && !first.paint && S.bosses[b.id] === 1, "first boss win");
+  check(bossRound(S, b) === 2 && bossLevel(S, b) === 1 && Math.abs(bossSpeed(b, 1) - b.speed * 1.04) < 1e-9 && bossPrize(S, b) === 2000 && bossPaintNext(S, b) === paint, "Round 2 is faster and offers the paint");
+  const r2 = bossReward(S, b);
+  check(!r2.first && r2.round === 2 && r2.bonus === 2000 && !r2.car && r2.paint === paint && S.paints.includes(paint.id) && S.coins === 7000, "Round 2 pays 2000 and the paint");
+  check(!bossPaintNext(S, b), "the paint is only given once");
+  const r3 = bossReward(S, b), r4 = bossReward(S, b);
+  check(r3.bonus === 3000 && r4.bonus === 4000 && !r3.paint && !r4.paint && S.paints.filter(p => p === paint.id).length === 1, "Rounds 3 and 4 pay 3000 and 4000");
+  check(bossLevel(S, b) === BOSS_ROUNDS.max && bossPrize(S, b) === REWARDS.bossAgain && bossRound(S, b) === 5, "after Round 4 the boss stays at its fastest and pays 1000");
+  const r5 = bossReward(S, b); check(r5.bonus === 1000 && bossLevel(S, b) === BOSS_ROUNDS.max && S.coins === 15000, "Round 5 pays 1000");
+  check(S.museum.filter(e => e.text.startsWith("Beat")).length === 1 && S.museum.filter(e => e.text.startsWith("Won Round")).length === 3, "the Museum keeps the first win and Rounds 2 to 4 (and counts one boss)");
+  check(S.chips === 1, "a boss's chip is paid once");
+  const P = fresh({ paints: ["stock", paint.id], bosses: { [b.id]: 1 } }); check(!bossPaintNext(P, b) && !bossReward(P, b).paint, "a paint already owned is not given twice");
 }
 { // a boss race that isn't won pays half its place's prize; a win pays in full, and a Hard boss win still earns the track's Hard chip
   const L = fresh(), lost = raceReward(L, sunny, race(2), { diff: "normal", boss: true });

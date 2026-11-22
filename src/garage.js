@@ -132,7 +132,8 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const label = (has, price) => has ? "" : `<small class="${S.coins >= price ? "" : "poor"}">🪙${price}</small>`;
     $("g-paint").innerHTML = (owned ? "" : `<div class="g-note">${carKnown(car) ? "Buy " + car.name + " first to paint it!" : "This car is still a mystery!"}</div>`) +
       `<div class="sw-title">🎨 Paint</div><div class="swatches">` +
-      PAINTS.map(p => { const has = S.paints.includes(p.id), lab = p.lab && !S.research[p.lab]; return `<button class="sw ${cur === p.id ? "on" : ""} ${has ? "" : "locked"} ${lab ? "lablock" : ""}" data-paint="${p.id}" title="${p.name}"><i style="background:${swatch(p)}">${lab ? "🔬" : ""}</i>${lab ? "<small>Lab</small>" : label(has, p.price)}</button>`; }).join("") +
+      // 👑 a boss paint (v1.15) is never sold: it shows a crown until it is won in Round 2 against that boss
+      PAINTS.map(p => { const has = S.paints.includes(p.id), lab = p.lab && !S.research[p.lab], boss = p.boss && !has; return `<button class="sw ${cur === p.id ? "on" : ""} ${has ? "" : "locked"} ${lab || boss ? "lablock" : ""}" data-paint="${p.id}" title="${p.name}"><i style="background:${swatch(p)}">${lab ? "🔬" : boss ? "👑" : ""}</i>${lab ? "<small>Lab</small>" : boss ? "<small>Boss</small>" : label(has, p.price)}</button>`; }).join("") +
       `</div><div class="sw-title">✨ Stickers</div><div class="swatches">` +
       STICKERS.map(k => { const has = S.stickers.includes(k.id); return `<button class="sw st ${curS === k.id ? "on" : ""} ${has ? "" : "locked"}" data-sticker="${k.id}" title="${k.name}"><i>${k.icon}</i>${label(has, k.price)}</button>`; }).join("") +
       `</div>`;
@@ -180,6 +181,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const isPaint = !!b.dataset.paint, id = b.dataset.paint || b.dataset.sticker;
     const list = isPaint ? S.paints : S.stickers, item = (isPaint ? PAINTS : STICKERS).find(x => x.id === id);
     if (item.lab && !S.research[item.lab]) { sfx("nope"); return; }
+    if (item.price == null && !list.includes(id)) { sfx("nope"); return; }   // 👑 a boss paint is won, never bought
     if (!list.includes(id)) {
       if (!spend(item.price)) return;
       list.push(id); sfx("buy"); celebrate();

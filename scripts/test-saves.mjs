@@ -40,6 +40,8 @@ const FIXTURES = {
   "v1.8 (good student bonus)": { v: 20, name: "Carter", coins: 900, owned: ["zippy", "patrol"], rank: 6, school: { tickets: 0, earned: 14, skills: { focus: 0, reflex: 0, courage: 0, smarts: 0 }, log: [{ d: "2026-11-09", a: "math", m: 10, t: 3 }], readingDouble: true, capMin: 0, math: { right: 40, wrong: 3, laps: 12, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 30, wrong: 2, laps: 9, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 1794200000000 }, { p: 10, until: 1794200500000 }] } },
   "v1.9 (more earth, bonus from a wrong clock)": { v: 21, name: "Carter", coins: 1200, owned: ["zippy", "bolt"], rank: 7, best: { fair: 1, haunted: 2 }, bestD: { "fair:normal": 1, "haunted:normal": 2 }, school: { earned: 20, log: [{ d: "2026-11-10", a: "word", m: 10, t: 2 }], math: { right: 50, wrong: 4, laps: 14, lv: 3, p: 0 }, mathMax: "10", capT: 6, word: { right: 40, wrong: 2, laps: 11, lv: 2, p: 1 }, wordMax: "5", boosts: [{ p: 20, until: 9e15 }] } },
   "v1.13 (rival of the week, a broken level)": { v: 23, coins: 900, owned: ["zippy", "bolt"], rank: 4, rivalWeek: { w: 151, lvl: 9, seen: "x" } },
+  "v1.14 (bosses beaten as true)": { v: 23, coins: 9000, owned: ["zippy", "thunder", "starfire"], car: "thunder", rank: 24, bosses: { bruno: true, luna: true } },
+  "v1.15 (boss rounds, a broken count)": { v: 24, coins: 9000, owned: ["zippy", "thunder"], car: "thunder", rank: 12, paints: ["stock", "bronze"], bosses: { bruno: 3, luna: "2", fang: -4, kraken: 0, windup: 2.6 } },
   "v1.9.1 (tracks stay open, seasonal Haunted Hill, bank server time)": { v: 22, name: "Carter", coins: 1500, owned: ["zippy", "bolt"], rank: 7, best: { fair: 1 }, bestD: { "fair:normal": 1 }, opened: { beach: 1, haunted: 1, nope: 1 }, bank: { bal: 500, low: 500, t: 1794100000000, paid: 0, news: 0, srv: 1794150000000 }, history: [{ d: "2026-11-09", t: "fair", df: "normal", p: 1, c: 400 }, { d: "<b>x</b>", t: "sunny", df: "normal", p: 1, c: 5 }, { d: "2026-11-09", t: "sunny", df: "normal", p: "1", c: 5 }] },
   "damaged save (wrong types, unknown ids)": { coins: "1500", owned: "zippy", car: "flyingCar", ups: { zippy: { engine: 99, turbo: -3, tires: "x" } }, best: { sunny: 0, desert: 7, snow: 2 }, rank: -2, diff: "insane", research: { coinBoost: 3.7, nope: 5 }, lab: { benches: [{ p: "gone", end: "soon" }, null] }, parent: null, missions: { day: 5 }, history: "lots", look: { zippy: { paint: "unpaid", sticker: null } } },
 };
@@ -81,7 +83,11 @@ for (const [name, raw] of Object.entries(FIXTURES)) {
   // v23 (1.13): the rival of the week is always a whole week number and a level from 0 to the cap
   { const r = S.rivalWeek; check(name, r && Number.isInteger(r.w) && Number.isInteger(r.lvl) && r.lvl >= 0 && r.lvl <= 5 && Number.isInteger(r.seen), `bad rival of the week ${JSON.stringify(r)}`);
     if (raw.rivalWeek) check(name, r.w === raw.rivalWeek.w && r.lvl === 5 && r.seen === -1, "the rival of the week was not kept or not repaired"); }
-  if (raw.bosses) check(name, Object.keys(raw.bosses).every(k => S.bosses[k]), "boss wins lost");
+  if (raw.bosses) check(name, Object.entries(raw.bosses).every(([k, v]) => !v || S.bosses[k]), "boss wins lost");
+  // v24 (1.15): every boss entry is a whole count of wins, at least 1; a v23 `true` is one win
+  check(name, Object.values(S.bosses).every(v => Number.isInteger(v) && v >= 1), `bad boss wins ${JSON.stringify(S.bosses)}`);
+  if (name.startsWith("v1.14")) check(name, S.bosses.bruno === 1 && S.bosses.luna === 1, "a beaten boss should be one win");
+  if (name.startsWith("v1.15")) check(name, S.bosses.bruno === 3 && S.bosses.luna === 2 && S.bosses.fang === 1 && !("kraken" in S.bosses) && S.bosses.windup === 3 && S.paints.includes("bronze"), `boss rounds not kept or repaired ${JSON.stringify(S.bosses)}`);
   if (raw.daily) check(name, Object.entries(raw.daily).every(([k, v]) => S.daily[k] === v), "daily treats lost");
   if (raw.world) check(name, S.world === raw.world, "world choice lost");
   if (raw.trials) check(name, Object.entries(raw.trials).every(([k, v]) => S.trials[k] === v), "trial times lost");

@@ -1,8 +1,8 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance, newClock, resetClock, stepCounter } from "./pace.js";
 import { qualityLadder, QUALITY_CAP } from "./quality.js";
-import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock } from "./rules.js";
+import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, bossRound, bossLevel, bossSpeed, bossPrize, bossPaintNext, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -365,7 +365,7 @@ function startRace(track) {
   mode = "race"; paused = false; resize();
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
   const autoLv = S.research.autoSteer || 0, autoOk = autoLv > 0 && S.parent.autoSteer;
-  const boss = run.kind === "boss" && { ...run.boss, def: CARS.find(c => c.id === run.boss.car) };
+  const boss = run.kind === "boss" && { ...run.boss, def: CARS.find(c => c.id === run.boss.car), speed: bossSpeed(run.boss, bossLevel(S, run.boss)) };   // 👑 faster each round (v1.15)
   const trial = run.kind === "trial";
   // 🌧️ about one Earth race in four has weather (never in the very first races, never in Time Trials or boss races)
   const RAINY = ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"];
@@ -565,11 +565,13 @@ const bossOpen = b => S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id ===
 function paintBosses() {
   const bosses = BOSSES.filter(b => b.world === S.world), nextBoss = bosses.find(b => !bossOpen(b));
   $("boss-list").innerHTML = bosses.filter(b => bossOpen(b) || b === nextBoss).map(b => {
-    const open = bossOpen(b), beat = S.bosses[b.id], car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
+    const open = bossOpen(b), wins = S.bosses[b.id] || 0, car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track), paint = bossPaintNext(S, b);
+    // 👑 one crown per round won (up to 4), then what the next win gives: the car, the boss's paint, or coins
+    const prize = !S.owned.includes(car.id) ? "Win: 🎁 a mystery car" : (paint ? `<i class="bc-paint" style="background:${paint.color}"></i> ` : "") + `🪙 ${bossPrize(S, b)}`;
     return `<button class="cup-card boss ${open ? "" : "locked"}" data-boss="${b.id}" style="border-color:#ffd400">
       <div class="cc-cup">${b.icon}</div><div class="cc-name" style="color:#ffd400">${b.name}</div>
-      <div class="cc-tracks">${t.icon}</div><div class="cc-best">${beat ? "👑" : ""}</div>
-      <div class="cc-car">${S.owned.includes(car.id) ? "✔ " + car.name : "Win: 🎁 a mystery car"}</div>
+      <div class="cc-tracks">${t.icon}</div><div class="cc-best">${"👑".repeat(Math.min(wins, BOSS_ROUNDS.max + 1))}</div>
+      ${wins ? `<div class="cc-round">Round ${bossRound(S, b)}</div>` : ""}<div class="cc-car">${prize}</div>
       ${open ? "" : `<div class="tc-lock">🔒<small>${S.rank < b.rank ? "Rank " + b.rank : "Open " + t.name}</small></div>`}</button>`;
   }).join("") || `<div class="boss-says">No boss here yet!</div>`;
 }
@@ -581,9 +583,15 @@ $("boss-list").addEventListener("click", e => {
 });
 function openBossIntro(b) {
   const car = CARS.find(c => c.id === b.car), t = TRACKS.find(x => x.id === b.track);
-  $("bi-face").textContent = b.icon; $("bi-name").textContent = b.name; $("bi-says").textContent = `"${b.says}"`;
-  $("bi-info").textContent = `One on one on ${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`;
-  const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, car, { t: 0 });
+  // 👑 a rematch (v1.15): "Round N", the boss's rematch line, a 💪 per step faster, and in Round 2 the boss's car
+  // wears the paint the player can win, so the prize is a picture
+  const wins = S.bosses[b.id] || 0, paint = bossPaintNext(S, b);
+  $("bi-face").textContent = b.icon; $("bi-name").textContent = wins ? `${b.name} is back!` : b.name; $("bi-says").textContent = `"${wins ? b.again : b.says}"`;
+  $("bi-info").textContent = !wins ? `One on one on ${t.icon} ${t.name}. Win ${carKnown(car) ? "the " + car.name : "a mystery car"}!`
+    : `Round ${bossRound(S, b)} on ${t.icon} ${t.name}. Win ${paint ? paint.name + " paint and " : ""}🪙 ${bossPrize(S, b)}!`;
+  $("bi-round").textContent = "💪".repeat(bossLevel(S, b)); $("bi-round").hidden = !wins;
+  const shown = paint && carKnown(car) ? { ...car, body: paint.color, shiny: true, rainbow: false } : car;
+  const cv = $("bi-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height); drawCarOrMystery(cx, cv.width / 2, cv.height - 8, 200, shown, { t: 0 });
   $("bi-go").onclick = () => { sfx("click"); run = { kind: "boss", boss: b }; startRace(t); };
   $("bi-back").onclick = () => { sfx("click"); openTracks(); };
   sfx("chest"); show("s-boss");
@@ -884,10 +892,11 @@ function showResult(r) {
   if (bossRace) {
     const b = run.boss, car = CARS.find(c => c.id === b.car);
     if (r.place === 1) {
-      const { first, bonus, car: gotCar, chip: gotChip } = bossReward(S, b, dayKey(new Date()));
+      const { first, round, bonus, car: gotCar, chip: gotChip, paint } = bossReward(S, b, dayKey(new Date()));
       if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
       save(); chipToast(gotChip);
-      const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}` : `👑 You beat ${b.name} again! +🪙${bonus}`;
+      const msg = first ? `👑 You beat ${b.name}! 🚗 ${car.name} is yours! +🪙${bonus}`
+        : paint ? `👑 You won Round ${round}! 🎨 ${paint.name} paint is yours! +🪙${bonus}` : `👑 You won Round ${round}! +🪙${bonus}`;
       $("r-unlock").textContent = msg; $("r-unlock").hidden = false;
       $("r-title").textContent = "BOSS BEATEN!";
     } else { $("r-title").textContent = `${b.name} wins this time!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }

@@ -6,7 +6,7 @@
 import { CARS, TRACKS, UPGRADES, UPGRADE_MAX, DIFFS, PAINTS, STICKERS, RESEARCH, WORLDS, CUPS, BOSSES, BONUS_TRACKS } from "./data.js";
 import { WEEK_RIVAL } from "./rival-week.js";
 
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 const KEY = "turbodash.save", BACKUP = "turbodash.save.backup", BEFORE = "turbodash.save.before";
 const NO_UPS = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
 const DEFAULTS = () => ({
@@ -77,7 +77,8 @@ export function port(d) {
   s.world = WORLDS.some(w => w.id === d.world && !w.soon) ? d.world : "earth";
   s.trials = Object.fromEntries(Object.entries(obj(d.trials)).filter(([, v]) => typeof v === "number" && v > 0 && v < 3600).map(([k, v]) => [k, Math.round(v * 100) / 100]));
   s.trialMedals = Object.fromEntries(Object.entries(obj(d.trialMedals)).map(([k, v]) => [k, Math.round(num(v, 0, 0, 3))]).filter(([, v]) => v > 0));
-  s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v));
+  // v24 (1.15): bosses count wins (boss rematches); up to v23 a beaten boss was `true`, which is one win
+  s.bosses = Object.fromEntries(Object.entries(obj(d.bosses)).filter(([, v]) => v).map(([k, v]) => [k, v === true ? 1 : Math.round(num(+v, 1, 1, 9999))]));
   s.seen = Object.fromEntries(Object.entries(obj(d.seen)).filter(([, v]) => v === true));
   // v19 (1.6): Piqua National Bank
   s.bank = (b => { const bal = Math.round(num(b.bal, 0, 0)); return { bal, low: Math.round(num(b.low, 0, 0, bal)), t: num(b.t, 0, 0), paid: Math.round(num(b.paid, 0, 0)), news: Math.round(num(b.news, 0, 0)), srv: num(b.srv, 0, 0) }; })(obj(d.bank));

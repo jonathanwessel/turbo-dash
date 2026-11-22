@@ -2,7 +2,7 @@
 // No page and no storage here: every function takes the save (S), changes it, and returns what happened so the
 // screen can show it. The game (src/main.js) and the career simulator (scripts/career.mjs) both use these, so the
 // simulator checks the same rules the game plays by. Numbers live in REWARDS (src/data.js).
-import { REWARDS, UPGRADES, CUP_POINTS, TRACKS, prizeFor, diffOf, starsFor, trialMedal, trialPay, trackOpen, inSeason, GOOD_STUDENT } from "./data.js";
+import { REWARDS, UPGRADES, CUP_POINTS, TRACKS, PAINTS, BOSS_ROUNDS, prizeFor, diffOf, starsFor, trialMedal, trialPay, trackOpen, inSeason, GOOD_STUDENT } from "./data.js";
 
 export const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const coinBoost = S => 1 + REWARDS.coinBoost * (S.research.coinBoost || 0);
@@ -52,14 +52,27 @@ export function chestValues(S, track, diff = S.diff, rnd = Math.random) {
   const base = Math.round(REWARDS.chestBase(track.diff) * diffOf(diff).pay * (1 + REWARDS.luckyChests * (S.research.luckyChests || 0)));
   return [base, base * 2, base * 4].sort(() => rnd() - 0.5);
 }
-/* a boss race won: 5000 the first time, 1000 after; the boss's car and a chip */
+/* 👑 boss rounds (v1.15). S.bosses[id] counts the wins over that boss. The next race is Round wins + 1; the boss is
+   BOSS_ROUNDS.speed faster for each win, up to BOSS_ROUNDS.max wins. */
+export const bossWins = (S, b) => S.bosses[b.id] || 0;
+export const bossRound = (S, b) => bossWins(S, b) + 1;
+export const bossLevel = (S, b) => Math.min(bossWins(S, b), BOSS_ROUNDS.max);
+export const bossSpeed = (b, level) => b.speed * (1 + BOSS_ROUNDS.speed * level);
+/* the coins the next win pays: 5000 the first time, then 2000, 3000 and 4000, then 1000 */
+export const bossPrize = (S, b) => { const w = bossWins(S, b); return !w ? REWARDS.bossFirst : w <= BOSS_ROUNDS.max ? BOSS_ROUNDS.prize[w] : REWARDS.bossAgain; };
+export const bossPaint = b => PAINTS.find(p => p.boss === b.id) || null;
+/* the next win's paint: the boss's own paint, for the first rematch win (Round 2) if not owned yet */
+export const bossPaintNext = (S, b) => { const p = bossPaint(b); return p && bossWins(S, b) === 1 && !S.paints.includes(p.id) ? p : null; };
+/* a boss race won: the round's coins, the boss's car and a chip the first time, its paint in Round 2 */
 export function bossReward(S, b, day) {
-  const first = !S.bosses[b.id], bonus = first ? REWARDS.bossFirst : REWARDS.bossAgain;
-  S.bosses[b.id] = true; S.coins += bonus;
+  const wins = bossWins(S, b), first = !wins, bonus = bossPrize(S, b), paint = bossPaintNext(S, b);
+  S.bosses[b.id] = wins + 1; S.coins += bonus;
   if (first) museumAdd(S, b.icon, `Beat ${b.name}`, day);
+  else if (wins <= BOSS_ROUNDS.max) museumAdd(S, b.icon, `Won Round ${wins + 1} against ${b.name}`, day);
+  if (paint) S.paints.push(paint.id);
   const car = grantCar(S, b.car);
   const gotChip = chip(S, "boss:" + b.id);
-  return { first, bonus, car, chip: gotChip };
+  return { first, round: wins + 1, bonus, car, chip: gotChip, paint };
 }
 /* a Time Trial finished (len = track length); the ghost is saved by the game, not here.
    now (ms): the Good Student bonus is paid on medal coins and road coins, the same as a race. */

@@ -73,12 +73,17 @@ export const REWARDS = {
 
 /* 👑 Bosses: a one-on-one race against a named rival on that world's hardest track. Beat them to win their car. */
 export const BOSSES = [
-  { id: "bruno", world: "earth", name: "Big Bruno", icon: "🦏", track: "space", rank: 9, car: "thunder", speed: 1.8, says: "Nobody beats Big Bruno on Space Road!" },
-  { id: "kraken", world: "ocean", name: "Captain Kraken", icon: "🐙", track: "trench", rank: 28, car: "kraken", speed: 2.4, says: "Eight arms on the wheel. You can't win!" },
-  { id: "windup", world: "toy", name: "Major Wind-Up", icon: "🤖", track: "grandprix", rank: 38, car: "windup", speed: 3.55, says: "Tick-tock! I'm wound up and ready to WIN!" },
-  { id: "fang", world: "glacier", name: "Fang the Ice Wolf", icon: "🐺", track: "summit", rank: 33, car: "blizzard", speed: 2.9, says: "Ice is slippery... for YOU! Awooo!" },
-  { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!" },
+  { id: "bruno", world: "earth", name: "Big Bruno", icon: "🦏", track: "space", rank: 9, car: "thunder", speed: 1.8, says: "Nobody beats Big Bruno on Space Road!", again: "I got faster. Bet you can't do it again!" },
+  { id: "kraken", world: "ocean", name: "Captain Kraken", icon: "🐙", track: "trench", rank: 28, car: "kraken", speed: 2.4, says: "Eight arms on the wheel. You can't win!", again: "I'm back with a bigger engine. Blub blub!" },
+  { id: "windup", world: "toy", name: "Major Wind-Up", icon: "🤖", track: "grandprix", rank: 38, car: "windup", speed: 3.55, says: "Tick-tock! I'm wound up and ready to WIN!", again: "I wound my key extra tight this time!" },
+  { id: "fang", world: "glacier", name: "Fang the Ice Wolf", icon: "🐺", track: "summit", rank: 33, car: "blizzard", speed: 2.9, says: "Ice is slippery... for YOU! Awooo!", again: "I sharpened my skis. Race me again!" },
+  { id: "luna", world: "moon", name: "Captain Luna", icon: "👩‍🚀", track: "earthrise", rank: 23, car: "starfire", speed: 2.22, says: "The Moon is MY racetrack, kid!", again: "New rockets! Catch me if you can!" },
 ];
+/* 👑 Boss rematches (v1.15): after a win the boss comes back for another round, 4% faster each time for 3 rounds
+   (Round 2, 3 and 4), paying more each time. The first rematch win (Round 2) gives that boss's own paint. After
+   Round 4 the boss stays at its fastest and a win pays REWARDS.bossAgain. `npm run sim -- boss` proves every round
+   can be won. */
+export const BOSS_ROUNDS = { max: 3, speed: 0.04, prize: [0, 2000, 3000, 4000] };
 /* One place for "opens at Rank N" (keep in step with RANK_UNLOCKS) */
 export const OPEN_RANK = { lab: 2, weather: 2, trial: 4, cups: 5, missions: 7, boss: 9 };
 /* 🏙️ Main Street grows: new buildings open as you rank up. */
@@ -247,6 +252,12 @@ export const PAINTS = [
   { id: "neonGreen", name: "Neon Green", color: "#39ff14", price: 900, shiny: true, lab: "superPaint" },
   { id: "neonPink", name: "Neon Pink", color: "#ff2bd6", price: 900, shiny: true, lab: "superPaint" },
   { id: "neonBlue", name: "Neon Blue", color: "#14e1ff", price: 900, shiny: true, lab: "superPaint" },
+  // 👑 v1.15: won by beating a boss in Round 2 (never sold)
+  { id: "bronze", name: "Bronze", color: "#c47a3a", price: null, shiny: true, boss: "bruno" },
+  { id: "starlight", name: "Starlight", color: "#b49cff", price: null, shiny: true, boss: "luna" },
+  { id: "seaglass", name: "Sea Glass", color: "#2fe0c0", price: null, shiny: true, boss: "kraken" },
+  { id: "icewolf", name: "Ice Wolf", color: "#a6ecff", price: null, shiny: true, boss: "fang" },
+  { id: "gumball", name: "Gumball", color: "#ff4f7b", price: null, shiny: true, boss: "windup" },
 ];
 export const STICKERS = [
   { id: "none", name: "None", icon: "✖", price: 0 },

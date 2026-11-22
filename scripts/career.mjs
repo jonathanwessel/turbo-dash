@@ -9,7 +9,7 @@ import { writeFileSync } from "node:fs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
 import { weekRivalRace, weekRivalResult } from "../src/rival-week.js";
-import { dayKey, raceReward, chestValues, bossReward, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
+import { dayKey, raceReward, chestValues, bossReward, bossLevel, bossSpeed, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
 const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
 const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
 // 🍂 seasonal tracks open on their calendar dates (the career starts on 1 January); "season" opens them on day 1,
@@ -59,7 +59,9 @@ const carOf = () => CARS.find(c => c.id === S.car);
 const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"].includes(t.theme) ? "rain" : null) : null;
 // 🎯 the rival of the week (v1.13) is in every race and cup race, on the career's own calendar
 const date = () => new Date(2027, 0, 1 + day, 12);
-let weekBonus = 0, weekBeats = 0;
+let weekBonus = 0, weekBeats = 0, rematchWins = 0;
+// the world the bot is racing in today: the world of its newest open track
+const carWorld = () => [...TRACKS].reverse().find(t => trackOpen(S, t))?.world;
 const race = (track, diff) => {
   const week = weekRivalRace(S, "race", date());
   const r = runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), null, false, weatherFor(track), week);
@@ -69,9 +71,9 @@ const race = (track, diff) => {
 
 function playBoss(b) {
   const car = carOf(), t = TRACKS.find(x => x.id === b.track);
-  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, { ...b, def: CARS.find(c => c.id === b.car) });
+  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, { ...b, def: CARS.find(c => c.id === b.car), speed: bossSpeed(b, bossLevel(S, b)) });
   reward(t, r, "normal", { boss: true });
-  if (r.place === 1) { bossReward(S, b, today()); gate("boss:" + b.id, `Beat ${b.name}`); }
+  if (r.place === 1) { const w = bossReward(S, b, today()); gate("boss:" + b.id + (w.round > 1 ? ":" + w.round : ""), w.round > 1 ? `Won Round ${w.round} against ${b.name}` : `Beat ${b.name}`); if (w.round > 1 && w.round <= 4) rematchWins++; }
 }
 
 /* one Time Trial a day: the newest open track still missing gold */
@@ -172,6 +174,9 @@ for (day = 1; day <= MAX_DAYS; day++) {
     if (!trialToday && n === 3) { trialToday = true; if (playTrial()) { collectLab(); claimGoals(); rankUps(); spend(); continue; } }
     const boss = BOSSES.find(b => !S.bosses[b.id] && S.rank >= b.rank && trackOpen(S, TRACKS.find(t => t.id === b.track)));
     if (boss && Math.random() < 0.15) { playBoss(boss); collectLab(); claimGoals(); rankUps(); spend(); continue; }
+    // 👑 v1.15: now and then a rematch against a beaten boss (Rounds 2 to 4), on that boss's world
+    const again = !boss && BOSSES.find(b => S.bosses[b.id] >= 1 && S.bosses[b.id] <= 3 && b.world === carWorld());
+    if (again && Math.random() < 0.04) { playBoss(again); collectLab(); claimGoals(); rankUps(); spend(); continue; }
     const pick = pickRace();
     if (pick.cup) {
       const before = S.cups[pick.cup.id + ":" + pick.diff];
@@ -191,7 +196,7 @@ for (day = 1; day <= MAX_DAYS; day++) {
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
   // CAREER_SNAP=16:src/dev/mid-save.json writes the bot's save the evening it first reaches Rank 16 (the sweep's
   // pictures use it, so they show a save a real player could have, not made-up numbers)
-  if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 23, name: "Racer", rivalWeek: { w: -1, lvl: 0, seen: -1 }, world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
+  if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 24, name: "Racer", rivalWeek: { w: -1, lvl: 0, seen: -1 }, world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
   if (day - lastRankDay > 60 && S.rank < RANK_CAP && !gates.some(g => g.key === "stuck" + S.rank)) {
     const need = rankNeeds(S.rank, S);
     gate("stuck" + S.rank, `⚠ STUCK at Rank ${S.rank} for 60 days: ` + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
@@ -204,6 +209,7 @@ console.log(`\nCareer: ${RACES_PER_DAY} races a day (${Math.round(RACES_PER_DAY 
 for (const g of gates) console.log(`  ${months(g.day).padEnd(24)} race ${String(g.race).padStart(5)}  ${g.text}`);
 console.log(`\nAfter ${Math.min(day, MAX_DAYS)} days: rank ${S.rank}, Auto Steer ${lv("autoSteer")}, coins ${S.coins}, chips ${S.chips}, research levels ${Object.values(S.research).reduce((a, b) => a + b, 0)}, cars ${S.owned.length}/${CARS.length}`);
 console.log(`Rival of the week: beaten ${weekBeats} times below the cap, bonus coins ${weekBonus}`);
+console.log(`Boss rematches: ${rematchWins} round wins, rounds won per boss ${BOSSES.map(b => b.id + " " + Math.max(0, (S.bosses[b.id] || 0) - 1)).join(", ")}`);
 const need = rankNeeds(S.rank, S); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
 
 // v1.11.2: a gate that never opens fails the run (exit 1), so `npm run check` stops: a STUCK rank, or the rank
