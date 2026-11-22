@@ -9,6 +9,7 @@ import { toyPoint, DS, HW, WALL_H, startArch, startLine } from "./track.js";
 import { drawEmojiText } from "../emoji.js";
 import { drawHornBubble } from "../horn.js";
 import { drawTargetBadge } from "../rival-week.js";
+import { drawFaceBubble, faceShow } from "../faces.js";
 
 const V = (a = 0, b = 0, c = 0) => new THREE.Vector3(a, b, c);
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -489,6 +490,7 @@ export class ToyView {
       const g = this.cars.get("r" + k); if (!g) return; this.place(g, T, c.dist, c.x, c.air || 0, c.knockT > 0 ? Math.sin(t * 30) * 0.4 : 0); this.spinCar(g, c.speed, dt, false, t);
       // a rival in the gap between the camera and the player turns see-through, so it never fills the picture (v1.13)
       const gap = p.dist - c.dist; this.fadeCar(g, gap > 0.4 && gap < CAM_BACK + 1.5 && p.fallT <= 0 ? 0.2 : 1, dt);
+      if (c.week) { const b = g.children.find(o => o.userData.badge); if (b) b.visible = !(c.mood && faceShow(race) > 0); }   // the face shows first
       const up = g.userData.wasAir > 0.3 && !(c.air > 0.3); g.userData.wasAir = c.air || 0;
       this.bounce(g, dt, up ? 8 : 0, c.speed, 0);
     });
@@ -554,8 +556,8 @@ export class ToyView {
 
   /* 2D things on top: speed lines, the toy hand, Auto Steer robot, popups */
   overlay(race, W, H, t, fast, falling) {
-    const honking = race.rivals.some(c => c.honkT > 0);
-    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0 || honking;
+    const honking = race.rivals.some(c => c.honkT > 0), faces = faceShow(race) > 0 && race.rivals.some(c => c.mood);
+    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0 || honking || faces;
     if (!need && !this.ovHad) return;   // nothing on it now or last frame: leave the clear canvas alone (v1.10)
     this.ovHad = need; ctx.clearRect(0, 0, W, H);
     if (fast) {
@@ -576,6 +578,12 @@ export class ToyView {
       ctx.globalAlpha = Math.min(1, c.honkT * 4); drawHornBubble(ctx, (v.x + 1) / 2 * W, (1 - v.y) / 2 * H, r, drawEmojiText);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
     });
+    // on the start grid every rival shows its face over the car (the target badge waits until the faces are gone)
+    if (faces) { const a = faceShow(race); race.rivals.forEach((c, k) => {
+      const g = c.mood && !(c.honkT > 0) && this.cars.get("r" + k); if (!g) return;
+      const v = g.position.clone().add(V(0, 1.6, 0)).project(this.camera); if (v.z > 1 || Math.abs(v.x) > 0.85 || Math.abs(v.y) > 0.9) return;
+      ctx.globalAlpha = a; drawFaceBubble(ctx, (v.x + 1) / 2 * W, (1 - v.y) / 2 * H, H * 0.04, c.mood, c.def);
+    }); }
     ctx.globalAlpha = 1;
     for (const q of race.popups) {
       const s = 1 + Math.min(0.3, q.age * 2); ctx.globalAlpha = 1 - q.age;

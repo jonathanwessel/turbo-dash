@@ -3,6 +3,7 @@ import { THEMES, RIVALS, PHYSICS, diffOf, MPH } from "./data.js";
 import { drawEmojiText } from "./emoji.js";
 import { honk, tickHonks, drawHornBubble } from "./horn.js";
 import { drawTargetBadge, weekBase } from "./rival-week.js";
+import { drawFaceBubble, faceShow } from "./faces.js";
 import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
@@ -245,6 +246,8 @@ export class Race {
     // never past the player's own top speed
     const wk = mode === "race" && !opts.boss && !this.trial && opts.weekRival, wr = wk && this.rivals[wk.i];
     if (wr) { wr.base = weekBase(wr.base, wk.boost, stats.maxSpeed * this.home * this.phys.top); wr.week = true; }
+    // the start grid faces (src/faces.js): only a picture, never part of the race
+    this.rivals.forEach((c, i) => { c.mood = mode === "race" && !opts.boss && !this.trial && opts.moods ? opts.moods[i] || "ready" : null; });
     if (mode === "demo") this.player.dist = 2 * SEG;
     this.prevIdx = this.segAt(this.player.dist).index;
     this.lastPad = null; this.beamT = 0; this.snowHit = null; this.driftT = 0;
@@ -891,6 +894,9 @@ export class Race {
       if (c.honkT > 0 && !ghost && w > 8 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
         const k = Math.min(1, (0.9 - c.honkT) * 8), r = Math.max(14, Math.min(40, w * 0.28)) * (0.6 + 0.4 * k);
         ctx.save(); ctx.globalAlpha *= Math.min(1, c.honkT * 4); drawHornBubble(ctx, x, y - w * CAR_TOP - 4, r, drawEmojiText); ctx.restore();
+      } else if (c.mood && !ghost && w > 10 && faceShow(this) > 0 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
+        // on the start grid every rival shows its face over the car (it takes the target badge's place for a moment)
+        ctx.save(); ctx.globalAlpha *= faceShow(this); drawFaceBubble(ctx, x, y - w * 0.6 - 2, Math.max(12, Math.min(34, w * 0.26)), c.mood, c.def); ctx.restore();
       } else if (c.week && !ghost && w > 10 && x - w * 0.5 > 0 && x + w * 0.5 < this.canvas.width) {
         // 🎯 the rival of the week wears a target badge (the horn bubble takes its place while it honks). Its tail
         // touches the roof (CAR_TOP leaves room for tall trucks and left it floating over a low car)

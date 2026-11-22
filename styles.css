@@ -203,6 +203,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .up-buy.max { background: #23a33a; color: #fff; }
 .up-card.flash { animation: cbump .4s; border-color: #ffd400; }
 
+.r-faces { display: block; height: clamp(30px, 8vmin, 50px); width: auto; margin: 0 auto 6px; }
+.r-faces[hidden] { display: none; }
+@media (max-height: 430px) and (orientation: landscape) { .r-faces { height: 28px; margin-bottom: 2px; } }
 .r-lines { display: flex; gap: 18px; justify-content: center; font-size: clamp(16px, 4.5vmin, 24px); margin-bottom: 8px; flex-wrap: wrap; }
 .r-unlock { font-size: clamp(18px, 5vmin, 26px); font-weight: 900; color: #5be36a; margin-bottom: 8px; animation: cbump .6s 2; }
 .r-pick { font-size: clamp(18px, 5vmin, 26px); font-weight: 900; margin-bottom: 6px; }

@@ -12,6 +12,7 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { unseen } from "./news.js";
+import { raceMoods, gridMoods, faceRow, drawFace } from "./faces.js";
 import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL, drawTargetBadge } from "./rival-week.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
@@ -370,7 +371,8 @@ function startRace(track) {
   const weather = track.world === "earth" && S.parent.weather && S.rank >= OPEN_RANK.weather && !trial && !boss && Math.random() < 0.25
     ? (track.theme === "snow" ? "snow" : RAINY.includes(track.theme) ? "rain" : null) : null;
   raceWeek = isPreview() ? null : weekRivalRace(S, run.kind);   // 🎯 the rival of the week (races and cups)
-  race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper } : { weekRival: raceWeek, weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
+  const moods = gridMoods(lastMoods, RIVALS.length);   // faces on the start grid (the engines skip boss races and Time Trials)
+  race.setup(track, "race", car, stats, isPreview() ? { diff: "easy", helper: S.parent.helper, moods } : { moods, weekRival: raceWeek, weather, diff: S.diff, helper: S.parent.helper, autoSteer: autoOk && S.autoOn && !boss && !trial ? autoLv : 0, boss, trial, ghost: trial ? loadGhost(track.id) : null });
   $("btn-auto").hidden = !autoOk; $("auto-lv").textContent = autoLv; $("btn-auto").classList.toggle("on", autoOk && S.autoOn);
   raceStartAt = Date.now(); resetClock(clock); ladder().raceStart(); steps = STEPS_ON ? stepCounter() : null;
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
@@ -538,6 +540,7 @@ function showTrialResult(r) {
   if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
   save();
   mode = "result"; setRaceUi(false); engineOff();
+  paintRivalRow(null); paintFaces(null);   // no rivals in a Time Trial (the card is shared with races)
   const [b, s, g] = trialTimes(t, len);
   $("r-trophy").textContent = TRIAL_MEDALS[medal] || "⏱️";
   $("r-title").textContent = record ? `NEW RECORD! ${time.toFixed(1)}s` : `${time.toFixed(1)} seconds`;
@@ -710,6 +713,23 @@ function openRivalCard() {
 }
 $("rw-ok").onclick = () => { sfx("click"); openTracks(); };
 $("rw-chip").onclick = () => { sfx("click"); openRivalCard(); };
+/* ---------- faces and reactions (rules and drawing in src/faces.js) ---------- */
+let lastMoods = null;   // how the last race went for each rival: their faces on the next start grid (this play time only)
+/* the result card's row of faces in finishing order, the player's own car in a gold ring in its place */
+function paintFaces(standings) {
+  const cv = $("r-faces"), show = !!standings && standings.length === RIVALS.length + 1; cv.hidden = !show; if (!show) return;
+  const row = faceRow(standings, RIVALS.length), D = 120; cv.width = row.length * D; cv.height = D;
+  const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
+  row.forEach(({ k, mood }, n) => {
+    const x = n * D + D / 2, y = D / 2;
+    if (k === 0) {
+      ctx.fillStyle = "#10142a"; ctx.beginPath(); ctx.arc(x, y, 52, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffd400"; ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff7c2"; ctx.beginPath(); ctx.arc(x, y, 38, 0, Math.PI * 2); ctx.fill();
+      drawCar(ctx, x, y + 26, 66, lookOf(CARS.find(c => c.id === S.car) || CARS[0]), { t: 0 });
+    } else drawFace(ctx, x, y, 48, mood, RIVALS[k - 1]);
+  });
+}
 function paintRivalRow(wk) {
   $("r-rival").hidden = !(wk && wk.up); if (!wk || !wk.up) return;
   $("r-rival-name").textContent = wk.name; $("r-rival-dot").style.background = RIVALS[wk.i].body;
@@ -824,6 +844,9 @@ function showResult(r) {
   // 🎯 finished ahead of the rival of the week: they get faster, and the first beats of the week pay a bonus
   const wk = raceWeek && r.standings ? weekRivalResult(S, currentTrack, r.standings, S.diff, new Date(raceStartAt || Date.now())) : null;
   paintRivalRow(wk);
+  // the rivals ahead of the player are happy, the ones behind are grumpy (and still are on the next start grid)
+  const faced = !bossRace && r.standings?.length === RIVALS.length + 1;
+  paintFaces(faced ? r.standings : null); if (faced) lastMoods = raceMoods(r.standings, RIVALS.length);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   keepOpens(S);
   save();

@@ -57,6 +57,8 @@ export class ToyRace {
     // never past the player's own top speed
     const wk = mode === "race" && !opts.boss && !this.trial && opts.weekRival, wr = wk && this.rivals[wk.i];
     if (wr) { wr.base = weekBase(wr.base, wk.boost, this.topSpeed()); wr.week = true; }
+    // the start grid faces (src/faces.js): only a picture, never part of the race
+    this.rivals.forEach((c, i) => { c.mood = mode === "race" && !opts.boss && !this.trial && opts.moods ? opts.moods[i] || "ready" : null; });
     if (mode === "demo") this.player.dist = 2;
     this.prevIdx = sampleAt(T, this.player.dist);
     this.lastPad = null;
