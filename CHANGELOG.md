@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.15.0 — Boss rematches 👑
+
+- **👑 The bosses come back.** After the player beats a boss, that boss returns for Round 2, then Round 3 and
+  Round 4, a little faster each time (4% a round). The wins pay 2000, 3000 and 4000 coins. After Round 4 the boss
+  stays at its fastest and a win pays 1000, like a repeat win before.
+- **🎨 A boss paint.** Winning Round 2 gives that boss's own shiny paint: Bronze, Starlight, Sea Glass, Ice Wolf
+  and Gumball. They are never sold, and the Paint tab shows a 👑 on each one until it is won.
+- **The boss card** shows a crown for each round won, a red "Round 2" pill and the next prize, with a dot of the
+  paint when the paint is next. The intro says the boss is back, has a new line for each boss, shows a 💪 for each
+  step faster, and in Round 2 draws the boss's car in the paint the player can win.
+- Old saves: every boss already beaten is ready for Round 2.
+- Polish: the boss's car in its prize paint is the new thing to see, and the rematch is the new thing to use.
+- For the grown-ups: save v24 counts boss wins (a v23 `true` is one win). `npm run sim -- boss` is in
+  `npm run check` and fails when any round of any boss has no car that wins it. The career run tries a rematch now
+  and then. `npm run sweep` now takes its race pictures from the Rank 16 save (so they show the horn and no
+  first-race lesson), keeps one brand-new race picture, adds a Toy Track World picture on the first sharp curve,
+  and shoots the boss tab, a boss rematch intro and result card, and a Lab sheet at every size.
+
 ## v1.14.0 — Faces 😄
 
 - **😄 Rivals with faces.** Rosie, Splash, Sunny, Rocky and Snowball each have a little face under a helmet in their

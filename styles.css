@@ -1189,3 +1189,8 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .boss-card { position: relative; }
 .bi-round { position: absolute; top: 26px; right: 14px; font-size: clamp(18px, 5vmin, 28px); line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,.5)); }
 @media (max-height: 430px) and (orientation: landscape) { .bi-round { top: 20px; font-size: 18px; } .cup-card .cc-round { font-size: 13px; } }
+/* v1.15: the result title is tilted (rotate -1.5deg), so a box as wide as the card grows taller with the card and
+   ran into the line under it on a wide boss result card. The box now hugs its words. */
+.card.result h1 { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+.card.result h1 + .r-sub { padding-top: 6px; }   /* the display font's text box reaches below its line */
+.card.result { overflow-x: hidden; }   /* the prize line's bump (cbump) grows past the card for a moment: no sideways scrollbar */

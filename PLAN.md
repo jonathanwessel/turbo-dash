@@ -259,8 +259,25 @@ every test green.
   older things it found went to the leftovers box below. Check on the release commit: career Rank 40 on day 548,
   Moon 106, Ocean 186, Glacier 282, Toy 411 (no rule changed). Sweep clean at 7 sizes. Not checked on a real
   tablet: the size of the faces over the cars needs the owner's eyes.
-- [ ] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
+- [x] **Boss rematches.** A beaten boss comes back stronger for a bigger prize. The first rematch win gives a
   new paint.
+  Notes: v1.15.0. Rules in `src/rules.js` (`bossRound`, `bossLevel`, `bossSpeed`, `bossPrize`, `bossPaintNext`,
+  `bossReward`), numbers in `BOSS_ROUNDS` (data.js). After the first win a boss comes back for Round 2, 3 and 4,
+  each 4% faster than the last, paying 2000, 3000 and 4000 coins (the first win still pays 5000 and the car). After
+  Round 4 the boss stays at its fastest and a win pays 1000, as a repeat win did before. Round 2 gives the boss's own
+  paint once: Bronze (Big Bruno), Starlight (Captain Luna), Sea Glass (Captain Kraken), Ice Wolf (Fang) and Gumball
+  (Major Wind-Up), shiny, never sold, shown in the Paint tab with a 👑 until won. Decisions: 4% a round, found with a
+  probe over the car ladder: with the world kits done each round needs the next car or two up, and the top round is
+  beaten by the boss's own car or the next world's (`npm run sim -- boss`, now in `npm run check`, fails if any
+  round of any boss has no car that wins 3 of 6). "Round 2" is the word on screen (a child knows rounds; "rematch"
+  is a grown-up word). The boss card shows a crown per round won (up to 4), a red "Round N" pill and the next prize,
+  with a dot of the paint when the paint is next. The intro says "Big Bruno is back!", the boss's own rematch line,
+  a 💪 per step faster in the corner, and in Round 2 the boss's car is drawn in the paint the player can win.
+  Save v24: `bosses` counts wins (a v23 `true` is one win, so an old save gets Round 2 right away), with a port and
+  two fixtures. The Museum keeps "Won Round N against ..." for Rounds 2 to 4 (its boss count still counts only
+  "Beat ..."). The career bot now tries a rematch now and then on the world it races in: it won Rounds 2 to 4 of
+  four bosses (Major Wind-Up's rounds are left for after Rank 40 in that run). Career on this build: Rank 40 on day
+  542 (548 before, inside 5%), Moon 102, Ocean 184, Glacier 278, Toy 406.
 - [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
   World start: the player's car blends into a pack of look-alike cars with navy roofs (a marker or a brighter
   outline for the player's car). Turbo Lab: the pip bar and "10/10" say the same thing twice, "MAX!" chips and card

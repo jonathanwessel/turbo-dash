@@ -342,6 +342,12 @@ Rivals ahead of the player smile, rivals behind frown, and tapping a face makes 
 - Lesson: a picture-only feature still needs a "same race" test. Faces ride on the rival objects both engines move,
   so the test plays one race with and without them and compares every distance.
 
+### v1.15.0 👑 Boss rematches (shipped)
+A beaten boss comes back for Rounds 2 to 4, faster each time and paying more, and Round 2 gives that boss's own
+paint.
+- Lesson: a harder rematch must be measured against the car ladder, like the rival of the week. A probe found the
+  step (4% a round) at which each round needs the next car or two up and every round stays winnable.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

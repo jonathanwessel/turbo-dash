@@ -177,6 +177,17 @@ window.__sweep = async (only) => {
   await go("s-preview", () => { td.show("s-tracks"); td.openPreview("moon"); });
   await go("s-preview:toy", () => td.openPreview("toy"), "#s-preview");
   for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
+  // 👑 v1.15: the boss intro the first time, in Round 2 (with the paint to win) and after the last round, the boss tab
+  // with crowns, and a boss result card (each filled in, not the empty placeholder td.show gives)
+  const bossKeep = JSON.stringify(td.S.bosses), ownKeep = JSON.stringify(td.S.owned), paintKeep = JSON.stringify(td.S.paints);
+  await go("s-boss:first", () => td.bossIntro("bruno", 0), "#s-boss");
+  await go("s-boss:again", () => td.bossIntro("bruno", 1), "#s-boss");
+  await go("s-boss:last", () => td.bossIntro("windup", 4), "#s-boss");
+  await go("s-tracks:boss-rounds", async () => { td.S.bosses.bruno = 2; td.S.rank = Math.max(td.S.rank, 9); td.openTracks(); await wait(60); document.querySelector('[data-rtab="boss"]').click(); }, "#s-tracks");
+  document.querySelector('[data-rtab="races"]').click();
+  await go("s-result:boss", async () => { td.S.bosses.bruno = 1; td.bossResult("bruno", 1); await wait(300); }, "#s-result");
+  await go("s-result:boss-lost", async () => { td.bossResult("bruno", 2); await wait(300); }, "#s-result");
+  Object.assign(td.S, { bosses: JSON.parse(bossKeep), owned: JSON.parse(ownKeep), paints: JSON.parse(paintKeep) });
   await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
   await go("s-result:rival", async () => { td.showResult({ place: 1, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [0, 1, 2, 3, 4, 5] }); td.rivalRow({ up: true, name: "Snowball", i: 4, bonus: 1250 }); await wait(900); }, "#s-result");

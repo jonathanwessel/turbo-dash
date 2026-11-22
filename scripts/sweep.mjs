@@ -8,7 +8,7 @@
 //   npm run sweep -- --no-race          -> skip the race frames
 // Never point this at the play server (port 5183): it serves the family's real game and save.
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -21,6 +21,15 @@ const RACES = !args.includes("--no-race");
 const DEV = 5184, CDP = 9334, URL0 = `http://127.0.0.1:${DEV}/`;
 const EDGE = process.env.EDGE || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
 const SHOTS = ["s-title", "s-hub", "s-garage", "s-rival", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
+// v1.15: pictures of cards that only open on a tap, from the same Rank 16 save (the picture review never saw them
+// before): the boss tab, a boss rematch intro and its result card, and the Lab sheet
+const tap = go => `document.querySelector('[data-go="${go}"]').dispatchEvent(new MouseEvent("click", { bubbles: true }))`;
+const EXTRA = {
+  "s-tracks-boss": `(__td.goHub(), ${tap("race")}, document.querySelector('[data-rtab="boss"]').click(), true)`,
+  "s-boss-again": `(__td.bossIntro("bruno", 1), true)`,
+  "s-result-boss": `(__td.bossResult("bruno", 1), true)`,
+  "s-lab-sheet": `(__td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
+};
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 const kids = [];
@@ -114,21 +123,33 @@ async function main() {
       await js(s === "s-title" ? "(__td.show('s-title'), true)" : `(__td.goHub(), ${GO[s] ? `document.querySelector('[data-go="${GO[s]}"]').dispatchEvent(new MouseEvent("click", { bubbles: true })), ` : ""}true)`);
       await wait(500); await shot(`${size}-${s}`);
     }
+    for (const [name, expr] of Object.entries(EXTRA)) { await js(expr); await wait(700); await shot(`${size}-${name}`); }
+    await js("(document.getElementById('ls-close')?.click(), localStorage.clear(), true)");   // the next size starts from a brand-new save again
     const n = Object.keys(issues).length;
     console.log(`${size.padEnd(10)} ${n ? "✖ " + n + " screens with problems" : "✔ every screen fits"}  (${((Date.now() - t) / 1000).toFixed(0)}s)`);
     for (const [k, v] of Object.entries(issues)) console.log(`   ${k}: ${[].concat(v).slice(0, 4).join(" | ")}`);
   }
-  // one race frame per world, at tablet size
+  // one race frame per world, at tablet size. v1.15: from the Rank 16 save with the horn tip seen, so the pictures
+  // show what a playing child sees (the horn, no first-race lesson). One brand-new frame stays, for the lesson, and
+  // one Toy Track World frame mid-race on the first sharp curve (scripts/probes/toy-curve.js), which a start-line
+  // frame can never show.
   if (RACES) {
     await c.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-    for (const world of ["earth", "moon", "ocean", "glacier", "toy"]) {
-      await load();
-      await js(`(() => { const t = __td.TRACKS.find(x => x.world === ${JSON.stringify(world)}); __td.S.rank = 40; __td.show("s-tracks"); __td.startRace(t); return true; })()`);
-      await wait(world === "toy" ? 9000 : 6000);   // the countdown, and the 3D engine loading for Toy World
+    const played = "Object.assign(__td.S, __mid()); localStorage.setItem('turbodash.tips', JSON.stringify({ horn: 1 })); __td.S.rank = 40;";
+    const FRAMES = [["earth-new", "earth", ""], ...["earth", "moon", "ocean", "glacier", "toy"].map(w => [w, w, played]), ["toy-curve", "toy", played]];
+    for (const [name, world, prep] of FRAMES) {
+      await js("(localStorage.clear(), true)"); await load();
+      if (name === "toy-curve") { await js(`(() => { ${prep} return true; })()`); await js(readFileSync(join(root, "scripts", "probes", "toy-curve.js"), "utf8").split(/\r?\n/).filter(l => !l.startsWith("//")).join("\n"), 30000); }
+      else {
+        await js(`(() => { ${prep} const t = __td.TRACKS.find(x => x.world === ${JSON.stringify(world)}); if (!${JSON.stringify(prep)}) __td.S.rank = 40; __td.show("s-tracks"); __td.startRace(t); return true; })()`);
+        await wait(world === "toy" ? 9000 : 6000);   // the countdown, and the 3D engine loading for Toy World
+      }
       const on = await js("!!__td.race && document.getElementById('hud') && !document.getElementById('hud').hidden");
-      await shot(`race-${world}`);
-      console.log(`race ${world.padEnd(8)} ${on ? "✔ picture saved" : "✖ the race did not start"}`);
-      if (!on) report["race " + world] = { start: ["the race did not start"] };
+      const horn = await js("!document.getElementById('btn-horn').hidden");
+      await shot(`race-${name}`);
+      const bad = !on ? "the race did not start" : prep && !horn ? "the horn is hidden in a played save's race" : "";
+      console.log(`race ${name.padEnd(10)} ${bad ? "✖ " + bad : "✔ picture saved"}`);
+      if (bad) report["race " + name] = { start: [bad] };
     }
   }
   c.close();
