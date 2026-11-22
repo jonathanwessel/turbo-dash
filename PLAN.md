@@ -226,6 +226,13 @@ every test green.
   Rosie" coin line on the result card. Save v23 `rivalWeek` with a port and a broken-save fixture. The sweep
   shoots the card (`s-rival`, `s-rival:max`) and the result line. This box was started by a run that stopped
   before releasing (its lock went stale); the next run carried on from its uncommitted work, as the task says.
+  The sweep found the card's OK! off a short screen (the card is now sized by the screen's height, title on one
+  line) and an old "New track:" colon line ("🔓 Beach Boardwalk is open!"). A badge probe
+  (`scripts/probes/week-badge.js`) found the badge floating over the start arch: it now sits on the roof. Picture
+  review: the card shows the same badge over the car, the chip's dots are bigger and it matches the difficulty
+  buttons' height. Decisions on the rest of that review: "Rival of the week" stays as the title (the 🎯 picture
+  carries it), the coin amount is left out (it changes per track), the chip keeps the badge's red rim, and the
+  Toy Track World "GO!" over the start grid is a one-second countdown, left as is.
   Not checked on a real tablet: the badge size in Toy Track World needs the owner's eyes.
 - [ ] **Faces and reactions.** A small face for each rival on the start grid and the result screen: happy when
   they win, grumpy when they lose. Pictures only.

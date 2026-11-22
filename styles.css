@@ -1151,12 +1151,12 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* ---------- v1.13: 🎯 rival of the week ---------- */
 #h-track i.wk { box-shadow: 0 0 0 3px #e8262b, 0 0 0 5px #fff; }
 #h-track i.me.wk { box-shadow: 0 0 0 3px #ffd400; }
-.rw-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px 2px 6px; min-height: 40px; border-radius: 14px; background: rgba(255,255,255,.12); border: 3px solid #e8262b; font-weight: 900; }
+.rw-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px; min-height: 52px; align-self: stretch; border-radius: 14px; background: rgba(255,255,255,.12); border: 3px solid #e8262b; font-weight: 900; }
 .rw-chip[hidden] { display: none; }
 .rw-chip .rw-t { font-size: 22px; line-height: 1; }
 #rw-chip-car { width: 56px; height: 32px; }
 .rw-pips { display: inline-flex; gap: 3px; }
-.rw-pips i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); background: rgba(0,0,0,.3); }
+.rw-pips i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); background: rgba(0,0,0,.3); }
 .rw-pips i.on { background: var(--rc, #e8262b); border-color: #fff; }
 .rw-pips.big { gap: 8px; margin: 6px 0; justify-content: center; }
 .rw-pips.big i { width: 22px; height: 22px; border-width: 3px; }
@@ -1171,5 +1171,6 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 #r-rival[hidden] { display: none; }
 @media (max-height: 430px) and (orientation: landscape) {
   #rw-car { height: 18vh; } .rw-pips.big { margin: 2px 0; } .rw-pips.big i { width: 16px; height: 16px; } .rw-info { margin-bottom: 4px; }
-  .rw-chip { min-height: 34px; } #rw-chip-car { width: 46px; height: 26px; }
+  .rw-chip { min-height: 34px; padding: 0 10px 0 6px; align-self: center; } #rw-chip-car { width: 46px; height: 26px; }
+  .rw-pips i { width: 12px; height: 12px; }
 }

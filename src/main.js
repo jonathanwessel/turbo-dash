@@ -12,7 +12,7 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { unseen } from "./news.js";
-import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL } from "./rival-week.js";
+import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL, drawTargetBadge } from "./rival-week.js";
 import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, setEngineVoice, setRain } from "./audio.js";
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
@@ -705,6 +705,7 @@ function openRivalCard() {
   $("rw-pips").innerHTML = pipsHtml(w.lvl, w.def.body);
   $("rw-info").textContent = w.max ? `${w.name} is at top speed!` : `Beat ${w.name}. Win 🪙!`;
   drawRivalCar($("rw-car"), w.def);
+  { const cv = $("rw-car"); drawTargetBadge(cv.getContext("2d"), cv.width / 2, cv.height * 0.36, 20); }   // the same badge it wears in a race
   sfx("chest"); show("s-rival");
 }
 $("rw-ok").onclick = () => { sfx("click"); openTracks(); };
