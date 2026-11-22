@@ -14,6 +14,10 @@
 - **Never a wall.** The boost never takes the rival past 95% of the player's own top speed, and a rival already
   faster than the player's car stays as it is. `npm run sim -- rival` (now in `npm run check`) proves every track
   can still be won 3 times in 8 with the next faster car and the fastest rival at the cap.
+- Small fixes: a newly opened track now says "🔓 Beach Boardwalk is open!" (no colon), and the What's new card
+  keeps room for its scrollbar, so a long line is never cut off.
+- A helper that saw only the pictures reviewed the new card, button and badge. From it: the card shows the same
+  target over the rival's car, and the button's dots are bigger and it lines up with Easy, Normal and Hard.
 - Polish: the target badge is the new thing to see, and the rival card's button is the new thing to use.
 - For the grown-ups: save version 23 adds `rivalWeek` (the week number, the level, the week whose card was shown),
   with a port and a broken-save fixture in `scripts/test-saves.mjs`. `scripts/test-rival-week.mjs` covers the
