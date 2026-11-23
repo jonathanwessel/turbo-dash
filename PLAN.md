@@ -364,8 +364,8 @@ every test green.
   shipped; the leftovers box is the last M1 box before this target is judged.
   Notes (v1.15.1, passed): every M1 box has shipped. On the v1.15.1 release commit `npm run sim -- rival` passes on
   all 32 tracks with the rival of the week at the cap (28 tracks win 8 of 8, the lowest 5 of 8), and the career run
-  reaches Rank 40 on day 544, inside 5% of the 552 measured when this target was set (Moon 107, Ocean 187, Glacier
-  281, Toy 409). M1 is done.
+  reaches Rank 40 on day 549 (Moon 103, Ocean 184, Glacier 280, Toy 410), inside 5% of the 552 measured when this
+  target was set. The check on the commit before it said day 544: the bot's luck moves these a few days. M1 is done.
 
 ### M2. Cars that feel different (v1.13)
 - [ ] **v1.15.1 picture review leftovers** (all on screen before v1.15.1, so that release shipped). Garage: the
@@ -512,8 +512,8 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   The run that started the box committed its work and stopped before the sweep; this run checked, finished and
   released it (the commit-early rule paid off again). This run was also paused once by the owner mid-run and carried
   on when asked. The new 360x740 sweep size found three layout problems at once that had been live for many
-  releases, and the picture review found two more at that size. Rule, added to games/CLAUDE.md's spirit already
-  ("phone first"): **the sweep's sizes cover every screen shape the rules name**, so an upright phone is now one of
+  releases, and the picture review found two more at that size. Rule (it follows the "phone first" rule in
+  games/CLAUDE.md): **the sweep's sizes cover every screen shape the rules name**, so an upright phone is now one of
   them. Seen once in this run: a background `npm run sweep` failed with "command not found" while the same call had
   worked an hour earlier; `node scripts/sweep.mjs` worked. If it happens again, call the scripts with node in
   background runs. Pacing: v1.15.1 is one fix release after three that moved the game forward, so the next release
