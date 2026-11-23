@@ -352,7 +352,7 @@ every test green.
   the save). Not checked on a real tablet: the thumb reach to the horn above the left arrow needs the owner's eyes.
   Check on the release commit: career Rank 40 on day 552, Moon 107, Ocean 188, Glacier 283, Toy 413 (no rule
   changed). Sweep clean at 7 sizes, and again at 740x360 and 800x1280 after the picture review fixes.
-- [ ] **Target:** the race sim shows every track still has a result the "kid" driver can reach with the car
+- [x] **Target:** the race sim shows every track still has a result the "kid" driver can reach with the car
   one step above the starter, with the rival of the week at its cap. The career run reaches Rank 40 within 5% of
   the day it does today.
   Notes (v1.13.0, progress): `npm run sim -- rival` is in `npm run check` and passes: for each track, the car one
@@ -362,6 +362,10 @@ every test green.
   Stays open until the rest of M1 (faces, boss rematches) ships, since it gates the whole milestone.
   Notes (v1.15.0, progress): career Rank 40 on day 552 on the release commit (548 before), inside 5%. Faces and boss rematches have
   shipped; the leftovers box is the last M1 box before this target is judged.
+  Notes (v1.15.1, passed): every M1 box has shipped. On the v1.15.1 release commit `npm run sim -- rival` passes on
+  all 32 tracks with the rival of the week at the cap (28 tracks win 8 of 8, the lowest 5 of 8), and the career run
+  reaches Rank 40 on day 544, inside 5% of the 552 measured when this target was set (Moon 107, Ocean 187, Glacier
+  281, Toy 409). M1 is done.
 
 ### M2. Cars that feel different (v1.13)
 - [ ] **v1.15.1 picture review leftovers** (all on screen before v1.15.1, so that release shipped). Garage: the
@@ -504,3 +508,15 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   was running (the existing rule says never): the sweep was already red, but the rule stands. Next: the
   **v1.12.1 picture review leftovers** box (it now also lists the v1.15.0 review's older finds), which closes M1
   with its target, and the M0 picture guard riding along.
+- 2026-11-23 (v1.15.1): the M1 leftovers box shipped as a tidy-up release and the M1 target passed, so M1 is done.
+  The run that started the box committed its work and stopped before the sweep; this run checked, finished and
+  released it (the commit-early rule paid off again). This run was also paused once by the owner mid-run and carried
+  on when asked. The new 360x740 sweep size found three layout problems at once that had been live for many
+  releases, and the picture review found two more at that size. Rule, added to games/CLAUDE.md's spirit already
+  ("phone first"): **the sweep's sizes cover every screen shape the rules name**, so an upright phone is now one of
+  them. Seen once in this run: a background `npm run sweep` failed with "command not found" while the same call had
+  worked an hour earlier; `node scripts/sweep.mjs` worked. If it happens again, call the scripts with node in
+  background runs. Pacing: v1.15.1 is one fix release after three that moved the game forward, so the next release
+  must move the game forward: **M2's first real box, three traits per car**, with the M0 picture guard riding
+  along (scoped in its notes). The new v1.15.1 leftovers box sits at the top of M2; take one or two of its items as
+  the release's polish, not as a release of its own.
