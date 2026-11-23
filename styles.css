@@ -1216,3 +1216,12 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
   .share-box img { width: 20vw; height: 20vw; }
   .share-box b { font-size: 3.4vw; }
 }
+/* v1.15.1: an upright phone (360 px wide). The logo sits under the Install button, Main Street's Rank pill and Next
+   sign get their own rows under the coins and the gear (side by side they touched, and the sign cut its words), and
+   boss and cup cards are taller so the name never runs into the picture under it */
+@media (orientation: portrait) and (max-width: 500px) {
+  #s-title .title-hero { padding-top: calc(max(12px, env(safe-area-inset-top)) + 56px); }
+  .rank-pill { top: calc(max(10px, env(safe-area-inset-top)) + 74px); }
+  .next-plate { top: calc(max(10px, env(safe-area-inset-top)) + 128px); max-width: calc(100% - 24px); }
+  .cup-card { height: min(100%, clamp(250px, 44vh, 340px)); }
+}
