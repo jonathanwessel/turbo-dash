@@ -37,6 +37,15 @@ for (const r of RESEARCH) check(typeof r.tag === "string" && r.tag.split(/ +/).l
 {
   const lab = readFileSync(join(root, "src/lab.js"), "utf8");
   check(!/Lab tier|"k"|✔ Done/.test(lab), "src/lab.js still says Lab tier, writes prices as 39k, or says Done on a finished card");
+  check(!lab.includes("<em>${lvl}/${r.max}</em>"), "src/lab.js writes 3/10 beside the level bar (the bar already says it)");
+}
+// 6. v1.15.1 leftovers: one coin total on the result card (no grown-up "Road coins"), no narrator line in the Lab,
+//    and no rank number on Main Street's tower (the Rank pill shows it)
+{
+  const html = readFileSync(join(root, "index.html"), "utf8"), main = readFileSync(join(root, "src/main.js"), "utf8"), town = readFileSync(join(root, "src/town.js"), "utf8");
+  check(!/Road coins|r-road/.test(html + main), "the result card says Road coins again (one coin total does it)");
+  check(!/Research makes/.test(main), "the Lab robot says a narrator line again");
+  check(!/tw-rank/.test(town + main), "Main Street's tower shows the rank number again (the Rank pill shows it)");
 }
 console.log(fails ? `\n✖ ${fails} of ${checks} word checks failed` : `All ${checks} word checks passed`);
 process.exit(fails ? 1 : 0);

@@ -550,7 +550,7 @@ function showTrialResult(r) {
   $("r-trophy").textContent = TRIAL_MEDALS[medal] || "⏱️";
   $("r-title").textContent = record ? `NEW RECORD! ${time.toFixed(1)}s` : `${time.toFixed(1)} seconds`;
   $("r-sub").textContent = !before ? `Your first time on ${t.name}! Next time, race your ghost.` : record ? `You beat your ghost by ${(before - time).toFixed(1)}s, ${who()}!` : `Your record is ${before.toFixed(1)}s. Catch your ghost!`;
-  countUp($("r-prize"), pay + r.coins);   // one coin total (v1.15.1: Prize and Road coins were two lines)
+  countUp($("r-prize"), pay + r.coins);   // one coin total (v1.15.1: the prize and the coins grabbed were two lines)
   $("r-goal").hidden = claimable().length <= goalsBefore;
   $("r-unlock").hidden = medal <= oldMedal;
   if (medal > oldMedal) $("r-unlock").textContent = `${TRIAL_MEDALS[medal]} New medal on ${t.name}!`;
