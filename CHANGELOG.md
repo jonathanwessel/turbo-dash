@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.15.1 — Tidy up 🧹
+
+- **🪙 One coin total.** The result card shows one coin amount (the prize, the coins grabbed on the road and a
+  boss's prize together) instead of three lines. The rival of the week's line shows that rival's grumpy face, not a
+  small colored dot.
+- **Clearer pictures.** In Toy Track World a marker floats over the player's car at the start, the power-up boxes
+  never spin upside down, and "BAM!" and "BOOSTER!" no longer land on top of each other. A shiny car's gleam stays
+  on the car.
+- **Plainer screens.** MAX! is a flat green word in the Lab and the Garage, not a button. The Lab bar has no "3/10"
+  beside it, and its card words are bigger. Main Street's tower has no rank number (the Rank pill shows it), and the
+  Gifts "!" sits on the Gifts roof. Garage world chips show a 🚗 by the car count. Long track names shrink onto one
+  line, and the track cards fill the screen's height on big tablets. The rival chip hides on the Boss and Trials
+  tabs.
+- **Upright phones.** The share code sits in the sky under the logo, not on the car. On a 360 px wide screen the logo
+  clears the Install button, the Rank pill and the Next sign get their own rows, and boss cards are tall enough for
+  the boss's name.
+- Polish: the rival's face on the result card is the new thing to see, and the one coin total is the new thing to
+  use.
+- For the grown-ups: `npm run sweep` now has an eighth size, 360x740 (an upright phone). `scripts/test-words.mjs`
+  checks the result card, the Lab robot's lines, the tower and the Lab bar so the old words cannot come back.
+
 ## v1.15.0 — Boss rematches 👑
 
 - **👑 The bosses come back.** After the player beats a boss, that boss returns for Round 2, then Round 3 and
