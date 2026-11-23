@@ -348,6 +348,12 @@ paint.
 - Lesson: a harder rematch must be measured against the car ladder, like the rival of the week. A probe found the
   step (4% a round) at which each round needs the next car or two up and every round stays winnable.
 
+### v1.15.1 🧹 Tidy up (shipped)
+The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
+player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.
+- Lesson: a new sweep size finds things at once. The first 360x740 sweep found three layout problems that had been
+  live for many releases. The sweep's sizes should cover every screen shape the rules name.
+
 ### Next
 Still open for the owner: whether late-game curves should need more steering (X3). The Turbo Lab leftovers
 (locked-box opacity, the bright poster) wait for the owner too.

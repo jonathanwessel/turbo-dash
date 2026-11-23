@@ -124,6 +124,14 @@ every test green.
   changed; the bot's luck moves these a few days). Sweep clean at 7 sizes. Not checked on a real tablet.
 - [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
+  Notes (2026-11-23, scoping, nothing built yet): the classic road already draws a seeded frame headless in
+  `scripts/perf.mjs` (Math.random seeded, fixed 1/60 steps, the kid bot steering). The guard can do the same in the
+  sweep's headless Edge on the real canvas: seed Math.random, set up the race without starting the frame loop, step
+  it a fixed number of times, call `render()`, and read the canvas. Keep the accepted pictures small (for example
+  320x200 PNGs under `scripts/guard/`, committed) and compare them in the page (draw both on a canvas, count pixels
+  that differ by more than a small amount). `-- --accept` writes new pictures on purpose. Toy Track World needs a
+  fixed camera time as well; start with the four classic worlds and add Toy after. Screens are harder to keep
+  still (animations, the town's cars): take them only after the race frames work.
 - [x] **Tell the owner.** `.github/workflows/release.yml` makes a GitHub release from each pushed tag, using
   the tag message (2 to 5 plain lines). An in-game "What's new" card lists every change since this device last
   played, in pictures and a few words, and closes with one tap.
@@ -356,6 +364,16 @@ every test green.
   shipped; the leftovers box is the last M1 box before this target is judged.
 
 ### M2. Cars that feel different (v1.13)
+- [ ] **v1.15.1 picture review leftovers** (all on screen before v1.15.1, so that release shipped). Garage: the
+  green "✓ Driving" looks like a button but only shows a state (make it a flat mark like MAX!), at 360x740 the
+  "Garage" title touches the back button, and the world chips' "🚗 13/13" is small. Lab words a young child may not
+  follow: "Robot plug", "Softer bonks", "Brain Chip Socket". The result card's "Upgrade your car and try again,
+  Racer!" leaves "Racer!" alone on a line at 360 px. "More worlds" has a dashed outline and does not read as a
+  button. The track and cup lists show a gray scrollbar in desktop browsers (thin or hidden, the cards still
+  scroll). Main Street at 1280x800 has a hard color seam in the sky. On a 360 px phone a long track name such as
+  "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Decided to leave: the rival chip and the
+  boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
+  (it has one level), and the player's name and the home town stay (owner decision).
 - [ ] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
   grippy car is slower on the straight. A tough car loses less speed on a bump. No bare numbers on the card.
 - [ ] **A "Best on" badge** on each track card, and a matching badge in the garage.

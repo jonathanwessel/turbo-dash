@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.15.1",
+    pics: [["🪙", "One coin total after a race"], ["😠", "See who you beat"], ["🧸", "An arrow shows your toy car"]],
+    notes: [
+      "The result card shows one coin total, and the rival of the week's line shows that rival's face.",
+      "In Toy Track World an arrow points at the player's car at the start, and the power-up boxes stay upright.",
+      "Tidier Lab, Garage, Main Street and track cards, and upright phones fit better.",
+      "Not checked on a real tablet or phone yet, so please look at the Toy Track World start and the result card.",
+    ],
+  },
+  {
     v: "1.15.0",
     pics: [["👑", "Beaten bosses come back faster"], ["🎨", "Win Round 2 for a new paint"], ["🪙", "More coins each round"]],
     notes: [
