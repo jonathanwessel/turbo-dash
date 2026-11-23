@@ -485,6 +485,8 @@ $("diff-bar").addEventListener("click", e => {
   if (d.rank && S.rank < d.rank) { sfx("nope"); b.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "none" }], { duration: 300 }); return; }
   sfx("click"); S.diff = d.id; save(); openTracks();
 });
+/* a long track name shrinks to fit its card on one line instead of wrapping onto the trophy (v1.15.1) */
+const tcName = n => `<div class="tc-name${n.length > 12 ? " long" : ""}" style="--n:${n.length}">${n}</div>`;
 let raceTab = "races";
 const cupOpen = cup => S.rank >= Math.max(5, cup.rank || 0) && cup.tracks.every(id => unlocked(TRACKS.findIndex(t => t.id === id)));
 function paintCups() {
@@ -511,6 +513,8 @@ function paintRaceTabs() {
   document.querySelector(".race-tabs").hidden = shown < 2;
   $("track-list").hidden = raceTab !== "races"; $("cup-list").hidden = raceTab !== "cups"; $("boss-list").hidden = raceTab !== "boss"; $("trial-list").hidden = raceTab !== "trial";
   $("diff-bar").style.visibility = raceTab === "trial" || raceTab === "boss" ? "hidden" : "";
+  // the rival of the week races in races and cups only, so its chip hides on the Boss and Trials tabs (v1.15.1)
+  $("rw-chip").style.visibility = $("diff-bar").style.visibility;
   if (raceTab === "trial") paintTrials();
   if (raceTab === "cups") paintCups();
   if (raceTab === "boss") paintBosses();
@@ -521,7 +525,7 @@ function paintTrials() {
     if ((t.world || "earth") !== S.world) return "";
     const th = THEMES[t.theme], open = unlocked(i), best = S.trials[t.id], medal = S.trialMedals[t.id] || 0, times = trialTimes(t, trackLen(t));
     return `<button class="track-card trial-card ${open ? "" : "locked"}" data-trial="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-icon">${t.icon}</div>${tcName(t.name)}
       <div class="tc-best">${TRIAL_MEDALS[medal]}</div>
       <div class="tc-time">${best ? "⏱ " + best.toFixed(1) + "s" : "⏱ no time yet"}</div>
       <div class="tc-prize">${medal < 3 ? `${TRIAL_MEDALS[medal + 1]} ${times[medal].toFixed(1)}s for 🪙${trialPay(t, medal + 1)}` : "🥇 All medals!"}</div>
@@ -546,7 +550,7 @@ function showTrialResult(r) {
   $("r-trophy").textContent = TRIAL_MEDALS[medal] || "⏱️";
   $("r-title").textContent = record ? `NEW RECORD! ${time.toFixed(1)}s` : `${time.toFixed(1)} seconds`;
   $("r-sub").textContent = !before ? `Your first time on ${t.name}! Next time, race your ghost.` : record ? `You beat your ghost by ${(before - time).toFixed(1)}s, ${who()}!` : `Your record is ${before.toFixed(1)}s. Catch your ghost!`;
-  countUp($("r-prize"), pay); countUp($("r-road"), r.coins);
+  countUp($("r-prize"), pay + r.coins);   // one coin total (v1.15.1: Prize and Road coins were two lines)
   $("r-goal").hidden = claimable().length <= goalsBefore;
   $("r-unlock").hidden = medal <= oldMedal;
   if (medal > oldMedal) $("r-unlock").textContent = `${TRIAL_MEDALS[medal]} New medal on ${t.name}!`;
@@ -676,7 +680,7 @@ function openTracks() {
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
     if (!open && i !== nextLocked && !t.season) return "";
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-icon">${t.icon}</div>${tcName(t.name)}
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       ${(() => { const w = S.mastery[t.id + ":" + S.diff] || 0, s = starsFor(w), lo = MASTERY[s - 1] || 0, hi = MASTERY[s];
         // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
@@ -687,7 +691,7 @@ function openTracks() {
       ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-ribbon">Tricky bonus!</div><div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div>
+      <div class="tc-ribbon">Tricky bonus!</div><div class="tc-icon">${t.icon}</div>${tcName(t.name)}
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
   show("s-tracks");
@@ -751,7 +755,9 @@ $("r-faces").addEventListener("click", e => {
 });
 function paintRivalRow(wk) {
   $("r-rival").hidden = !(wk && wk.up); if (!wk || !wk.up) return;
-  $("r-rival-name").textContent = wk.name; $("r-rival-dot").style.background = RIVALS[wk.i].body;
+  $("r-rival-name").textContent = wk.name;
+  // the beaten rival's own grumpy face says who it was (it was a small colored dot)
+  const fc = $("r-rival-face"), fx = fc.getContext("2d"); fx.clearRect(0, 0, fc.width, fc.height); drawFace(fx, fc.width / 2, fc.height / 2, fc.width / 2 - 3, "grumpy", RIVALS[wk.i]);
   countUp($("r-rival-n"), wk.bonus);
 }
 
@@ -872,7 +878,7 @@ function showResult(r) {
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
   $("r-title").textContent = r.place <= 3 ? `${r.place}${suffix(r.place)} place!` : `${r.place}${suffix(r.place)} place. Good try!`;
-  countUp($("r-prize"), prize); countUp($("r-road"), r.coins);
+  let total = prize + r.coins;   // one coin total: the prize, the coins grabbed on the road, and a boss's prize (v1.15.1)
   const cheers = r.place === 1 ? ["Way to go, " + who() + "!", "You're the champ, " + who() + "!", "Super fast, " + who() + "!"]
     : r.place <= 3 ? ["Great driving, " + who() + "!", "So close, " + who() + "!"] : ["Upgrade your car and try again, " + who() + "!", "Keep going, " + who() + "!"];
   $("r-sub").textContent = cheers[Math.floor(Math.random() * cheers.length)];
@@ -895,12 +901,15 @@ function showResult(r) {
       if (gotCar) museumAdd("🚗", `Won the ${car.name}`);
       save(); chipToast(gotChip);
       // v1.15: the round is in the title and the line under it is only the prize (a longer line ran off the card)
-      const msg = first ? `🚗 ${car.name}! +🪙${bonus}` : paint ? `🎨 ${paint.name} paint! +🪙${bonus}` : `👑 +🪙${bonus}`;
-      $("r-unlock").textContent = msg; $("r-unlock").hidden = false;
+      // the boss's coins go into the one total, so the line under the title is only the car or the paint
+      total += bonus;
+      const msg = first ? `🚗 ${car.name}!` : paint ? `🎨 ${paint.name} paint!` : "";
+      $("r-unlock").textContent = msg; $("r-unlock").hidden = !msg;
       $("r-title").textContent = first ? "BOSS BEATEN!" : `ROUND ${round} WON!`;
     } else { $("r-title").textContent = `${b.name} wins!`; $("r-sub").textContent = "Upgrade your car and try again, " + who() + "!"; }
     lastRun = { kind: "boss", boss: b }; run = RACE();
   } else lastRun = run.kind === "cup" ? null : RACE();
+  countUp($("r-prize"), total);
   if (run.kind === "cup") { paintCupResult(); $("btn-next").hidden = false; $("btn-again").hidden = true; $("btn-next").textContent = run.i < 2 ? "Next race ▶" : "🏆 Cup results!"; }
   else { $("btn-next").hidden = !nowOpen; $("btn-again").hidden = false; $("btn-next").textContent = "Next ▶"; }
   if (!$("r-unlock").hidden) $("r-goal").hidden = true;   // one "what changed" line: an unlock beats a goal reminder
@@ -1246,7 +1255,7 @@ function refreshHub() {
   $("mis-lock").style.display = S.rank >= MISSIONS_RANK ? "none" : "";
   $("lab-timer").textContent = ls.text;
   paintNext();
-  $("tw-rank").textContent = S.rank; $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
+  $("rp-rank").textContent = S.rank; $("rp-title").textContent = rankTitle(S.rank);
   // wide screens: fill and trim the sky; squarer or portrait screens: show the whole street
   paintTownArrows();
 }
@@ -1311,7 +1320,7 @@ $("town-wrap").addEventListener("click", e => {
   else if (go === "lab") { if (S.rank < OPEN_RANK.lab) { nope(); setTimeout(() => { if (screen === "s-hub") openRank(); }, 350); } else { sfx("click"); openLab(); } }
 });
 const lab = createLab({ $, sfx, spend, celebrate: () => confetti(90), onChange: () => { refreshChips(); if (screen === "s-hub") refreshHub(); } });
-const PROF = () => ["Hi " + who() + "! What should we invent?", "Beep boop! Science time!", "Research makes EVERY car better!", "Let's make you super fast, " + who() + "!"];
+const PROF = () => ["Hi " + who() + "! What should we invent?", "Beep boop! Science time!", "Bubbles! Fizz! Pop!", "Let's make you super fast, " + who() + "!"];
 function openLab() { { const L = PROF(); $("prof-say").textContent = L[Math.floor(Math.random() * L.length)]; } lab.open(); show("s-lab"); }
 function goHub() {
   const season = seasonUnlock(S); keepOpens(S); if (season.length) save();

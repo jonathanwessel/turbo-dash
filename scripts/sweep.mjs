@@ -2,7 +2,7 @@
 // throwaway profile (a brand-new test save, never a real one), runs `await __sweepAll()` from src/dev/audit.js at
 // every size below, saves a screenshot of the main screens at each size and one race frame per world, then stops
 // the browser and the server. Any overlap, spill, off-screen button or "null" fails the run (exit 1).
-//   npm run sweep                       -> all 7 sizes, pictures in .sweep/ (git-ignored)
+//   npm run sweep                       -> all 8 sizes, pictures in .sweep/ (git-ignored)
 //   npm run sweep -- 1280x800 740x360   -> only these sizes
 //   npm run sweep -- --out <folder>     -> pictures somewhere else
 //   npm run sweep -- --no-race          -> skip the race frames
@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const args = process.argv.slice(2);
-const ALL = ["740x360", "915x412", "1000x448", "1024x600", "1280x800", "1920x1080", "800x1280"];
+const ALL = ["740x360", "915x412", "1000x448", "1024x600", "1280x800", "1920x1080", "800x1280", "360x740"];   // 360x740: an upright phone (v1.15.1)
 const sizes = args.filter(a => /^\d+x\d+$/.test(a)).length ? args.filter(a => /^\d+x\d+$/.test(a)) : ALL;
 const outArg = args.indexOf("--out"), out = resolve(root, outArg >= 0 ? args[outArg + 1] : ".sweep");
 const RACES = !args.includes("--no-race");

@@ -520,7 +520,7 @@ export class ToyView {
     const col = new THREE.Color();
     T.boxes.forEach((b, k) => b.xs.forEach((bx, n) => {
       const id = k * 3 + n, gone = b.until[n] > t;
-      e.set(t * 1.2, t * 1.7 + id, 0); q.setFromEuler(e);
+      e.set(Math.sin(t * 2 + id) * 0.25, t * 1.7 + id, 0); q.setFromEuler(e);   // spin upright with a small wobble (a full tumble showed the "?" upside down)
       m4.compose(V(...toyPoint(T, b.s, bx, 1.4 + Math.sin(t * 3 + id) * 0.2)), q, gone ? zero : one); this.boxes.setMatrixAt(id, m4);
       col.setHSL(((t * 0.4 + id * 0.13) % 1), 0.9, 0.6); this.boxes.setColorAt(id, col);
     }));
@@ -556,8 +556,8 @@ export class ToyView {
 
   /* 2D things on top: speed lines, the toy hand, Auto Steer robot, popups */
   overlay(race, W, H, t, fast, falling) {
-    const honking = race.rivals.some(c => c.honkT > 0), faces = faceShow(race) > 0 && race.rivals.some(c => c.mood);
-    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0 || honking || faces;
+    const honking = race.rivals.some(c => c.honkT > 0), you = faceShow(race), faces = you > 0 && race.rivals.some(c => c.mood);
+    const ctx = this.ctx, need = fast || falling || race.autoTarget !== null || race.popups.length > 0 || honking || you > 0;
     if (!need && !this.ovHad) return;   // nothing on it now or last frame: leave the clear canvas alone (v1.10)
     this.ovHad = need; ctx.clearRect(0, 0, W, H);
     if (fast) {
@@ -584,13 +584,23 @@ export class ToyView {
       const v = g.position.clone().add(V(0, 1.6, 0)).project(this.camera); if (v.z > 1 || Math.abs(v.x) > 0.85 || Math.abs(v.y) > 0.9) return;
       ctx.globalAlpha = a; drawFaceBubble(ctx, (v.x + 1) / 2 * W, (1 - v.y) / 2 * H, H * 0.04, c.mood, c.def);
     }); }
+    // on the start grid a bouncing yellow arrow points at the player's own car, so it stands out in the pack (v1.15.1)
+    const pg = you > 0 && this.cars.get("p");
+    if (pg) { const v = pg.position.clone().add(V(0, 2.2, 0)).project(this.camera);
+      if (v.z <= 1 && Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9) {
+        const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H - Math.abs(Math.sin(t * 5)) * H * 0.025, s = H * 0.035;
+        ctx.globalAlpha = you; ctx.fillStyle = "#ffd400"; ctx.strokeStyle = "#10142a"; ctx.lineWidth = Math.max(2, s * 0.22); ctx.lineJoin = "round";
+        ctx.beginPath(); ctx.moveTo(x - s, y - s * 1.1); ctx.lineTo(x + s, y - s * 1.1); ctx.lineTo(x, y + s * 0.4); ctx.closePath(); ctx.stroke(); ctx.fill();
+      } }
     ctx.globalAlpha = 1;
-    for (const q of race.popups) {
+    race.popups.forEach((q, i) => {
+      // a newer popup pushes the older ones up a row, eased so nothing hops ("BAM!" and "BOOSTER!" once sat on top of each other)
+      const row = race.popups.length - 1 - i; q.lift = q.lift === undefined ? row : q.lift + (row - q.lift) * 0.25;
       const s = 1 + Math.min(0.3, q.age * 2); ctx.globalAlpha = 1 - q.age;
       ctx.font = `900 ${Math.round(H * 0.08 * s)}px system-ui,sans-serif`; ctx.lineWidth = H * 0.012; ctx.strokeStyle = "rgba(0,0,0,0.6)";
-      const qx = W / 2 + q.x * W, qy = H * 0.42 - q.age * H * 0.15;
+      const qx = W / 2 + q.x * W, qy = H * 0.42 - q.age * H * 0.15 - q.lift * H * 0.11;
       drawEmojiText(ctx, q.text, qx, qy, true, q.color);
-    }
+    });
     ctx.globalAlpha = 1;
   }
 }

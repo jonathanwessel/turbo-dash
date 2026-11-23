@@ -48,7 +48,7 @@ const gifts = () => { const { x, w } = B.gifts, top = BASE - 170; return `
   <text x="${cx("gifts")}" y="${BASE - 40}" font-size="38" text-anchor="middle">🎁</text>
   ${roofIcon(cx("gifts"), top - 48, "🎁", 60)}
   ${label(cx("gifts"), top + 14, w - 10, "GIFTS", 28, "#fff")}
-  ${badge("tb-gift", x + w, top - 50)}
+  ${badge("tb-gift", cx("gifts"), top - 122)}
 </g>`; };
 
 const missions = () => { const { x, w } = B.missions, top = BASE - 250; return `
@@ -79,7 +79,7 @@ const rank = () => { const { x, w } = B.rank, top = BASE - 380; return `
   <rect x="${x}" y="${top - 14}" width="${w}" height="26" rx="8" fill="#ff8a00"/>
   ${[0, 1, 2, 3, 4].map(i => win(x + w / 2 - 15, top + 30 + i * 62)).join("")}
   <path d="M${cx("rank")} ${top - 128} l18 38 l42 6 l-30 29 l7 42 l-37 -20 l-37 20 l7 -42 l-30 -29 l42 -6z" fill="#ffd400" stroke="#ff8a00" stroke-width="6"/>
-  <text x="${cx("rank")}" y="${top - 55}" class="lbl" font-size="38" id="tw-rank">1</text>
+  <circle cx="${cx("rank") - 12}" cy="${top - 78}" r="7" fill="#fff6b0"/>
   ${label(cx("rank"), BASE - 64, w + 6, "RANK", 28, "#fff")}
   ${badge("tb-rank", x + w, top - 120)}
 </g>`; };

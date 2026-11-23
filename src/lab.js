@@ -40,7 +40,7 @@ export function createLab({ $, sfx, spend, celebrate, onChange }) {
      State stays on the card (level, working, done, locked); the sheet explains (what it does, how long it takes). */
   const levelRow = (r, lvl, running) => r.max === 1 ? "" : `<div class="plv" data-lvl="${lvl}/${r.max}" aria-label="Level ${lvl} of ${r.max}">${
     r.max <= 10 ? `<span class="pseg">${Array.from({ length: r.max }, (_, i) => `<i class="${i < lvl ? "on" : i === lvl && running ? "next" : ""}"></i>`).join("")}</span>`
-      : `<span class="pbar"><i style="width:${Math.round(100 * lvl / r.max)}%"></i></span>`}<em>${lvl}/${r.max}</em></div>`;
+      : `<span class="pbar"><i style="width:${Math.round(100 * lvl / r.max)}%"></i></span>`}</div>`;   // no "3/10" beside it (v1.15.1: the bar already says it; the sheet says the number)
   function rush(b) {
     if (!spend(rushCost(b))) return;
     b.end = Date.now(); save(); collect(b);

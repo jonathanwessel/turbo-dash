@@ -103,7 +103,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     $("g-worlds").hidden = chips.length < 2;
     $("g-worlds").innerHTML = chips.map(w => {
       const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
-      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.name}</span><small>${mine}/${list.length}</small></button>`;
+      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.name}</span><small>🚗${mine}/${list.length}</small></button>`;
     }).join("");
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${carKnown(car) ? Math.round(8 + 92 * Math.min(1, v)) : 0}%"></i></div>`).join("");
     const btn = $("g-action");

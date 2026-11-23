@@ -91,7 +91,12 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
   if (def.shiny && w > 20) {
     ctx.fillStyle = "rgba(255,255,255,0.55)";
     const sx = ((t * 0.4) % 1.6 - 0.8) * w;
-    poly(ctx, [sx - w * 0.06, top + 2, sx + w * 0.02, top + 2, sx - w * 0.06, by - 2, sx - w * 0.14, by - 2]);
+    // the gleam only shows on the body (off the body it was a white line floating beside the car, v1.15.1)
+    if (sx + w * 0.02 > -w * 0.5 && sx - w * 0.14 < w * 0.5) {
+      ctx.save(); ctx.beginPath(); ctx.rect(-w * 0.5, top, w, bh); ctx.clip();
+      poly(ctx, [sx - w * 0.06, top + 2, sx + w * 0.02, top + 2, sx - w * 0.06, by - 2, sx - w * 0.14, by - 2]);
+      ctx.restore();
+    }
   }
   if (def.sticker && def.sticker !== "none" && w > 16) sticker(ctx, def.sticker, w, top, bh);
 

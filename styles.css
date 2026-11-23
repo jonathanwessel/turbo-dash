@@ -330,7 +330,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .proj { background: rgba(255,255,255,.1); border: 3px solid rgba(255,255,255,.3); border-radius: 18px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .proj .pi { font-size: 34px; line-height: 1.1; }
 .proj b { font-size: 16px; }
-.proj .ptag { font-size: 13px; font-weight: 700; opacity: .85; line-height: 1.15; }
+.proj .ptag { font-size: 15px; font-weight: 700; opacity: .9; line-height: 1.15; }
 .tier-head { display: flex; align-items: center; gap: var(--s2, 8px); }
 .tier-n { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 50%; background: #ffd400; color: #1a1d2e; font-size: 18px; border: 2px solid #1a1d2e; }
 /* the research level on a card (and, larger, in its sheet): segments up to 10 levels, a bar beyond, then "3/10" */
@@ -346,7 +346,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .ls-lv .plv { max-width: 280px; margin: 0 auto var(--s2); }
 .ls-lv .plv .pseg i, .ls-lv .plv .pbar { height: 14px; }
 .ls-lv .plv em { font-size: 16px; }
-.proj .pbtn { margin-top: 3px; font-weight: 900; font-size: 13px; padding: 5px 8px; border-radius: 12px; background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; }
+.proj .pbtn { margin-top: 3px; font-weight: 900; font-size: 15px; padding: 5px 8px; border-radius: 12px; background: linear-gradient(#ffe14d, #ff9d00); color: #5a2a00; }
 .proj .pbtn.poor { background: #5a4a7a; color: #cfc6e6; }
 .proj.locked { opacity: .5; }
 .proj.maxed { border-color: #5be36a; }
@@ -1174,7 +1174,8 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 #rw-name { font-size: clamp(20px, 5vmin, 28px); font-weight: 900; opacity: 1; }
 .rival-card .boss-says { margin: 0; }
 .rw-info { font-size: clamp(16px, 4.4vmin, 24px); font-weight: 900; color: #ffd400; margin: 2px 0 10px; max-width: 520px; margin-inline: auto; }
-.rr-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; margin-right: 6px; vertical-align: middle; }
+.rr-face { display: inline-block; width: 1.5em; height: 1.5em; margin-right: 6px; vertical-align: middle; }
+.r-total { font-size: 1.25em; }   /* one coin total, a little bigger than the other lines */
 #r-rival[hidden] { display: none; }
 @media (max-height: 430px) and (orientation: landscape) {
   #rw-car { height: 18vh; } .rw-pips.big { margin: 2px 0; } .rw-pips.big i { width: 16px; height: 16px; } .rw-info { margin-bottom: 4px; }
@@ -1199,3 +1200,19 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 @media (max-height: 720px) and (orientation: landscape) { .r-chests:has(~ #r-btns:not([hidden])) .row { display: none; } }
 #s-boss .boss-card h1 { margin-left: auto; margin-right: auto; }   /* centered */
 @media (min-height: 431px) { #s-boss .boss-card h1 { margin-top: 6px; } }   /* clear of the face where the face is big */
+/* v1.15.1: MAX! is a finished mark, not a button: big green word, no box, no shadow (Lab and Garage alike) */
+.proj.maxed .pbtn, .proj.maxed .pbtn.poor, .up-buy.max { background: none; border-color: transparent; box-shadow: none; color: #5be36a; text-shadow: 0 2px 0 rgba(0,0,0,.55); cursor: default; }
+.up-buy.max:active { transform: none; }
+/* v1.15.1: a long track name fits its card on one line (it wrapped onto the trophy), and taller cards fill the band
+   that was left empty above and below them on big screens */
+.track-card .tc-name { line-height: 1.05; }
+.track-card .tc-name.long { white-space: nowrap; font-size: max(13px, min(clamp(18px, 4.8vmin, 28px), calc(clamp(150px, 34vmin, 270px) * 1.4 / var(--n)))); }
+@media (orientation: landscape) and (min-height: 600px) {
+  .track-card { width: clamp(150px, 34vmin, 270px); height: min(100%, clamp(200px, 62vmin, 440px)); }
+}
+/* v1.15.1: on an upright screen the share code sits in the empty sky under the logo, not over the car */
+@media (orientation: portrait) {
+  .share-box { top: 25%; bottom: auto; max-width: none; }
+  .share-box img { width: 20vw; height: 20vw; }
+  .share-box b { font-size: 3.4vw; }
+}
