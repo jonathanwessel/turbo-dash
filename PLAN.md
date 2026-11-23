@@ -299,7 +299,7 @@ every test green.
   542 (548 before, inside 5%), Moon 102, Ocean 184, Glacier 278, Toy 406. Check on the release commit: Rank 40 on
   day 552, Moon 107, Ocean 187, Glacier 281, Toy 413 (the bot's luck moves these a few days). Sweep clean at 7
   sizes, and again after the picture review fixes. Not checked on a real tablet.
-- [ ] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
+- [x] **v1.12.1 picture review leftovers** (all on screen before v1.12.1, so that release shipped). Toy Track
   World start: the player's car blends into a pack of look-alike cars with navy roofs (a marker or a brighter
   outline for the player's car). Turbo Lab: the pip bar and "10/10" say the same thing twice, "MAX!" chips and card
   lines are about 11 px, and "Research makes EVERY car better!" sounds like a narrator. Main Street: "16" shows on
@@ -313,6 +313,23 @@ every test green.
   total would do; the rival of the week chip shows on the Boss and Cups tabs, where that rival never races; the
   green "MAX!" pill in the Garage looks like a button; in Toy Track World "BAM!" and "BOOSTER!" stack on top of each
   other; and the boss intro's car has a small white speed line beside it.
+  Notes: v1.15.1, built over two runs (the first committed its work and stopped before the sweep; this run read
+  that commit, checked it and released it). Toy Track World: a bouncing yellow arrow over the player's car while
+  the start faces show, power-up boxes spin upright with a small wobble, and a newer popup pushes the older ones up a
+  row. Lab: no "3/10" beside the bar (the sheet keeps the number), card words 15 px (were 13), the robot's narrator
+  line is now "Bubbles! Fizz! Pop!". Main Street: no number on the Rank tower (a star with a shine), the Gifts "!"
+  sits over the Gifts roof. Garage world chips read "🚗 13/13". Long track names shrink to one line, and on
+  landscape screens 600 px and taller the track cards are taller (no empty band). Portrait title: the share code
+  sits in the sky under the logo. Result card: one coin total (prize, road coins and a boss's prize together), the
+  boss line only names the car or the paint, the rival line shows the rival's grumpy face, and the coin counter
+  no longer reaches the card at 740x360. MAX! is a flat green word in the Lab and the Garage. The rival chip hides on
+  the Boss and Trials tabs. The shiny gleam is clipped to the car body (the "white speed line" in the boss intro).
+  Added 360x740 to the sweep, as the box asked. Its first run found three more things at that size, all fixed: the
+  logo under the Install button, the coin counter and Rank pill side by side (the Rank pill and the Next sign now
+  have their own rows on screens up to 500 px wide), and the boss name squeezed into the world picture (taller
+  cards). A probe picture also found the race tabs cut at both edges at 360 px (narrower padding) and the rival's
+  coin touching the name on the result card. `scripts/test-words.mjs` now checks the coin total, the Lab robot's
+  lines, the tower number and the Lab bar's "3/10". Not checked on a real tablet or phone.
 - [x] **A horn button.** It honks. Rivals nearby honk back.
   Notes: v1.12.0, taken ahead of its turn: v1.12.0 had to move the game forward (four tool releases in a row) and
   this is the smallest new thing to use. Rules in `src/horn.js`, used by both engines: the two closest rivals

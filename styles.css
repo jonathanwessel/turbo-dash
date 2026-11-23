@@ -1225,5 +1225,7 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
   .next-plate { top: calc(max(10px, env(safe-area-inset-top)) + 128px); max-width: calc(100% - 24px); }
   .cup-card { height: min(100%, clamp(250px, 44vh, 340px)); }
   .race-tabs { gap: 6px; } .race-tabs button { padding: 7px 10px; }   /* all four tabs fit (Races and Trials were cut at the edges) */
+  .share-box { top: 30%; }   /* under the logo, which moved down to clear Install */
+  .lab-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* two fixed columns, so a row badge spans the row (with auto-fill it took one cell) */
 }
 #r-rival b { margin-left: 6px; }   /* the coin kept clear of the rival's name */
