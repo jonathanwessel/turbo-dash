@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.18.0 — Read it to me 🔊
+
+- **🔊 A speaker button on the picture cards.** The car kinds card, the rival of the week card, the boss card, the
+  Best car card and the world preview card each have a round yellow speaker at the end of their buttons. A tap reads
+  the card's words aloud (coins are said as "300 coins", pictures and quote marks are skipped), the speaker pulses
+  while it talks, and a second tap stops it. Leaving the card, or the game going to the background, stops it too.
+- **On-device voice only.** The game only speaks with a voice the browser marks as living on the device (never an
+  online one, and never the browser's default voice, which can be online). With no such voice the speaker is hidden.
+- Polish: the speaker is the new thing to see and to use.
+- On a 1024x600 tablet held sideways the boss card's face and car are a little smaller, so its second row of buttons
+  (Not yet and the speaker) stays on the card. The sweep found the speaker under the card's edge there.
+- For the grown-ups: `src/speak.js` (the voice pick and the spoken line are tested in `scripts/test-say.mjs`).
+  `npm run check` now runs `scripts/say-test.mjs`, which taps the speaker with a real tap in headless Edge and checks a
+  local voice starts, the speaker pulses, and a second tap and leaving the card both stop it.
+- **Picture guard for Toy Track World.** `npm run guard` now also draws one seeded Toy Track World frame with the
+  game's own 3D code and compares it with `scripts/guard/toy.png`. The frame is picked when a row of coins is drawn
+  in the middle of the picture and no pop-up is on the road. With the coins hidden on purpose it fails (0.53% changed,
+  worst block 100%). The accepted picture comes from this machine's software 3D (SwiftShader).
+
 ## v1.17.0 — Best car 🏆
 
 - **🏆 Best car on each track.** When another of the player's cars is clearly faster on a track (at least 1%), that

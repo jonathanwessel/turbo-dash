@@ -360,6 +360,13 @@ time, and the Garage lists where each car is best. A picture guard joins the rel
 - Lesson: the fastest car overall wins everywhere, so a useful "best" is the best of what the player owns. A cheap
   rule is fine when the sim races every pick against it.
 
+### v1.18.0 🔊 Read it to me (shipped)
+A round speaker button on the picture cards (car kinds, rival of the week, boss, best car, world preview) reads the
+card aloud with a voice that lives on the device, and hides when there is none. The picture guard now also draws a
+Toy Track World frame.
+- Lesson: a browser only speaks after a real tap, so the test taps the speaker with a real mouse event over DevTools,
+  not a script click. A 3D guard frame is picked by coins drawn on screen, and proved by hiding the coins.
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.

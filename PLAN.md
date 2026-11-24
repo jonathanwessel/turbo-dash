@@ -188,6 +188,16 @@ every test green.
   three.js view on a canvas the guard reads (WebGL in headless Edge uses SwiftShader, so keep the accepted pictures
   from this machine). Screens need their animations held still (the town's cars, the Garage car's bounce, toasts):
   start with the Garage on the Rank 16 save, then the track list, then Main Street.
+  Notes (v1.18.0, progress): Toy Track World is in. `scripts/guard.mjs` imports `src/toy/race.js` and
+  `src/toy/view.js` in the page, builds its own ToyRace with its own ToyView on a 640x400 picture (the "light" look a
+  tablet gets), seeds Math.random, steps 1/60 with a steer-to-the-middle bot, and keeps the first quiet moment (3 s
+  in, on the ground, no pop-up, no shake) where at least 3 coins between 6 and 24 steps ahead are drawn in the open
+  middle of the picture (projected with the view's own camera). The camera is snapped, the picture drawn and read in
+  one go (a WebGL picture is gone once the browser shows it). The first try picked a frame by distance alone: it had
+  four BAM! pop-ups stacked over the road and no coin in sight, so a missing coin would not have failed it; the pick
+  is now by what is on screen (the v1.17.0 rule). Proved red: with the coins hidden in `view.js` the guard fails
+  (0.53% changed, worst block 100%); put back, two runs give 0.00%. `scripts/guard/toy.png` is this machine's
+  SwiftShader picture. Still to do: the screens (Garage on the Rank 16 save first).
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
 - [x] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
@@ -403,6 +413,12 @@ every test green.
   green mark. Done in v1.17.0: the track, cup, boss and trial lists have a thin yellow scrollbar instead of the gray one. Decided to leave: the rival chip and the
   boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
   (it has one level), and the player's name and the home town stay (owner decision).
+  Added from the v1.18.0 picture review (all on screen before v1.18.0): the world preview card says "Opens with Rank 20
+  and the Moon Tires research" ("research" is a grown-up word) and "Take a peek! One lap of Crater Hop in a mystery
+  car. No coins or prizes in a preview." (three sentences, the last one reads like a manual); its mystery car's roof
+  is cut flat under the words at 1024x600 and 1280x800; the car kinds card leaves "roads." and "much." alone on a line
+  at 1024x600 and 1280x800; the small "Not yet" and "OK" buttons have small words in a narrow box; at 360x740 the
+  rival and preview cards run edge to edge and the preview arrows touch the screen's edge.
 - [x] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
   grippy car is slower on the straight. A tough car loses less speed on a bump. No bare numbers on the card.
   Notes: v1.16.0. Decision: "three traits" read as three kinds of car, one kind per car (a pill with a picture and
@@ -462,10 +478,31 @@ every test green.
   track card starts the race). Check on the release commit: career Rank 40 on day 547 (Moon 104, Ocean 187,
   Glacier 280, Toy 408), inside 5% of the 549 before. Sweep clean at 8 sizes, again after the review fixes, and at the
   three sizes the last text fix touches. Not checked on a real tablet.
-- [ ] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
+- [x] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
   it with an on-device voice only (`speechSynthesis` with a local voice, never an online one), and Turbo Dash has
   none yet. Start with the car kinds card, the rival of the week card and the boss intro. Hide the button when the
   device has no local voice.
+  Notes: v1.18.0, built by a run that committed it and stopped before the release; the next run released it.
+  `src/speak.js`: `pickVoice` takes only voices the browser marks `localService`, English (US first), and never one
+  named Online, Natural or Cloud, and never the browser's default voice (it can be an online one). No such voice
+  hides every speaker. A round yellow 🔊 sits at the end of the buttons on the car kinds, rival of the week, boss
+  intro, Best car and world preview cards; the words it reads are the card's `[data-say]` parts on screen, with
+  coins said as "300 coins" and pictures and quote marks dropped (`sayLine`). It pulses while it talks, a second
+  tap stops it, and leaving the card or hiding the app stops it. `scripts/test-say.mjs` (in `npm test`) checks the
+  voice pick and the spoken line; `scripts/say-test.mjs` (in `npm run check`) taps the speaker with a real DevTools
+  mouse event in headless Edge, because a browser only speaks after a real tap, and on this machine heard "Microsoft
+  David" (a local voice) start, pulse, stop on a second tap and stop on leaving the card. The audit flags a picture
+  card with no speaker when a voice exists, and counts the speaker in its "must be on screen" check. Decision: the
+  sweep shows the speaker even on a machine with no voice (`fakeVoice`, dev builds only), so the pictures always
+  have it. No race, prize or save change, so the sim and career numbers move only by the bot's luck: on this
+  build's check career Rank 40 on day 544 (Moon 105, Ocean 181, Glacier 277, Toy 405). The sweep found the speaker
+  under the boss card's edge at 1024x600 (a smaller face and car there now). Picture review (a helper that saw only
+  the sweep pictures): the speaker squeezed its row so "Preview lap" and "Not yet" broke onto two lines (the buttons
+  beside it now keep one line, and the speaker moves under them when the row is too narrow), and the gray speaker
+  picture was faint on the yellow (drawn darker). Decision: a speaker under the buttons on a narrow card stays,
+  centered (a speaker in the card's corner was considered, but it would sit on the big titles at 360 px). Its older finds
+  went to the leftovers box at the top of M2. Not checked on a real
+  tablet: which voices an Android tablet marks as local, and whether it speaks offline, need the owner's ears.
 - [ ] **A second special car per world,** earned by play: a Moon hopper that jumps farther, a submarine that
   ignores currents, an ice car that does not slide.
 - [ ] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.
@@ -627,3 +664,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   in the sweep until the sweep set up a save that shows it. That is the v1.15.0 rule ("a card is not checked until
   the sweep opens it filled in") again, so no new rule. Next: **Explainers read aloud** as the main piece (games/
   CLAUDE.md asks for it and Turbo Dash has none), with the guard's Toy Track World frame riding along.
+- 2026-11-24 (v1.18.0): Explainers read aloud shipped as the main piece with the guard's Toy Track World frame, as
+  the last note asked. Third release in a row that moves the game forward. Again a run built the box, committed it
+  and stopped before releasing (its lock went stale after 8 hours), but this time it also left the Toy guard step
+  uncommitted with no accepted picture: the next run had to judge a dirty tree. The commit-early rule (v1.13.0) holds;
+  it now also covers half-done tool steps: **commit a tool step only once it has been run green and seen red, and
+  stash anything that has not**, so a dirty tree always means "work in progress from this box". The Toy guard's first
+  frame was picked by distance again and showed no coins: the v1.17.0 rule (pick by what is on screen) caught it
+  before it counted. The sweep found the new speaker under the boss card's edge at 1024x600, a size between the two
+  the old boss card rule covered; the audit's on-screen check caught it because the box added the speaker to it.
+  Next: M0's picture guard for the screens (Garage first) and the Android back button can ride along, and the main
+  piece is **a second special car per world** (M2), so the game keeps moving forward.

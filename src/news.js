@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.18.0",
+    pics: [["🔊", "Tap the speaker to hear a card"]],
+    notes: [
+      "A round yellow speaker button on the picture cards reads the card aloud. A second tap stops it.",
+      "It only uses a voice that lives on the tablet, never an online one, and hides when there is none.",
+      "A new picture check also guards a Toy Track World race frame before each release.",
+      "Not checked on a real tablet yet, so please tap the speaker on the car kinds card in the Garage.",
+    ],
+  },
+  {
     v: "1.17.0",
     pics: [["🏆", "See your best car for each track"], ["🚗", "The Garage shows where a car is best"]],
     notes: [
