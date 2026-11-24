@@ -8,7 +8,7 @@
 export const NEWS = [
   {
     v: "1.16.0",
-    pics: [["⚡", "Fast cars zoom on straights"], ["🛞", "Grippy cars hold the curves"], ["💪", "Tough cars shrug off bumps"]],
+    pics: [["⚡", "Fast cars zoom on straight roads"], ["🛞", "Grippy cars turn well"], ["💪", "Bumps don't slow Tough cars much"]],
     notes: [
       "Every car is now Fast, Grippy or Tough, and each kind has a good side and a cost.",
       "Fast is quicker on top but slides on curves. Grippy holds curves but is a bit slower.",
