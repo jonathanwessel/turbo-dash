@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS, TRAITS } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance, newClock, resetClock, stepCounter } from "./pace.js";
 import { qualityLadder, QUALITY_CAP } from "./quality.js";
@@ -213,7 +213,7 @@ const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 /* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
    One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
-const NO_RETURN = new Set(["s-rival", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+const NO_RETURN = new Set(["s-rival", "s-traits", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
@@ -226,7 +226,7 @@ function show(id) {
   paintUpdate();
 }
 const REOPEN = {
-  "s-tracks": () => openTracks(), "s-school": () => { paintSchool(); show("s-school"); }, "s-garage": () => { garage.open(); show("s-garage"); },
+  "s-tracks": () => openTracks(), "s-school": () => { paintSchool(); show("s-school"); }, "s-garage": () => openGarage(),
   "s-settings": () => { paintToggles(); show("s-settings"); }, "s-parent": () => { paintParent(); show("s-parent"); }, "s-rank": () => openRank(),
   "s-lab": () => openLab(), "s-trophies": () => openTrophies(), "s-bank": () => openBank(),
 };
@@ -1218,7 +1218,27 @@ $("mis-list").addEventListener("click", e => {
 });
 
 /* ---------- hub, garage, settings ---------- */
-const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onCar: car => museumAdd("🚗", `Got the ${car.name}`), onPreview: w => openPreview(w) });
+const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onCar: car => museumAdd("🚗", `Got the ${car.name}`), onPreview: w => openPreview(w), onTrait: car => openTraits(car) });
+/* ⚡🛞💪 car traits (v1.16, rules in statsFor): a picture card of the three kinds of car. It shows once, the first
+   time the Garage opens (remembered in turbodash.tips, not the save), and again from the trait pill beside a car's
+   name. Each row draws a car of that kind: the car on show when it is that kind, else a starter car of it. After
+   the first card the pill on the car glows for a moment (the spotlight). */
+const TRAIT_CARS = { fast: "zippy", grippy: "bolt", tough: "monster" };
+function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits")) openTraits(CARS.find(c => c.id === S.car), true); }
+let traitSpot = false;
+function openTraits(car, first = false) {
+  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row ${car?.trait === t.id ? "on" : ""}" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b>${t.icon} ${t.name}</b><small>${t.line}</small></div></div>`).join("");
+  for (const row of $("tr-rows").querySelectorAll(".tr-row")) {
+    const id = row.dataset.trait, c = car && car.trait === id && carKnown(car) ? car : CARS.find(x => x.id === TRAIT_CARS[id]);
+    drawCar(row.querySelector("canvas").getContext("2d"), 80, 90, 104, lookOf(c), { t: 0 });
+  }
+  markTip("traits"); traitSpot = first; sfx("chest"); show("s-traits");
+}
+$("tr-ok").onclick = () => {
+  sfx("click"); show("s-garage");
+  if (traitSpot) { const el = $("g-trait"); el.classList.remove("spot"); void el.offsetWidth; el.classList.add("spot"); setTimeout(() => el.classList.remove("spot"), 3200); }
+  traitSpot = false;
+};
 let giftShownThisVisit = false;
 $("town-wrap").innerHTML = townSVG();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
@@ -1288,7 +1308,7 @@ $("town-wrap").addEventListener("click", e => {
   const go = b.dataset.go;
   const nope = () => { sfx("nope"); b.classList.remove("shake"); void b.getBBox(); b.classList.add("shake"); };
   if (go === "race") { sfx("click"); openTracks(); }
-  else if (go === "garage") { sfx("click"); garage.open(); show("s-garage"); }
+  else if (go === "garage") { sfx("click"); openGarage(); }
   else if (go === "gift") { sfx("click"); openGift(); }
   else if (go === "trophy") { sfx("click"); openTrophies(); }
   else if (go === "rank") { sfx("click"); openRank(); }

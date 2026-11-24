@@ -47,5 +47,17 @@ for (const r of RESEARCH) check(typeof r.tag === "string" && r.tag.split(/ +/).l
   check(!/Research makes/.test(main), "the Lab robot says a narrator line again");
   check(!/tw-rank/.test(town + main), "Main Street's tower shows the rank number again (the Rank pill shows it)");
 }
+// ⚡🛞💪 car traits (v1.16): one word for each kind, and one short line about what it does (no advice, no colons,
+// no numbers), and the line never repeats the word on the pill
+{
+  const { TRAITS, CARS } = await import("../src/data.js");
+  for (const t of Object.values(TRAITS)) {
+    check(/^[A-Z][a-z]+$/.test(t.name), `trait "${t.name}" is not one word`);
+    check(t.line.length <= 40 && !/[:;0-9%]/.test(t.line), `trait ${t.name} line is long or has a colon or a number: ${t.line}`);
+    check(!t.line.toLowerCase().includes(t.name.toLowerCase()), `trait ${t.name} line repeats the word: ${t.line}`);
+    check(!/(best|use|pick|choose|try)/i.test(t.line), `trait ${t.name} line gives advice: ${t.line}`);
+  }
+  check(CARS.every(c => TRAITS[c.trait]), "a car has no trait");
+}
 console.log(fails ? `\n✖ ${fails} of ${checks} word checks failed` : `All ${checks} word checks passed`);
 process.exit(fails ? 1 : 0);

@@ -127,7 +127,12 @@ window.__sweep = async (only) => {
   await go("s-hub", () => td.goHub());
   for (const [k, f] of [["mid", 0.5], ["end", 1]]) await go("s-hub:" + k, async () => { const w = document.getElementById("town-wrap"); w.scrollLeft = (w.scrollWidth - w.clientWidth) * f; await wait(150); }, "#s-hub");
   document.getElementById("town-wrap").scrollLeft = 0;
+  // ⚡🛞💪 v1.16: the first Garage visit shows the car traits card, and the trait pill opens it again
+  const forgetTip = id => { try { const t = JSON.parse(localStorage.getItem("turbodash.tips") || "{}"); delete t[id]; localStorage.setItem("turbodash.tips", JSON.stringify(t)); } catch (e) {} };
+  await go("s-traits", async () => { forgetTip("traits"); await hub("garage")(); }, "#s-traits");
   await go("s-garage", hub("garage"));
+  await go("s-traits:pill", async () => { document.getElementById("g-trait").click(); }, "#s-traits");
+  document.getElementById("tr-ok").click();
   await go("s-garage:paint", () => document.querySelector('[data-gtab="paint"]').click(), "#s-garage");
   document.querySelector('[data-gtab="up"]').click();
   for (let k = 0; k < 40; k++) {   // step through every car (stops when it's back at the first one)

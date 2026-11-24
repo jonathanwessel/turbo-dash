@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen } from "./data.js";
+import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen, traitOf } from "./data.js";
 import { drawCar } from "./draw.js";
 import { drawEmojiText } from "./emoji.js";
 import { S, save, upsOf } from "./save.js";
@@ -43,7 +43,7 @@ export function howToGet(car, grid = false) {
     : boss ? `👑 Beat ${boss.name}` : bld ? `🚒 ${bld.name}, Rank ${bld.rank}` : car.school ? "🚦 20 School laps" : car.price != null ? `🪙 ${car.price}` : "🔒 Coming soon";
 }
 
-export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
+export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview, onTrait }) {
   const cvs = $("g-car"), ctx = cvs.getContext("2d");
   let idx = 0, t = 0, zoom = 0, tab = "up";
 
@@ -74,6 +74,8 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
         x.globalCompositeOperation = "source-atop"; x.fillStyle = buy ? "rgba(20,10,50,0.45)" : MYSTERY; x.fillRect(0, 0, 160, 95); x.globalCompositeOperation = "source-over";
         x.font = "26px system-ui"; x.textAlign = "right"; x.textBaseline = "top"; drawEmojiText(x, buy ? "🔒" : "❓", 156, 2);
       }
+      // ⚡🛞💪 the car's trait in the top left corner, for a car that is no longer a mystery
+      if ((owned || buy) && traitOf(c)) { x.font = "26px system-ui"; x.textAlign = "left"; x.textBaseline = "top"; drawEmojiText(x, traitOf(c).icon, 4, 2); }
     }
   }
   $("g-gridbtn").onclick = () => { sfx("click"); grid = !grid; showGrid(); if (!grid) render(); };
@@ -94,8 +96,11 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
 
   function render() {
     const car = CARS[idx], owned = S.owned.includes(car.id), driving = S.car === car.id;
-    $("g-name").textContent = carName(car); $("g-name").title = carKnown(car) && homeNote(car) ? homeNote(car).text : "";
+    $("g-name").textContent = carName(car); $("g-name").classList.toggle("long", carName(car).length > 14);   // a long name and the trait pill share one line $("g-name").title = carKnown(car) && homeNote(car) ? homeNote(car).text : "";
     $("g-home").hidden = !carKnown(car) || !homeNote(car); $("g-home").textContent = homeNote(car)?.text || "";
+    // ⚡🛞💪 the trait pill beside the name (v1.16). A tap opens the card with all three kinds of car.
+    const tr = traitOf(car); $("g-trait").hidden = !carKnown(car) || !tr;
+    if (tr) { $("g-trait").textContent = `${tr.icon} ${tr.name}`; $("g-trait").dataset.trait = tr.id; }
     const here = worldOf(car);
     // like the race screen: the worlds he can race in (or owns a car from), plus just the next one as a goal
     const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
@@ -109,7 +114,8 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const btn = $("g-action");
     // cars that can't be bought say how to earn them (a cup, a boss, a building, the Driver School, a new world)
     const far = car.world && !worldOpen(S, car.world) && !owned, buyable = car.price != null && !far;
-    btn.className = "big-btn " + (driving ? "" : owned ? "go" : buyable && S.coins >= car.price ? "gold" : "");
+    // ✔ Driving only shows a state, so it is a flat mark, not a sign that looks like a button (v1.15.1 review)
+    btn.className = "big-btn " + (driving ? "state" : owned ? "go" : buyable && S.coins >= car.price ? "gold" : "");
     btn.textContent = howToGet(car);
     document.querySelectorAll("[data-gtab]").forEach(b => b.classList.toggle("on", b.dataset.gtab === tab));
     $("g-ups").hidden = tab !== "up"; $("g-paint").hidden = tab !== "paint";
@@ -149,6 +155,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview }) {
     const i = CARS.findIndex(c => worldOf(c) === b.dataset.gworld); if (i < 0) return;
     sfx("click"); idx = i; zoom = 1; render();
   });
+  $("g-trait").onclick = () => { sfx("click"); onTrait?.(CARS[idx]); };
   $("g-prev").onclick = () => { sfx("click"); idx = (idx + CARS.length - 1) % CARS.length; zoom = 1; render(); };
   $("g-next").onclick = () => { sfx("click"); idx = (idx + 1) % CARS.length; zoom = 1; render(); };
   document.querySelectorAll("[data-gtab]").forEach(b => b.onclick = () => { sfx("click"); tab = b.dataset.gtab; render(); });

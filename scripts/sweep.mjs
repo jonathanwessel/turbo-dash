@@ -20,7 +20,7 @@ const outArg = args.indexOf("--out"), out = resolve(root, outArg >= 0 ? args[out
 const RACES = !args.includes("--no-race");
 const DEV = 5184, CDP = 9334, URL0 = `http://127.0.0.1:${DEV}/`;
 const EDGE = process.env.EDGE || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const SHOTS = ["s-title", "s-hub", "s-garage", "s-rival", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
+const SHOTS = ["s-title", "s-hub", "s-traits", "s-garage", "s-rival", "s-tracks", "s-rank", "s-school", "s-lab", "s-trophies"];
 // v1.15: pictures of cards that only open on a tap, from the same Rank 16 save (the picture review never saw them
 // before): the boss tab, a boss rematch intro and its result card, and the Lab sheet
 const tap = go => `document.querySelector('[data-go="${go}"]').dispatchEvent(new MouseEvent("click", { bubbles: true }))`;
@@ -126,8 +126,10 @@ async function main() {
     await js("Object.assign(__td.S, __mid()); __td.refreshCoins(); document.head.insertAdjacentHTML('beforeend', '<style>#toast{display:none!important}</style>'); true");
     // each screen opened the way the player opens it (its Main Street button), so it is painted from this save. The
     // first tap on Race shows the rival of the week's card (s-rival), the second the track list.
-    const GO = { "s-garage": "garage", "s-rival": "race", "s-tracks": "race", "s-rank": "rank", "s-school": "school", "s-lab": "lab", "s-trophies": "trophy" };
+    // v1.16: the first tap on Garage shows the car traits card (s-traits), the second the Garage itself.
+    const GO = { "s-traits": "garage", "s-garage": "garage", "s-rival": "race", "s-tracks": "race", "s-rank": "rank", "s-school": "school", "s-lab": "lab", "s-trophies": "trophy" };
     for (const s of SHOTS) {
+      if (s === "s-traits") await js("(() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.traits; localStorage.setItem('turbodash.tips', JSON.stringify(t)); return true; })()");
       await js(s === "s-title" ? "(__td.show('s-title'), true)" : `(__td.goHub(), ${GO[s] ? `document.querySelector('[data-go="${GO[s]}"]').dispatchEvent(new MouseEvent("click", { bubbles: true })), ` : ""}true)`);
       await wait(500); await shot(`${size}-${s}`);
     }
