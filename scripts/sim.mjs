@@ -3,6 +3,7 @@
 //   npm run sim -- journey  -> plays a whole career (race, earn, buy) and reports how long each milestone takes
 //   npm run sim -- ladder   -> wins per car on every Earth track, easiest first (finds difficulty gaps)
 //   npm run sim -- boss     -> the slowest car that beats each boss in each round (in npm run check)
+//   npm run sim -- best     -> races each "Best" badge pick against every car in many garages (in npm run check)
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, BOSSES, BOSS_ROUNDS, RESEARCH, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { bossSpeed } from "../src/rules.js";
 import { rivalBoost, WEEK_RIVAL } from "../src/rival-week.js";
@@ -144,6 +145,36 @@ else if (mode === "boss") {
   }
   if (bad.length) { console.log("\n✖ " + bad.join("\n✖ ")); process.exit(1); }
   console.log(`\n✔ Every boss can be beaten in every round (up to ${Math.round(BOSS_ROUNDS.speed * BOSS_ROUNDS.max * 100)}% faster)`);
+}
+else if (mode === "best") {
+  // 🏆 v1.17 "Best" badges (src/best.js): the badge's pick is raced against every car in the garage. Random garages
+  // (cars, upgrade levels and the car being driven, seeded) plus the career bot's Rank 16 save, on every track, each
+  // car racing alone with the kid driver (3 seeded races). Exits 1 when a pick is more than 4% slower than the
+  // fastest car there, when a badge would ask for a swap to a car that is not faster than the one being driven, or
+  // when fewer than 93 picks in 100 are the fastest car. BEST_SEED=n tries other garages.
+  const { bestCar } = await import("../src/best.js");
+  const mid = JSON.parse((await import("node:fs")).readFileSync(new URL("../src/dev/mid-save.json", import.meta.url), "utf8"));
+  const R = rng(+(process.env.BEST_SEED || 1)), seed = s => rng(s);
+  const timeOf = (t, c, u, lab) => { let sum = 0; for (let k = 0; k < 3; k++) { Math.random = seed(1000 + k); sum += runRace(t, c, u, "normal", "kid", lab, 0, null, true).time; } return sum / 3; };
+  const garages = [{ name: "Rank 16 save", owned: CARS.filter(c => mid.owned.includes(c.id)), ups: mid.ups, lab: mid.research, car: mid.car }];
+  for (let g = 0; g < 24; g++) {
+    const owned = CARS.filter(() => R() < 0.4); if (owned.length < 2) continue;
+    const ups = Object.fromEntries(owned.map(c => [c.id, { engine: Math.floor(R() * 6), turbo: Math.floor(R() * 6), tires: Math.floor(R() * 6), magnet: 0 }]));
+    garages.push({ name: "garage " + (g + 1), owned, ups, lab: {}, car: owned[Math.floor(R() * owned.length)].id });
+  }
+  let n = 0, exact = 0, swaps = 0, worst = 0; const bad = [];
+  for (const G of garages) for (const t of TRACKS) {
+    const upsOf = id => G.ups[id], pick = bestCar(t, G.owned, upsOf, G.lab, G.car);
+    const times = new Map(G.owned.map(c => [c.id, timeOf(t, c, upsOf(c.id), G.lab)]));
+    const fastest = Math.min(...times.values()), mine = times.get(pick.id), loss = mine / fastest - 1;
+    n++; if (mine === fastest) exact++; worst = Math.max(worst, loss);
+    if (loss > 0.04) bad.push(`${G.name}, ${t.name}: ${pick.name} is ${(loss * 100).toFixed(1)}% slower than the fastest car`);
+    if (pick.id !== G.car) { swaps++; if (mine >= times.get(G.car)) bad.push(`${G.name}, ${t.name}: the badge names ${pick.name}, which is not faster than ${CARS.find(c => c.id === G.car).name}`); }
+  }
+  console.log(`  ${garages.length} garages x ${TRACKS.length} tracks: the pick is the fastest car ${exact} of ${n} times (${(100 * exact / n).toFixed(1)}%), at worst ${(worst * 100).toFixed(1)}% slower. ${swaps} badges name another car than the one being driven.`);
+  if (exact / n < 0.93) bad.push(`the pick is the fastest car only ${(100 * exact / n).toFixed(1)}% of the time (93% needed)`);
+  if (bad.length) { console.log("\n✖ " + bad.slice(0, 12).join("\n✖ ")); process.exit(1); }
+  console.log("\n✔ Every Best badge names a car within 4% of the fastest, and never asks for a swap to a slower car");
 }
 else if (mode === "ladder") {
   // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.

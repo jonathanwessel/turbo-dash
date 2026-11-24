@@ -7,6 +7,7 @@ import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
+import { chipFor } from "./best.js";
 import { townSVG, SITE_PIPS } from "./town.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
@@ -213,14 +214,14 @@ const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 /* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
    One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
-const NO_RETURN = new Set(["s-rival", "s-traits", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+const NO_RETURN = new Set(["s-rival", "s-traits", "s-bestcar", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
   screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
   document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
-  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits"].includes(id);
+  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits", "s-bestcar"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
   paintUpdate();
@@ -674,6 +675,9 @@ function openTracks() {
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !t.season && !unlocked(i));   // only the next locked track shows
+  // 🏆 v1.17: on an open track where another of the player's cars is clearly faster, a Best chip shows that car
+  // (src/best.js, the same rule as the Garage's Best chip)
+  const bestOf = t => chipFor(S, t);
   // (a locked 🍂 seasonal track always shows, with the month it opens)
   list.innerHTML = TRACKS.map((t, i) => {
     if ((t.world || "earth") !== S.world) return "";
@@ -681,7 +685,7 @@ function openTracks() {
     if (!open && i !== nextLocked && !t.season) return "";
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-icon">${t.icon}</div>${tcName(t.name)}
-      <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
+      <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}${open && bestOf(t) ? `<span class="tc-car" data-best="${bestOf(t).id}"><canvas width="96" height="52"></canvas><b>Best</b></span>` : ""}</div>
       ${(() => { const w = S.mastery[t.id + ":" + S.diff] || 0, s = starsFor(w), lo = MASTERY[s - 1] || 0, hi = MASTERY[s];
         // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
         if (!w) return "";   // stars and the bar appear after the first win here
@@ -694,10 +698,31 @@ function openTracks() {
       <div class="tc-ribbon">Tricky bonus!</div><div class="tc-icon">${t.icon}</div>${tcName(t.name)}
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}</div>
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div></button>`; }).join("") : "");
+  for (const b of list.querySelectorAll("[data-best]")) { const cv = b.querySelector("canvas"); drawCar(cv.getContext("2d"), cv.width / 2, cv.height - 3, cv.width * 0.78, lookOf(CARS.find(c => c.id === b.dataset.best)), { t: 0, noShadow: true }); }
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);
   cur?.scrollIntoView({ inline: "center", block: "center" });
+  // 🏆 the first Best chip the player ever sees opens a picture card once (turbodash.tips), then the chip glows
+  const chip = list.querySelector("[data-best]");
+  if (chip && !tipSeen("best")) openBestCard(TRACKS[+chip.closest("[data-i]").dataset.i], CARS.find(c => c.id === chip.dataset.best));
 }
+/* 🏆 v1.17: the Best chip's picture card. The track's picture, the car, and one line that says what it means. */
+let bestSpot = null;
+function openBestCard(track, car) {
+  $("bc-track").textContent = track.icon;
+  const cv = $("bc-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height);
+  const glow = cx.createRadialGradient(120, 126, 6, 120, 126, 112);   // a light spot, so a dark car shows (as on the car kinds card)
+  glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, cv.width, cv.height);
+  drawCar(cx, cv.width / 2, cv.height - 6, cv.width * 0.7, lookOf(car), { t: 0.4 });
+  $("bc-says").innerHTML = `<span>Your ${car.name} is faster on ${track.name}.</span><span>Pick it in the Garage.</span>`;
+  markTip("best"); bestSpot = track.id; sfx("chest"); show("s-bestcar");
+}
+$("bc-ok").onclick = () => {
+  sfx("click"); show("s-tracks");
+  const i = TRACKS.findIndex(t => t.id === bestSpot), el = $("track-list").querySelector(`[data-i="${i}"] .tc-car`);
+  if (el) { el.scrollIntoView({ inline: "center", block: "nearest" }); el.classList.remove("spot"); void el.offsetWidth; el.classList.add("spot"); setTimeout(() => el.classList.remove("spot"), 3200); }
+  bestSpot = null;
+};
 $("track-list").addEventListener("click", e => {
   const c = e.target.closest(".track-card"); if (!c) return;
   if (c.dataset.bonus) { sfx("click"); run = RACE(); startRace(BONUS_TRACKS.find(t => t.id === c.dataset.bonus)); return; }

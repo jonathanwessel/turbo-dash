@@ -149,6 +149,14 @@ window.__sweep = async (only) => {
   await go("s-rival", async () => { if (td.S.rivalWeek) td.S.rivalWeek.seen = -1; await hub("race")(); }, "#s-rival");
   await go("s-rival:max", async () => { if (td.S.rivalWeek) Object.assign(td.S.rivalWeek, { seen: -1, lvl: 5 }); await hub("race")(); }, "#s-rival");
   await go("s-tracks", hub("race"));
+  // 🏆 v1.17: a save with more than one car, driving Zippy, shows Best chips; the first one opens the picture card once
+  if (td.S.owned.length > 1) {
+    const was = td.S.car; td.S.car = "zippy";
+    await go("s-bestcar", async () => { forgetTip("best"); await hub("race")(); }, "#s-bestcar");
+    await go("s-tracks:best", () => document.getElementById("bc-ok").click(), "#s-tracks");
+    await go("s-garage:best", async () => { td.S.car = was; await hub("garage")(); }, "#s-garage");
+    td.S.car = was;
+  }
   await go("s-tracks:bonus", async () => { const l = document.getElementById("track-list"); l.scrollLeft = l.scrollWidth; l.scrollTop = l.scrollHeight; await wait(150); }, "#s-tracks");
   document.getElementById("track-list").scrollLeft = document.getElementById("track-list").scrollTop = 0;
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");

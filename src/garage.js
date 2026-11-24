@@ -1,5 +1,6 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, upgradeCost, worldOpen, traitOf } from "./data.js";
+import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, TRACKS, upgradeCost, worldOpen, trackOpen, traitOf } from "./data.js";
+import { bestTracks } from "./best.js";
 import { drawCar } from "./draw.js";
 import { drawEmojiText } from "./emoji.js";
 import { S, save, upsOf } from "./save.js";
@@ -101,6 +102,11 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview, onTra
     // ⚡🛞💪 the trait pill beside the name (v1.16). A tap opens the card with all three kinds of car.
     const tr = traitOf(car); $("g-trait").hidden = !carKnown(car) || !tr;
     if (tr) { $("g-trait").textContent = `${tr.icon} ${tr.name}`; $("g-trait").dataset.trait = tr.id; }
+    // 🏆 v1.17: the open tracks where this car is the best of the player's cars (src/best.js, the same rule as the
+    // Best chip on the track cards): the first few track pictures, then how many more
+    const bestOn = bestTracks(S, car, TRACKS.filter(t => trackOpen(S, t)));
+    $("g-best").hidden = !bestOn.length;
+    $("g-best").innerHTML = bestOn.length ? `<b>🏆 Best</b>${bestOn.slice(0, 5).map(t => `<i>${t.icon}</i>`).join("")}${bestOn.length > 5 ? `<small>+${bestOn.length - 5}</small>` : ""}` : "";
     const here = worldOf(car);
     // like the race screen: the worlds he can race in (or owns a car from), plus just the next one as a goal
     const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));

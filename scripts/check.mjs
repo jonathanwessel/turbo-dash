@@ -21,6 +21,7 @@ const STEPS = [
   ["hands-off start", "node scripts/sim.mjs start"],
   ["rival of the week", "node scripts/sim.mjs rival"],   // v1.13: the rival at its cap never walls a track off
   ["boss rounds", "node scripts/sim.mjs boss"],          // v1.15: every round of every boss can be won
+  ["best badges", "node scripts/sim.mjs best"],          // v1.17: each Best badge names a car the sim finds fastest (or within 4%)
   ["career", "node scripts/career.mjs"],
   ["install test", "node scripts/install-test.mjs"],
   ["update test", "node scripts/update-test.mjs"],

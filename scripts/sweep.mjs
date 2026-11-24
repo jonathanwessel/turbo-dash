@@ -28,6 +28,11 @@ const EXTRA = {
   "s-tracks-boss": `(__td.goHub(), ${tap("race")}, document.querySelector('[data-rtab="boss"]').click(), true)`,
   "s-boss-again": `(__td.bossIntro("bruno", 1), true)`,
   "s-result-boss": `(__td.bossResult("bruno", 1), true)`,
+  // v1.17: the Best chip's card and the chips, from the same save driving Zippy (it drives its fastest car otherwise),
+  // and the Garage's Best row on its fastest car
+  "s-bestcar": `(__td.S.car = "zippy", (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.best; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, true)`,
+  "s-tracks-best": `(document.querySelector('[data-rtab="races"]').click(), document.getElementById("bc-ok").click(), true)`,
+  "s-garage-best": `(__td.S.car = __mid().car, __td.goHub(), ${tap("garage")}, true)`,
   "s-lab-sheet": `(__td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));
