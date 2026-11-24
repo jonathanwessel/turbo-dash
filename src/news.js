@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.19.0",
+    pics: [["🚗", "Win a new car in every world"], ["🦘", "The Moon Hopper jumps extra high"]],
+    notes: [
+      "Four new special cars, one per world, won by playing there.",
+      "Moon rings, Deep Blue pearls, ice drift boosts and Toy loops count toward them.",
+      "Each has a power at home. Higher jumps, no current push, no slide on ice, longer boosters.",
+      "The Garage shows how many are still needed, and a New car card shows when one is won.",
+      "Not checked on a real tablet yet, so please look at the New car card and the Moon Hopper.",
+    ],
+  },
+  {
     v: "1.18.0",
     pics: [["🔊", "Tap the speaker to hear a card"]],
     notes: [

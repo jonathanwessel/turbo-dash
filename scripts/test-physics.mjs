@@ -470,7 +470,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
       const k = [...r.T.flag.keys()].find(i => r.T.flag[i] & 4); r.player.speed = 1; r.touch(k); return [r.player.speed, r.boostT];
     };
     const [sa, ta] = fling(statsFor(car("buggy"), UPS, {})), [sb, tb] = fling(statsFor(plainOf(car("buggy")), UPS, {}));
-    check("a booster flings the Boost Buggy farther", sa > sb * 1.25 && ta > tb * 1.25, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
+    check("a booster flings the Boost Buggy farther", sa > sb * 1.1 && ta > tb * 1.1, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
   }
 }
 

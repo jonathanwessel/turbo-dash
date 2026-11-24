@@ -12,6 +12,13 @@ import { chromium } from "./cdp.mjs";
 const root = resolve(import.meta.dirname, "..");
 const DEV = 5184, URL0 = `http://127.0.0.1:${DEV}/`;
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/* v1.19: a machine with no sound output at all (Windows lists no audio endpoint, for example with the speakers or
+   headset unplugged) can't play any voice, and the browser reports "synthesis-failed". That says nothing about the
+   game, so only then the two checks that need sound are reported as not checked, loudly, instead of failing. With
+   any sound output present they count as always. */
+const soundOut = () => process.platform !== "win32" || /^[1-9]/.test(spawnSync("powershell", ["-NoProfile", "-Command",
+  "@(Get-CimInstance Win32_PnPEntity -Filter \"PNPClass='AudioEndpoint'\").Count"], { encoding: "utf8" }).stdout.trim());
+let unheard = false;
 let vite = null, browser = null;
 function stopVite() { if (vite) { try { process.platform === "win32" ? spawnSync("taskkill", ["/pid", String(vite.pid), "/T", "/F"], { stdio: "ignore" }) : vite.kill("SIGKILL"); } catch {} vite = null; } }
 
@@ -52,8 +59,15 @@ async function main() {
   ok(said.length === 1, `one tap, one utterance (${said.length})`);
   ok(said[0]?.local, `a local voice speaks (${said[0]?.voice})`);
   ok(/^Every car is different! Fast\. /.test(said[0]?.text || ""), `it reads the card ("${(said[0]?.text || "").slice(0, 40)}…")`);
-  ok(said[0]?.ev.includes("start") && !said[0]?.ev.some(e => e.startsWith("error")), `the voice starts after a real tap (${said[0]?.ev.join(", ")})`);
-  ok(sp && b1.on, "the speaker pulses while it talks");
+  const started = said[0]?.ev.includes("start") && !said[0]?.ev.some(e => e.startsWith("error"));
+  if (!started && said[0]?.ev.includes("error:synthesis-failed") && !soundOut()) {
+    unheard = true;
+    console.log("  ⚠ NOT CHECKED: this machine has no sound output right now (no audio endpoint), so no voice can play.");
+    console.log("    The voice start and the pulse were not checked. Plug in a speaker or headset and run it again.");
+  } else {
+    ok(started, `the voice starts after a real tap (${said[0]?.ev.join(", ")})`);
+    ok(sp && b1.on, "the speaker pulses while it talks");
+  }
   await tap(b1); await wait(400);
   ok(!(await page.evaluate("speechSynthesis.speaking")) && !(await btn()).on, "a second tap stops it");
   await tap(await btn()); await wait(600);
@@ -64,7 +78,7 @@ async function main() {
 }
 
 let code = 1;
-try { code = await main(); console.log(code ? "✖ read aloud is broken" : "Read aloud works"); }
+try { code = await main(); console.log(code ? "✖ read aloud is broken" : unheard ? "Read aloud works, but the voice itself was NOT heard (no sound output on this machine)" : "Read aloud works"); }
 catch (e) { console.error("✖ say test failed: " + e.message); }
 finally { try { await browser?.close(); } catch {} stopVite(); }
 process.exit(code);

@@ -367,6 +367,13 @@ Toy Track World frame.
 - Lesson: a browser only speaks after a real tap, so the test taps the speaker with a real mouse event over DevTools,
   not a script click. A 3D guard frame is picked by coins drawn on screen, and proved by hiding the coins.
 
+### v1.19.0 🌟 Special cars (shipped)
+Four cars that are never sold, one per world, won by doing that world's own thing (Moon rings, Deep Blue pearls, ice
+drift boosts, Toy Track World loops). Each has a power at home: higher jumps, no push from currents, no slide on ice,
+longer boosters. A New car card shows when one is won, and the Garage counts what is still needed.
+- Lesson: a goal picked by feel was far too easy (the first Moon Hopper came one bot day after the Moon opened).
+  Measure how fast the counter really grows in the career run, then set the goal from that.
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.

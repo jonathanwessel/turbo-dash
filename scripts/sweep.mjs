@@ -35,7 +35,12 @@ const EXTRA = {
   "s-garage-best": `(__td.S.car = __mid().car, __td.goHub(), ${tap("garage")}, true)`,
   // v1.18: the world preview card, which gained a 🔊 speaker (the audit already opened it, the pictures never had)
   "s-preview": `(__td.goHub(), __td.show("s-tracks"), __td.openPreview("moon"), true)`,
-  "s-lab-sheet": `(__td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
+  // v1.19: the "New car!" card of a special car, the Garage on that car (its power line), and the All cars grid with
+  // the Moon open and a ring counter part way (a copy of the Rank 16 save, put back after)
+  "s-newcar": `(__td.goHub(), __td.newCar("hopper"), true)`,
+  "s-garage-perk": `(document.getElementById("nc-drive").click(), __td.goHub(), ${tap("garage")}, true)`,
+  "s-garage-earn": `(Object.assign(__td.S, { rank: 21, car: __mid().car, owned: __mid().owned, research: { ...__mid().research, moonTires: 1 }, stats: { ...__mid().stats, rings: 137 } }), __td.goHub(), ${tap("garage")}, document.getElementById("g-gridbtn").click(), [...document.querySelectorAll(".gg-head")].find(h => h.textContent.startsWith("Moon"))?.scrollIntoView(), true)`,
+  "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 

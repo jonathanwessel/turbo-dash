@@ -160,6 +160,13 @@ window.__sweep = async (only) => {
     await go("s-garage:best", async () => { td.S.car = was; await hub("garage")(); }, "#s-garage");
     td.S.car = was;
   }
+  // 🌟 v1.19: the "New car!" card of every special car, filled in, and the Garage on one (its power line)
+  {
+    const was = { car: td.S.car, owned: [...td.S.owned] };
+    for (const id of ["hopper", "diver", "snowcat", "buggy"]) await go("s-newcar:" + id, async () => { td.newCar(id); }, "#s-newcar");
+    await go("s-garage:perk", async () => { td.S.car = "snowcat"; await hub("garage")(); }, "#s-garage");
+    td.S.car = was.car; td.S.owned = was.owned;
+  }
   await go("s-tracks:bonus", async () => { const l = document.getElementById("track-list"); l.scrollLeft = l.scrollWidth; l.scrollTop = l.scrollHeight; await wait(150); }, "#s-tracks");
   document.getElementById("track-list").scrollLeft = document.getElementById("track-list").scrollTop = 0;
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");

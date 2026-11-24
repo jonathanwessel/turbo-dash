@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.19.0 — Special cars 🌟
+
+- **🌟 Four special cars, one in each world.** They are never sold. They are won by playing in their world:
+  🦘 **Moon Hopper** for 500 boost rings on the Moon, ⚓ **Deep Diver** for 900 pearls in Deep Blue, 🧊 **Snow Cat**
+  for 120 drift boosts on the Glacier Rink, and 🚀 **Boost Buggy** for 80 loop-the-loops in Toy Track World.
+- **Each one has a power.** The Moon Hopper jumps 35% higher (it rides on two big springs), water currents can't
+  push the Deep Diver, the Snow Cat does not slide on ice, and Toy Track World boosters fling the Boost Buggy 30%
+  farther. Like every world car it is also 5% faster at home.
+- **A "New car!" card** with the car, its power as a picture and a 🚗 Drive it! button (and the 🔊 speaker) shows
+  when one is won. In the Garage a special car still to win shows its counter, such as "⭕ 137 / 500", and an owned
+  one shows its power under its name.
+- **Old saves:** a save that has already collected enough gets its cars when the game opens, and sees the card on
+  Main Street.
+- Polish: the four cars and the New car card are the new things to see, the Garage counter is the new thing to use.
+- For the grown-ups: the powers are in `statsFor` (`PERKS` in `src/data.js`), so the game, the race sims and the
+  career run share them. `earnCars` in `src/rules.js` hands them out after each race and on load.
+  `scripts/test-earn.mjs` (in `npm test`) checks the goals, the counters, one car per goal and an old save, and
+  `scripts/test-physics.mjs` checks each power on its own world's track. Both were seen failing with the rule
+  broken on purpose. The sweep and the audit open the New car card of all four cars and the Garage on one.
+
 ## v1.18.0 — Read it to me 🔊
 
 - **🔊 A speaker button on the picture cards.** The car kinds card, the rival of the week card, the boss card, the

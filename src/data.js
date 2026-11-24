@@ -47,12 +47,15 @@ export const CARS = [
    - hop: jumps go 35% higher (Moon gaps and ramps)
    - steady: water currents don't push it sideways (Deep Blue)
    - studs: it does not slide on ice (Glacier Rink)
-   - boost: boosters fling it 30% farther (Toy Track World) */
+   - boost: boosters fling it 12% farther (Toy Track World)
+   pace: how much faster the power makes a whole race at home, measured with the kid driver (v1.19: the Boost Buggy
+   about 2.5% at 12%, it was 9% at 30%, too strong; the other three change a race by less than 1%). The Best rule
+   (src/best.js) counts it, so a Best pill stays honest. */
 export const PERKS = {
   hop:    { id: "hop",    icon: "🦘", line: "Jumps extra high!", jump: 1.35 },
   steady: { id: "steady", icon: "⚓", line: "The water can't push it!" },
   studs:  { id: "studs",  icon: "🧊", line: "It does not slide on ice!" },
-  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.3 },
+  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.12, pace: 1.025 },
 };
 export const perkOf = car => PERKS[car?.perk] || null;
 /* what a special car's earn counter shows: the picture of the thing to collect */
@@ -78,7 +81,7 @@ const TRAIT_OF = {
   sub: "tough", manta: "grippy", kraken: "fast",
   frost: "grippy", polar: "tough", blizzard: "fast",
   toyRacer: "tough", loopLegend: "grippy", windup: "fast",
-  hopper: "tough", diver: "grippy", snowcat: "tough", buggy: "fast",
+  hopper: "fast", diver: "grippy", snowcat: "tough", buggy: "tough",
 };
 for (const c of CARS) c.trait = TRAIT_OF[c.id];
 export const traitOf = car => TRAITS[car?.trait] || null;
