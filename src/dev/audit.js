@@ -46,7 +46,8 @@ window.__audit = (rootSel) => {
   // v1.11.3: the Racer Rank hint and its Rank up button too (the hint sat below the gauges, off a 360 px screen)
   // v1.15: also inside a card that scrolls (the boss card's Race button sat under its bottom edge on a 360 px screen,
   // still inside the screen, so the old check missed it). Lists meant to scroll sideways or long pages are not cards.
-  for (const e of root.querySelectorAll(".big-btn.go:not(.small), .rank-up-btn, .rk-hint")) if (vis(e)) {
+  // v1.18: the 🔊 speaker on a picture card too (it sits at the end of the card's buttons)
+  for (const e of root.querySelectorAll(".big-btn.go:not(.small), .rank-up-btn, .rk-hint, .say")) if (vis(e)) {
     const r = e.getBoundingClientRect(), card = e.closest(".card"), cr = card && /(auto|scroll)/.test(getComputedStyle(card).overflowY) ? card.getBoundingClientRect() : null;
     if (r.bottom > H + 2 || r.right > W + 2 || (cr && r.bottom > cr.bottom + 2)) issues.push("NEEDS SCROLLING " + name(e));
   }
@@ -56,6 +57,8 @@ window.__audit = (rootSel) => {
     const want = `${window.__td.S.research[r.id] || 0}/${r.max}`, row = c.querySelector(".plv");
     if (!row || row.dataset.lvl !== want || !vis(row)) issues.push(`LAB CARD HIDES LEVEL ${r.id} (want ${want})`);
   }
+  // v1.18: with a voice on the device, every picture card that explains something shows its speaker
+  if (window.__td?.canSay?.()) for (const b of root.querySelectorAll("[data-say-btn]")) if (vis(b.closest(".card")) && !vis(b)) issues.push("NO SPEAKER on " + name(b.closest(".card")));
   const BAD =/\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));

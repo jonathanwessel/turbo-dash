@@ -103,7 +103,9 @@ async function main() {
     return r.result.value;
   };
   const shot = async name => { const r = await c.send("Page.captureScreenshot", { format: "png" }); writeFileSync(join(out, name + ".png"), Buffer.from(r.data, "base64")); };
-  const load = async () => { await c.send("Page.navigate", { url: URL0 }); await wait(500); await until("the game", () => js("!!(window.__td && window.__sweepAll && document.readyState === 'complete')", 5000), 60000); await js("document.fonts.ready.then(() => true)", 20000); await wait(800); };
+  const load = async () => { await c.send("Page.navigate", { url: URL0 }); await wait(500); await until("the game", () => js("!!(window.__td && window.__sweepAll && document.readyState === 'complete')", 5000), 60000); await js("document.fonts.ready.then(() => true)", 20000); await wait(800);
+    // v1.18: a machine with no local voice still shows the 🔊 speaker in the pictures (this one has local voices)
+    await js("(window.__td.canSay() || window.__td.fakeVoice(), true)"); };
 
   const probe = args.indexOf("--probe");
   if (probe >= 0) {
