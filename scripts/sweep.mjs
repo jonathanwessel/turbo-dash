@@ -33,6 +33,8 @@ const EXTRA = {
   "s-bestcar": `(__td.S.car = "zippy", (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.best; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, true)`,
   "s-tracks-best": `(document.querySelector('[data-rtab="races"]').click(), document.getElementById("bc-ok").click(), true)`,
   "s-garage-best": `(__td.S.car = __mid().car, __td.goHub(), ${tap("garage")}, true)`,
+  // v1.18: the world preview card, which gained a 🔊 speaker (the audit already opened it, the pictures never had)
+  "s-preview": `(__td.goHub(), __td.show("s-tracks"), __td.openPreview("moon"), true)`,
   "s-lab-sheet": `(__td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));

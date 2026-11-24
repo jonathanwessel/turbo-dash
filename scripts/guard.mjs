@@ -21,7 +21,7 @@ const ACCEPT = process.argv.includes("--accept");
 const keep = join(root, "scripts", "guard"), out = join(root, ".guard");
 const DEV = 5184, URL0 = `http://127.0.0.1:${DEV}/`;
 const W = 640, H = 400, BLOCK = 8, PIX = 40, MAX_ALL = 0.005, MAX_BLOCK = 0.3;
-const WORLDS = ["earth", "moon", "ocean", "glacier"];   // Toy Track World (3D) and the screens come next (PLAN.md)
+const WORLDS = ["earth", "moon", "ocean", "glacier", "toy"];   // v1.18: Toy Track World (3D) too. The screens come next (PLAN.md)
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /* runs in the page: one seeded frame per world, compared with the accepted picture when there is one */
@@ -32,7 +32,51 @@ const inPage = async ({ worlds, accepted, W, H, BLOCK, PIX }) => {
   const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
   const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
   const ups = { engine: 0, turbo: 0, tires: 0, magnet: 0 };
+  /* 🧸 v1.18: Toy Track World draws with three.js (WebGL; in headless Edge that is SwiftShader, so the accepted
+     picture is this machine's). A ToyRace (src/toy/race.js) with its own ToyView on a 640x400 picture, the "light"
+     look a tablet gets, Math.random seeded (the car's rattle and the shake use it), fixed 1/60 steps and the kid bot.
+     The frame kept is the first one, at least 3 seconds into the race, with the car on the track and a row of coins
+     just ahead of it in the picture. The 3D view is drawn once, with the camera snapped to its place (no smoothing
+     left over from earlier frames), and read in the same go (a WebGL picture is gone after the browser shows it). */
+  let toyView = null;
+  const toyFrame = async () => {
+    const { ToyRace } = await import("/src/toy/race.js");
+    const { ToyView } = await import("/src/toy/view.js");
+    const { toyPoint } = await import("/src/toy/track.js");
+    const real = Math.random; let s = 12345;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    try {
+      const track = TRACKS.find(t => t.world === "toy"), car = CARS.find(c => c.id === "toyRacer");
+      if (!toyView) { const gl = mk(), ov = mk(); toyView = new ToyView(gl, ov, { tier: "light" }); toyView.glc = gl; toyView.ovc = ov; }
+      const race = new ToyRace(null, { sfx() {}, engine() {}, onFinish() {}, onPower() {} });
+      race.view = toyView;
+      race.setup(track, "race", car, statsFor(car, ups, {}), { diff: "normal" });
+      while (race.state === "countdown") race.update(1 / 60);
+      const T = race.T, p = race.player;
+      const coinsAhead = () => T.coins.some(c => !c.taken && !c.air && !c.loop && c.s - p.dist > 8 && c.s - p.dist < 26 && Math.abs(c.x - p.x) < 2.5);
+      // coins drawn in the open middle of the picture (not at its edges, where the car or a pop-up could hide them)
+      const coinsOnScreen = () => T.coins.filter(c => {
+        if (c.taken || c.s - p.dist < 6 || c.s - p.dist > 24) return false;
+        const v = new toyView.camera.position.constructor(...toyPoint(T, c.s, c.x, c.h + 1)).project(toyView.camera);
+        return v.z < 1 && Math.abs(v.x) < 0.8 && v.y > -0.3 && v.y < 0.6;
+      }).length;
+      let f = 0, seen = false, shown = 0;
+      for (; f < 4000 && race.state === "race" && !seen; f++) {
+        race.input.left = p.offset > 0.7; race.input.right = p.offset < -0.7;
+        race.update(1 / 60);
+        // a quiet moment (no pop-ups stacked over the road) with a row of coins just ahead, then checked on screen
+        if (race.raceTime >= 3 && p.air <= 0 && p.fallT <= 0 && !race.popups.length && race.shake <= 0 && coinsAhead()) {
+          toyView.snapCam = true; toyView.draw(race); shown = coinsOnScreen(); seen = shown >= 3;
+        }
+      }
+      toyView.snapCam = true; toyView.draw(race);
+      const canvas = mk(), c = canvas.getContext("2d");
+      c.drawImage(toyView.glc, 0, 0, W, H); c.drawImage(toyView.ovc, 0, 0);
+      return { canvas, frames: f, pad: seen, track: track.id + ", " + shown + " coins on screen" };
+    } finally { Math.random = real; }
+  };
   const frameOf = (world, warm) => {
+    if (world === "toy") return toyFrame();
     const real = Math.random; let s = 12345;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
     try {
@@ -61,11 +105,11 @@ const inPage = async ({ worlds, accepted, W, H, BLOCK, PIX }) => {
     } finally { Math.random = real; }
   };
   // a first frame per world loads the pictures the road draws (emoji sprites); the real frames come after
-  for (const w of worlds) frameOf(w);
+  for (const w of worlds) await frameOf(w);
   await new Promise(r => setTimeout(r, 1500));
   const res = {};
   for (const w of worlds) {
-    const { canvas, frames, pad, track } = frameOf(w);
+    const { canvas, frames, pad, track } = await frameOf(w);
     const png = canvas.toDataURL("image/png"), r = { frames, pad, track, png };
     if (accepted[w]) {
       // compare the PNG round trip of both, so the two sides are read the same way
@@ -114,7 +158,7 @@ async function main() {
   rmSync(out, { recursive: true, force: true });
   for (const w of WORLDS) {
     const r = res[w], at = `${r.track}, ${r.frames} steps`;
-    if (!r.pad) { bad++; console.log(`  ✖ ${w.padEnd(8)} no boost pad came into view (${at})`); continue; }
+    if (!r.pad) { bad++; console.log(`  ✖ ${w.padEnd(8)} ${w === "toy" ? "no coins came into view" : "no boost pad came into view"} (${at})`); continue; }
     if (ACCEPT) { mkdirSync(keep, { recursive: true }); writeFileSync(join(keep, w + ".png"), png(r.png)); console.log(`  ✔ ${w.padEnd(8)} accepted (${at})`); continue; }
     if (!r.diff) { bad++; console.log(`  ✖ ${w.padEnd(8)} has no accepted picture. Look at it, then npm run guard -- --accept`); mkdirSync(out, { recursive: true }); writeFileSync(join(out, w + ".png"), png(r.png)); continue; }
     const big = r.changed > MAX_ALL || r.block > MAX_BLOCK;
