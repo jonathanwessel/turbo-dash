@@ -6,6 +6,8 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
 ## How the task works through this roadmap
 1. **Pick the next box.** Take the first unticked box in the first unfinished milestone. Work boxes in order for
    as long as the run lasts. A big box may take several runs: commit working steps, and note where you stopped.
+   A new check counts as a working step only once it has passed and has been seen red on purpose; before the run
+   stops, stash anything that has not (v1.18.0).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -501,7 +503,9 @@ every test green.
   beside it now keep one line, and the speaker moves under them when the row is too narrow), and the gray speaker
   picture was faint on the yellow (drawn darker). Decision: a speaker under the buttons on a narrow card stays,
   centered (a speaker in the card's corner was considered, but it would sit on the big titles at 360 px). Its older finds
-  went to the leftovers box at the top of M2. Not checked on a real
+  went to the leftovers box at the top of M2. Check on the release commit: career Rank 40 on day 543 (Moon 104,
+  Ocean 184, Glacier 277, Toy 405), the Toy guard frame 0.00%. Sweep clean at 8 sizes, then again at the sizes each
+  review fix touched (1024x600; all 8; 360x740, 800x1280, 1280x800). Live install test ok. Not checked on a real
   tablet: which voices an Android tablet marks as local, and whether it speaks offline, need the owner's ears.
 - [ ] **A second special car per world,** earned by play: a Moon hopper that jumps farther, a submarine that
   ignores currents, an ice car that does not slide.
