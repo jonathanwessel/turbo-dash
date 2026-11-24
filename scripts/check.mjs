@@ -3,7 +3,7 @@
 // Each step must pass before the next one runs; the first failure stops the check with a non-zero exit.
 // A full pass on a clean, committed tree writes .check-pass (git-ignored) with the commit it passed on, and
 // `npm run release` refuses to build a new release unless that file names the commit being released.
-//   npm run check            -> all seven steps
+//   npm run check            -> every step below
 import { spawnSync, execSync } from "node:child_process";
 import { writeFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -17,6 +17,7 @@ const head = sh("git rev-parse HEAD"), clean = !sh("git status --porcelain");
 const STEPS = [
   ["tests", "npm test"],
   ["drawing budget", "node scripts/perf.mjs"],
+  ["picture guard", "node scripts/guard.mjs"],      // v1.16.1: one seeded race frame per classic world, compared with scripts/guard/
   ["hands-off start", "node scripts/sim.mjs start"],
   ["rival of the week", "node scripts/sim.mjs rival"],   // v1.13: the rival at its cap never walls a track off
   ["boss rounds", "node scripts/sim.mjs boss"],          // v1.15: every round of every boss can be won

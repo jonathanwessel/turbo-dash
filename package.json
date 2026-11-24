@@ -18,7 +18,8 @@
     "sweep": "node scripts/sweep.mjs",
     "install-test": "node scripts/install-test.mjs",
     "update-test": "node scripts/update-test.mjs",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "guard": "node scripts/guard.mjs"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",
