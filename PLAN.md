@@ -47,7 +47,8 @@ Turbo Dash's own rules on top, and they win where the two disagree.
    (`npm run sim -- start`), the whole career run (`npm run career`), the install test and the update test,
    stopping at the first failure. It takes about 3 minutes. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
    something on purpose, and say so in the changelog. Run the full sim for any track, car or physics you changed.
-   Write the day of Rank 40 and of each world opening (the career run's last line) in the notes.
+   Write the day of Rank 40 and of each world opening (the career run's last line) in the notes. A change to car
+   stats also checks that each sim gate orders cars by `statsFor` (with the home bonus), never by a raw data field.
 2. `npm run sweep`: every screen at all 7 sizes in headless Edge with a throwaway save, about 20 minutes (run it in
    the background, and save no source file while it runs: the dev server reloads the page). No overlap, no spill,
    no "null". Pictures land in `.sweep/`.
@@ -407,7 +408,7 @@ every test green.
   start.", each sentence on its own line, so no word is left alone on a line), the yellow bolt vanished on the
   yellow pill (Fast is red now), and the coin counter covered the card's corner at 740x360 (hidden on this card).
   Its older finds (the Garage title by the back button at 360 px, the "🚗13/13" chips, full bars that do not show
-  the kind) are in the leftovers box above or belong to the "Best on" box. RELEASE_NUMBERS. Not checked on a real tablet: how the slide feels on the Fast cars needs
+  the kind) are in the leftovers box above or belong to the "Best on" box. Check on the release commit: career Rank 40 on day 549 (Moon 105, Ocean 186, Glacier 280, Toy 409), inside 5% of the 549 before. Sweep clean at 8 sizes, and again after the review fixes. Not checked on a real tablet: how the slide feels on the Fast cars needs
   the owner's eyes.
 - [ ] **A "Best on" badge** on each track card, and a matching badge in the garage.
 - [ ] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
@@ -553,3 +554,13 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   must move the game forward: **M2's first real box, three traits per car**, with the M0 picture guard riding
   along (scoped in its notes). The new v1.15.1 leftovers box sits at the top of M2; take one or two of its items as
   the release's polish, not as a release of its own.
+- 2026-11-23 (v1.16.0): M2's first real box, car traits, shipped as the main piece, so the game moved forward after
+  one fix release, as the last note asked. Seen twice now (v1.12.1's "hands-off" bot that pressed Turbo, and this
+  run's car ladder sorted by the raw `speed` field, which put a slower car "one up"): **a gate is only as good as what
+  it measures. When a change touches car stats, check that every sim gate orders and judges cars by what they really
+  do (`statsFor` plus the home bonus on that track), not by a data field.** The checklist's step 1 now says so. The
+  picture review again found grown-up words and a tile that looked like a choice on the new card: the helper that
+  sees only pictures earns its place every release. Gap found while reading games/CLAUDE.md: Turbo Dash has no
+  speaker button on its explainers, so M2 has a new box for it. The M0 picture guard did not ride along this time
+  (the traits box filled the run). Next: **the "Best on" badge** as the main piece (it needs the per-track best car,
+  which the sim ladders now compute honestly), with the picture guard or the read-aloud box riding along.
