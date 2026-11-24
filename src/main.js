@@ -706,7 +706,8 @@ function openTracks() {
   const chip = list.querySelector("[data-best]");
   if (chip && !tipSeen("best")) openBestCard(TRACKS[+chip.closest("[data-i]").dataset.i], CARS.find(c => c.id === chip.dataset.best));
 }
-/* 🏆 v1.17: the Best chip's picture card. The track's picture, the car, and one line that says what it means. */
+/* 🏆 v1.17: the Best chip's picture card. The track's picture, the car, one line, and a button that drives that car
+   (the picture review found "Pick it in the Garage" with only an OK button left the child no way to act on it) */
 let bestSpot = null;
 function openBestCard(track, car) {
   $("bc-track").textContent = track.icon;
@@ -714,9 +715,15 @@ function openBestCard(track, car) {
   const glow = cx.createRadialGradient(120, 126, 6, 120, 126, 112);   // a light spot, so a dark car shows (as on the car kinds card)
   glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, cv.width, cv.height);
   drawCar(cx, cv.width / 2, cv.height - 6, cv.width * 0.7, lookOf(car), { t: 0.4 });
-  $("bc-says").innerHTML = `<span>Your ${car.name} is faster on ${track.name}.</span><span>Pick it in the Garage.</span>`;
-  markTip("best"); bestSpot = track.id; sfx("chest"); show("s-bestcar");
+  const now = CARS.find(c => c.id === S.car) || CARS[0];
+  $("bc-says").textContent = `${car.name} is faster here than ${now.name}.`;   // the last two words stay together, so a name never sits alone on a line
+  markTip("best"); bestSpot = track.id; bestPick = car.id; sfx("chest"); show("s-bestcar");
 }
+let bestPick = null;
+$("bc-drive").onclick = () => {
+  if (bestPick && S.owned.includes(bestPick)) { S.car = bestPick; save(); }
+  sfx("click"); bestSpot = bestPick = null; openTracks();
+};
 $("bc-ok").onclick = () => {
   sfx("click"); show("s-tracks");
   const i = TRACKS.findIndex(t => t.id === bestSpot), el = $("track-list").querySelector(`[data-i="${i}"] .tc-car`);

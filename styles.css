@@ -1268,21 +1268,20 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* 🏆 v1.17 Best chips: on a track card, the player's car that is clearly faster there (top right, only on open
    tracks); in the Garage, the open tracks where the car on show is the best of the player's cars */
 .track-card .tc-best { display: flex; align-items: center; justify-content: center; gap: 6px; }
-.track-card .tc-car { display: inline-flex; align-items: center; gap: 2px; background: #ffd400; border: 3px solid var(--ink); border-radius: 999px; padding: 0 8px 0 4px; color: var(--ink); line-height: 1; }
-.track-card .tc-car canvas { height: 0.8em; width: auto; aspect-ratio: 96 / 52; }
-.track-card .tc-car b { font-size: 0.4em; font-weight: 900; }
+.track-card .tc-car { display: inline-flex; align-items: center; gap: 2px; background: #ffd400; border-radius: 8px; padding: 0 8px 0 4px; color: var(--ink); line-height: 1; }
+.track-card .tc-car canvas { height: max(26px, 0.9em); width: auto; aspect-ratio: 96 / 52; }
+.track-card .tc-car b { font-size: max(12px, 0.42em); font-weight: 900; }
 .g-bestrow { display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 900; font-size: clamp(12px, 2.6vmin, 16px); line-height: 1.1; }
 .g-bestrow[hidden] { display: none; }
-.g-bestrow b { background: #ffd400; color: var(--ink); border-radius: 999px; padding: 1px 8px; }
-.g-bestrow i { font-style: normal; font-size: 1.2em; }
+.g-bestrow b { background: #ffd400; color: var(--ink); border-radius: 8px; padding: 1px 10px; }
+.g-bestrow i { font-style: normal; font-size: max(22px, 1.6em); line-height: 1; }
 .g-bestrow small { font-weight: 900; color: #ffd400; }
 .bestcar-card { max-width: 520px; }
 .bestcar-card h1 { font-size: clamp(26px, 6.5vmin, 46px); }
 .bc-pic { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin: 2px 0 6px; }
 .bc-pic canvas { width: clamp(150px, 34vmin, 240px); height: auto; aspect-ratio: 240 / 140; }
 .bc-track { font-size: clamp(44px, 12vmin, 76px); line-height: 1.2; }
-.bc-tag { display: inline-block; margin-bottom: 6px; background: #ffd400; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 1px 8px; font-weight: 900; font-size: clamp(14px, 3.4vmin, 18px); }
-.bc-says span { display: block; font-weight: 800; font-size: clamp(15px, 3.8vmin, 20px); line-height: 1.25; }
+.bc-says { font-weight: 800; font-size: clamp(16px, 4vmin, 22px); line-height: 1.25; margin: 4px 0 10px; }
 @media (max-height: 430px) and (orientation: landscape) { .bc-pic canvas { width: 130px; } .bc-track { font-size: 40px; } .bestcar-card h1 { margin-bottom: 2px; } }
 .track-card .tc-car.spot { animation: bspot 0.8s ease-in-out 4; }
 @keyframes bspot { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 0 10px rgba(255,255,255,.8); } }

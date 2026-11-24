@@ -354,6 +354,12 @@ Tough (bumps cost half, slower to start). A pill in the Garage and a picture car
 - Lesson: a change that reorders the cars breaks any check that sorts cars by a raw number. The sim's ladders now
   sort by what the car really does on each track.
 
+### v1.17.0 🏆 Best car (shipped)
+A Best pill on a track card names the player's own car that is clearly faster there, with a picture card the first
+time, and the Garage lists where each car is best. A picture guard joins the release check.
+- Lesson: the fastest car overall wins everywhere, so a useful "best" is the best of what the player owns. A cheap
+  rule is fine when the sim races every pick against it.
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.

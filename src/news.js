@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.17.0",
+    pics: [["🏆", "See your best car for each track"], ["🚗", "The Garage shows where a car is best"]],
+    notes: [
+      "A yellow Best pill on a track card shows which of the player's cars is faster on that track.",
+      "The Garage shows the tracks where each car is the best pick. A Moon car on Moon tracks is the usual find.",
+      "The race sim checked every Best pick, so it never asks for a swap to a slower car.",
+      "A new picture check guards the race pictures of all four classic worlds before each release.",
+      "Not checked on a real tablet yet, so please look at the Best pill on the track cards.",
+    ],
+  },
+  {
     v: "1.16.0",
     pics: [["⚡", "Fast cars zoom on straight roads"], ["🛞", "Grippy cars turn well"], ["💪", "Bumps don't slow Tough cars much"]],
     notes: [

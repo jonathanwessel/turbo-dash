@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.17.0 — Best car 🏆
+
+- **🏆 Best car on each track.** When another of the player's cars is clearly faster on a track (at least 1%), that
+  track's card shows a yellow Best pill with a picture of that car, beside the medal. The first one opens a picture
+  card once ("Best car here!", "Champion X is faster here than Zippy.") with a 🚗 Drive it! button that switches to
+  that car, and then the pill glows. A Moon car on Moon tracks is the usual find.
+- **In the Garage** a Best row under the car's name shows the tracks where that car is the best of the player's cars
+  (the first five track pictures, then how many more).
+- Polish: the Best pill and its card are the new things to see, and the Garage's Best row tells which car to pick.
+  The track, cup, boss and trial lists have a thin yellow scrollbar instead of the wide gray one in desktop browsers.
+- For the grown-ups: the rule is in `src/best.js` (top speed with trait and home bonus, a small share for Turbo and
+  quick starts). `npm run sim -- best` races every pick in 25 garages on all 32 tracks (in `npm run check`): the
+  pick was the fastest car 771 of 800 times, never more than 3.0% slower, and never a swap to a slower car.
+- **Picture guard** (`npm run guard`, in `npm run check`): one seeded race frame per classic world, drawn by the
+  game's own code in headless Edge, compared with `scripts/guard/`. A missing boost pad turns it red.
+
 ## v1.16.0 — Fast, Grippy, Tough ⚡
 
 - **⚡🛞💪 Every car is a kind.** Each car is Fast, Grippy or Tough, and each kind costs something. A Fast car has a

@@ -43,9 +43,11 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 - Nothing is ever for real money. Timers can only be rushed with in-game coins.
 
 ## Release checklist (every release; stop and fix on any failure)
-1. `npm run check` passes: `npm test`, the drawing budget (`npm run perf`), the hands-off sim
-   (`npm run sim -- start`), the whole career run (`npm run career`), the install test and the update test,
-   stopping at the first failure. It takes about 3 minutes. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
+1. `npm run check` passes: `npm test`, the drawing budget (`npm run perf`), the picture guard
+   (`npm run guard`), the sim gates (`npm run sim -- start`, `rival`, `boss`, `best`), the whole career run
+   (`npm run career`), the install test and the update test, stopping at the first failure. It takes about 5
+   minutes. A picture guard failure is looked at in `.guard/` (the new picture and a pink diff): accept it
+   (`npm run guard -- --accept`, and say so in the changelog) only when the race picture changed on purpose. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
    something on purpose, and say so in the changelog. Run the full sim for any track, car or physics you changed.
    Write the day of Rank 40 and of each world opening (the career run's last line) in the notes. A change to car
    stats also checks that each sim gate orders cars by `statsFor` (with the home bonus), never by a raw data field.
@@ -123,9 +125,23 @@ every test green.
   2.6-second pop-up, left as is. The rest of that review became the boxes below and in M1.
   Check on the release commit: career Rank 40 on day 547, Moon 107, Ocean 187, Glacier 283, Toy 410 (no rule
   changed; the bot's luck moves these a few days). Sweep clean at 7 sizes. Not checked on a real tablet.
-- [ ] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
+- [x] **A picture guard.** One fixed, seeded race frame per world and one picture per screen, compared with the
   pictures kept from the last release. A large difference fails until the new picture is accepted on purpose.
-  Notes (2026-11-23, scoping, nothing built yet): the classic road already draws a seeded frame headless in
+  Notes: v1.17.0 (race frames for the four classic worlds; Toy Track World and the screens moved to the box below,
+  since this box was too big for one run). `npm run guard` (`scripts/guard.mjs`, a step of `npm run check` right
+  after the drawing budget): the dev server on 127.0.0.1:5184 and headless Edge with a throwaway profile
+  (`scripts/cdp.mjs`). In the page it imports `src/engine.js` (the same module the game uses), builds its own Race on
+  a 640x400 canvas, seeds Math.random, takes fixed 1/60 steps with the kid bot from `perf.mjs`, and keeps the first
+  frame (car on the ground) where a boost pad has at least 3 of its 6 pieces in the open band just in front of the
+  cars and no rival on the road up to it. All of it runs in one go, so the game's own frame loop can't step in. The
+  accepted pictures are `scripts/guard/<world>.png` (83 to 152 KB each, committed). A pixel counts as changed when a
+  channel moved by more than 40; a frame fails when more than 0.5% changed or one 8x8 block changed by more than
+  30%. Two clean runs give 0.00% on every world. `npm run guard -- --accept` keeps new pictures on purpose; a failure
+  writes the new picture and a pink diff to `.guard/` (git-ignored). Decisions on the way: the first try picked a
+  frame by distance to the pad, and the pad sat under the cars (Moon, the car mid-jump) or behind rivals (Earth), so
+  a missing pad changed too few pixels to fail; the frame is now picked by where the pad is drawn on screen. 16x16
+  blocks missed a far pad; 8x8 blocks catch it.
+  Earlier notes (2026-11-23, scoping): the classic road already draws a seeded frame headless in
   `scripts/perf.mjs` (Math.random seeded, fixed 1/60 steps, the kid bot steering). The guard can do the same in the
   sweep's headless Edge on the real canvas: seed Math.random, set up the race without starting the frame loop, step
   it a fixed number of times, call `render()`, and read the canvas. Keep the accepted pictures small (for example
@@ -168,9 +184,16 @@ every test green.
   boss intro's Race button sat under the card's bottom edge at 740x360 for Major Wind-Up, and after a gift pick
   Next hid under the result card's edge on landscape screens from 360 to 600 px tall (the audit's "needs scrolling"
   check only looked at the screen's edge, now it looks at the card's edge too). All fixed.
+- [ ] **The picture guard for Toy Track World and the screens.** Toy Track World needs a fixed camera time and the
+  three.js view on a canvas the guard reads (WebGL in headless Edge uses SwiftShader, so keep the accepted pictures
+  from this machine). Screens need their animations held still (the town's cars, the Garage car's bounce, toasts):
+  start with the Garage on the Rank 16 save, then the track list, then Main Street.
 - [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
-- [ ] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
+- [x] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
+  Notes: passed in v1.17.0. With the boost pad drawing switched off in `drawRoad`, the guard failed on all four
+  worlds (Earth 0.31% changed, worst block 100%; Moon 0.34%, 100%; Ocean 0.31%, 100%; Glacier 0.37%, 100%). Put back,
+  all four were 0.00%. M0 stays open for the two boxes above.
 
 ### M1. Rivals with character (v1.12)
 - [x] **Turbo Lab in plain words** (v1.11.3 picture review). "Lab tier 1/2/3" is a grown-up word (use a number
@@ -377,7 +400,7 @@ every test green.
   button. The track and cup lists show a gray scrollbar in desktop browsers (thin or hidden, the cards still
   scroll). Main Street at 1280x800 has a hard color seam in the sky. On a 360 px phone a long track name such as
   "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Done in v1.16.0: "✓ Driving" is a flat
-  green mark. Decided to leave: the rival chip and the
+  green mark. Done in v1.17.0: the track, cup, boss and trial lists have a thin yellow scrollbar instead of the gray one. Decided to leave: the rival chip and the
   boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
   (it has one level), and the player's name and the home town stay (owner decision).
 - [x] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
@@ -410,7 +433,33 @@ every test green.
   Its older finds (the Garage title by the back button at 360 px, the "🚗13/13" chips, full bars that do not show
   the kind) are in the leftovers box above or belong to the "Best on" box. Check on the release commit: career Rank 40 on day 549 (Moon 105, Ocean 186, Glacier 280, Toy 409), inside 5% of the 549 before. Sweep clean at 8 sizes, and again after the review fixes. Not checked on a real tablet: how the slide feels on the Fast cars needs
   the owner's eyes.
-- [ ] **A "Best on" badge** on each track card, and a matching badge in the garage.
+- [x] **A "Best on" badge** on each track card, and a matching badge in the garage.
+  Notes: v1.17.0. Decision: "best" means the best of the player's own cars, because at full upgrades the sim's
+  fastest car wins on all 32 tracks (Wind-Up Racer), so a badge naming one car for the whole game would say nothing.
+  (Making every car the best pick somewhere is this milestone's target, for the strategy bots box.) The rule is in
+  `src/best.js`: a car's pace on a track is its top speed there (upgrades, trait, home-world bonus) with a small share
+  for a longer Turbo and quicker starts (fitted against whole races; top speed alone matched the sim 94% of the time
+  and was up to 5.7% off, the fitted pace 96 to 98% and at most 3.4% off on garages it was not fitted on). The car
+  being driven keeps the title unless another is at least 1% faster. A track card shows a yellow Best pill with that
+  car's picture beside the medal, only when it is not the car being driven (labels stay quiet; decision after the
+  corner badge covered the track picture at 740x360 and the stars at 360x740). The first one opens a picture card
+  once ("Best car here!", the track's picture, the car, "Your Champion X is faster on Sunny Hills. Pick it in the
+  Garage.", `turbodash.tips`, no save change), then the pill glows. The Garage shows a "🏆 Best" row under the car's
+  name with the first five open tracks where that car is the best of the player's cars, and "+N" for the rest. Both
+  screens use `chipFor` and `bestTracks`, and `scripts/test-best.mjs` checks they agree on every track for the
+  Rank 16 save and 30 random saves (one state, one source). `npm run sim -- best` (in `npm run check`, about a
+  minute) races every pick in 25 garages on all 32 tracks: on the first run the pick was the fastest car 771 of 800
+  times, at worst 3.0% slower, and no badge asks for a swap to a car that is not faster than the one being driven.
+  The Rank 16 save drives its fastest car, so the sweep and audit switch it to Zippy to open the pill and the card
+  filled in. No race, prize or price changed, so the career run is unchanged by design. Picture review (a helper that
+  saw only the sweep pictures): the pill's car and word were tiny at 740x360 (now at least 26 px and 12 px), the
+  Garage's track pictures were about 15 px (now at least 22 px), "+10" had no unit ("+10 more"), the Garage used a
+  trophy where the track pill shows a car (both are now a flat yellow "Best" mark, no border, so neither looks like a
+  button), and the card said "Pick it in the Garage" with only an OK button, so the child could not act on it. The
+  card now says "Champion X is faster here than Zippy." with **🚗 Drive it!** (drives that car and shows the list
+  again) and **OK**. Left as is: on an upright phone the pill moves the medal to its own row, so about 1.5 track cards
+  fit on screen instead of 2.5 (only when a pill shows). A tap on the pill itself does not switch cars (the whole
+  track card starts the race). Not checked on a real tablet.
 - [ ] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
   it with an on-device voice only (`speechSynthesis` with a local voice, never an online one), and Turbo Dash has
   none yet. Start with the car kinds card, the rival of the week card and the boss intro. Hide the button when the
@@ -564,3 +613,15 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   speaker button on its explainers, so M2 has a new box for it. The M0 picture guard did not ride along this time
   (the traits box filled the run). Next: **the "Best on" badge** as the main piece (it needs the per-track best car,
   which the sim ladders now compute honestly), with the picture guard or the read-aloud box riding along.
+- 2026-11-24 (v1.17.0): the "Best on" badge shipped as the main piece with the M0 picture guard (race frames for the
+  four classic worlds), so the game moved forward for the second release in a row and the guard finally rode along
+  after five releases of waiting. The guard box was too big for one run, so it was split: Toy Track World and the
+  screens are a new M0 box. The M0 target (a missing boost pad turns the check red) passed. Seen a third time now
+  (the "hands-off" bot that pressed Turbo, the car ladder sorted by a raw field, and this run's first guard frames,
+  where the boost pad sat under the cars or behind rivals): **a check must be shown to see the thing it guards.**
+  Every new check is run once with the thing broken on purpose before it counts, and its sample is picked by what is
+  on screen, not by a distance or a count. The checklist's step 1 now names the guard and the four sim gates. Also
+  found: the Rank 16 save drives its fastest car, so a new thing that depends on the car (the Best pill) never showed
+  in the sweep until the sweep set up a save that shows it. That is the v1.15.0 rule ("a card is not checked until
+  the sweep opens it filled in") again, so no new rule. Next: **Explainers read aloud** as the main piece (games/
+  CLAUDE.md asks for it and Turbo Dash has none), with the guard's Toy Track World frame riding along.

@@ -128,7 +128,7 @@ async function main() {
     report[size] = issues;
     // the main screens with a real mid-game save (the career bot's Rank 16), so most of Main Street and the menus
     // are open. Toasts are hidden: a pop-up left over from the sweep (a School lap's bonus) is not part of a screen.
-    await js("Object.assign(__td.S, __mid()); __td.refreshCoins(); document.head.insertAdjacentHTML('beforeend', '<style>#toast{display:none!important}</style>'); true");
+    await js("Object.assign(__td.S, __mid()); __td.refreshCoins(); document.head.insertAdjacentHTML('beforeend', '<style>#toast,#fx{display:none!important}</style>'); true");
     // each screen opened the way the player opens it (its Main Street button), so it is painted from this save. The
     // first tap on Race shows the rival of the week's card (s-rival), the second the track list.
     // v1.16: the first tap on Garage shows the car traits card (s-traits), the second the Garage itself.
