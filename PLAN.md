@@ -459,7 +459,9 @@ every test green.
   card now says "Champion X is faster here than Zippy." with **🚗 Drive it!** (drives that car and shows the list
   again) and **OK**. Left as is: on an upright phone the pill moves the medal to its own row, so about 1.5 track cards
   fit on screen instead of 2.5 (only when a pill shows). A tap on the pill itself does not switch cars (the whole
-  track card starts the race). Not checked on a real tablet.
+  track card starts the race). Check on the release commit: career Rank 40 on day 547 (Moon 104, Ocean 187,
+  Glacier 280, Toy 408), inside 5% of the 549 before. Sweep clean at 8 sizes, again after the review fixes, and at the
+  three sizes the last text fix touches. Not checked on a real tablet.
 - [ ] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
   it with an on-device voice only (`speechSynthesis` with a local voice, never an online one), and Turbo Dash has
   none yet. Start with the car kinds card, the rival of the week card and the boss intro. Hide the button when the
