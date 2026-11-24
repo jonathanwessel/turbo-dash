@@ -220,7 +220,7 @@ function show(id) {
   screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
   document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
-  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset"].includes(id);
+  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
   paintUpdate();
@@ -1227,10 +1227,14 @@ const TRAIT_CARS = { fast: "zippy", grippy: "bolt", tough: "monster" };
 function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits")) openTraits(CARS.find(c => c.id === S.car), true); }
 let traitSpot = false;
 function openTraits(car, first = false) {
-  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row ${car?.trait === t.id ? "on" : ""}" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b>${t.icon} ${t.name}</b><small>${t.line}</small></div></div>`).join("");
+  // each sentence on its own line (a lone word wrapped onto a line by itself in the picture review)
+  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small>${x}</small>`).join("")}</div></div>`).join("");
   for (const row of $("tr-rows").querySelectorAll(".tr-row")) {
     const id = row.dataset.trait, c = car && car.trait === id && carKnown(car) ? car : CARS.find(x => x.id === TRAIT_CARS[id]);
-    drawCar(row.querySelector("canvas").getContext("2d"), 80, 90, 104, lookOf(c), { t: 0 });
+    const cx = row.querySelector("canvas").getContext("2d"), glow = cx.createRadialGradient(80, 84, 4, 80, 84, 74);
+    glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, 160, 95);   // a light spot, so a dark car shows
+    // the picture says the kind: a Fast car with its flames on, a Grippy car with its wheels turned
+    drawCar(cx, 80, 90, 104, lookOf(c), { t: 0.4, nitro: id === "fast", steer: id === "grippy" ? 0.8 : 0 });
   }
   markTip("traits"); traitSpot = first; sfx("chest"); show("s-traits");
 }

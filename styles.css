@@ -1235,6 +1235,7 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .g-trait { font-family: var(--race); font-weight: 400; font-size: clamp(16px, 4vmin, 22px); line-height: 1; padding: 5px 12px; min-height: 34px;
   border-radius: 999px; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); background: #ffd400; white-space: nowrap; }
 .g-trait[hidden] { display: none; }
+.g-trait[data-trait="fast"] { background: #ff6b5a; }   /* red, so the yellow bolt shows */
 .g-trait[data-trait="grippy"] { background: #5be36a; }
 .g-trait[data-trait="tough"] { background: #ff9d4d; }
 .g-trait:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
@@ -1243,8 +1244,7 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .traits-card { max-width: 760px; }
 .traits-card h1 { font-size: clamp(26px, 6.5vmin, 46px); }
 .tr-rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 4px 0 12px; }
-.tr-row { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px 10px; border-radius: 16px; background: rgba(255,255,255,.08); border: 3px solid rgba(255,255,255,.2); min-width: 0; }
-.tr-row.on { border-color: #ffd400; background: rgba(255,212,0,.14); }
+.tr-row { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px 10px; border-radius: 16px; background: rgba(255,255,255,.16); border: 3px solid rgba(255,255,255,.2); min-width: 0; }
 .tr-row canvas { width: 100%; max-width: 170px; aspect-ratio: 160 / 95; height: auto; }
 .tr-row b { display: block; font-family: var(--race); font-weight: 400; font-size: clamp(20px, 5vmin, 30px); color: var(--lane); }
 .tr-row small { display: block; font-weight: 800; font-size: clamp(14px, 3.6vmin, 18px); line-height: 1.2; }
@@ -1260,3 +1260,8 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* ✔ Driving: a flat green mark, not a button */
 .big-btn.state { background: transparent; border-color: transparent; box-shadow: none; color: #5be36a; }
 .big-btn.state:active { transform: none; }
+/* a 360 px upright phone: a smaller car and tighter edges, so each sentence fits on one line */
+@media (max-width: 420px) and (orientation: portrait) {
+  .traits-card { padding: 0 12px 12px; } .traits-card::before { margin: 0 -12px 10px; }
+  .tr-row { padding: 6px 8px; gap: 8px; } .tr-row canvas { width: 26%; } .tr-row small { font-size: 13.5px; }
+}

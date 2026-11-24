@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.16.0",
+    pics: [["⚡", "Fast cars zoom on straights"], ["🛞", "Grippy cars hold the curves"], ["💪", "Tough cars shrug off bumps"]],
+    notes: [
+      "Every car is now Fast, Grippy or Tough, and each kind has a good side and a cost.",
+      "Fast is quicker on top but slides on curves. Grippy holds curves but is a bit slower.",
+      "Tough loses less speed on bumps but starts slower. A pill in the Garage shows each car's kind.",
+      "Re-checked with the race sims and the career run. Every track and boss round can still be won.",
+      "Not checked on a real tablet yet, so please feel how a Fast car slides and look at the Garage pill.",
+    ],
+  },
+  {
     v: "1.15.1",
     pics: [["🪙", "One coin total after a race"], ["😠", "See who you beat"], ["🧸", "An arrow shows your toy car"]],
     notes: [

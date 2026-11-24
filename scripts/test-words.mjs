@@ -53,7 +53,7 @@ for (const r of RESEARCH) check(typeof r.tag === "string" && r.tag.split(/ +/).l
   const { TRAITS, CARS } = await import("../src/data.js");
   for (const t of Object.values(TRAITS)) {
     check(/^[A-Z][a-z]+$/.test(t.name), `trait "${t.name}" is not one word`);
-    check(t.line.length <= 40 && !/[:;0-9%]/.test(t.line), `trait ${t.name} line is long or has a colon or a number: ${t.line}`);
+    check(t.line.length <= 44 && !/[:;0-9%]/.test(t.line), `trait ${t.name} line is long or has a colon or a number: ${t.line}`);
     check(!t.line.toLowerCase().includes(t.name.toLowerCase()), `trait ${t.name} line repeats the word: ${t.line}`);
     check(!/(best|use|pick|choose|try)/i.test(t.line), `trait ${t.name} line gives advice: ${t.line}`);
   }

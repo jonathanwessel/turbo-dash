@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.16.0 — Fast, Grippy, Tough ⚡
+
+- **⚡🛞💪 Every car is a kind.** Each car is Fast, Grippy or Tough, and each kind costs something. A Fast car has a
+  higher top speed (3%) and slides more on curves. A Grippy car slides less on curves and is a little slower on top
+  (2.5%). A Tough car loses half as much speed on a bump (walls, trees when steering back, rails, puddles,
+  snowbanks, other cars) and speeds up a little slower (12%). Riding the trees hands-off is still a hard stop for
+  every car. The kinds are mixed along the car ladder, so the next car up is often a different kind.
+- **In the Garage** a pill beside each car's name shows its kind (a picture and one word), and the All cars grid
+  shows the kind's picture on each card. Tapping the pill opens a card with the three kinds and a car of each. That
+  card also shows once by itself the first time the Garage opens, and the pill glows for a moment after it.
+- Polish: the pill and the grid pictures are the new things to see, and the pill's card is the new thing to use.
+- **Plainer Garage.** "✔ Driving" is a flat green mark, not a sign that looks like a button. A long car name shrinks
+  to share its line with the pill on short screens.
+- For the grown-ups: the rules live in `statsFor` (`src/stats.js`) and `bumpKeep` (`src/physics-common.js`), so
+  both race engines, the race sim and the career run use them. `npm run sim -- rival` and `-- boss` now sort the
+  cars by their real top speed on each track (trait and home bonus), not by the raw speed number.
+
 ## v1.15.1 — Tidy up 🧹
 
 - **🪙 One coin total.** The result card shows one coin amount (the prize, the coins grabbed on the road and a

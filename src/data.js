@@ -43,9 +43,9 @@ export const CARS = [
    - tough: bumps (walls, trees, rails, puddles, snowbanks, other cars) take half as much speed, and it speeds up
      a little slower (it is heavy). */
 export const TRAITS = {
-  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straights. Slides on curves.", top: 1.03, slide: 1.3 },
-  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Holds the curves. A bit slower.",      top: 0.975, slide: 0.7 },
-  tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Bumps slow it less. Slow to start.",   accel: 0.88, bump: 0.5 },
+  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straight roads. Slides on turns.", top: 1.03, slide: 1.3 },
+  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Turns well. A bit slower.", top: 0.975, slide: 0.7 },
+  tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Bumps don't slow it much. Slow to start.", accel: 0.88, bump: 0.5 },
 };
 // one trait per car, mixed along the car ladder so the next car up is often a different kind
 const TRAIT_OF = {

@@ -375,12 +375,45 @@ every test green.
   Racer!" leaves "Racer!" alone on a line at 360 px. "More worlds" has a dashed outline and does not read as a
   button. The track and cup lists show a gray scrollbar in desktop browsers (thin or hidden, the cards still
   scroll). Main Street at 1280x800 has a hard color seam in the sky. On a 360 px phone a long track name such as
-  "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Decided to leave: the rival chip and the
+  "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Done in v1.16.0: "✓ Driving" is a flat
+  green mark. Decided to leave: the rival chip and the
   boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
   (it has one level), and the player's name and the home town stay (owner decision).
-- [ ] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
+- [x] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
   grippy car is slower on the straight. A tough car loses less speed on a bump. No bare numbers on the card.
+  Notes: v1.16.0. Decision: "three traits" read as three kinds of car, one kind per car (a pill with a picture and
+  one word), because the card already shows Speed, Power and Turning bars, and three more meters would say the same
+  thing twice. `TRAITS` and one trait per car in data.js, the rules in `statsFor` (`slide`, `tough`) and
+  `bumpKeep` (physics-common.js), so both engines, the sim and the career run share them. Fast: top speed x1.03,
+  curves push it out x1.3. Grippy: curves push it out x0.7, top speed x0.975. Tough: a bump costs half as much speed
+  (barriers, guardrails, trees when steering back, puddles, snowbanks, other cars, Toy Track World walls), and it
+  speeds up x0.88. Riding the trees hands-off stays a hard stop for every kind. 8 Fast, 8 Grippy, 9 Tough, mixed
+  along the ladder (Zippy is Fast). 13 physics tests (each fails on the old engine), word tests for the lines.
+  Found by `npm run sim -- rival`: the trait speeds reorder neighbors on the ladder (Grippy Shark Fin is now a bit
+  slower on top than Fast Green Machine), and the gate sorted cars by the raw `speed` number, so its "one up" car
+  could be one that is really slower. Decision, in the open: the rival and boss gates now sort by the real top speed
+  on each track (trait and home bonus); the target itself (3 of 8 with the rival at the cap) is unchanged. With
+  that, every track passes (lowest Earthrise 4 of 8 at the cap) and every boss round has a car. Garage: a pill
+  beside the name (a tap opens a card of the three kinds, each with a car, the car on show when it is that kind),
+  the kind's picture on the All cars grid, and the card once by itself the first time the Garage opens
+  (`turbodash.tips`, no save change), after which the pill glows. The sweep and the audit open the card filled in,
+  first visit and from the pill. A long name plus the pill wrapped and pushed Drive off a 740x360 screen: a long
+  name now shrinks to share the line. Career on this build: Rank 40 on day 548 (549 before), Moon 106, Ocean 185,
+  Glacier 278, Toy 408. Picture review (a helper that saw only the sweep pictures): the highlighted tile of the
+  car's own kind looked like a choice to pick (all tiles now look the same), a dark car vanished on its dark tile
+  (a light spot under each car, lighter tiles), the Fast and Grippy cars did not say their kind (the Fast car shows
+  its flames, the Grippy car its wheels turned), "straights" and "Bumps slow it less" were grown-up words (now
+  "Zooms on straight roads. Slides on turns.", "Turns well. A bit slower.", "Bumps don't slow it much. Slow to
+  start.", each sentence on its own line, so no word is left alone on a line), the yellow bolt vanished on the
+  yellow pill (Fast is red now), and the coin counter covered the card's corner at 740x360 (hidden on this card).
+  Its older finds (the Garage title by the back button at 360 px, the "🚗13/13" chips, full bars that do not show
+  the kind) are in the leftovers box above or belong to the "Best on" box. RELEASE_NUMBERS. Not checked on a real tablet: how the slide feels on the Fast cars needs
+  the owner's eyes.
 - [ ] **A "Best on" badge** on each track card, and a matching badge in the garage.
+- [ ] **Explainers read aloud.** games/CLAUDE.md asks for a speaker button on every first-time explainer that reads
+  it with an on-device voice only (`speechSynthesis` with a local voice, never an online one), and Turbo Dash has
+  none yet. Start with the car kinds card, the rival of the week card and the boss intro. Hide the button when the
+  device has no local voice.
 - [ ] **A second special car per world,** earned by play: a Moon hopper that jumps farther, a submarine that
   ignores currents, an ice car that does not slide.
 - [ ] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.

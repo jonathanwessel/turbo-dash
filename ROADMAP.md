@@ -348,6 +348,12 @@ paint.
 - Lesson: a harder rematch must be measured against the car ladder, like the rival of the week. A probe found the
   step (4% a round) at which each round needs the next car or two up and every round stays winnable.
 
+### v1.16.0 ⚡ Fast, Grippy, Tough (shipped)
+Every car is one of three kinds, each with a cost: Fast (top speed, slides), Grippy (holds curves, a bit slower),
+Tough (bumps cost half, slower to start). A pill in the Garage and a picture card show them.
+- Lesson: a change that reorders the cars breaks any check that sorts cars by a raw number. The sim's ladders now
+  sort by what the car really does on each track.
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.
