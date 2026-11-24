@@ -1,12 +1,15 @@
 // Car stats for a race: the car itself + its own upgrades + Turbo Lab research (shared by every car).
 // Used by the game and by the race simulator (scripts/sim.mjs), so both always agree.
 import { BASE_MAX } from "./engine.js";
+import { TRAITS } from "./data.js";
 
 export function statsFor(car, u, lab = {}) {
-  const L = k => lab[k] || 0;
+  const L = k => lab[k] || 0, T = TRAITS[car.trait] || {};
   return {
-    maxSpeed: BASE_MAX * (1 + car.speed + 0.06 * u.engine),
-    accel: BASE_MAX / 4.5 * (1 + car.accel + 0.04 * u.engine),
+    maxSpeed: BASE_MAX * (1 + car.speed + 0.06 * u.engine) * (T.top || 1),
+    accel: BASE_MAX / 4.5 * (1 + car.accel + 0.04 * u.engine) * (T.accel || 1),
+    slide: T.slide || 1,                   // ⚡🛞 how hard curves push the car outward (trait)
+    tough: T.bump ?? 1,                    // 💪 the share of a bump's speed loss the car feels (trait)
     handling: 1.15 + car.grip + 0.07 * u.tires,
     grip: Math.min(0.7, car.grip + 0.06 * u.tires),
     nitroFill: 0.05 + 0.01 * u.turbo,

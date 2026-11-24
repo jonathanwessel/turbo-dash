@@ -8,7 +8,7 @@
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
-import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus } from "../physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus, bumpKeep } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 import { honk, tickHonks } from "../horn.js";
 import { weekBase } from "../rival-week.js";
@@ -163,12 +163,12 @@ export class ToyRace {
     const sp = clamp(p.speed / V0, 0, 2.4);
     const help = this.assist;
     p.x += this.steerIn * dt * 3.2 * (auto ? 1.2 : S.handling) * (p.fly ? 0.55 * (S.airCtl || 1) : 1) * Math.min(1, 0.4 + sp * 0.5);
-    if (!p.fly && !auto) p.x -= (p.speed * p.speed * T.k[i] - G * Math.sin(T.bank[i])) * 0.055 * (1 - S.grip) * (1 - 0.25 * help) * dt;
+    if (!p.fly && !auto) p.x -= (p.speed * p.speed * T.k[i] - G * Math.sin(T.bank[i])) * 0.055 * (1 - S.grip) * (S.slide || 1) * (1 - 0.25 * help) * dt;   // ⚡🛞 slide: the car's trait
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.x) > LIMIT * (0.8 - 0.15 * this.pull)) p.x -= Math.sign(p.x) * dt * (1.2 + 1.6 * this.pull);
     if (Math.abs(p.x) > LIMIT) {
       p.x = Math.sign(p.x) * LIMIT;
       if (!auto && this.wallCD <= 0) {
-        if (this.shieldT <= 0) p.speed *= 1 - 0.1 * (1 - (S.wallBumper || 0));
+        if (this.shieldT <= 0) p.speed *= bumpKeep(1 - 0.1 * (1 - (S.wallBumper || 0)), S);
         this.wallCD = 0.35; h.sfx("bump"); this.fx.push({ type: "spark", dist: p.dist, x: p.x, t: this.t });
       }
     }
@@ -300,7 +300,7 @@ export class ToyRace {
           if (c.knockT <= 0) { c.x = clamp(c.x + (c.x >= p.x ? 1 : -1) * 2.4, -LIMIT, LIMIT); c.lane = c.x; c.knockT = 1; this.popup("BAM!", "#ff6b3d"); this.hooks.sfx("bam"); this.shake = 0.2; this.runStats.bams++; this.fx.push({ type: "spark", dist: c.dist, x: c.x, t: this.t }); }
         } else if (Math.abs(gap) < 1.2) {
           const dir = p.x >= c.x ? 1 : -1, k = stepK(dt); p.x = clamp(p.x + dir * 0.3 * k, -LIMIT, LIMIT); c.x = clamp(c.x - dir * 0.4 * k, -LIMIT, LIMIT); c.lane = c.x;
-          if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; p.speed *= 0.97; c.speed *= 0.97; }
+          if (this.bumpCD <= 0) { this.hooks.sfx("bump"); this.bumpCD = 0.4; p.speed *= bumpKeep(0.97, this.stats); c.speed *= 0.97; }
         } else if (gap > 0 && p.speed > c.speed) {
           // catching a slower car from behind: ease off (no wall), stay behind it, and slide a little to get around,
           // like the classic road (v1.11; it used to drop to 90% of the rival's speed at once)

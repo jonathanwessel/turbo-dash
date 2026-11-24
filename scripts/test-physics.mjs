@@ -365,5 +365,66 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   }
 }
 
+/* ---------- ⚡🛞💪 car traits (v1.16): each car is Fast, Grippy or Tough, and each one costs something ---------- */
+{
+  const { TRAITS } = await import("../src/data.js");
+  const { bumpKeep } = await import("../src/physics-common.js");
+  const { ToyRace } = await import("../src/toy/race.js");
+  const { LIMIT } = await import("../src/toy/track.js");
+  check("every car has a trait", CARS.every(c => TRAITS[c.trait]), CARS.filter(c => !TRAITS[c.trait]).map(c => c.id).join(" "));
+  const kinds = Object.keys(TRAITS).map(k => CARS.filter(c => c.trait === k).length);
+  check("each trait is on at least 6 cars", kinds.every(n => n >= 6), kinds.join(" / "));
+  const as = trait => ({ ...zippy, trait }), st = trait => statsFor(as(trait), UPS, {});
+  const plain = st(undefined), fast = st("fast"), grippy = st("grippy"), tough = st("tough");
+  check("a car with no trait is unchanged", plain.slide === 1 && plain.tough === 1, `slide ${plain.slide}, tough ${plain.tough}`);
+  check("Fast: a higher top speed, slides more", fast.maxSpeed > plain.maxSpeed && fast.slide > 1 && fast.accel === plain.accel, JSON.stringify([fast.maxSpeed, fast.slide]));
+  check("Grippy: slides less, a lower top speed", grippy.slide < 1 && grippy.maxSpeed < plain.maxSpeed, JSON.stringify([grippy.maxSpeed, grippy.slide]));
+  check("Tough: bumps cost less, speeds up slower", tough.tough < 1 && tough.accel < plain.accel && tough.maxSpeed === plain.maxSpeed, JSON.stringify([tough.accel, tough.tough]));
+  check("bumpKeep: a Tough car keeps more of its speed", bumpKeep(0.88, tough) > bumpKeep(0.88, plain) && bumpKeep(0.88, plain) === 0.88 && Math.abs(bumpKeep(0.88, tough) - 0.94) < 1e-9, `${bumpKeep(0.88, tough)}`);
+  // on a long curve with nobody steering, the curve pushes a Fast car out farthest and a Grippy car least
+  const T = buildTrack(track("autumn")), ci = T.segs.findIndex((q, k) => k > 40 && Math.abs(q.curve) > 1.5 && Math.abs(T.segs[k + 25]?.curve) > 1.5);
+  const pushed = S => { seed = 4242; const r = scene("autumn", { from: (ci + 1) * SEG - (15 * SEG + SEG * 0.5) }); r.stats = S; r.player.speed = BASE_MAX; r.prevIdx = r.segAt(r.player.dist).index; run(r, 0.4); return Math.abs(r.player.offset); };
+  const pf = pushed(fast), pp = pushed(plain), pg = pushed(grippy);
+  check("a Fast car slides farther on a curve", pf > pp * 1.15, `fast ${pf.toFixed(3)}, plain ${pp.toFixed(3)}`);
+  check("a Grippy car slides less on a curve", pg < pp * 0.85, `grippy ${pg.toFixed(3)}, plain ${pp.toFixed(3)}`);
+  // a bump into the trees while steering back: the Tough car keeps more speed. Riding the trees hands-off stays a
+  // hard stop for every car (so a Tough car hands-off can't ride the trees to a podium)
+  const bonk = (S, steering) => {
+    const r = scene("sunny", { from: quietStretch("sunny") }), p = r.player, here = r.segAt(p.dist).index; r.stats = S;
+    for (let k = 0; k < 8; k++) r.T.segs[(here + k) % r.T.segs.length].sprites.push({ type: "tree", offset: 1.6 });
+    p.offset = 1.6; p.speed = BASE_MAX; if (steering) { r.input.left = true; r.steerIn = -1; }
+    let low = Infinity; run(r, 0.3, q => { low = Math.min(low, q.player.speed); }); return low;
+  };
+  const bt = bonk(tough, true), bp = bonk(plain, true);
+  check("a Tough car loses less speed on a bump", bt > bp + BASE_MAX * 0.1, `tough ${Math.round(bt)}, plain ${Math.round(bp)}`);
+  check("hands-off in the trees is a hard stop for a Tough car too", bonk(tough, false) <= BASE_MAX * 0.16, `${Math.round(bonk(tough, false))}`);
+  // the barrier on a Downtown corner
+  {
+    const { BONUS_TRACKS } = await import("../src/data.js");
+    const dt = BONUS_TRACKS.find(t => t.id === "downtown"), segs = buildTrack(dt).segs, bi = segs.findIndex((q, k) => k > 30 && q.barrier && segs[k + 4]?.barrier === q.barrier);
+    const hitBarrier = S => {
+      const r = new Race({ getContext: () => null, width: 1, height: 1 }, { sfx() {}, engine() {}, onFinish() {} });
+      r.setup(dt, "race", zippy, S, { diff: "normal" }); r.state = "race"; r.count = 0;
+      for (const c of r.rivals) { c.dist = -1e7; c.speed = 0; c.base = 0; }
+      const p = r.player; p.dist = (bi + 1) * SEG - (15 * SEG + SEG * 0.5); p.speed = BASE_MAX; p.offset = segs[bi].barrier * 2; r.prevIdx = r.segAt(p.dist).index;
+      r.update(STEP); return p.speed;
+    };
+    const kt = hitBarrier(tough), kp = hitBarrier(plain);
+    check("a Tough car loses less on a corner barrier", kt > kp, `tough ${Math.round(kt)}, plain ${Math.round(kp)}`);
+  }
+  // Toy Track World: the side walls
+  {
+    const wall = S => {
+      const r = new ToyRace(null, { sfx() {}, engine() {}, onFinish() {} });
+      r.setup(TRACKS.find(t => t.world === "toy"), "race", zippy, S, { diff: "normal" });
+      r.state = "race"; r.count = 0; for (const c of r.rivals) { c.dist = -1e6; c.speed = 0; }
+      const p = r.player; p.dist = 30; p.speed = 20; p.x = LIMIT + 0.5; r.wallCD = 0; r.shieldT = 0;
+      const before = p.speed; r.update(STEP); return p.speed / before;
+    };
+    const wt = wall(tough), wp = wall(plain);
+    check("a Tough car loses less on a Toy Track World wall", wt > wp, `tough ${wt.toFixed(3)}, plain ${wp.toFixed(3)}`);
+  }
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

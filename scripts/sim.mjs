@@ -6,8 +6,15 @@
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, BOSSES, BOSS_ROUNDS, RESEARCH, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { bossSpeed } from "../src/rules.js";
 import { rivalBoost, WEEK_RIVAL } from "../src/rival-week.js";
-import { rng } from "../src/physics-common.js";
+import { rng, homeBonus } from "../src/physics-common.js";
 import { race, runRace } from "./racebot.mjs";
+import { statsFor } from "../src/stats.js";
+
+// a car's real top speed on a track, fully upgraded: its speed with its trait (v1.16 ⚡ Fast cars are a little faster
+// on top, 🛞 Grippy a little slower) and its home-world bonus there, so the car ladders below are sorted by what the
+// car really does on that track
+const topOf = (c, t) => statsFor(c, lvl(UPGRADE_MAX)).maxSpeed * homeBonus(c, t);
+const ladderFor = t => [...CARS].sort((a, b) => topOf(a, t) - topOf(b, t));
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });
 
@@ -92,19 +99,19 @@ else if (mode === "start") {
 }
 else if (mode === "rival") {
   // 🎯 v1.13 target (PLAN.md M1): the rival of the week at its cap never walls a track off. Every car, fully
-  // upgraded, sorted by speed is a ladder. For each track, "today's car" is the slowest one the kid driver wins
+  // upgraded, sorted by its top speed on that track (trait and home bonus, v1.16) is a ladder. For each track, "today's car" is the slowest one the kid driver wins
   // with (half of 8 races on Normal). The next faster car must still win 3 of 8 with the fastest rival (Rosie) as
   // the rival of the week at the cap. Exits 1 if any track fails. RIVAL_BOOST=1.03 tries another cap, RIVAL_SEED=n
   // another seed: the bot's random numbers are seeded, so the gate gives the same answer every run.
   { const r = rng(+(process.env.RIVAL_SEED || 1)); Math.random = r; }
-  const ladder = [...CARS].sort((a, b) => a.speed - b.speed), ups = lvl(UPGRADE_MAX), N = 8, PASS = 3;
+  const ups = lvl(UPGRADE_MAX), N = 8, PASS = 3;
   const cap = { i: 0, boost: process.env.RIVAL_BOOST ? +process.env.RIVAL_BOOST : rivalBoost(WEEK_RIVAL.cap) };
   const wins = (t, car, week, n = N) => { let w = 0; for (let k = 0; k < n; k++) w += runRace(t, car, ups, "normal", "kid", {}, 0, null, false, null, week).place === 1; return w; };
   const bad = [];
   for (const t of TRACKS) {
-    const k = ladder.findIndex(c => wins(t, c, null, 2) >= 1 && wins(t, c, null) >= N / 2);
+    const ladder = ladderFor(t), k = ladder.findIndex(c => wins(t, c, null, 2) >= 1 && wins(t, c, null) >= N / 2);
     if (k < 0) { console.log(`  ${t.id.padEnd(12)} no car wins it today (not a rival of the week problem)`); continue; }
-    const up = ladder.find(c => c.speed > ladder[k].speed) || ladder[k], w = wins(t, up, cap), base = wins(t, up, null);
+    const up = ladder.find(c => topOf(c, t) > topOf(ladder[k], t)) || ladder[k], w = wins(t, up, cap), base = wins(t, up, null);
     console.log(`  ${t.id.padEnd(12)} today ${ladder[k].name.padEnd(24)} one up ${up.name.padEnd(16)} wins ${base}/${N}, with Rosie at the cap ${w}/${N}`);
     if (w < PASS) bad.push(`${t.name}: ${up.name} wins ${w} of ${N} with the rival of the week at the cap`);
   }
@@ -118,11 +125,11 @@ else if (mode === "boss") {
   // round (1 is the first race, 2 to 4 are 4% faster each), the slowest car the kid driver wins with (3 of 6) is
   // printed. Exits 1 if a round has no such car. BOSS_SEED=n tries another seed.
   { const r = rng(+(process.env.BOSS_SEED || 1)); Math.random = r; }
-  const ladder = [...CARS].sort((a, b) => a.speed - b.speed), ups = lvl(UPGRADE_MAX), N = 6, PASS = 3;
+  const ups = lvl(UPGRADE_MAX), N = 6, PASS = 3;
   const lab = Object.fromEntries(RESEARCH.filter(r => r.id !== "autoSteer").map(r => [r.id, r.max]));
   const bad = [];
   for (const b of BOSSES) {
-    const t = TRACKS.find(x => x.id === b.track), row = [];
+    const t = TRACKS.find(x => x.id === b.track), row = [], ladder = ladderFor(t);
     for (let level = 0; level <= BOSS_ROUNDS.max; level++) {
       const boss = { ...b, speed: bossSpeed(b, level), def: CARS.find(c => c.id === b.car) };
       let hit = null;

@@ -24,6 +24,10 @@ export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.wor
 export const homeNote = car => { const w = WORLDS.find(x => x.id === worldOf(car)); return w && w.id !== "earth" ? { icon: w.icon, text: `${w.icon} Faster in ${w.name}` } : null; };
 export const homeBonus = (car, track) => track && track.world && track.world !== "earth" && worldOf(car) === track.world ? 1 + HOME_BONUS : 1;
 
+/* 💪 a bump keeps this share of the car's speed: keep is the normal share, and a Tough car (stats.tough 0.5) feels
+   only half of the loss (v1.16 car traits) */
+export const bumpKeep = (keep, S) => 1 - (1 - keep) * (S?.tough ?? 1);
+
 /* a small seeded random generator (same seed, same numbers), and a seed from a track id */
 export function rng(seed) { let s = Math.abs(Math.floor(seed)) % 2147483646 + 1; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 export const strSeed = str => [...String(str)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 1000003, 7);

@@ -8,7 +8,7 @@ import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
-import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep, homeBonus } from "./physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep, homeBonus, bumpKeep } from "./physics-common.js";
 export { BASE_MAX };   // starter car top speed (world units / s)
 const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, LANES = 3;   // the draw distance is per quality level (past 60% of it: no lane dashes)
 /* picture quality (v1.10, set by the game from how fast this device draws; Settings > Effects can pin it):
@@ -318,7 +318,7 @@ export class Race {
     p.offset = side * at;
     if (this.scrapeCD > 0) return;
     this.scrapeCD = 0.3;
-    if (real) { p.speed *= 0.96; this.hooks.sfx("scrape"); this.shake = Math.max(this.shake, 0.06); }
+    if (real) { p.speed *= bumpKeep(0.96, this.stats); this.hooks.sfx("scrape"); this.shake = Math.max(this.shake, 0.06); }
     for (let k = 0; k < 10; k++) this.parts.push({ x: 0.5 + side * (0.1 + Math.random() * 0.05), y: 0.9 + Math.random() * 0.05, vx: -side * (0.2 + Math.random() * 0.5), vy: -0.3 - Math.random() * 0.5, life: 0.35 + Math.random() * 0.2, c: Math.random() < 0.5 ? "#ffb020" : "#fff3a0", r: 0.004 + Math.random() * 0.004 });
   }
 
@@ -404,7 +404,7 @@ export class Race {
     // the curve pushes the car outward. Downtown's squared-off corners look far sharper than any normal curve but
     // push only a little harder than a sharp one, so steering into them can always hold the line (other tracks unchanged)
     const ac = Math.abs(seg.curve), pushCurve = this.track.layout === "blocks" && ac > 4 ? Math.sign(seg.curve) * (4 + (ac - 4) * 0.25) : seg.curve;   // Downtown only
-    if (!flying) p.offset -= dx * sp * pushCurve * 0.15 * (1 - S.grip) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);
+    if (!flying) p.offset -= dx * sp * pushCurve * 0.15 * (1 - S.grip) * (S.slide || 1) * (1 - 0.25 * help) / ph.grip * (this.weather ? 1.08 : 1);   // ⚡🛞 slide: the car's trait
     // skid marks and tire smoke: turning hard into a sharp curve at speed, sliding on ice, or drifting
     const skid = !flying && !auto && racing && p.speed > BASE_MAX * 0.5 && ((Math.abs(steer) > 0.6 && Math.abs(seg.curve) > 1.2 && Math.sign(steer) === Math.sign(seg.curve)) || Math.abs(p.slideV) > 1.7 || this.driftT > 0.2);
     if (skid) {
@@ -425,7 +425,7 @@ export class Race {
       const a = Math.abs(p.offset);
       p.offset = seg.barrier * (a - BARRIER < 0.1 ? BARRIER : Math.max(BARRIER, a - dt * 4));
       if (this.bonkCD <= 0 && !auto) {
-        this.bonkCD = 0.6; p.speed *= 0.88; this.shake = Math.max(this.shake, 0.25); h.sfx("bonk"); this.popup("BONK!", "#ffffff");
+        this.bonkCD = 0.6; p.speed *= bumpKeep(0.88, S); this.shake = Math.max(this.shake, 0.25); h.sfx("bonk"); this.popup("BONK!", "#ffffff");
         this.sparks(0.5 + seg.barrier * 0.1, 0.88, 10, "#ffb020");
         if (!this.cornerTip) { this.cornerTip = true; setTimeout(() => this.popup("Steer early into the corners!", "#ffd400"), 500); }
       }
@@ -538,10 +538,10 @@ export class Race {
           // side by side: the rival gets nudged aside and wobbles. Only steering INTO it costs a little speed (1%).
           const dir = p.offset >= c.offset ? 1 : -1, into = steer !== 0 && Math.sign(steer) === -dir;
           p.offset += dir * 0.06 * dt * 60; c.offset -= dir * 0.21 * dt * 60; c.lane = clamp(c.offset - dir * 0.2, -0.8, 0.8); c.wobT = 0.5;
-          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; if (into) { p.speed *= 0.99; c.speed *= 0.99; } this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
+          if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; if (into) { p.speed *= bumpKeep(0.99, this.stats); c.speed *= 0.99; } this.sparks(0.5 - dir * 0.08, 0.86, 8, "#fff6a8"); }
         } else if (g > 0 && p.speed > c.speed) {
           // catching a slower car from behind: ease off (no wall), stay behind it, and slide a little to get around
-          p.speed = Math.max(c.speed * 0.97, p.speed - BASE_MAX * 3 * dt); p.dist = c.dist - SEG * 0.9;
+          p.speed = Math.max(c.speed * bumpKeep(0.97, this.stats), p.speed - BASE_MAX * 3 * dt); p.dist = c.dist - SEG * 0.9;
           p.offset += (p.offset >= c.offset ? 1 : -1) * dt * 0.8;
           if (this.bumpCD <= 0) { h.sfx("bump"); this.bumpCD = 0.4; this.sparks(0.5, 0.78, 8, "#fff6a8"); }
         } else if (g <= 0 && c.speed > p.speed) { c.speed = Math.min(c.speed, p.speed * 0.97); c.dist = p.dist - SEG * 0.9; }
@@ -565,7 +565,7 @@ export class Race {
     const pud = this.puddles.get(s.index);
     if (pud !== undefined && p.air <= 0 && this.puddleHit !== s.index && Math.abs(p.offset - pud) < 0.36) {
       // SPLASH: a little slide sideways and a spray of water (a small slowdown, never a crash)
-      this.puddleHit = s.index; p.offset += (this.luck() < 0.5 ? -1 : 1) * 0.14; p.speed *= 0.97;
+      this.puddleHit = s.index; p.offset += (this.luck() < 0.5 ? -1 : 1) * 0.14; p.speed *= bumpKeep(0.97, S);
       for (let k = 0; k < 14; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.25, y: 0.95, vx: (Math.random() - 0.5) * 0.7, vy: -0.4 - Math.random() * 0.3, life: 0.6, c: "#cdeeff", r: 0.006 + Math.random() * 0.008 });
       this.hooks.sfx("bump"); this.popup("SPLASH!", "#9fe8ff");
     }
@@ -577,7 +577,7 @@ export class Race {
     }
     if (s.snow != null && p.air < 150 && this.snowHit !== s.index + ":" + Math.floor(p.dist / this.T.length) && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
       this.snowHit = s.index + ":" + Math.floor(p.dist / this.T.length);
-      if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= Math.min(0.9, 0.62 + (S.plow || 0));
+      if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(Math.min(0.9, 0.62 + (S.plow || 0)), S);
       for (let k = 0; k < 18; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.9, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.4, life: 0.7, c: "#ffffff", r: 0.008 + Math.random() * 0.012 });
       this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup("POOF!", "#ffffff");
     }
@@ -625,7 +625,8 @@ export class Race {
           const again = this.t - (this.lastBonkT ?? -9) < 2; this.lastBonkT = this.t;
           const trying = Math.abs(this.steerIn) > 0.2 && Math.sign(this.steerIn) === -Math.sign(p.offset), soft = trying && !again;
           const floor = (soft ? 0.35 : 0.15) + 0.1 * this.assist + (this.stats.bumper || 0);
-          p.speed = Math.min(p.speed, soft ? Math.max(BASE_MAX * floor, p.speed * 0.6) : BASE_MAX * floor);
+          const hit = Math.min(p.speed, soft ? Math.max(BASE_MAX * floor, p.speed * 0.6) : BASE_MAX * floor);
+          p.speed -= (p.speed - hit) * (soft ? this.stats.tough ?? 1 : 1);   // 💪 a Tough car loses half as much (riding the trees hands-off stays a hard stop)
           p.offset += spr.offset > p.offset ? -0.25 : 0.25;
           this.shake = 0.35; this.bonkCD = 0.6; this.hooks.sfx("bonk"); this.popup("BONK!", "#ffffff");
           break;

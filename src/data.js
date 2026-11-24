@@ -36,6 +36,29 @@ export const CARS = [
   { id: "barnstormer", name: "Barnstormer", price: null, cup: "country", tier: 4, body: "#2fbf3a", accent: "#ffd400", type: "monster", speed: 0.18, accel: 0.22, grip: 0.18 },
 ];
 
+/* ⚡🛞💪 Car traits (v1.16): every car is Fast, Grippy or Tough, and each one costs something. The rules are in
+   statsFor (src/stats.js), so the game, the race sim and the career run all use the same numbers.
+   - fast: a higher top speed, and curves push it outward more (it slides).
+   - grippy: curves push it outward less, and its top speed is a little lower.
+   - tough: bumps (walls, trees, rails, puddles, snowbanks, other cars) take half as much speed, and it speeds up
+     a little slower (it is heavy). */
+export const TRAITS = {
+  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straights. Slides on curves.", top: 1.03, slide: 1.3 },
+  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Holds the curves. A bit slower.",      top: 0.975, slide: 0.7 },
+  tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Bumps slow it less. Slow to start.",   accel: 0.88, bump: 0.5 },
+};
+// one trait per car, mixed along the car ladder so the next car up is often a different kind
+const TRAIT_OF = {
+  zippy: "fast", bolt: "grippy", monster: "tough", shark: "grippy", rocket: "fast", galaxy: "grippy",
+  greenMachine: "fast", goldRush: "tough", champX: "fast", barnstormer: "tough", thunder: "tough", firetruck: "tough", patrol: "grippy",
+  rover: "tough", comet: "fast", starfire: "grippy",
+  sub: "tough", manta: "grippy", kraken: "fast",
+  frost: "grippy", polar: "tough", blizzard: "fast",
+  toyRacer: "tough", loopLegend: "grippy", windup: "fast",
+};
+for (const c of CARS) c.trait = TRAIT_OF[c.id];
+export const traitOf = car => TRAITS[car?.trait] || null;
+
 // Opponent looks (they race with their own speeds, set by the track). says: what they shout as the rival of the
 // week (src/rival-week.js).
 export const RIVALS = [
