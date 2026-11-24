@@ -544,8 +544,12 @@ every test green.
   from five worlds) found the world chips running into the upgrade cards at 1024x600, older than this release (with
   more than three chips each shows its world's picture now). Swept again clean at those sizes. Machine: the release
   check's read-aloud step failed with "synthesis-failed" while Windows listed no audio device at all; `say-test` now
-  reports that one case as NOT CHECKED in plain sight. Career on this build: Rank 40 on day 556 (Moon 104, Ocean 191,
-  Glacier 288, Toy 419), Hopper day 114, Diver 203, Snow Cat 299, Buggy 423. Not checked on a real tablet.
+  reports that one case as NOT CHECKED in plain sight. Picture review (a helper that saw only the sweep pictures): the
+  Garage's Turbo flames sat on the Hopper's springs and looked like spikes (the springs moved inward, swept again at
+  740x360 and 1280x800); its older finds went to the leftovers box. Check on the release commit: career Rank 40 on
+  day 555 (Moon 107, Ocean 185, Glacier 286, Toy 417), within 3% of v1.18.0's 543; Hopper day 118, Diver 197, Snow Cat
+  295, Buggy 423; Best picks the fastest car 775 of 800 times, at worst 2.4% slower; the voice was NOT heard (no sound
+  output on this machine). Live install test ok. Not checked on a real tablet.
 - [ ] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.
 - [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
