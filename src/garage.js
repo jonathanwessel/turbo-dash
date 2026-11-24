@@ -116,9 +116,12 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview, onTra
     const nextW = WORLDS.find(w => !w.soon && !worldOpen(S, w.id));
     const chips = WORLDS.filter(w => CARS.some(c => worldOf(c) === w.id) && (worldOpen(S, w.id) || (w === nextW && S.rank >= (w.rank || 0) - 5) || CARS.some(c => worldOf(c) === w.id && S.owned.includes(c.id))));
     $("g-worlds").hidden = chips.length < 2;
+    // v1.19: with cars from more than three worlds the names ran sideways into the upgrade cards (1024x600), so then
+    // each chip shows its world's picture instead of its name
+    const many = chips.length > 3; $("g-worlds").classList.toggle("many", many);
     $("g-worlds").innerHTML = chips.map(w => {
       const list = CARS.filter(c => worldOf(c) === w.id), mine = list.filter(c => S.owned.includes(c.id)).length;
-      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}"><span>${w.name}</span><small>🚗${mine}/${list.length}</small></button>`;
+      return `<button data-gworld="${w.id}" class="${w.id === here ? "on" : ""}" aria-label="${w.name}"><span>${many ? w.icon : w.name}</span><small>🚗${mine}/${list.length}</small></button>`;
     }).join("");
     $("g-stats").innerHTML = stats(car).map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${carKnown(car) ? Math.round(8 + 92 * Math.min(1, v)) : 0}%"></i></div>`).join("");
     const btn = $("g-action");

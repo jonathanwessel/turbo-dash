@@ -136,7 +136,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .g-name { font-size: clamp(22px, 6vmin, 38px); font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.4); }
 .g-home { font-size: clamp(12px, 2.6vmin, 16px); font-weight: 800; color: #ffd400; line-height: 1.1; }
 .g-home[hidden] { display: none; }
-.g-perk { color: #9fe8ff; }   /* 🌟 a special car's power (v1.19) */
+.g-perk { color: #9fe8ff; }   /* 🌟 a special car's power (v1.19), beside the home line so it costs no row on a short screen */
+.g-notes { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 12px; }
+.g-worlds.many button span { font-size: 1.1em; }   /* more than three worlds: each chip shows its world's picture */
 .g-stats { width: min(100%, 340px); display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; align-items: center; font-weight: 700; font-size: 15px; }
 .bar { height: 13px; border-radius: 999px; background: rgba(255,255,255,.15); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5be36a, #ffd400); transition: width .3s; }

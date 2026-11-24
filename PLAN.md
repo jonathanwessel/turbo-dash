@@ -30,6 +30,8 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 - **Winning is earned.** Hands-off driving finishes last (`npm run sim -- start`). The starter car does not win
   the first race. A track opens only after a Normal or Hard win on the one before.
 - **There is always a track the player can almost win.** Tracks stay closely spaced in difficulty.
+- **Measure a number before it ships** (v1.19.0). A new goal, price or power gets its number from the career run's
+  counters or from the same seeded races with and without it, and the notes say how it was measured.
 - **Every old save loads.** Any change to the save adds a port and a fixture in `scripts/test-saves.mjs`. Only
   `turbodash.*` storage keys.
 - **Never touch a real save.** Browser checks run in a headless browser with a throwaway profile. Never open
@@ -421,6 +423,14 @@ every test green.
   is cut flat under the words at 1024x600 and 1280x800; the car kinds card leaves "roads." and "much." alone on a line
   at 1024x600 and 1280x800; the small "Not yet" and "OK" buttons have small words in a narrow box; at 360x740 the
   rival and preview cards run edge to edge and the preview arrows touch the screen's edge.
+  Added in v1.19.0: the special car's counter ("⭕ 137 / 500") only shows in the Garage. Show it where the child
+  collects (for example a small ⭕ counter with the car's dark shape on the world's track list or the result card).
+  From the v1.19.0 picture review (older than v1.19.0 unless said): on the All cars grid a price the player can't
+  pay yet is white, not red ("have / need, red when short"); "Deep Blue, Rank 25" under a far world's car reads like
+  a manual; the ⭕ counter picture is red while the Moon's boost rings are blue (new in v1.19.0); the home and power
+  lines under a car's name are about 12 px at 740x360 and 360x740. Decided to leave: the Fast / Grippy / Tough pill
+  looks like a button because it is one (it opens the car kinds card), and the world icon after a car's name is the
+  home mark.
 - [x] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
   grippy car is slower on the straight. A tough car loses less speed on a bump. No bare numbers on the card.
   Notes: v1.16.0. Decision: "three traits" read as three kinds of car, one kind per car (a pill with a picture and
@@ -507,8 +517,35 @@ every test green.
   Ocean 184, Glacier 277, Toy 405), the Toy guard frame 0.00%. Sweep clean at 8 sizes, then again at the sizes each
   review fix touched (1024x600; all 8; 360x740, 800x1280, 1280x800). Live install test ok. Not checked on a real
   tablet: which voices an Android tablet marks as local, and whether it speaks offline, need the owner's ears.
-- [ ] **A second special car per world,** earned by play: a Moon hopper that jumps farther, a submarine that
+- [x] **A second special car per world,** earned by play: a Moon hopper that jumps farther, a submarine that
   ignores currents, an ice car that does not slide.
+  Notes: v1.19.0. Decision: "per world" read as all four worlds, so Toy Track World got one too (the Boost Buggy,
+  boosters fling it farther). The cars are never sold and never a cup or boss prize: each is earned by the world's own
+  counter, which old saves already keep (`S.stats`), so no save change. 🦘 Moon Hopper for 500 boost rings, ⚓ Deep
+  Diver for 900 pearls, 🧊 Snow Cat for 120 drift boosts, 🚀 Boost Buggy for 80 loops. The powers live in `PERKS`
+  (data.js) and `statsFor`: jump x1.35; `fins` 1 (currents can't push it); `studs` 1, and the engine skips the
+  ice slide when studs reach 1 (Snow Chains top out at 0.5); booster x1.12. `earnCars` (rules.js) runs after every race
+  and Time Trial and when a save loads ("New choices reach old saves": a save with enough rings gets the Hopper on
+  load and sees the card on Main Street). Goals measured, not guessed: the first goals (120 rings and so on) gave the
+  Hopper one bot day after the Moon opened, so the career run printed the counters every 5 days (about 50 rings, 90
+  pearls, 8 drifts, 8 loops a bot day at first) and the goals were set for about 10 bot days into each world. The
+  bot drifts little after its first weeks on ice (its count stops near 220), so the Snow Cat goal stays low.
+  Balance measured too (48 kid-driver races per car, same seeds with and without the power): the booster power at 30%
+  won a whole race by 9%, the others by under 1%, so the booster is 12% (about 2.5%). `npm run sim -- best` then
+  failed twice: the Best rule ignored the Buggy's power in Toy Track World (it now counts each power's measured share,
+  `PERKS.pace`, on home tracks only), and it named the Buggy (Fast) on a Moon track where it slid slower than Loop
+  Legend. Decision: the Buggy is Tough and the Hopper Fast (9 Fast, 9 Grippy, 11 Tough). Seen red: with the powers
+  switched off in `statsFor` nine physics checks fail; without the engine's ice change the Snow Cat check fails; with
+  the earn rule off by one, 14 of 50 earn checks fail. Look: the Moon Hopper rides on two drawn springs, the others use
+  existing bodies in new colors. A "New car!" picture card (car, power picture, one line, 🚗 Drive it!, OK, 🔊) shows
+  over the result card, or on Main Street for a save that earned cars on load. The Garage shows "⭕ 137 / 500" on a
+  car still to win and the power beside the home line on an owned one. The sweep found the power line pushed the car
+  into the title at 740x360 and 915x412 (it now sits beside the home line), and the audit's late-game Garage (cars
+  from five worlds) found the world chips running into the upgrade cards at 1024x600, older than this release (with
+  more than three chips each shows its world's picture now). Swept again clean at those sizes. Machine: the release
+  check's read-aloud step failed with "synthesis-failed" while Windows listed no audio device at all; `say-test` now
+  reports that one case as NOT CHECKED in plain sight. Career on this build: Rank 40 on day 556 (Moon 104, Ocean 191,
+  Glacier 288, Toy 419), Hopper day 114, Diver 203, Snow Cat 299, Buggy 423. Not checked on a real tablet.
 - [ ] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.
 - [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
@@ -679,3 +716,15 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   the old boss card rule covered; the audit's on-screen check caught it because the box added the speaker to it.
   Next: M0's picture guard for the screens (Garage first) and the Android back button can ride along, and the main
   piece is **a second special car per world** (M2), so the game keeps moving forward.
+- 2026-11-24 (v1.19.0): a second special car per world shipped as the main piece, the fourth release in a row that
+  moves the game forward. The M0 screens guard and the back button did not ride along (the box, its balance work and
+  a machine problem filled the run); the next release takes the screens guard with it. Two numbers set by feel were
+  wrong and only a measurement showed it: the first earn goals (a car one bot day after its world opened) and the
+  first booster power (9% of a whole race). With the boost pad guard frame (v1.17.0) and the trait ladder (v1.16.0)
+  that is the same lesson again, so it is now a rule: **a new goal, price or power gets its number from a
+  measurement (the career run's counters, or the same seeded races with and without it), written in the notes.**
+  Also new: this machine had no sound output during the check (Windows listed no audio device), and the read-aloud
+  step failed on that alone. Like a timeout on a busy machine, it was checked against the machine first, and the
+  test now names that case instead of failing; nothing in the game was changed for it. Gap found: the special car's
+  counter only shows in the Garage, so a child racing on the Moon never sees the rings add up; it is in the leftovers
+  box below. Next: **Strategy bots** (M2) as the main piece, with the M0 screens guard riding along.

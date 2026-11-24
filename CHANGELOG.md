@@ -6,8 +6,9 @@
   🦘 **Moon Hopper** for 500 boost rings on the Moon, ⚓ **Deep Diver** for 900 pearls in Deep Blue, 🧊 **Snow Cat**
   for 120 drift boosts on the Glacier Rink, and 🚀 **Boost Buggy** for 80 loop-the-loops in Toy Track World.
 - **Each one has a power.** The Moon Hopper jumps 35% higher (it rides on two big springs), water currents can't
-  push the Deep Diver, the Snow Cat does not slide on ice, and Toy Track World boosters fling the Boost Buggy 30%
-  farther. Like every world car it is also 5% faster at home.
+  push the Deep Diver, the Snow Cat does not slide on ice, and Toy Track World boosters fling the Boost Buggy 12%
+  farther. Like every world car it is also 5% faster at home. The Moon Hopper is a Fast car, the Deep Diver Grippy,
+  the Snow Cat and the Boost Buggy Tough.
 - **A "New car!" card** with the car, its power as a picture and a 🚗 Drive it! button (and the 🔊 speaker) shows
   when one is won. In the Garage a special car still to win shows its counter, such as "⭕ 137 / 500", and an owned
   one shows its power under its name.
@@ -19,6 +20,13 @@
   `scripts/test-earn.mjs` (in `npm test`) checks the goals, the counters, one car per goal and an old save, and
   `scripts/test-physics.mjs` checks each power on its own world's track. Both were seen failing with the rule
   broken on purpose. The sweep and the audit open the New car card of all four cars and the Garage on one.
+- **Balance, measured:** with the kid driver over 48 races per car, the Boost Buggy's booster power at 30% won a whole
+  race by 9%, far more than the other three powers (each under 1%), so it is 12% now (about 2.5%). The Best pill's
+  rule counts that share on the car's home tracks, and `npm run sim -- best` stays green.
+- **Read-aloud check:** this machine had no sound output during the release (Windows listed no audio device), so the
+  browser could not play any voice. `scripts/say-test.mjs` now reports that case as "NOT CHECKED" in plain sight and
+  still runs its other checks, instead of failing for a reason that has nothing to do with the game. The voice itself
+  was not heard for this release. Nothing in the read-aloud code changed.
 
 ## v1.18.0 — Read it to me 🔊
 

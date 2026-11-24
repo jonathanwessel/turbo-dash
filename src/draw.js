@@ -77,11 +77,12 @@ export function drawCar(ctx, x, yb, w, def, o = {}) {
     }
   }
 
-  // 🦘 the Moon Hopper (v1.19) rides on two big springs, drawn under the body between the wheels
+  // 🦘 the Moon Hopper (v1.19) rides on two big springs, drawn under the body between the wheels, inside the Turbo
+  // flames (at ±0.2 of the width) so the two never sit on each other (the picture review saw "spikes" there)
   if (def.perk === "hop" && w > 20) {
     ctx.strokeStyle = "#c9d6e3"; ctx.lineWidth = Math.max(1.5, w * 0.03); ctx.lineCap = "round";
     const n = 5, y0 = -w * 0.02, y1 = by + 2;
-    for (const sx of [-0.2, 0.2]) { ctx.beginPath(); ctx.moveTo(sx * w, y0); for (let k = 1; k <= n; k++) ctx.lineTo(sx * w + (k % 2 ? 1 : -1) * w * 0.07, y0 + (y1 - y0) * k / n); ctx.lineTo(sx * w, y1); ctx.stroke(); }
+    for (const sx of [-0.075, 0.075]) { ctx.beginPath(); ctx.moveTo(sx * w, y0); for (let k = 1; k <= n; k++) ctx.lineTo(sx * w + (k % 2 ? 1 : -1) * w * 0.045, y0 + (y1 - y0) * k / n); ctx.lineTo(sx * w, y1); ctx.stroke(); }
   }
   let g;
   if (def.rainbow) {
