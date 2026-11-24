@@ -17,8 +17,8 @@ const head = sh("git rev-parse HEAD"), clean = !sh("git status --porcelain");
 const STEPS = [
   ["tests", "npm test"],
   ["drawing budget", "node scripts/perf.mjs"],
-  ["picture guard", "node scripts/guard.mjs"],
-  ["read aloud", "node scripts/say-test.mjs"],      // v1.18: a real tap on the speaker starts a local voice, or no speaker shows      // v1.16.1: one seeded race frame per classic world, compared with scripts/guard/
+  ["picture guard", "node scripts/guard.mjs"],      // v1.16.1: one seeded race frame per classic world, compared with scripts/guard/
+  ["read aloud", "node scripts/say-test.mjs"],       // v1.18: a real tap on the speaker starts a local voice, or no speaker shows
   ["hands-off start", "node scripts/sim.mjs start"],
   ["rival of the week", "node scripts/sim.mjs rival"],   // v1.13: the rival at its cap never walls a track off
   ["boss rounds", "node scripts/sim.mjs boss"],          // v1.15: every round of every boss can be won
