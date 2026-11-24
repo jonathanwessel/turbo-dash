@@ -1,10 +1,10 @@
 // Car stats for a race: the car itself + its own upgrades + Turbo Lab research (shared by every car).
 // Used by the game and by the race simulator (scripts/sim.mjs), so both always agree.
 import { BASE_MAX } from "./engine.js";
-import { TRAITS } from "./data.js";
+import { TRAITS, PERKS } from "./data.js";
 
 export function statsFor(car, u, lab = {}) {
-  const L = k => lab[k] || 0, T = TRAITS[car.trait] || {};
+  const L = k => lab[k] || 0, T = TRAITS[car.trait] || {}, P = PERKS[car.perk] || {}, perk = car.perk;   // 🌟 a special car's power (v1.19)
   return {
     maxSpeed: BASE_MAX * (1 + car.speed + 0.06 * u.engine) * (T.top || 1),
     accel: BASE_MAX / 4.5 * (1 + car.accel + 0.04 * u.engine) * (T.accel || 1),
@@ -17,18 +17,18 @@ export function statsFor(car, u, lab = {}) {
     magnet: 0.12 * u.magnet + 0.03 * L("magnetField"),
     startNitro: 0.13 * L("headStart"),
     bumper: 0.04 * L("bumper"),
-    jump: 1 + 0.08 * L("bigRamps"),
+    jump: (1 + 0.08 * L("bigRamps")) * (P.jump || 1),   // 🦘 hop
     airCtl: 1 + 0.15 * L("thrusters"),
     ringReach: 0.12 * L("ringMagnet"),
     propel: 1 + 0.08 * L("propellers"),   // underwater: speed up faster
-    fins: 0.12 * L("fins"),
+    fins: perk === "steady" ? 1 : 0.12 * L("fins"),   // ⚓ steady: currents can't push it
     pearlReach: 0.1 * L("pearlDiver"),
-    studs: 0.1 * L("snowChains"),          // ice: slide less
+    studs: perk === "studs" ? 1 : 0.1 * L("snowChains"),   // ice: slide less (🧊 studs: not at all)
     driftPow: 1 + 0.12 * L("driftMaster"), // ice: bigger drift boosts
     plow: 0.06 * L("snowplow"),            // ice: snowbanks slow you less
     warm: 1 + 0.08 * L("warmEngine"),      // ice: speed up faster
     loopGrip: 0.06 * L("loopGrip"),        // toy: stay on loops at lower speed
-    boosterTune: 1 + 0.05 * L("boosterTune"), // toy: boosters fling you farther
+    boosterTune: (1 + 0.05 * L("boosterTune")) * (P.booster || 1), // toy: boosters fling you farther (🚀 boost)
     wallBumper: 0.15 * L("wallBumpers"),   // toy: walls slow you less
     windUp: 1 + 0.08 * L("windUp"),        // toy: speed up faster   // underwater: grab pearls from farther away               // underwater: currents push less
   };

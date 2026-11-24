@@ -9,7 +9,7 @@ import { writeFileSync } from "node:fs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
 import { weekRivalRace, weekRivalResult } from "../src/rival-week.js";
-import { dayKey, raceReward, chestValues, bossReward, bossLevel, bossSpeed, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, keepOpens, seasonUnlock } from "../src/rules.js";
+import { dayKey, raceReward, chestValues, bossReward, bossLevel, bossSpeed, trialReward, cupEndReward, rankUp, claimGift, treat, claimMission, missionsBonus, lapBonus, grantCar, earnCars, keepOpens, seasonUnlock } from "../src/rules.js";
 const LAPS_PER_DAY = +(process.argv[4] || 2), PERFECT = 0.6;   // Math/Word Laps a day, and how often one is perfect
 const BANK = process.argv[5] !== "nobank";   // npm run career -- 12 1000 2 nobank: leave the bank out
 // 🍂 seasonal tracks open on their calendar dates (the career starts on 1 January); "season" opens them on day 1,
@@ -44,7 +44,9 @@ function rankUps() {
     gate("rank" + S.rank, `Rank ${S.rank}`); lastRankDay = day;
   }
 }
-function claimGoals() { for (const g of GOALS) if (!S.claimed.includes(g.id) && g.have(S) >= g.goal) { S.claimed.push(g.id); S.coins += g.reward; } }
+function claimGoals() {
+  for (const c of earnCars(S, today())) gate("car:" + c.id, `Earned the ${c.name} (${c.earn.goal} ${c.earn.stat})`);   // 🌟 v1.19
+  for (const g of GOALS) if (!S.claimed.includes(g.id) && g.have(S) >= g.goal) { S.claimed.push(g.id); S.coins += g.reward; } }
 
 function reward(track, r, diff, opts = {}) {
   raceNo++; clock += 75 + 35;

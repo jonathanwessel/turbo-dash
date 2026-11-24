@@ -426,5 +426,53 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   }
 }
 
+/* ---------- 🌟 special cars' powers (v1.19): each one changes its own world's thing, and only that ---------- */
+{
+  const { PERKS } = await import("../src/data.js");
+  const { ToyRace } = await import("../src/toy/race.js");
+  const car = id => CARS.find(c => c.id === id), plainOf = c => ({ ...c, perk: undefined });
+  const specials = CARS.filter(c => c.perk);
+  check("one special car per world", ["moon", "ocean", "glacier", "toy"].every(w => specials.filter(c => c.world === w).length === 1) && specials.length === 4, specials.map(c => c.id).join(" "));
+  check("every special car has a power and an earn goal", specials.every(c => PERKS[c.perk] && c.earn?.goal > 0 && c.price == null), specials.map(c => c.id + ":" + c.perk).join(" "));
+  const withPerk = (id, field) => [statsFor(car(id), UPS, {})[field], statsFor(plainOf(car(id)), UPS, {})[field]];
+  for (const [id, f] of [["hopper", "jump"], ["diver", "fins"], ["snowcat", "studs"], ["buggy", "boosterTune"]]) {
+    const [a, b] = withPerk(id, f); check(`${id}: ${f} is its power`, a > b, `${a} vs ${b} without the power`);
+  }
+  // the other stats are the same with or without the power
+  { const a = statsFor(car("hopper"), UPS, {}), b = statsFor(plainOf(car("hopper")), UPS, {}); check("a power changes nothing else", Object.keys(a).filter(k => a[k] !== b[k]).join() === "jump", Object.keys(a).filter(k => a[k] !== b[k]).join()); }
+  const sceneWith = (trackId, S, from) => { const r = scene(trackId, { from }); r.stats = S; r.player.speed = S.maxSpeed; return r; };
+  // 🦘 Moon Hopper: jumps higher off a Moon ramp
+  {
+    const T = buildTrack(track("crater")), k = T.segs.findIndex((s, i) => i > 30 && s.rampStart);
+    const peak = S => { const r = sceneWith("crater", S, (k - 6) * SEG - (15 * SEG + SEG * 0.5)); let top = 0; run(r, 3, q => { top = Math.max(top, q.player.air); }); return top; };
+    const hi = peak(statsFor(car("hopper"), UPS, {})), lo = peak(statsFor(plainOf(car("hopper")), UPS, {}));
+    check("Moon Hopper jumps higher", hi > lo * 1.4, `peak ${Math.round(hi)} vs ${Math.round(lo)}`);
+  }
+  // ⚓ Deep Diver: a current does not push it sideways
+  {
+    const T = buildTrack(track("kelp")), k = T.segs.findIndex((s, i) => i > 30 && s.current && T.segs.slice(i, i + 25).every(q => q.current === s.current && Math.abs(q.curve) < 0.6));
+    const drift = S => { const r = sceneWith("kelp", S, (k + 1) * SEG - (15 * SEG + SEG * 0.5)); r.player.speed = S.maxSpeed * 0.5; run(r, 0.6); return Math.abs(r.player.offset); };
+    const d = drift(statsFor(car("diver"), UPS, {})), s = drift(statsFor(plainOf(car("diver")), UPS, {}));
+    check("the current can't push the Deep Diver", k > 0 && d < 0.05 && s > 0.3, `moved ${d.toFixed(3)} vs ${s.toFixed(3)} (current at segment ${k})`);
+  }
+  // 🧊 Snow Cat: no slide on ice. Steer for a moment and let go: it stops moving sideways at once
+  {
+    const at = quietStretch("icecave");
+    const after = S => { const r = sceneWith("icecave", S, at); r.input.right = true; run(r, 0.12); r.input.right = false; run(r, 0.12); const o = r.player.offset; run(r, 0.2); return Math.abs(r.player.offset - o); };   // after the steering's own 0.1 s ease-out
+    const cat = after(statsFor(car("snowcat"), UPS, {})), other = after(statsFor(plainOf(car("snowcat")), UPS, {}));
+    check("the Snow Cat does not slide on ice", cat < other * 0.5 && other > 0.02, `kept moving ${cat.toFixed(3)} vs ${other.toFixed(3)}`);
+  }
+  // 🚀 Boost Buggy: a Toy Track World booster flings it farther
+  {
+    const fling = S => {
+      const r = new ToyRace(null, { sfx() {}, engine() {}, onFinish() {} });
+      r.setup(track("bedroom"), "race", car("buggy"), S, { diff: "normal" }); r.state = "race"; r.count = 0;
+      const k = [...r.T.flag.keys()].find(i => r.T.flag[i] & 4); r.player.speed = 1; r.touch(k); return [r.player.speed, r.boostT];
+    };
+    const [sa, ta] = fling(statsFor(car("buggy"), UPS, {})), [sb, tb] = fling(statsFor(plainOf(car("buggy")), UPS, {}));
+    check("a booster flings the Boost Buggy farther", sa > sb * 1.25 && ta > tb * 1.25, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
+  }
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

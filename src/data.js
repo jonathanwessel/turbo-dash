@@ -34,7 +34,30 @@ export const CARS = [
   { id: "blizzard", name: "Blizzard Wolf", price: null, boss: "fang", world: "glacier", ice: true, body: "#5a6b8a", accent: "#bff6ff", type: "skis", speed: 0.84, accel: 0.72, grip: 0.7 },
   // 🌾 Country Cup prize (v1.0; at the end so every older car keeps its upgrade prices)
   { id: "barnstormer", name: "Barnstormer", price: null, cup: "country", tier: 4, body: "#2fbf3a", accent: "#ffd400", type: "monster", speed: 0.18, accel: 0.22, grip: 0.18 },
+  // 🌟 special cars (v1.19): one per world, earned by doing that world's own thing, each with a power (PERKS below).
+  // tier: upgrade prices like the world's shop car (at the end of the list so older cars keep their prices)
+  { id: "hopper", name: "Moon Hopper", price: null, world: "moon", perk: "hop", earn: { stat: "rings", goal: 500 }, tier: 9, body: "#7dff6a", accent: "#ffffff", type: "rover", speed: 0.44, accel: 0.4, grip: 0.38 },
+  { id: "diver", name: "Deep Diver", price: null, world: "ocean", perk: "steady", earn: { stat: "pearls", goal: 900 }, tier: 15, body: "#ff8a00", accent: "#ffffff", type: "sub", speed: 0.62, accel: 0.52, grip: 0.52 },
+  { id: "snowcat", name: "Snow Cat", price: null, world: "glacier", ice: true, perk: "studs", earn: { stat: "drifts", goal: 120 }, tier: 18, body: "#ff3d3d", accent: "#ffffff", type: "monster", speed: 0.8, accel: 0.68, grip: 0.66 },
+  { id: "buggy", name: "Boost Buggy", price: null, world: "toy", toy: true, perk: "boost", earn: { stat: "loops", goal: 80 }, tier: 20, body: "#2fbf3a", accent: "#ff2bd6", type: "sport", speed: 0.98, accel: 0.84, grip: 0.7 },
 ];
+
+/* 🌟 Special cars' powers (v1.19). The rules are in statsFor (src/stats.js), so the game, the sim and the career run
+   share them. Each one only does something where its world has the thing it changes.
+   - hop: jumps go 35% higher (Moon gaps and ramps)
+   - steady: water currents don't push it sideways (Deep Blue)
+   - studs: it does not slide on ice (Glacier Rink)
+   - boost: boosters fling it 30% farther (Toy Track World) */
+export const PERKS = {
+  hop:    { id: "hop",    icon: "🦘", line: "Jumps extra high!", jump: 1.35 },
+  steady: { id: "steady", icon: "⚓", line: "The water can't push it!" },
+  studs:  { id: "studs",  icon: "🧊", line: "It does not slide on ice!" },
+  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.3 },
+};
+export const perkOf = car => PERKS[car?.perk] || null;
+/* what a special car's earn counter shows: the picture of the thing to collect */
+export const EARN_ICON = { rings: "⭕", pearls: "🦪", drifts: "❄️", loops: "🎢" };
+export const earnHave = (S, car) => Math.min(car.earn.goal, S.stats?.[car.earn.stat] || 0);
 
 /* ⚡🛞💪 Car traits (v1.16): every car is Fast, Grippy or Tough, and each one costs something. The rules are in
    statsFor (src/stats.js), so the game, the race sim and the career run all use the same numbers.
@@ -55,6 +78,7 @@ const TRAIT_OF = {
   sub: "tough", manta: "grippy", kraken: "fast",
   frost: "grippy", polar: "tough", blizzard: "fast",
   toyRacer: "tough", loopLegend: "grippy", windup: "fast",
+  hopper: "tough", diver: "grippy", snowcat: "tough", buggy: "fast",
 };
 for (const c of CARS) c.trait = TRAIT_OF[c.id];
 export const traitOf = car => TRAITS[car?.trait] || null;

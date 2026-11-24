@@ -1,8 +1,8 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS, TRAITS } from "./data.js";
+import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS, TRAITS, perkOf } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance, newClock, resetClock, stepCounter } from "./pace.js";
 import { qualityLadder, QUALITY_CAP } from "./quality.js";
-import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, bossRound, bossLevel, bossSpeed, bossPrize, bossPaintNext, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock } from "./rules.js";
+import { dayKey, chip, museumAdd as logMuseum, grantCar, raceReward, chestValues as rollChests, bossReward, bossRound, bossLevel, bossSpeed, bossPrize, bossPaintNext, trialReward, cupOrder as standings, cupEndReward, rankUp, giftInfo as giftFor, claimGift, treat, claimMission, missionsBonus, missionPay, LAPS, lapToday as lapOf, lapBonus, goodStudentPct, activeBoosts, bonusLeft, keepOpens, seasonUnlock, earnCars } from "./rules.js";
 import { startEmoji, drawEmojiText } from "./emoji.js";
 startEmoji();   // 🎨 the game's own emoji pictures everywhere (see src/emoji.js)
 import { ToyRace } from "./toy/race.js";
@@ -21,7 +21,7 @@ import { initAudio, sfx, engine, engineOff, setAudioOpts, setSong, setWater, set
 import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whenSaveFails, hasBefore, restoreBefore, loadGhost, saveGhost } from "./save.js";
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
-import { carKnown, drawCarOrMystery, createGarage, lookOf } from "./garage.js";
+import { carKnown, drawCarOrMystery, createGarage, lookOf, worldOf } from "./garage.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
@@ -30,6 +30,10 @@ const canvas = $("game");
 let resultT = 0;
 
 load();
+// 🌟 v1.19: a save that already collected enough rings, pearls, drifts or loops gets its special cars on load (the
+// "New car!" card shows when Main Street opens)
+let newCars = earnCars(S, ""), newBack = "s-hub";
+if (newCars.length) save();
 setAudioOpts({ music: S.music, sfx: S.sfx, volume: S.parent.volume });
 
 const POWER_ICON = { shield: "🛡️", coins: "💰", magnet: "🧲", turbo: "⚡" };   // Super Turbo is ⚡ so it never looks like the 🚀 Turbo button
@@ -215,7 +219,7 @@ const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 /* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
    One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
-const NO_RETURN = new Set(["s-rival", "s-traits", "s-bestcar", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+const NO_RETURN = new Set(["s-rival", "s-traits", "s-bestcar", "s-newcar", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
@@ -223,9 +227,10 @@ function show(id) {
   screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
   document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
-  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits", "s-bestcar"].includes(id);
+  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits", "s-bestcar", "s-newcar"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
+  if (id === "s-hub" && newCars.length) setTimeout(() => { if (screen === "s-hub" && newCars.length) openNewCar("s-hub"); }, 500);
   paintUpdate();
 }
 const REOPEN = {
@@ -546,6 +551,7 @@ function showTrialResult(r) {
   const { time, before, oldMedal, medal, record, pay, student } = trialReward(S, t, r, len, raceStartAt || Date.now());
   if (student) setTimeout(() => toast(`📚 School bonus +🪙${student}`), 1200);
   if (record && r.rec) saveGhost(t.id, { t: time, ...r.rec });
+  newCars.push(...earnCars(S, dayKey(new Date())));   // 🌟 v1.19
   save();
   mode = "result"; setRaceUi(false); engineOff();
   paintRivalRow(null); paintFaces(null);   // no rivals in a Time Trial (the card is shared with races)
@@ -722,6 +728,25 @@ function openBestCard(track, car) {
   markTip("best"); bestSpot = track.id; bestPick = car.id; sfx("chest"); show("s-bestcar");
 }
 let bestPick = null;
+/* 🌟 v1.19: "New car!" when a special car is earned. The car, its power as a picture and a few words, and a button
+   that drives it now. Several in a row (an old save that earned more than one) show one after the other. */
+function openNewCar(back) {
+  const car = newCars[0]; if (!car) return; newBack = back || newBack;
+  const pk = perkOf(car), cv = $("nc-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height);
+  const glow = cx.createRadialGradient(120, 126, 6, 120, 126, 112);
+  glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, cv.width, cv.height);
+  drawCar(cx, cv.width / 2, cv.height - 6, cv.width * 0.7, lookOf(car), { t: 0.4 });
+  $("nc-name").textContent = car.name; $("nc-perk").textContent = pk?.icon || ""; $("nc-says").textContent = pk?.line || "";
+  sfx("chest"); confetti(90); show("s-newcar");
+}
+function closeNewCar(drive) {
+  const car = newCars.shift();
+  if (drive && car && S.owned.includes(car.id)) { S.car = car.id; S.world = worldOf(car); save(); }
+  sfx("click");
+  if (newCars.length) openNewCar(); else if (newBack === "s-result") show("s-result"); else goHub();
+}
+$("nc-drive").onclick = () => closeNewCar(true);
+$("nc-ok").onclick = () => closeNewCar(false);
 $("bc-drive").onclick = () => {
   if (bestPick && S.owned.includes(bestPick)) { S.car = bestPick; save(); }
   sfx("click"); bestSpot = bestPick = null; openTracks();
@@ -908,6 +933,7 @@ function showResult(r) {
   paintFaces(faced ? r.standings : null); if (faced) lastMoods = raceMoods(r.standings, RIVALS.length);
   if (!bossRace) countRace(r, currentTrack.id, dayKey(new Date()), unlocked);
   keepOpens(S);
+  newCars.push(...earnCars(S, dayKey(new Date())));   // 🌟 v1.19
   save();
   mode = "result"; setRaceUi(false); engineOff();
   $("r-trophy").textContent = MEDAL[r.place] || "🏁";
@@ -950,6 +976,7 @@ function showResult(r) {
   show("s-result"); refreshCoins();
   sfx(r.place <= 3 ? "win" : "lose");
   if (r.place <= 3) confetti(r.place === 1 ? 160 : 80);
+  if (newCars.length) setTimeout(() => { if (screen === "s-result" && newCars.length) openNewCar("s-result"); }, 900);
 }
 document.querySelectorAll(".chest").forEach(c => c.addEventListener("click", () => {
   if (chestDone) return; chestDone = true;
@@ -1652,7 +1679,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
+if (import.meta.env.DEV) window.__td = { fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, newCar: id => { newCars = [CARS.find(c => c.id === id)]; openNewCar("s-hub"); }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
   // 👑 v1.15 sweep: a boss's intro after `wins` wins, and a boss race's result card (the sweep and probes only)
   bossIntro: (id, wins) => { const b = BOSSES.find(x => x.id === id); if (wins) { S.bosses[id] = wins; if (!S.owned.includes(b.car)) grantCar(S, b.car); } else delete S.bosses[id]; openBossIntro(b); },
   bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id), keep = currentTrack; run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); currentTrack = keep; } };   // the track goes back, so later sweep cards are not on the boss's track

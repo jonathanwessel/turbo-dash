@@ -2,7 +2,7 @@
 // No page and no storage here: every function takes the save (S), changes it, and returns what happened so the
 // screen can show it. The game (src/main.js) and the career simulator (scripts/career.mjs) both use these, so the
 // simulator checks the same rules the game plays by. Numbers live in REWARDS (src/data.js).
-import { REWARDS, UPGRADES, CUP_POINTS, TRACKS, PAINTS, BOSS_ROUNDS, prizeFor, diffOf, starsFor, trialMedal, trialPay, trackOpen, inSeason, GOOD_STUDENT } from "./data.js";
+import { CARS, earnHave, REWARDS, UPGRADES, CUP_POINTS, TRACKS, PAINTS, BOSS_ROUNDS, prizeFor, diffOf, starsFor, trialMedal, trialPay, trackOpen, inSeason, GOOD_STUDENT } from "./data.js";
 
 export const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const coinBoost = S => 1 + REWARDS.coinBoost * (S.research.coinBoost || 0);
@@ -14,6 +14,14 @@ export function museumAdd(S, icon, text, day) { if (!S.museum) return; S.museum.
 export function grantCar(S, id) {
   if (S.owned.includes(id)) return false;
   S.owned.push(id); S.ups[id] ||= Object.fromEntries(UPGRADES.map(u => [u.id, 0])); return true;
+}
+/* 🌟 special cars (v1.19): a car with `earn` joins the garage once its world's counter (rings, pearls, drifts,
+   loops) reaches the goal. Called after every race and when a save loads, so an old save that already collected
+   enough gets the car too. Returns the cars newly earned. */
+export function earnCars(S, day) {
+  const got = [];
+  for (const c of CARS) if (c.earn && earnHave(S, c) >= c.earn.goal && grantCar(S, c.id)) { got.push(c); museumAdd(S, "🚗", `Earned the ${c.name}`, day); }
+  return got;
 }
 export function addRaceStats(S, r) {
   const st = S.stats, rs = r.stats || {};

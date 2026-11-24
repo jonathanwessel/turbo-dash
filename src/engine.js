@@ -380,7 +380,7 @@ export class Race {
     const steerDx = dt * 2.2 * Math.max(sp, 0.35 + 0.65 * sp);   // a floor when slow; unchanged at speed (curves need it)
     const lat = this.steerIn * steerDx * (auto ? 1 : S.handling) * (flying ? ph.air * (S.airCtl || 1) : 1);
     const help = this.assist;   // 0 none, 1 a little, 2 lots
-    if (ph.ice && !auto && !flying && dt > 0) {
+    if (ph.ice && !auto && !flying && dt > 0 && (S.studs || 0) < 1) {   // 🧊 Snow Cat (studs 1, v1.19): no slide at all
       // ❄️ on ice the car keeps sliding: steering changes where you're GOING, not where you are.
       // Snow Chains (and the steering helper) make the tires bite sooner.
       const bite = Math.min(1, dt * (3 + 9 * Math.min(1, (S.studs || 0) + 0.15 * help)));
