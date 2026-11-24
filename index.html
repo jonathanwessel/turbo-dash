@@ -320,11 +320,11 @@
 
   <section id="s-preview" class="screen dim" hidden>
     <div class="card boss-card preview-card">
-      <h1 id="pv-name">Take a peek!</h1>
-      <div class="boss-says" id="pv-says">One lap in the Moon Rover. No coins or prizes in a preview.</div>
+      <h1 id="pv-name" data-say>Take a peek!</h1>
+      <div class="boss-says" id="pv-says" data-say>One lap in the Moon Rover. No coins or prizes in a preview.</div>
       <div class="pv-row"><button id="pv-prev" class="arrow" aria-label="Previous world">◀</button><canvas id="pv-car" width="320" height="170"></canvas><button id="pv-next" class="arrow" aria-label="Next world">▶</button></div>
-      <div class="gift-day" id="pv-info"></div>
-      <div class="row"><button id="pv-go" class="big-btn go">Preview lap</button><button id="pv-back" class="big-btn small">Not yet</button></div>
+      <div class="gift-day" id="pv-info" data-say></div>
+      <div class="row"><button id="pv-go" class="big-btn go">Preview lap</button><button id="pv-back" class="big-btn small">Not yet</button><button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button></div>
     </div>
   </section>
 
@@ -340,40 +340,40 @@
   <section id="s-boss" class="screen dim" hidden>
     <div class="card boss-card">
       <div class="boss-face" id="bi-face">🦏</div>
-      <h1 id="bi-name">Big Bruno</h1>
-      <div class="boss-says" id="bi-says">"Nobody beats Big Bruno!"</div>
+      <h1 id="bi-name" data-say>Big Bruno</h1>
+      <div class="boss-says" id="bi-says" data-say>"Nobody beats Big Bruno!"</div>
       <canvas id="bi-car" width="320" height="170"></canvas>
-      <div class="gift-day" id="bi-info"></div>
-      <div class="row"><button id="bi-go" class="big-btn go">🏁 Race the boss!</button><button id="bi-back" class="big-btn small">Not yet</button></div>
+      <div class="gift-day" id="bi-info" data-say></div>
+      <div class="row"><button id="bi-go" class="big-btn go">🏁 Race the boss!</button><button id="bi-back" class="big-btn small">Not yet</button><button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button></div>
     </div>
   </section>
 
   <section id="s-rival" class="screen dim" hidden>
     <div class="card boss-card rival-card">
-      <h1>🎯 Rival of the week</h1>
+      <h1 data-say>🎯 Rival of the week</h1>
       <canvas id="rw-car" width="320" height="170"></canvas>
-      <div class="gift-day" id="rw-name">Rosie</div>
-      <div class="boss-says" id="rw-says"></div>
+      <div class="gift-day" id="rw-name" data-say>Rosie</div>
+      <div class="boss-says" id="rw-says" data-say></div>
       <div class="rw-pips big" id="rw-pips"></div>
-      <div class="rw-info" id="rw-info"></div>
-      <div class="row"><button id="rw-ok" class="big-btn go">OK!</button></div>
+      <div class="rw-info" id="rw-info" data-say></div>
+      <div class="row"><button id="rw-ok" class="big-btn go">OK!</button><button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button></div>
     </div>
   </section>
 
   <section id="s-traits" class="screen dim" hidden>
     <div class="card boss-card traits-card">
-      <h1>Every car is different!</h1>
+      <h1 data-say>Every car is different!</h1>
       <div class="tr-rows" id="tr-rows"></div>
-      <div class="row"><button id="tr-ok" class="big-btn go">OK!</button></div>
+      <div class="row"><button id="tr-ok" class="big-btn go">OK!</button><button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button></div>
     </div>
   </section>
 
   <section id="s-bestcar" class="screen dim" hidden>
     <div class="card boss-card bestcar-card">
-      <h1>Best car here!</h1>
+      <h1 data-say>Best car here!</h1>
       <div class="bc-pic"><span class="bc-track" id="bc-track"></span><canvas id="bc-car" width="240" height="140"></canvas></div>
-      <p class="bc-says" id="bc-says"></p>
-      <div class="row"><button id="bc-drive" class="big-btn go">🚗 Drive it!</button><button id="bc-ok" class="big-btn small">OK</button></div>
+      <p class="bc-says" id="bc-says" data-say></p>
+      <div class="row"><button id="bc-drive" class="big-btn go">🚗 Drive it!</button><button id="bc-ok" class="big-btn small">OK</button><button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button></div>
     </div>
   </section>
 

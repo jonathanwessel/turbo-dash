@@ -1288,3 +1288,12 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* v1.17 (v1.15.1 review leftover): the track, cup, boss and trial lists showed a wide gray scrollbar in desktop
    browsers. A thin one in the game's colors instead (the cards still scroll by touch, wheel and drag) */
 .track-list { scrollbar-width: thin; scrollbar-color: rgba(255,212,0,.7) rgba(0,0,0,.25); }
+/* 🔊 v1.18 read aloud: a round speaker sign at the end of a picture card's buttons (only with a voice on the
+   device). While it talks it pulses; a second tap stops it. */
+.say { flex: 0 0 auto; align-self: center; width: 52px; height: 52px; padding: 0; border-radius: 50%; border: 3px solid var(--ink); background: #ffd400; box-shadow: 0 5px 0 var(--ink);
+  font-size: 26px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.say[hidden] { display: none; }
+.say:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.say.on { animation: sayon 0.9s ease-in-out infinite; }
+@keyframes sayon { 0%, 100% { box-shadow: 0 5px 0 var(--ink), 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 5px 0 var(--ink), 0 0 0 9px rgba(255,255,255,.7); } }
+@media (max-height: 430px) and (orientation: landscape) { .say { width: 44px; height: 44px; font-size: 22px; } }

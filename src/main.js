@@ -13,6 +13,7 @@ import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
 import { unseen } from "./news.js";
+import { startSay, stopSay, fakeVoice } from "./speak.js";
 import { raceMoods, gridMoods, faceRow, drawFace } from "./faces.js";
 import { HORN } from "./horn.js";
 import { weekRival, weekRivalRace, weekRivalResult, weekRivalOpen, weekCardDue, weekCardSeen, WEEK_RIVAL, drawTargetBadge } from "./rival-week.js";
@@ -218,6 +219,7 @@ const NO_RETURN = new Set(["s-rival", "s-traits", "s-bestcar", "s-result", "s-ra
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
+  stopSay();   // 🔊 leaving a card (or painting it again, as the preview's ◀ ▶ do) stops its voice
   screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
   document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
@@ -1260,7 +1262,7 @@ function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits"))
 let traitSpot = false;
 function openTraits(car, first = false) {
   // each sentence on its own line (a lone word wrapped onto a line by itself in the picture review)
-  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small>${x}</small>`).join("")}</div></div>`).join("");
+  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b data-say>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small data-say>${x}</small>`).join("")}</div></div>`).join("");
   for (const row of $("tr-rows").querySelectorAll(".tr-row")) {
     const id = row.dataset.trait, c = car && car.trait === id && carKnown(car) ? car : CARS.find(x => x.id === TRAIT_CARS[id]);
     const cx = row.querySelector("canvas").getContext("2d"), glow = cx.createRadialGradient(80, 84, 4, 80, 84, 74);
@@ -1484,7 +1486,8 @@ $("btn-auto").onclick = () => {
 $("btn-resume").onclick = () => { sfx("click"); paused = false; show(null); };
 $("btn-quit").onclick = () => { sfx("click"); run = RACE(); menuDemo(); show("s-hub"); };
 // coming back to the game: draw the paused race again (a phone may have dropped the canvas while it was hidden)
-document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); else pauseDrawn = false; });
+document.addEventListener("visibilitychange", () => { if (document.hidden) { pause(); stopSay(); } else pauseDrawn = false; });
+startSay();   // 🔊 the speaker button on picture cards (src/speak.js), only with a voice on the device
 
 /* ---------- parent corner: tap the version label 5 times ---------- */
 let verTaps = [];
@@ -1649,7 +1652,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
+if (import.meta.env.DEV) window.__td = { fakeVoice, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
   // 👑 v1.15 sweep: a boss's intro after `wins` wins, and a boss race's result card (the sweep and probes only)
   bossIntro: (id, wins) => { const b = BOSSES.find(x => x.id === id); if (wins) { S.bosses[id] = wins; if (!S.owned.includes(b.car)) grantCar(S, b.car); } else delete S.bosses[id]; openBossIntro(b); },
   bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id), keep = currentTrack; run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); currentTrack = keep; } };   // the track goes back, so later sweep cards are not on the boss's track
