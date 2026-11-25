@@ -460,7 +460,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
     const [a, b] = withPerk(id, f); check(`${id}: ${f} is its power`, a > b, `${a} vs ${b} without the power`);
   }
   // the other stats are the same with or without the power
-  { const a = statsFor(car("hopper"), UPS, {}), b = statsFor(plainOf(car("hopper")), UPS, {}); check("a power changes nothing else", Object.keys(a).filter(k => a[k] !== b[k]).join() === "jump", Object.keys(a).filter(k => a[k] !== b[k]).join()); }
+  { const a = statsFor(car("hopper"), UPS, {}), b = statsFor(plainOf(car("hopper")), UPS, {}); check("a power changes nothing else", Object.keys(a).filter(k => a[k] !== b[k]).join() === "jump,spring",Object.keys(a).filter(k => a[k] !== b[k]).join()); }
   const sceneWith = (trackId, S, from) => { const r = scene(trackId, { from }); r.stats = S; r.player.speed = S.maxSpeed; return r; };
   // 🦘 Moon Hopper: jumps higher off a Moon ramp
   {
@@ -493,6 +493,37 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
     const [sa, ta] = fling(statsFor(car("buggy"), UPS, {})), [sb, tb] = fling(statsFor(plainOf(car("buggy")), UPS, {}));
     check("a booster flings the Boost Buggy farther", sa > sb * 1.04 && ta > tb * 1.04, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
   }
+  /* v1.23: each power helps at home, as a push on top of any boost (KICK), because Turbo and boosts already run most
+     of a fully upgraded race. Each check fails on the v1.22 engine. */
+  const { KICK } = await import("../src/engine.js");
+  const capOf = r => r.stats.maxSpeed * 1.25 * r.home * r.phys.top;   // the top speed with a boost on
+  // 🦘 Moon Hopper: a Moon landing springs it ahead, past a boosted car's top speed. Not on Earth.
+  {
+    const landing = (trackId, S) => {
+      const r = sceneWith(trackId, S, 0), p = r.player; p.air = 1; p.vy = -100; p.airT = 1; r.land();
+      const kick = r.kickT; let fastest = 0; run(r, 0.8, q => { fastest = Math.max(fastest, q.player.speed / capOf(q)); });
+      return { kick, fastest, boing: r.popups.some(q => q.text === "BOING!") };
+    };
+    const hop = landing("crater", statsFor(car("hopper"), UPS, {})), plain = landing("crater", statsFor(plainOf(car("hopper")), UPS, {})), earth = landing("sunny", statsFor(car("hopper"), UPS, {}));
+    check("a Moon landing springs the Moon Hopper ahead", hop.kick === PERKS.hop.spring && hop.fastest > 1.05 && hop.boing && plain.kick <= 0 && plain.fastest < 1.01,
+      `kick ${hop.kick} vs ${plain.kick}, fastest ${hop.fastest.toFixed(3)} vs ${plain.fastest.toFixed(3)} of the boosted top`);
+    check("the Hopper's spring is a Moon power only", earth.kick <= 0, `kick on Earth ${earth.kick}`);
+  }
+  // ⚓ Deep Diver: a current carries it forward
+  {
+    const T = buildTrack(track("kelp")), k = T.segs.findIndex((s, i) => i > 30 && T.segs.slice(i, i + 40).every(q => q.current));
+    const ahead = S => { const r = sceneWith("kelp", S, (k + 1) * SEG - (15 * SEG + SEG * 0.5)); const d0 = r.player.dist; let surf = false; run(r, 1.2, q => { surf = surf || q.popups.some(u => u.text === "SURF!"); }); return { d: r.player.dist - d0, surf }; };
+    const S = statsFor(car("diver"), UPS, {}), a = ahead(S), b = ahead({ ...S, ride: 0 });
+    check("a current carries the Deep Diver forward", k > 0 && a.d > b.d * 1.05 && a.surf && !b.surf, `${Math.round(a.d)} vs ${Math.round(b.d)} in 1.2 s (current at segment ${k})`);
+  }
+  // 🧊 Snow Cat: a snowbank does not slow it, it kicks it ahead
+  {
+    const T = buildTrack(track("icecave")), s = T.segs.find((q, i) => i > 30 && q.snow != null);
+    const hit = S => { const r = sceneWith("icecave", S, 0), p = r.player; p.offset = s.snow; const v = p.speed; r.touch(r.T.segs[s.index]); return { keep: p.speed / v, kick: r.kickT }; };
+    const cat = hit(statsFor(car("snowcat"), UPS, {})), other = hit(statsFor(plainOf(car("snowcat")), UPS, {}));
+    check("the Snow Cat smashes a snowbank and zooms", s && cat.keep === 1 && cat.kick === PERKS.studs.smash && other.keep < 0.95 && other.kick <= 0, `keeps ${cat.keep.toFixed(2)} vs ${other.keep.toFixed(2)} of its speed, kick ${cat.kick} vs ${other.kick}`);
+  }
+  check("the kick is a real push", KICK > 0.05 && KICK < 0.3, `KICK ${KICK}`);
 }
 
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);

@@ -1303,6 +1303,8 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .bc-pic canvas { width: clamp(150px, 34vmin, 240px); height: auto; aspect-ratio: 240 / 140; }
 .bc-track { font-size: clamp(44px, 12vmin, 76px); line-height: 1.2; }
 .bc-says { font-weight: 800; font-size: clamp(16px, 4vmin, 22px); line-height: 1.25; margin: 4px 0 10px; }
+.bc-now { white-space: nowrap; }   /* v1.23: "than", the slower car's picture and its name, never split */
+.bc-now canvas { width: 2.8em; height: auto; aspect-ratio: 96 / 56; vertical-align: middle; margin: 0 0.15em; }
 @media (max-height: 430px) and (orientation: landscape) { .bc-pic canvas { width: 130px; } .bc-track { font-size: 40px; } .bestcar-card h1 { margin-bottom: 2px; } }
 .track-card .tc-car.spot { animation: bspot 0.8s ease-in-out 4; }
 @keyframes bspot { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 0 10px rgba(255,255,255,.8); } }

@@ -29,6 +29,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const HILL = BASE_MAX * 0.12;                                       // how much hills speed you up / slow you down
 const slopeOf = s => (s.p2.world.y - s.p1.world.y) / SEG;            // rise per distance along the road
 const jumpFor = speed => 0.8 + 0.2 * Math.min(1.5, speed / BASE_MAX);   // jump strength: 1.0 at a starter's top speed
+export const KICK = 0.15;   // 🌟 a special car's kick (v1.23): this much more top speed for a moment, on top of any boost
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeIn = (a, b, p) => a + (b - a) * p * p;
 const easeInOut = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
@@ -227,6 +228,7 @@ export class Race {
     this.player = { isPlayer: true, def: car, speed: mode === "demo" ? BASE_MAX * 0.7 : 0, finished: false, air: 0, vy: 0, airT: 0, slideV: 0, draftT: 0, landT: 0, landV: 0, ...slot(5) };
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false; this.quality = this.quality || 3;
+    this.kickT = 0; this.riding = false;   // 🌟 special car powers (v1.23)
     this.driftT = 0; this.wildT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centered on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     this.luck = seededRng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks, boss Turbo timing, puddle shoves (v1.11)
@@ -364,8 +366,16 @@ export class Race {
     const draft = this.drafting && !auto && !fast;
     // Downtown: like the rivals, the car eases off for a city-block corner (there's no brake pedal)
     const corner = this.track.layout === "blocks" && !auto && (Math.abs(seg.curve) > BLOCK_CURVE * 0.5 || Math.abs(this.segAt(p.dist + 5 * SEG).curve) > BLOCK_CURVE * 0.5);
-    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (corner ? 0.86 : 1) * this.home * (draft ? 1.06 : 1)) * ph.top;
-    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * this.home * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast ? 3 : draft ? 1.3 : 1) * dt);
+    // 🌟 special car powers (v1.23): a push on top of any boost. ⚓ Deep Diver: a current carries it forward (floating
+    // too, it is under water). 🦘 Moon Hopper and 🧊 Snow Cat: a short kick (kickT) after a Moon landing or a smashed
+    // snowbank. Turbo and boosts already run most of a fully upgraded race, so a power that only adds boost time is
+    // worth almost nothing (measured in v1.23), and this one stacks with them.
+    const ride = !auto && seg.current && S.ride ? S.ride : 0;
+    if (ride && !this.riding && racing) this.popup("SURF!", "#9fe8ff");
+    this.riding = !!ride; this.kickT -= dt;
+    const push = 1 + ride + (this.kickT > 0 && !auto ? KICK : 0);
+    const top = (auto ? BASE_MAX * (p.finished ? 0.5 : 0.75) : S.maxSpeed * (fast ? 1.25 : 1) * (corner ? 0.86 : 1) * this.home * (draft ? 1.06 : 1) * push) * ph.top;
+    if (p.speed < top) p.speed = Math.min(top, p.speed + S.accel * this.home * ph.accel * (ph.water ? S.propel || 1 : 1) * (ph.ice ? S.warm || 1 : 1) * (fast || push > 1 ? 3 : draft ? 1.3 : 1) * dt);
     else p.speed = Math.max(top, p.speed - BASE_MAX * 0.6 * dt);
     const flying = p.air > 0;
     // hills: rolling downhill speeds you up a little, climbing slows you a little (rivals feel it too)
@@ -577,9 +587,11 @@ export class Race {
     }
     if (s.snow != null && p.air < 150 && this.snowHit !== s.index + ":" + Math.floor(p.dist / this.T.length) && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
       this.snowHit = s.index + ":" + Math.floor(p.dist / this.T.length);
-      if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(Math.min(0.9, 0.62 + (S.plow || 0)), S);
+      // 🧊 Snow Cat (v1.23): it smashes right through a snowbank and keeps its speed
+      if (S.smash) { this.kickT = Math.max(this.kickT, S.smash); this.hooks.sfx("boost"); }
+      else if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(Math.min(0.9, 0.62 + (S.plow || 0)), S);
       for (let k = 0; k < 18; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.9, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.4, life: 0.7, c: "#ffffff", r: 0.008 + Math.random() * 0.012 });
-      this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup("POOF!", "#ffffff");
+      this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup(S.smash ? "SMASH!" : "POOF!", "#ffffff");
     }
     for (const c of s.coins) {
       if (c.pearl) {
@@ -643,8 +655,11 @@ export class Race {
     if (this.state === "demo" || p.finished) return;
     this.hooks.sfx("land"); this.shake = Math.max(this.shake, 0.15);
     if (p.airT > 0.35 && !p.finished) {
-      this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); this.nitro = Math.min(1, this.nitro + 0.1);
-      this.popup(["STUNT!", "AIR TIME!", "WHOOSH!", "AWESOME!"][Math.floor(Math.random() * 4)], "#5be36a");
+      // 🦘 Moon Hopper (v1.23): on the Moon its springs bounce it ahead when it lands, a longer boost
+      const spring = this.phys.gaps ? this.stats.spring || 0 : 0;
+      this.coins += 3; this.runStats.stunts++; this.boostT = Math.max(this.boostT, 0.9); if (spring) this.kickT = spring; this.nitro = Math.min(1, this.nitro + 0.1);
+      if (spring) { this.popup("BOING!", "#7dff6a"); this.hooks.sfx("boost"); }
+      else this.popup(["STUNT!", "AIR TIME!", "WHOOSH!", "AWESOME!"][Math.floor(Math.random() * 4)], "#5be36a");
     }
   }
 

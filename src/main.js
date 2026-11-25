@@ -755,7 +755,10 @@ function openBestCard(track, car) {
   glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, cv.width, cv.height);
   drawCar(cx, cv.width / 2, cv.height - 6, cv.width * 0.7, lookOf(car), { t: 0.4 });
   const now = CARS.find(c => c.id === S.car) || CARS[0];
-  $("bc-says").textContent = `${car.name} is faster here than ${now.name}.`;   // the last two words stay together, so a name never sits alone on a line
+  // v1.23: the car being driven is a small picture beside its name, so a child who can't read the name still sees
+  // which car is slower (from the v1.21.0 picture review). "than", the picture and the name stay together on one line.
+  $("bc-says").innerHTML = `${car.name} is faster here <span class="bc-now">than <canvas width="96" height="56"></canvas> ${now.name}.</span>`;
+  { const nc = $("bc-says").querySelector("canvas"); drawCar(nc.getContext("2d"), nc.width / 2, nc.height - 3, nc.width * 0.78, lookOf(now), { t: 0, noShadow: true }); }
   markTip("best"); bestSpot = track.id; bestPick = car.id; sfx("chest"); show("s-bestcar");
 }
 let bestPick = null;

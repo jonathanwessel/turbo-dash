@@ -682,6 +682,10 @@ every test green.
   effect where its world has the thing it changes (for example rings collected in the air count double for the
   Hopper, or a current pushes it forward instead of sideways), measure it with the probe, and keep the end-game
   spread (no car the best on more than a third of the tracks).
+  Stopped at (v1.23.0 run, step commit): the powers are built and measured (Hopper 3.0%, Diver 2.9%, Snow Cat 3.2%,
+  Buggy 3.4% with `scripts/probes/perk.mjs`), with 5 physics checks seen red on the v1.22 engine. `npm test`, the
+  start, rival and boss sims and the end-game probe pass. Left: the career run, the bots, `sim -- best`, the sweep,
+  the picture review and the release.
 - [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
   Notes (v1.20.0, progress): the bots part passes (+1% at Rank 40, gated in `npm run check`). The car part does not:

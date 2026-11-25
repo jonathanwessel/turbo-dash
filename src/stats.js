@@ -18,14 +18,17 @@ export function statsFor(car, u, lab = {}) {
     startNitro: 0.13 * L("headStart"),
     bumper: 0.04 * L("bumper"),
     jump: (1 + 0.08 * L("bigRamps")) * (P.jump || 1),   // 🦘 hop
+    spring: P.spring || 0,                 // 🦘 hop (v1.23): a Moon landing springs it ahead (extra boost seconds)
     airCtl: 1 + 0.15 * L("thrusters"),
     ringReach: 0.12 * L("ringMagnet"),
     propel: 1 + 0.08 * L("propellers"),   // underwater: speed up faster
     fins: perk === "steady" ? 1 : 0.12 * L("fins"),   // ⚓ steady: currents can't push it
-    pearlReach: 0.1 * L("pearlDiver"),
+    ride: P.ride || 0,                     // ⚓ steady (v1.23): a current carries it forward (share of top speed)
+    pearlReach:0.1 * L("pearlDiver"),
     studs: perk === "studs" ? 1 : 0.1 * L("snowChains"),   // ice: slide less (🧊 studs: not at all)
     driftPow: 1 + 0.12 * L("driftMaster"), // ice: bigger drift boosts
     plow: 0.06 * L("snowplow"),            // ice: snowbanks slow you less
+    smash: P.smash || 0,                   // 🧊 studs (v1.23): smashing a snowbank boosts it (boost seconds)
     warm: 1 + 0.08 * L("warmEngine"),      // ice: speed up faster
     loopGrip: 0.06 * L("loopGrip"),        // toy: stay on loops at lower speed
     boosterTune: (1 + 0.05 * L("boosterTune")) * (P.booster || 1), // toy: boosters fling you farther (🚀 boost)
