@@ -59,6 +59,12 @@ window.__audit = (rootSel) => {
   }
   // v1.18: with a voice on the device, every picture card that explains something shows its speaker
   if (window.__td?.canSay?.()) for (const b of root.querySelectorAll("[data-say-btn]")) if (vis(b.closest(".card")) && !vis(b)) issues.push("NO SPEAKER on " + name(b.closest(".card")));
+  // v1.20: a panel that scrolls up and down must not also scroll sideways (three world chips in the Garage were 4 px
+  // wider than a 360 px phone, and a sideways bar showed). Lists that scroll sideways on purpose have overflow-y hidden.
+  for (const a of [root, ...root.querySelectorAll("*")]) {
+    const s = getComputedStyle(a);
+    if (/(auto|scroll)/.test(s.overflowY) && !/(hidden|clip)/.test(s.overflowX) && a.scrollWidth > a.clientWidth + 1 && vis(a)) issues.push(`SCROLLS SIDEWAYS ${name(a)} (${a.scrollWidth} in ${a.clientWidth})`);
+  }
   const BAD =/\b(null|undefined|NaN|Infinity)\b|\[object/;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) if (/\p{Emoji_Presentation}|\uFE0F|\u20E3/u.test(n.textContent) && n.parentElement && vis(n.parentElement)) issues.push("DEVICE EMOJI (not the game's own picture) in " + name(n.parentElement) + " → " + n.textContent.trim().slice(0, 30));

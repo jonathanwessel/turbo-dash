@@ -375,6 +375,14 @@ longer boosters. A New car card shows when one is won, and the Garage counts wha
   Measure how fast the counter really grows in the career run, then set the goal from that. The same for a power:
   the Boost Buggy's first booster power won races by 9% until a race-by-race measurement showed it.
 
+### v1.20.0 ◀ Back button and car counters (shipped)
+The Android back button closes cards, goes back a screen and pauses races, and Main Street asks "Stop playing?"
+first. Each world's track list shows its special car's counter. Strategy bots (speed, grip, coins, Auto Steer) join
+the release check.
+- Lesson: four very different bots reach Rank 40 within 1% of each other, because by then every bot owns every
+  upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
+  end-game garage (one car is best everywhere).
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.

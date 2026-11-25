@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.20.0 — Back button and car counters ◀
+
+- **◀ The Android back button works.** The phone's back gesture or button now does what the screen's own way back
+  does: it closes the open card, goes back one screen, closes the Lab sheet, or pauses a race. On Main Street it
+  asks first, on a new 👋 **Stop playing?** card with **🏁 Play** and **👋 Stop**. A second back there (or on the
+  title screen) leaves the game the phone's way. Before this, back left the game from any screen.
+- **🌟 The special car's counter on the track list.** In the Moon, Deep Blue, Glacier Rink and Toy Track World track
+  lists, a chip shows the world's special car still to win (its mystery shape) and how many are collected, such as
+  "⭕ 137 / 500". A tap opens the Garage on that car. It uses the Garage's own counter words.
+- Polish: the Stop playing? card and the counter chip are the new things to see, the back button is the new thing
+  to use.
+- **🤖 Strategy bots (for the grown-ups).** `npm run bots` plays the whole career four more ways, 3 seeds each: speed
+  first, grip first, coins first and Auto Steer first (that one lets the car steer itself from Auto Steer level 20).
+  It is now a step of `npm run check` and fails when a way of playing reaches Rank 10, 20, 30 or 40 more than 25%
+  later than the best one. On this release they are 21%, 4%, 1% and 1% apart, so every way of playing works. It
+  also prints which cars did the racing and what was bought. A trap bot that only drives Zippy turned it red.
+- **Fix:** on a short landscape phone (740x360) the boss tab's card squeezed the boss's name into the big face, and
+  the round into the prize, once the rival of the week's chip took a second row. The short-screen size for the big
+  picture now covers the boss face too (the boss card's own size rule had outranked it). Older than this release,
+  found when the sweep's new Moon step left the rival card seen, so the boss tab was measured with the chip showing.
+- **Fix:** on an upright 360 px phone, the Word Lap's three answer words ("carrot parrot carpet") were cut off at
+  both sides. They wrap onto two rows now. And the Garage scrolled sideways by a few pixels when three or more world
+  chips showed. The chips wrap now too. Both were older than this release. A new sweep check (a panel that scrolls up
+  and down must not scroll sideways) found them, after the picture review spotted a sideways bar in the Garage. It
+  was seen failing on purpose first.
+- Found by the same work: fully upgraded, Wind-Up Rocket is the fastest car on all 32 tracks, so the end-game
+  garage has one car. That is a new box in the plan. Nothing about cars or prizes changed in this release.
+- Checks: `scripts/test-back.mjs` (every screen's back press) and a new check in `scripts/test-earn.mjs` (the chip and
+  the Garage agree) are in `npm test`, both seen failing on purpose first. The sweep shoots the Moon track list with
+  the chip and the Garage it opens, and the Stop playing? card. Not checked on a real tablet.
+
 ## v1.19.0 — Special cars 🌟
 
 - **🌟 Four special cars, one in each world.** They are never sold. They are won by playing in their world:

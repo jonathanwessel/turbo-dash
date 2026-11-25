@@ -49,8 +49,8 @@ Turbo Dash's own rules on top, and they win where the two disagree.
 ## Release checklist (every release; stop and fix on any failure)
 1. `npm run check` passes: `npm test`, the drawing budget (`npm run perf`), the picture guard
    (`npm run guard`), the sim gates (`npm run sim -- start`, `rival`, `boss`, `best`), the whole career run
-   (`npm run career`), the install test and the update test, stopping at the first failure. It takes about 5
-   minutes. A picture guard failure is looked at in `.guard/` (the new picture and a pink diff): accept it
+   (`npm run career`), the strategy bots (`npm run bots`, v1.20.0), the install test and the update test, stopping
+   at the first failure. It takes about 7 minutes. A picture guard failure is looked at in `.guard/` (the new picture and a pink diff): accept it
    (`npm run guard -- --accept`, and say so in the changelog) only when the race picture changed on purpose. Re-record the drawing budget (`npm run perf -- --write`) only when the picture gained
    something on purpose, and say so in the changelog. Run the full sim for any track, car or physics you changed.
    Write the day of Rank 40 and of each world opening (the career run's last line) in the notes. A change to car
@@ -202,7 +202,19 @@ every test green.
   is now by what is on screen (the v1.17.0 rule). Proved red: with the coins hidden in `view.js` the guard fails
   (0.53% changed, worst block 100%); put back, two runs give 0.00%. `scripts/guard/toy.png` is this machine's
   SwiftShader picture. Still to do: the screens (Garage on the Rank 16 save first).
-- [ ] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
+- [x] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
+  Notes: v1.20.0. `src/backkey.js` decides what a back press does, so `scripts/test-back.mjs` (in `npm test`) checks
+  every one of the screens in index.html without a browser: a card taps its own button (OK, Not yet, Collect, the
+  result card's 🏠 once the gift is picked), the Lab sheet and the Toy World level-up card close first, a race pauses,
+  a menu screen does what its ◀ does, and the break and update screens wait. Main Street shows a new picture card,
+  👋 "Stop playing?" with **🏁 Play** and **👋 Stop** (and the 🔊 speaker). In `main.js` one extra history step is kept
+  while a screen catches back, and popstate runs the rule. Decision: the title screen and the Stop playing? card leave
+  back free, so a second back there leaves the game the phone's own way, and nothing is ever lost (the save is
+  already written). Stop tries `window.close()` and else shows the title screen. Seen red: a wrong button id and a
+  Main Street that does not ask each fail the test. Proved in headless Edge with a real `history.back()`
+  (`scripts/probes/back.js`): Main Street to Stop playing?, Play back to Main Street, the track list and the Garage
+  back to Main Street, the Lab sheet closed first, a race paused. Not checked on a real Android tablet: the back
+  gesture there, and whether Stop closes the installed app or shows the title screen, need the owner's eyes.
 - [x] **Target:** with one boost pad's drawing removed on purpose, `npm run check` plus the picture guard is
   red. Put it back and it is green.
   Notes: passed in v1.17.0. With the boost pad drawing switched off in `drawRoad`, the guard failed on all four
@@ -425,6 +437,16 @@ every test green.
   rival and preview cards run edge to edge and the preview arrows touch the screen's edge.
   Added in v1.19.0: the special car's counter ("⭕ 137 / 500") only shows in the Garage. Show it where the child
   collects (for example a small ⭕ counter with the car's dark shape on the world's track list or the result card).
+  Done in v1.20.0: a chip on each world's track list with the car's mystery shape and its counter (`earnLine`, the
+  same words as the Garage, a test says so), and a tap opens the Garage on that car.
+  From the v1.20.0 picture review (all older than v1.20.0 unless said): the Garage on a mystery car shows the four
+  upgrade cards with padlocks and prices the player could pay, so a tap seems to do nothing (hide them or show one
+  big padlock); "This car is still a mystery!" is pale pink and easy to miss; at 740x360 the button under the bars
+  ("✓ Driving", or the counter on a mystery car) is cut by the screen's bottom edge; Garage labels ("Go faster", the
+  13/13 and 0/4 counts, Speed, Power, Turning, Turbo) are about 10 to 11 px at 740x360 and 1024x600; "137 / 500" is
+  a big number for a young child (a bar that fills toward the car may read better, on the chip too, new in v1.20.0);
+  the rival chip and the counter chip both use circles and look alike side by side (new in v1.20.0); on the boss card
+  the crowns do not show how many rounds are left. Fixed in v1.20.0: the Garage's sideways scroll at 360 px.
   From the v1.19.0 picture review (older than v1.19.0 unless said): on the All cars grid a price the player can't
   pay yet is white, not red ("have / need, red when short"); "Deep Blue, Rank 25" under a far world's car reads like
   a manual; the ⭕ counter picture is red while the Moon's boost rings are blue (new in v1.19.0); the home and power
@@ -550,9 +572,39 @@ every test green.
   day 555 (Moon 107, Ocean 185, Glacier 286, Toy 417), within 3% of v1.18.0's 543; Hopper day 118, Diver 197, Snow Cat
   295, Buggy 423; Best picks the fastest car 775 of 800 times, at worst 2.4% slower; the voice was NOT heard (no sound
   output on this machine). Live install test ok. Not checked on a real tablet.
-- [ ] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.
+- [x] **Strategy bots.** Speed first, grip first, coins first and Auto Steer, each over several seeds.
+  Notes: v1.20.0. `CAREER_BOT` and `CAREER_SEED` in `scripts/career.mjs` (the default "kid" bot, the release gate's,
+  plays exactly as before; `Math.random` is seeded with the physics `rng` when a seed is given). speed: Engine and
+  Turbo first, Head Start, Turbo Tanks and Pit Crew first in the Lab, and it drives the fastest car it owns on each
+  track by the game's own Best rule (`bestCar`, so not by a raw `speed` field). grip: Tires first, Bumper Shield first,
+  and its best Grippy car unless another is more than 5% faster there. coins: Magnet first, Coin Boost, Lucky Gifts,
+  Magnet Field and Pit Crew first. auto: the Robot Brain chain and Auto Steer before anything else, and from Auto Steer
+  level 20 it stops steering and only taps Turbo and power-ups (the idle player). Decision: the world kits stay at the
+  front of every Lab order, so no strategy walls a world off. `npm run bots` (`scripts/bots.mjs`, a step of
+  `npm run check`, about 3 minutes) plays 3 seeds of each plus the kid bot side by side and fails when a strategy's
+  average day for Rank 10, 20, 30 or 40 is more than 25% after the best strategy's, or any run is stuck. It also
+  prints what did the work: races per car and upgrades bought. Seen red: a trap "speed" bot that only drives Zippy
+  never reaches the cap and fails all four milestones. Numbers (3 seeds, average day): Rank 10 speed 31, grip 30,
+  coins 33, auto 27; Rank 20 90, 89, 92, 89; Rank 30 271, 271, 271, 269; Rank 40 554, 557, 554, 552 (kid 554). The
+  slowest is behind the best by 21% at Rank 10, 4% at Rank 20, 1% at Rank 30 and 1% at Rank 40. What it shows: by
+  Rank 40 every bot has bought every upgrade on every car (145 of each), so the order of spending only matters early,
+  and the late game is paced by the rank gauges and Lab timers, not by coins. Blizzard Wolf, Champion X and Wind-Up
+  Rocket do the most racing (about 15 to 20% of races each); no car carries more than 21%.
+- [ ] **Every car has a place at the end** (added in v1.20.0, the target below found it). Fully upgraded with every Lab
+  project, Wind-Up Rocket is the best pick on all 32 tracks by the game's own pace rule (6% ahead of the Boost Buggy on
+  Earth, Moon and Deep Blue tracks, 3.3% ahead of Blizzard Wolf on the Glacier Rink), so the end-game garage has one
+  car. Make the top cars sidegrades, not a ladder: for example a bigger home-world bonus for each world's top cars so
+  each wins at home, and tracks with a character the traits answer (Grippy best on twisty tracks, Tough on bumpy ones,
+  Fast on long straights). Measure it with `npm run sim -- best` style races, keep "winning is earned" and the early
+  ladder as they are, and re-run `npm run sim`, `npm run career` and `npm run bots`.
 - [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
+  Notes (v1.20.0, progress): the bots part passes (+1% at Rank 40, gated in `npm run check`). The car part does not:
+  Wind-Up Rocket is best on 32 of 32 tracks at full upgrades. Decision, in the open: "every car" cannot mean every one
+  of the 29 cars on 32 tracks at the end of the game (Zippy can never be best there, and the ladder is how the game is
+  earned). Read it as two lines, measured by the Best rule in the career run: every car is the Best pick of the bot's
+  own garage on at least one open track at some point of the career, and at the end no car is the best pick on more
+  than a third of the tracks. The box above works on the second line.
 
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
@@ -732,3 +784,20 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   test now names that case instead of failing; nothing in the game was changed for it. Gap found: the special car's
   counter only shows in the Garage, so a child racing on the Moon never sees the rings add up; it is in the leftovers
   box below. Next: **Strategy bots** (M2) as the main piece, with the M0 screens guard riding along.
+- 2026-11-24 (v1.20.0): Strategy bots (M2) shipped with two boxes riding along, the M0 Android back button and the
+  special car counter from the leftovers box, so the release has something new to see and to use and the game moved
+  forward for the fifth release in a row. The M0 screens guard did not ride along again (second time); the next
+  release takes it first. What the bots showed: at Rank 40 all four strategies are within 1%, because every bot has
+  bought everything by then. A pacing target read only at the end hides where choices matter, so the gate also reads
+  Rank 10, 20 and 30 (21% apart at Rank 10, inside the 25% rule). Rule (fits every game, added to games/CLAUDE.md):
+  **strategy bots are compared at several milestones along the way, not only at the end.** The M2 target's car half
+  failed as written (Wind-Up Rocket is best on all 32 tracks at full upgrades), so a fix box sits above it and the
+  target's wording was made measurable in the open (its notes say why). Seen again (the v1.16.0 rule): the career's kid
+  bot still picks its main car by the raw `speed` field. It is a player model, not a judge, so it stays for now, and
+  the new "Every car has a place" box moves it to the Best rule when it changes the cars. The picture review saw a
+  sideways bar in the Garage at 360 px that the audit had never flagged (it only looked at the screen's edge). The
+  audit now flags any panel that scrolls up and down and also sideways; seen red, it found the Word Lap's answers cut
+  off on an upright phone too. Also learned: a new sweep step can change what later steps measure (the Moon step
+  marked the rival card seen, so the boss tab was measured with the rival chip for the first time, and a squeezed
+  boss card showed up); that was a real older bug, not noise. Next: **the M0 screens guard** and **Every car has a
+  place** as the main piece.

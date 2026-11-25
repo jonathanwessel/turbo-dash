@@ -816,7 +816,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .track-card .tc-ribbon { align-self: center; background: #ff3fa4; color: #fff; font-weight: 900; font-size: clamp(11px, 2.8vmin, 14px); padding: 2px 10px; border-radius: 8px; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
 .track-card .tc-hard { font-weight: 900; font-size: clamp(12px, 3.2vmin, 16px); text-shadow: 0 2px 0 rgba(0,0,0,.45); }
 .cup-card .cc-best:empty { display: none; }
-@media (max-height: 400px) and (orientation: landscape) { .cup-card .cc-cup { font-size: clamp(30px, 9vmin, 50px); } .cup-card .cc-car { line-height: 1.1; } }
+@media (max-height: 400px) and (orientation: landscape) { .cup-card .cc-cup, .cup-card.boss .cc-cup { font-size: clamp(30px, 9vmin, 50px); } .cup-card .cc-car { line-height: 1.1; } }   /* v1.20: the boss face too (its own size rule outranked this one) */
 .world-bar button.peek { border-style: dashed; background: rgba(255,255,255,.18); }
 .pv-row { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vmin, 24px); width: 100%; margin: 2px 0 4px; }
 .preview-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -1318,3 +1318,7 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .ec-chip[hidden] { display: none; }
 #ec-chip-car { width: 56px; height: 32px; }
 @media (max-height: 430px) and (orientation: landscape) { #ec-chip-car { width: 46px; height: 26px; } }
+/* v1.20: three world chips in the Garage were 4 px wider than an upright 360 px phone, so the Garage scrolled sideways */
+@media (max-width: 420px) { .g-worlds { gap: 4px; flex-wrap: wrap; } .g-worlds button { padding: 3px 8px; } .g-worlds button.on { transform: none; } }
+/* v1.20: on an upright phone three long words ("carrot parrot carpet") were cut off at both sides: they wrap now */
+@media (max-width: 420px) { .math-ans { flex-wrap: wrap; justify-content: center; max-width: 100%; } }

@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.20.0",
+    pics: [["👋", "Press back to go back or to stop"], ["🚗", "See how close the next car is"]],
+    notes: [
+      "The back button now goes back a screen, closes cards and pauses a race.",
+      "On Main Street the back button asks Stop playing first.",
+      "Each world's track list shows its special car still to win and how many are collected.",
+      "Not checked on a real tablet yet, so please try the back button on Main Street and in a race.",
+    ],
+  },
+  {
     v: "1.19.0",
     pics: [["🚗", "Win a new car in every world"], ["🦘", "The Moon Hopper jumps extra high"]],
     notes: [

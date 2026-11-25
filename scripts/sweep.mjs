@@ -43,6 +43,8 @@ const EXTRA = {
   // v1.20: the Moon's track list with the Moon Hopper's counter chip (same save as above), and its tap into the Garage
   "s-tracks-earn": `(__td.S.world = "moon", __td.goHub(), ${tap("race")}, true)`,
   "s-garage-earntap": `(document.getElementById("ec-chip").click(), true)`,
+  // v1.20: the Stop playing? card a back press on Main Street opens
+  "s-leave": `(__td.goHub(), __td.show("s-leave"), true)`,
   "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));
