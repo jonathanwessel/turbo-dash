@@ -1344,3 +1344,6 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* upright, the card is one row: the badge sits in the row before the track's picture (both top corners are taken
    there, by the picture and the trophy) */
 @media (orientation: portrait) { .track-card .tc-kind { position: static; flex: 0 0 auto; align-self: flex-start; margin-right: -8px; } }
+/* the Best card's track sign: small, beside the track's big picture (it took the picture's size at first) */
+.bc-track { white-space: nowrap; }
+.bc-track .kind-dot { font-size: max(16px, 0.36em); vertical-align: bottom; margin-left: -0.2em; }
