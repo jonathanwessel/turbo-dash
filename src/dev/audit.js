@@ -136,6 +136,17 @@ window.__sweep = async (only) => {
   await go("s-hub", () => td.goHub());
   for (const [k, f] of [["mid", 0.5], ["end", 1]]) await go("s-hub:" + k, async () => { const w = document.getElementById("town-wrap"); w.scrollLeft = (w.scrollWidth - w.clientWidth) * f; await wait(150); }, "#s-hub");
   document.getElementById("town-wrap").scrollLeft = 0;
+  // 🎃🎄🎆 v1.22: Main Street dressed for each holiday, scrolled to its big decoration, which a tap must reach (a finger
+  // on its top part lands on it, not on a building or a bar)
+  const holidayAt = () => { const w = document.getElementById("town-wrap"), el = document.getElementById("holiday"); if (!el) throw new Error("no holiday decoration");
+    const r = el.getBoundingClientRect(); w.scrollLeft += r.left + r.width / 2 - innerWidth / 2; };
+  for (const h of ["fall", "winter", "summer"]) await go("s-hub:" + h, async () => {
+    td.holiday(h); td.goHub(); await wait(60); holidayAt(); await wait(150);
+    const r = document.getElementById("holiday").getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * 0.12;
+    const hit = document.elementFromPoint(x, y)?.closest("[data-go]");
+    if (hit?.id !== "holiday") throw new Error(`the ${h} decoration's top is covered by ${hit?.dataset.go || document.elementFromPoint(x, y)?.id || "nothing"}`);
+  }, "#s-hub");
+  td.holiday(undefined); document.getElementById("town-wrap").scrollLeft = 0;
   // ⚡🛞💪 v1.16: the first Garage visit shows the car traits card, and the trait pill opens it again
   const forgetTip = id => { try { const t = JSON.parse(localStorage.getItem("turbodash.tips") || "{}"); delete t[id]; localStorage.setItem("turbodash.tips", JSON.stringify(t)); } catch (e) {} };
   await go("s-traits", async () => { forgetTip("traits"); await hub("garage")(); }, "#s-traits");
