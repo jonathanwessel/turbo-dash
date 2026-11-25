@@ -659,7 +659,7 @@ every test green.
   the best pick at some point on all three seeded kid careers in `npm run bots` (24, 23, 22 before) and on the default
   career run, so the floor in `scripts/bots.mjs` is now every car. Tests: the home track physics checks (a home is a
   real Earth track, one car each, the bonus only there, the Garage words, GO's shout) and the Rank 16 save's Best
-  chips. Check on the release commit: career Rank 40 on day 547 (Moon 106, Ocean 187, Glacier 279, Toy 411), inside 1%
+  chips. Check on the release commit: career Rank 40 on day 551 (Moon 106, Ocean 189, Glacier 284, Toy 414; 547 on the first check), inside 1%
   of v1.21.0's 543 to 555. At the end Boost Buggy 10, Loop Legend 9, Wind-Up Rocket 9, Snow Cat 2, Blizzard Wolf 1,
   Polar Bear 1 of 32. Bots 13%, 5%, 1% and 1% apart at Rank 10, 20, 30, 40 (17%, 6%, 2%, 1% before). Best badges pick
   the fastest car 772 of 800 times, at worst 3.0% slower. The starter car still does not win the first race. Not

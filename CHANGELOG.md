@@ -19,7 +19,7 @@
   turn gold. The summer fireworks sat behind the coin counter on a wide phone, so they are lower in the sky. Both
   have a node test that was seen failing first.
 - Numbers: every one of the 29 cars is the best pick of the garage at some point of the career (it was 20 to 24).
-  `npm run career` reaches Rank 40 on day 547 (Moon 106, Ocean 187, Glacier 279, Toy 411). At the end no car is the
+  `npm run career` reaches Rank 40 on day 547 to 551 (551 on the release check: Moon 106, Ocean 189, Glacier 284, Toy 414). At the end no car is the
   best on more than 10 of 32 tracks. `npm run bots`: every way of playing is within 13% at Rank 10 (it was 17%), 5% at
   Rank 20, 1% at Rank 30 and 1% at Rank 40. The starter car still does not win the first race.
 - **For the grown-ups:** `npm run bots` now fails unless all 29 cars are the best pick at some point on each seeded
