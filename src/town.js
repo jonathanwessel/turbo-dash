@@ -232,12 +232,56 @@ function site(id, x, w, rank) {
     ${sign}</g>`;
 }
 
-// little things in the gaps between buildings (they never take taps)
-const tree = x => `<g class="deco"><rect x="${x - 5}" y="${BASE - 60}" width="10" height="62" fill="#7a4a22"/><circle cx="${x}" cy="${BASE - 78}" r="26" fill="#2f9a3d"/><circle cx="${x - 9}" cy="${BASE - 90}" r="15" fill="#3fb84e"/></g>`;
-const lamp = x => `<g class="deco"><rect x="${x - 3}" y="${BASE - 120}" width="6" height="122" fill="#555"/><rect x="${x - 14}" y="${BASE - 128}" width="28" height="12" rx="6" fill="#555"/><circle cx="${x}" cy="${BASE - 114}" r="7" fill="#fff59a"/></g>`;
-const gaps = () => {
+// little things in the gaps between buildings (they never take taps). A holiday (src/holiday.js) dresses them up.
+const pumpkin = (x, s = 1) => `<g><rect x="${x - 3 * s}" y="${BASE - 36 * s}" width="${6 * s}" height="${12 * s}" rx="2" fill="#3d7a22"/><ellipse cx="${x}" cy="${BASE - 15 * s}" rx="${21 * s}" ry="${16 * s}" fill="#ff8a1e" stroke="#c85a00" stroke-width="3"/><ellipse cx="${x}" cy="${BASE - 15 * s}" rx="${8 * s}" ry="${15 * s}" fill="none" stroke="#c85a00" stroke-width="3"/></g>`;
+const tree = (x, i, h) => {
+  const [dark, light] = h === "fall" ? (i % 4 ? ["#e8742a", "#ffb43c"] : ["#d8452a", "#ff7a3c"]) : h === "winter" ? ["#22803a", "#2f9a3d"] : ["#2f9a3d", "#3fb84e"];
+  return `<g class="deco"><rect x="${x - 5}" y="${BASE - 60}" width="10" height="62" fill="#7a4a22"/><circle cx="${x}" cy="${BASE - 78}" r="26" fill="${dark}"/><circle cx="${x - 9}" cy="${BASE - 90}" r="15" fill="${light}"/>${h === "winter" ? `<path d="M${x - 24} ${BASE - 88} q24 -32 48 0 q-12 -6 -24 -2 q-12 -4 -24 2z" fill="#fff"/>` : ""}${h === "fall" ? pumpkin(x - 20, 0.8) : ""}</g>`;
+};
+const lamp = (x, h) => `<g class="deco"><rect x="${x - 3}" y="${BASE - 120}" width="6" height="122" fill="#555"/><rect x="${x - 14}" y="${BASE - 128}" width="28" height="12" rx="6" fill="#555"/><circle cx="${x}" cy="${BASE - 114}" r="7" fill="#fff59a"/>${
+  h === "fall" ? pumpkin(x + 16, 0.7) : h === "winter" ? `<rect x="${x - 15}" y="${BASE - 133}" width="30" height="8" rx="4" fill="#fff"/>` : h === "summer" ? `<rect x="${x - 2}" y="${BASE - 168}" width="4" height="42" fill="#555"/><path class="flag" d="M${x + 2} ${BASE - 168} l34 9 l-34 9z" fill="#e8262b"/>` : ""}</g>`;
+// the holiday's big decoration stands in the widest gap, between the School and the Bank, in place of its lamp
+const CENTER = (B.school.x + B.school.w + B.bank.x) / 2;
+const gaps = h => {
   const order = ["garage", "gifts", "missions", "race", "rank", "lab", "trophy", "school", "bank", "carwash", "museum", "icecream", "fire", "park"];
-  return order.slice(0, -1).map((k, i) => { const gx = B[k].x + B[k].w + (B[order[i + 1]].x - B[k].x - B[k].w) / 2; return i % 2 ? lamp(gx) : tree(gx); }).join("");
+  return order.slice(0, -1).map((k, i) => { const gx = B[k].x + B[k].w + (B[order[i + 1]].x - B[k].x - B[k].w) / 2; return h && k === "school" ? "" : i % 2 ? lamp(gx, h) : tree(gx, i, h); }).join("");
+};
+
+/* 🎃🎄🎆 holiday decorations (v1.22, src/holiday.js picks the holiday from the calendar). back: drawn behind the
+   buildings. front: drawn on the sidewalk. center: the big decoration, one tap target (data-go="holiday") that sits
+   behind the buildings, so it never takes a building's tap. Its hit box reaches above the roofs beside it. */
+const star = (x, y, r, fill) => `<path d="${Array.from({ length: 10 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 5, q = k % 2 ? r * 0.45 : r; return (k ? "L" : "M") + (x + q * Math.cos(a)).toFixed(1) + " " + (y + q * Math.sin(a)).toFixed(1); }).join(" ")}Z" fill="${fill}" stroke="#c98a00" stroke-width="4"/>`;
+const snowman = x => `<g class="deco"><circle cx="${x}" cy="${BASE - 26}" r="26" fill="#fff" stroke="#cfe3f5" stroke-width="3"/><circle cx="${x}" cy="${BASE - 70}" r="19" fill="#fff" stroke="#cfe3f5" stroke-width="3"/><circle cx="${x}" cy="${BASE - 102}" r="14" fill="#fff" stroke="#cfe3f5" stroke-width="3"/>
+  <circle cx="${x - 5}" cy="${BASE - 106}" r="2.5" fill="#222"/><circle cx="${x + 5}" cy="${BASE - 106}" r="2.5" fill="#222"/><path d="M${x} ${BASE - 101} l14 3 l-14 3z" fill="#ff8a00"/>
+  <rect x="${x - 12}" y="${BASE - 118}" width="24" height="5" fill="#222"/><rect x="${x - 8}" y="${BASE - 136}" width="16" height="19" fill="#222"/><rect x="${x - 16}" y="${BASE - 86}" width="32" height="7" rx="3" fill="#e8262b"/>
+  <circle cx="${x}" cy="${BASE - 64}" r="2.5" fill="#222"/><circle cx="${x}" cy="${BASE - 54}" r="2.5" fill="#222"/></g>`;
+const burst = (x, y, r, color) => `<g class="fw">${Array.from({ length: 12 }, (_, k) => { const a = k * Math.PI / 6, c = Math.cos(a), s = Math.sin(a); return `<line x1="${(x + c * r * 0.3).toFixed(1)}" y1="${(y + s * r * 0.3).toFixed(1)}" x2="${(x + c * r).toFixed(1)}" y2="${(y + s * r).toFixed(1)}" stroke="${color}" stroke-width="6" stroke-linecap="round"/><circle cx="${(x + c * r * 1.12).toFixed(1)}" cy="${(y + s * r * 1.12).toFixed(1)}" r="5" fill="#fff"/>`; }).join("")}</g>`;
+const centerHit = () => `<rect x="${CENTER - 72}" y="${BASE - 490}" width="144" height="520" fill="transparent"/>`;
+const CENTERS = {
+  winter: x => `${centerHit()}<rect x="${x - 11}" y="${BASE - 64}" width="22" height="64" fill="#7a4a22"/>
+    ${[[78, 60, 230], [66, 180, 340], [56, 290, 450]].map(([hw, lo, hi]) => `<path d="M${x - hw} ${BASE - lo} L${x + hw} ${BASE - lo} L${x} ${BASE - hi}Z" fill="#22803a" stroke="#17602a" stroke-width="4" stroke-linejoin="round"/>`).join("")}
+    ${[[-40, 80, "#e8262b"], [30, 100, "#ffd400"], [-8, 150, "#3cf2ff"], [36, 200, "#ff3fa4"], [-34, 220, "#ffd400"], [10, 260, "#e8262b"], [-20, 320, "#3cf2ff"], [22, 340, "#ffd400"], [0, 390, "#ff3fa4"]].map(([dx, dy, c]) => `<circle class="bulb" cx="${x + dx}" cy="${BASE - dy}" r="9" fill="${c}" stroke="#fff" stroke-width="3"/>`).join("")}
+    ${star(x, BASE - 456, 30, "#ffd400")}
+    <rect x="${x - 62}" y="${BASE - 36}" width="34" height="30" rx="4" fill="#e8262b"/><rect x="${x - 48}" y="${BASE - 36}" width="6" height="30" fill="#ffd400"/><rect x="${x + 24}" y="${BASE - 30}" width="30" height="26" rx="4" fill="#1f6fff"/><rect x="${x + 36}" y="${BASE - 30}" width="6" height="26" fill="#fff"/>`,
+  fall: x => `${centerHit()}<rect x="${x - 4}" y="${BASE - 340}" width="8" height="340" fill="#8a5a2b"/><rect x="${x - 74}" y="${BASE - 272}" width="148" height="8" rx="3" fill="#8a5a2b"/>
+    <path d="M${x - 30} ${BASE - 280} h60 l6 120 h-72z" fill="#e8262b"/>${[0, 1, 2].map(k => `<rect x="${x - 33 + k * 22}" y="${BASE - 280}" width="6" height="120" fill="#9a1a14"/>`).join("")}<rect x="${x - 36}" y="${BASE - 220}" width="72" height="6" fill="#9a1a14"/>
+    <rect x="${x - 74}" y="${BASE - 282}" width="46" height="26" rx="8" fill="#e8262b"/><rect x="${x + 28}" y="${BASE - 282}" width="46" height="26" rx="8" fill="#e8262b"/>
+    ${[-1, 1].map(d => `<path d="M${x + d * 74} ${BASE - 278} l${d * 14} -8 M${x + d * 74} ${BASE - 270} l${d * 16} 0 M${x + d * 74} ${BASE - 262} l${d * 14} 8" stroke="#ffd04a" stroke-width="5" stroke-linecap="round"/>`).join("")}
+    <path d="M${x - 30} ${BASE - 160} l-8 14 M${x - 14} ${BASE - 160} l-3 16 M${x + 14} ${BASE - 160} l3 16 M${x + 30} ${BASE - 160} l8 14" stroke="#ffd04a" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="${x}" cy="${BASE - 318}" r="34" fill="#f0cd8a" stroke="#c99a52" stroke-width="4"/><circle cx="${x - 12}" cy="${BASE - 324}" r="5" fill="#3a2a1a"/><circle cx="${x + 12}" cy="${BASE - 324}" r="5" fill="#3a2a1a"/>
+    <path d="M${x - 14} ${BASE - 306} q14 12 28 0" fill="none" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="${x - 22}" cy="${BASE - 310}" r="6" fill="#ff9a8a"/><circle cx="${x + 22}" cy="${BASE - 310}" r="6" fill="#ff9a8a"/>
+    <ellipse cx="${x}" cy="${BASE - 346}" rx="58" ry="11" fill="#d9a63a"/><path d="M${x - 30} ${BASE - 346} q2 -44 30 -44 q28 0 30 44z" fill="#e8b84a"/><rect x="${x - 30}" y="${BASE - 360}" width="60" height="9" fill="#e8262b"/>
+    ${pumpkin(x - 42, 1.3)}${pumpkin(x + 44, 1)}`,
+  summer: x => `${centerHit()}${[[-34, 380, "#e8262b"], [30, 400, "#1f6fff"], [-2, 440, "#ffd400"], [44, 330, "#ffffff"], [-48, 320, "#5be36a"]].map(([dx, dy, c]) => `<path d="M${x} ${BASE - 46} L${x + dx} ${BASE - dy + 34}" stroke="#555" stroke-width="2"/><ellipse cx="${x + dx}" cy="${BASE - dy}" rx="27" ry="33" fill="${c}" stroke="rgba(0,0,0,.18)" stroke-width="3"/><path d="M${x + dx - 4} ${BASE - dy + 33} h8 l-4 7z" fill="${c}"/><ellipse cx="${x + dx - 9}" cy="${BASE - dy - 12}" rx="6" ry="9" fill="#fff" opacity=".6"/>`).join("")}
+    <rect x="${x - 24}" y="${BASE - 48}" width="48" height="48" rx="6" fill="#ff3fa4"/><rect x="${x - 5}" y="${BASE - 48}" width="10" height="48" fill="#ffd400"/>`,
+};
+const holidayDeco = h => {
+  if (!h) return { back: "", front: "", center: "" };
+  const back = h === "summer" ? [[700, 190, 62, "#ff3fa4"], [1150, 260, 50, "#ffd400"], [2000, 200, 64, "#3cf2ff"], [2480, 270, 48, "#5be36a"], [2780, 170, 56, "#ff8a00"]].map(a => burst(...a)).join("")
+    : h === "winter" ? snowman(48) + snowman(2880) : pumpkin(48, 1.4) + pumpkin(2880, 1.4) + pumpkin(2850, 0.9);
+  // winter: string lights along the sidewalk
+  const front = h === "winter" ? `<path d="M0 ${BASE + 14} ${Array.from({ length: Math.ceil(TOWN_W / 60) }, (_, k) => `Q${k * 60 + 30} ${BASE + 24} ${k * 60 + 60} ${BASE + 14}`).join(" ")}" fill="none" stroke="#2a3a2a" stroke-width="3"/>${Array.from({ length: Math.ceil(TOWN_W / 60) }, (_, k) => `<circle class="bulb b${k % 2}" cx="${k * 60 + 30}" cy="${BASE + 25}" r="6" fill="${["#e8262b", "#ffd400", "#3cf2ff", "#5be36a", "#ff3fa4"][k % 5]}"/>`).join("")}` : "";
+  return { back, front, center: `<g class="bld holiday ${h}" data-go="holiday" id="holiday">${CENTERS[h](CENTER)}</g>` };
 };
 
 /* "Welcome to PIQUA, Ohio": a cartoon hometown sign (red words, big blue letters). */
@@ -255,24 +299,26 @@ const welcome = () => {
 
 const car = (cls, color) => `<g class="tcar ${cls}"><rect x="0" y="-36" width="90" height="28" rx="10" fill="${color}"/><path d="M18 -36 l12 -20 h34 l12 20z" fill="${color}"/><path d="M28 -38 l8 -14 h22 l8 14z" fill="#2b4c80"/><circle cx="22" cy="-8" r="11" fill="#222"/><circle cx="70" cy="-8" r="11" fill="#222"/><circle cx="22" cy="-8" r="4" fill="#bbb"/><circle cx="70" cy="-8" r="4" fill="#bbb"/></g>`;
 
-export function townSVG() {
+export function townSVG(holiday = null) {
+  const H = holidayDeco(holiday), snow = holiday === "winter";
   return `<svg id="town" viewBox="0 0 ${TOWN_W} 900" preserveAspectRatio="xMinYMax meet" xmlns="http://www.w3.org/2000/svg">
   <defs><linearGradient id="tsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fb6ff"/><stop offset="1" stop-color="#c9efff"/></linearGradient></defs>
   <rect width="${TOWN_W}" height="900" fill="url(#tsky)"/>
   <circle cx="1480" cy="110" r="95" fill="#fff59a" opacity=".35"/><circle cx="1480" cy="110" r="62" fill="#fff59a"/>
   <g class="clouds">${[[220, 110, 1], [720, 70, 0.8], [1150, 150, 1.1]].map(([x, y, s]) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="90" ry="30" fill="#fff"/><ellipse cx="-40" cy="8" rx="55" ry="26" fill="#fff"/><ellipse cx="35" cy="-12" rx="50" ry="30" fill="#fff"/></g>`).join("")}</g>
   <g class="birds" fill="none" stroke="#2a3a5a" stroke-width="4" stroke-linecap="round">${[[400, 200], [440, 225], [470, 195]].map(([x, y]) => `<path d="M${x - 12} ${y} q6 -8 12 0 q6 -8 12 0"/>`).join("")}</g>
-  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T2930 430 V900 H0Z" fill="#3fa553"/>
+  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T2930 430 V900 H0Z" fill="${snow ? "#dcebf7" : "#3fa553"}"/>
   <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#4fb6ff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
   <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#bfe9ff" stroke-width="6" stroke-dasharray="40 60" opacity=".8"/>
-  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T2930 535 V900 H0Z" fill="#5cc46a"/>
+  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T2930 535 V900 H0Z" fill="${snow ? "#eaf3fb" : "#5cc46a"}"/>
   ${welcome()}
-  <rect y="600" width="${TOWN_W}" height="300" fill="#5fd068"/>
-  ${gaps()}
+  <rect y="600" width="${TOWN_W}" height="300" fill="${snow ? "#f6fbff" : "#5fd068"}"/>
+  ${H.back}${gaps(holiday)}${H.center}
   ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${bank()}${carwash()}${museum()}${icecream()}${fire()}${park()}
   <rect y="${BASE + 10}" width="${TOWN_W}" height="16" fill="#e9e9ef"/>
   <rect y="${BASE + 26}" width="${TOWN_W}" height="100" fill="#6b6f78"/>
   <line x1="0" y1="${BASE + 76}" x2="${TOWN_W}" y2="${BASE + 76}" stroke="#fff" stroke-width="8" stroke-dasharray="50 40"/>
+  ${H.front}
   <g transform="translate(0 ${BASE + 72})">${car("c1", "#1f6fff")}</g>
   <g transform="translate(0 ${BASE + 120})">${car("c2", "#ff3fa4")}</g>
   <g transform="translate(0 ${BASE + 120})">${car("c3", "#ffcc00")}</g>

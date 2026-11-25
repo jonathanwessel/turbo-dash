@@ -1,6 +1,6 @@
 // Physics both race engines share (the classic road in src/engine.js and Toy Track World in src/toy/race.js),
 // so a change to how rivals drive happens in one place. Plain math: the race simulators use it too.
-import { PACE, CUPS, WORLDS, TRAITS } from "./data.js";
+import { PACE, CUPS, WORLDS, TRAITS, TRACKS } from "./data.js";
 
 export const BASE_MAX = 10000;   // the classic engine's speed unit: a starter car's top speed (world units / s)
 
@@ -20,9 +20,14 @@ export function rubberBand(gap, diffId, trackDiff = 99) {
    replaces the old 4% penalty for other cars on ice and in Toy Track World. Earth cars have no home bonus. */
 export const HOME_BONUS = 0.10;   // v1.21: 5% -> 10%, so each world's own top cars still win at home at the end
 export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
-/* what the game says about it: "🌙 Faster on Moon Base" (null for Earth cars) */
-export const homeNote = car => { const w = WORLDS.find(x => x.id === worldOf(car)); return w && w.id !== "earth" ? { icon: w.icon, text: `${w.icon} Faster in ${w.name}` } : null; };
-export const homeBonus = (car, track) => track && track.world && track.world !== "earth" && worldOf(car) === track.world ? 1 + HOME_BONUS : 1;
+/* 🏠 v1.22: an Earth prize car has one Earth track of its own (car.home in data.js) with the same bonus */
+export const homeTrack = car => car?.home ? TRACKS.find(t => t.id === car.home) || null : null;
+/* what the game says about it: "🌙 Faster in Moon Base", or "🎢 Faster on County Fair" (null for other Earth cars) */
+export const homeNote = car => {
+  const t = homeTrack(car); if (t) return { icon: t.icon, text: `${t.icon} Faster on ${t.name}` };
+  const w = WORLDS.find(x => x.id === worldOf(car)); return w && w.id !== "earth" ? { icon: w.icon, text: `${w.icon} Faster in ${w.name}` } : null;
+};
+export const homeBonus = (car, track) => !track ? 1 : (car?.home && car.home === track.id) || (track.world && track.world !== "earth" && worldOf(car) === track.world) ? 1 + HOME_BONUS : 1;
 /* ⚡🛞💪 track kinds (v1.21): every track is a Fast, a Grippy or a Tough track (track.kind in data.js), and a car
    whose trait matches is this much faster there. It replaced the traits' old top speed change (Fast +3% and Grippy
    -2.5% everywhere), so the top cars are sidegrades: at the end each kind has its own best car. */

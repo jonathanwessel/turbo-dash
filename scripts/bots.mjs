@@ -66,9 +66,10 @@ for (const bot of ALL) {
 
 const fails = [], spread = [];
 for (const r of RUNS) if (!r.ok) fails.push(`${r.bot} seed ${r.seed} did not reach the cap or has a car on more than a third of the tracks at the end${r.err ? " (" + r.err + ")" : ""}`);
-// 🏆 v1.21: until every car is the best pick somewhere (PLAN.md, M2 "Side cars have a place"), the seeded kid runs may
-// not fall below the count v1.21.0 reached (it was 15 of 29 before the track kinds), so it can only go up
-const PLACE_FLOOR = 22;   // the lowest of the three seeded kid runs in v1.21.0 (24, 23, 22)
+// 🏆 the M2 target's first line, on the seeded kid runs (they repeat exactly): every car is the best pick of the bot's
+// garage on an open track at some point. v1.21 held a floor of 22 while it climbed (15 of 29 before the track kinds,
+// 22 to 24 with them); v1.22's home tracks for Earth's prize cars reach 29 of 29 on six seeds, so the floor is all cars
+const PLACE_FLOOR = CARS.length;
 for (const r of by("kid")) if (r.ok && r.everBest < PLACE_FLOOR) fails.push(`kid seed ${r.seed}: only ${r.everBest} of ${CARS.length} cars are ever the best pick (at least ${PLACE_FLOOR}; never: ${r.never.map(name).join(", ")})`);
 console.log(`\nCars that are ever the best pick, kid seeds: ${by("kid").map(r => r.everBest).join(", ")} of ${CARS.length}. Never on any seed: ${CARS.filter(c => by("kid").every(r => r.never?.includes(c.id))).map(c => c.name).join(", ") || "none"}`);
 for (const [key, label] of MILESTONES) {

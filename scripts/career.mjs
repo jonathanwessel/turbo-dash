@@ -58,7 +58,7 @@ const S = {
 };
 const today = () => dayKey(new Date(2027, 0, 1 + day)), yesterday = () => dayKey(new Date(2027, 0, day));
 let day = 0, clock = 0, raceNo = 0, lastRankDay = 0;
-const gates = [], bestDay = {};
+const gates = [], bestDay = {}, closest = {};
 const gate = (key, text) => { if (gates.some(g => g.key === key)) return; gates.push({ key, text, day, race: raceNo }); };
 const lv = id => S.research[id] || 0;
 
@@ -247,6 +247,12 @@ for (day = 1; day <= MAX_DAYS; day++) {
   // 🏆 v1.21 "Every car has a place": the first day each car is the Best pick (src/best.js) of the bot's own garage on
   // an open track
   for (const t of TRACKS) if (trackOpen(S, t)) { const b = bestCar(t, mine(), upsOf, S.research); if (!(b.id in bestDay)) bestDay[b.id] = day; }
+  // how close a car that is not the best pick yet comes: the smallest gap to the best car on any open track (the
+  // "never" line prints it, so a fix can aim at the car's real shortfall)
+  for (const c of mine()) if (!(c.id in bestDay)) for (const t of TRACKS) if (trackOpen(S, t)) {
+    const b = bestCar(t, mine(), upsOf, S.research), gap = paceOn(b, upsOf(b.id), t, S.research) / paceOn(c, upsOf(c.id), t, S.research) - 1;
+    if (!closest[c.id] || gap < closest[c.id].gap) closest[c.id] = { gap, track: t.id, by: b.id, day };
+  }
   // CAREER_SNAP=16:src/dev/mid-save.json writes the bot's save the evening it first reaches Rank 16 (the sweep's
   // pictures use it, so they show a save a real player could have, not made-up numbers)
   if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 24, name: "Racer", rivalWeek: { w: -1, lvl: 0, seen: -1 }, world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
@@ -276,7 +282,7 @@ const at = key => gates.find(g => g.key === key)?.day;
 const never = CARS.filter(c => !(c.id in bestDay)), endBest = {};
 for (const t of TRACKS) { const b = bestCar(t, mine(), upsOf, S.research); endBest[b.name] = (endBest[b.name] || 0) + 1; }
 const endTop = Math.max(...Object.values(endBest)), place = [];
-console.log(`Best pick at some point: ${CARS.length - never.length} of ${CARS.length} cars${never.length ? " (never: " + never.map(c => c.name).join(", ") + ")" : ""}. At the end: ` + Object.entries(endBest).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ") + ` of ${TRACKS.length} tracks`);
+console.log(`Best pick at some point: ${CARS.length - never.length} of ${CARS.length} cars${never.length ? " (never: " + never.map(c => c.name + (closest[c.id] ? ` ${(100 * closest[c.id].gap).toFixed(1)}% short on ${closest[c.id].track} day ${closest[c.id].day} (${closest[c.id].by})` : " not owned")).join(", ") + ")" : ""}. At the end: ` + Object.entries(endBest).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ") + ` of ${TRACKS.length} tracks`);
 // the first half is not met yet (PLAN.md, M2 "Side cars have a place"). Its count changes from run to run (20 to 24
 // of 29 over six seeds), so `npm run bots` holds a floor on its seeded kid runs, where it repeats exactly
 if (endTop * 3 > TRACKS.length) place.push(`at the end one car is the best pick on ${endTop} of ${TRACKS.length} tracks (a third at most)`);

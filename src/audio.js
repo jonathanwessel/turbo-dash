@@ -87,6 +87,7 @@ export function sfx(name) {
     case "chest": noise(0.4, 0.3, 2000, 0, 0.5); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.3, "triangle", 0.12, 0.1 + i * 0.08)); break;
     case "win": [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i === 5 ? 0.6 : 0.18, "square", 0.12, i * 0.14)); break;
     case "lose": [392, 349, 330, 262].forEach((f, i) => tone(f, 0.25, "triangle", 0.14, i * 0.18)); break;
+    case "jingle": [1319, 1568, 1319, 2093, 1760].forEach((f, i) => tone(f, 0.22, "triangle", 0.1, i * 0.09)); break;   // 🎄 the holiday decoration
     case "horn": tone(392, 0.32, "square", 0.11); tone(494, 0.32, "square", 0.09); break;   // 📯 the player's horn: two notes at once
     default: if (name.startsWith("horn")) {                                                  // horn1..horn6: each rival's own voice
       const v = HORNS[(+name.slice(4) - 1) % HORNS.length] || HORNS[0];

@@ -9,6 +9,7 @@ import { ToyRace } from "./toy/race.js";
 import { statsFor } from "./stats.js";
 import { chipFor } from "./best.js";
 import { townSVG, SITE_PIPS } from "./town.js";
+import { holidayOn } from "./holiday.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
@@ -1349,10 +1350,16 @@ $("tr-ok").onclick = () => {
   traitSpot = null; traitBack = "s-garage";
 };
 let giftShownThisVisit = false;
-$("town-wrap").innerHTML = townSVG();
+/* 🎃🎄🎆 holiday decorations (v1.22): Main Street is drawn for today's holiday, and drawn again when the calendar moves
+   into another one while the game is open (the dev hook __td.holiday sets one for the sweep) */
+let devHoliday, townHoliday;
+const holidayNow = () => devHoliday !== undefined ? devHoliday : holidayOn(new Date());
+function paintTown() { const h = holidayNow(); if (h === townHoliday && $("town")) return; townHoliday = h; $("town-wrap").innerHTML = townSVG(h); }
+paintTown();
 const tb = (id, on) => { $(id).style.display = on ? "" : "none"; };
 const today = () => dayKey(new Date());
 function refreshHub() {
+  paintTown();
   for (const b of BUILDINGS) if ($("bld-" + b.id)) {
     const open = buildingOpen(S, b.id); $("bld-" + b.id).style.display = open ? "" : "none"; $("site-" + b.id).style.display = open ? "none" : "";
     if (!open && $("site-" + b.id + "-0")) {
@@ -1416,6 +1423,7 @@ $("town-wrap").addEventListener("click", e => {
   const b = e.target.closest("[data-go]"); if (!b) return;
   const go = b.dataset.go;
   const nope = () => { sfx("nope"); b.classList.remove("shake"); void b.getBBox(); b.classList.add("shake"); };
+  if (go === "holiday") { sfx("jingle"); b.classList.remove("hop"); void b.getBBox(); b.classList.add("hop"); confetti(40); return; }
   if (go === "race") { sfx("click"); openTracks(); }
   else if (go === "garage") { sfx("click"); openGarage(); }
   else if (go === "gift") { sfx("click"); openGift(); }
@@ -1723,7 +1731,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, newCar: id => { grantCar(S, id); newCars = [CARS.find(c => c.id === id)]; openNewCar("s-hub"); }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
+if (import.meta.env.DEV) window.__td = { holiday: h => { devHoliday = h; paintTown(); if (screen === "s-hub") refreshHub(); }, fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, newCar: id => { grantCar(S, id); newCars = [CARS.find(c => c.id === id)]; openNewCar("s-hub"); }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
   // 👑 v1.15 sweep: a boss's intro after `wins` wins, and a boss race's result card (the sweep and probes only)
   bossIntro: (id, wins) => { const b = BOSSES.find(x => x.id === id); if (wins) { S.bosses[id] = wins; if (!S.owned.includes(b.car)) grantCar(S, b.car); } else delete S.bosses[id]; openBossIntro(b); },
   bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id), keep = currentTrack; run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); currentTrack = keep; } };   // the track goes back, so later sweep cards are not on the boss's track

@@ -86,12 +86,18 @@ const TRAIT_OF = {
   greenMachine: "fast", goldRush: "tough", champX: "fast", barnstormer: "tough", thunder: "tough", firetruck: "tough", patrol: "grippy",
   rover: "tough", comet: "fast", starfire: "grippy",
   sub: "tough", manta: "grippy", kraken: "fast",
-  frost: "grippy", polar: "tough", blizzard: "fast",
-  toyRacer: "tough", loopLegend: "grippy", windup: "fast",
+  frost: "grippy", polar: "grippy", blizzard: "fast",
+  toyRacer: "fast", loopLegend: "grippy", windup: "fast",
   hopper: "fast", diver: "grippy", snowcat: "tough", buggy: "tough",
 };
 for (const c of CARS) c.trait = TRAIT_OF[c.id];
 export const traitOf = car => TRAITS[car?.trait] || null;
+/* 🏠 home tracks (v1.22): Earth's prize cars each have one Earth track of their own, where they get the same home
+   bonus a world's cars get in their world (homeBonus in physics-common.js). They arrive with no upgrades after the
+   garage's main car has many, so without it they were never the best pick anywhere (PLAN.md, M2 "Side cars have a
+   place"). Each home fits the car's story and, where it can, its kind. */
+const HOME_OF = { greenMachine: "desert", barnstormer: "autumn", goldRush: "pirate", firetruck: "factory", patrol: "night", rocket: "fair" };
+for (const c of CARS) if (HOME_OF[c.id]) c.home = HOME_OF[c.id];
 
 // Opponent looks (they race with their own speeds, set by the track). says: what they shout as the rival of the
 // week (src/rival-week.js).

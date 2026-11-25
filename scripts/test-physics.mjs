@@ -355,7 +355,14 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   const { ToyRace } = await import("../src/toy/race.js");
   const car = id => CARS.find(c => c.id === id);
   check("home bonus", homeBonus(car("rover"), track("crater")) === 1 + HOME_BONUS && homeBonus(car("polar"), track("icecave")) === 1 + HOME_BONUS && homeBonus(car("windup"), track("bedroom")) === 1 + HOME_BONUS, "Lunar Rover on the Moon, Polar Bear (cup car) on ice and Wind-Up Rocket (boss car) in Toy World get it");
-  check("no bonus away", homeBonus(car("rover"), track("kelp")) === 1 && homeBonus(zippy, track("sunny")) === 1 && homeBonus(car("toyRacer"), track("crater")) === 1, "nobody gets it away from home, and Earth cars never");
+  check("no bonus away", homeBonus(car("rover"), track("kelp")) === 1 && homeBonus(zippy, track("sunny")) === 1 && homeBonus(car("toyRacer"), track("crater")) === 1, "nobody gets it away from home, and Earth cars without a home track never");
+  // 🏠 v1.22 home tracks: an Earth prize car gets the same bonus on its one home track, and nowhere else
+  const { homeNote, homeTrack } = await import("../src/physics-common.js");
+  const homed = CARS.filter(c => c.home);
+  check("home tracks are real Earth tracks, one car each", homed.length >= 6 && homed.every(c => homeTrack(c)?.world === "earth") && new Set(homed.map(c => c.home)).size === homed.length, homed.map(c => c.id + ":" + c.home).join(" "));
+  check("a home track car is faster only on its home track", homed.every(c => homeBonus(c, homeTrack(c)) === 1 + HOME_BONUS && TRACKS.filter(t => t.id !== c.home).every(t => homeBonus(c, t) === 1)), "");
+  check("the Garage names the home track", homeNote(car("firetruck"))?.text === "🤖 Faster on Robot Factory" && homeNote(car("rover"))?.text === "🌙 Faster in Moon Base" && homeNote(zippy) === null, JSON.stringify(homeNote(car("firetruck"))));
+  check("GO shouts it on the home track", (await import("../src/physics-common.js")).bonusWord(car("firetruck"), track("factory")) === "🏠 💪 BONUS!", "");
   const topAfter = (R, t, c) => { const r = new R({ getContext: () => null, width: 1, height: 1 }, { sfx() {}, engine() {}, onFinish() {} });
     r.setup(t, "race", c, statsFor(c, UPS, {}), { diff: "normal" }); while (r.state === "countdown") r.update(STEP); for (let i = 0; i < 600; i++) r.update(STEP); return r.player.speed; };
   for (const [R, t, id] of [[Race, track("crater"), "rover"], [Race, track("icecave"), "frost"], [ToyRace, track("bedroom"), "toyRacer"]]) {

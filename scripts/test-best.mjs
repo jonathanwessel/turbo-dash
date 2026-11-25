@@ -61,7 +61,11 @@ ok(chips > 50, "the random saves do show chips (the agreement check is not empty
 // (Tough) and Galaxy GT (Grippy) take their own kinds, so a mid-game garage has three cars with a place. Driving
 // Zippy, every open track shows a chip (the sweep and the audit open the chip and its card this way)
 const chipKind = { fast: undefined, tough: "thunder", grippy: "galaxy" };
-ok(TRACKS.every(t => chipFor(mid, t)?.id === chipKind[t.kind]), "the Rank 16 save: no chip on Fast tracks, Thunder King on Tough, Galaxy GT on Grippy");
+// v1.22 home tracks: five of the save's Earth prize cars take their own home track (Green Machine's Desert Dash stays
+// with the Champion X it drives, which has its upgrades), so the garage has eight cars with a place
+const homeChip = { fair: "rocket", pirate: "goldRush", autumn: "barnstormer", night: "patrol", factory: "firetruck" };
+const wrong = TRACKS.filter(t => chipFor(mid, t)?.id !== (homeChip[t.id] || chipKind[t.kind]));
+ok(!wrong.length, "the Rank 16 save: each home car on its home track, else no chip on Fast tracks, Thunder King on Tough, Galaxy GT on Grippy (" + wrong.map(t => t.id + " " + chipFor(mid, t)?.id).join(", ") + ")");
 ok(TRACKS.filter(t => t.world === "earth").every(t => chipFor({ ...mid, car: "zippy" }, t)), "the Rank 16 save driving Zippy shows a chip on every Earth track");
 
 // the screens use these two helpers (and only these) to paint the chip and the Garage row

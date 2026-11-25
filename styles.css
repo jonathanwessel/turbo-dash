@@ -257,6 +257,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #town .clouds { animation: drift 60s linear infinite alternate; }
 @keyframes drift { to { transform: translateX(120px); } }
 #town .blink { animation: blink 1s steps(2) infinite; }
+/* 🎃🎄🎆 holiday decorations (v1.22): the lights twinkle, the fireworks glow, and a tap makes the big one jump */
+#town .bulb.b1 { animation: blink 1.4s steps(2) infinite; }
+#town .fw { animation: tpulse 1.1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+#town .holiday.hop { animation: hhop .7s ease-out; }
+@keyframes hhop { 30% { transform: translateY(-40px) rotate(-5deg); } 60% { transform: translateY(0) rotate(4deg); } 80% { transform: rotate(-2deg); } }
 @keyframes blink { 50% { opacity: .2; } }
 #town .tcar.c1 { animation: drive1 9s linear infinite; }
 #town .tcar.c2 { animation: drive2 12s linear infinite; }
