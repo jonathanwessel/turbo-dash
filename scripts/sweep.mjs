@@ -45,6 +45,9 @@ const EXTRA = {
   "s-garage-earntap": `(document.getElementById("ec-chip").click(), true)`,
   // v1.20: the Stop playing? card a back press on Main Street opens
   "s-leave": `(__td.goHub(), __td.show("s-leave"), true)`,
+  // v1.21: the car kinds card the first track list opens (track kinds), and the track list after OK with the badge lit
+  "s-traits-kinds": `(Object.assign(__td.S, __mid()), (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.kinds; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, true)`,
+  "s-tracks-kinds": `(document.getElementById("tr-ok").click(), true)`,
   "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));

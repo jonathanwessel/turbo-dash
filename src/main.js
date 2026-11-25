@@ -719,7 +719,7 @@ function openTracks() {
     const th = THEMES[t.theme], open = unlocked(i), best = S.bestD[t.id + ":" + S.diff];
     if (!open && i !== nextLocked && !t.season) return "";
     return `<button class="track-card ${open ? "" : "locked"}" data-i="${i}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
-      <div class="tc-icon">${t.icon}</div>${tcName(t.name)}
+      ${TRAITS[t.kind] ? `<div class="tc-kind" data-kind="${t.kind}" aria-label="${TRAITS[t.kind].name} track">${TRAITS[t.kind].icon}</div>` : ""}<div class="tc-icon">${t.icon}</div>${tcName(t.name)}
       <div class="tc-best">${best ? (MEDAL[best] || "🏁") : ""}${open && bestOf(t) ? `<span class="tc-car" data-best="${bestOf(t).id}"><canvas width="96" height="52"></canvas><b>Best</b></span>` : ""}</div>
       ${(() => { const w = S.mastery[t.id + ":" + S.diff] || 0, s = starsFor(w), lo = MASTERY[s - 1] || 0, hi = MASTERY[s];
         // ⭐ Track Mastery: a star at 3, 10, 25, 50 and 100 wins here; the bar fills toward the next one
@@ -737,6 +737,9 @@ function openTracks() {
   show("s-tracks");
   const cur = list.querySelector(`[data-i="${Math.max(0, TRACKS.findIndex(t => t.id === S.lastTrack))}"]`);
   cur?.scrollIntoView({ inline: "center", block: "center" });
+  // ⚡🛞💪 v1.21 track kinds: the first time a player with more than one car sees the track list, the car kinds card
+  // (its lines now say which tracks each kind is faster on) opens once, and after OK the badge on the card in view glows
+  if (!tipSeen("kinds") && S.owned.length > 1 && list.querySelector(".tc-kind")) { openTraits(CARS.find(c => c.id === S.car), (cur || list).querySelector(".tc-kind"), "s-tracks"); return; }
   // 🏆 the first Best chip the player ever sees opens a picture card once (turbodash.tips), then the chip glows
   const chip = list.querySelector("[data-best]");
   if (chip && !tipSeen("best")) openBestCard(TRACKS[+chip.closest("[data-i]").dataset.i], CARS.find(c => c.id === chip.dataset.best));
@@ -1322,9 +1325,11 @@ const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onC
    name. Each row draws a car of that kind: the car on show when it is that kind, else a starter car of it. After
    the first card the pill on the car glows for a moment (the spotlight). */
 const TRAIT_CARS = { fast: "zippy", grippy: "bolt", tough: "monster" };
-function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits")) openTraits(CARS.find(c => c.id === S.car), true); }
-let traitSpot = false;
-function openTraits(car, first = false) {
+function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits")) openTraits(CARS.find(c => c.id === S.car), $("g-trait")); }
+/* spot: the thing that glows after OK (the Garage's trait pill, or a track card's kind badge, v1.21), back: the
+   screen OK goes back to */
+let traitSpot = null, traitBack = "s-garage";
+function openTraits(car, spot = null, back = "s-garage") {
   // each sentence on its own line (a lone word wrapped onto a line by itself in the picture review)
   $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b data-say>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small data-say>${x}</small>`).join("")}</div></div>`).join("");
   for (const row of $("tr-rows").querySelectorAll(".tr-row")) {
@@ -1334,12 +1339,12 @@ function openTraits(car, first = false) {
     // the picture says the kind: a Fast car with its flames on, a Grippy car with its wheels turned
     drawCar(cx, 80, 90, 104, lookOf(c), { t: 0.4, nitro: id === "fast", steer: id === "grippy" ? 0.8 : 0 });
   }
-  markTip("traits"); traitSpot = first; sfx("chest"); show("s-traits");
+  markTip("traits"); markTip("kinds"); traitSpot = spot; traitBack = back; sfx("chest"); show("s-traits");
 }
 $("tr-ok").onclick = () => {
-  sfx("click"); show("s-garage");
-  if (traitSpot) { const el = $("g-trait"); el.classList.remove("spot"); void el.offsetWidth; el.classList.add("spot"); setTimeout(() => el.classList.remove("spot"), 3200); }
-  traitSpot = false;
+  sfx("click"); show(traitBack);
+  const el = traitSpot; if (el) { el.scrollIntoView?.({ inline: "center", block: "nearest" }); el.classList.remove("spot"); void el.offsetWidth; el.classList.add("spot"); setTimeout(() => el.classList.remove("spot"), 3200); }
+  traitSpot = null; traitBack = "s-garage";
 };
 let giftShownThisVisit = false;
 $("town-wrap").innerHTML = townSVG();

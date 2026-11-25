@@ -76,9 +76,9 @@ export const earnCarIn = (S, world) => CARS.find(c => c.earn && c.world === worl
    v1.21: a car is 6% faster on a track of its own kind (track.kind below, kindBonus in physics-common.js). That
    replaced the old top speed change (Fast +3%, Grippy -2.5% everywhere). */
 export const TRAITS = {
-  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straight roads. Slides on turns.", slide: 1.3 },
-  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Turns well. A bit slower.", slide: 0.7 },
-  tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Bumps don't slow it much. Slow to start.", accel: 0.88, bump: 0.5 },
+  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on ⚡ tracks. Slides on turns.", slide: 1.3 },
+  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Zooms on 🛞 tracks. Turns well.", slide: 0.7 },
+  tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Zooms on 💪 tracks. Slow to start.", accel: 0.88, bump: 0.5 },
 };
 // one trait per car, mixed along the car ladder so the next car up is often a different kind
 const TRAIT_OF = {

@@ -30,6 +30,9 @@ assert.equal(sayLine(["🦏", "", "  ", "Big Bruno"]), "Big Bruno.", "a line tha
 assert.equal(sayLine(["1️⃣ Go"]), "Go.", "keycap pictures are dropped");
 assert.equal(sayLine([]), "");
 for (const t of Object.values(TRAITS)) assert.ok(!/[🪙"“”]/u.test(sayLine([t.icon + " " + t.name, t.line])), t.id);
+// ⚡🛞💪 v1.21: a track kind is said as its word, and the heading's picture is still dropped
+assert.equal(sayLine([TRAITS.fast.icon + " " + TRAITS.fast.name, TRAITS.fast.line]), `Fast. ${TRAITS.fast.line.replace("⚡ tracks", "Fast tracks")}`);
+assert.equal(sayLine(["Zooms on 🛞 tracks.", "Zooms on 💪 tracks."]), "Zooms on Grippy tracks. Zooms on Tough tracks.");
 
 // every picture card that explains something has one speaker, and its words are marked to be read. The card's
 // own words are read, so what the child hears is what the card shows (one source).

@@ -1322,3 +1322,12 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 @media (max-width: 420px) { .g-worlds { gap: 4px; flex-wrap: wrap; } .g-worlds button { padding: 3px 8px; } .g-worlds button.on { transform: none; } }
 /* v1.20: on an upright phone three long words ("carrot parrot carpet") were cut off at both sides: they wrap now */
 @media (max-width: 420px) { .math-ans { flex-wrap: wrap; justify-content: center; max-width: 100%; } }
+
+/* ⚡🛞💪 v1.21 track kinds: a round badge in the top left corner of an open track card, in its trait's color (the same
+   colors as the Garage's trait pill), so a child can match it with the pill on the car */
+.track-card .tc-kind { position: absolute; top: 8px; left: 8px; width: clamp(30px, 8vmin, 42px); height: clamp(30px, 8vmin, 42px); border-radius: 50%;
+  display: grid; place-items: center; font-size: clamp(16px, 4.4vmin, 24px); line-height: 1; border: 3px solid var(--ink); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.track-card .tc-kind[data-kind="fast"] { background: #ff6b5a; }
+.track-card .tc-kind[data-kind="grippy"] { background: #5be36a; }
+.track-card .tc-kind[data-kind="tough"] { background: #ff9d4d; }
+.track-card .tc-kind.spot { animation: bspot 0.8s ease-in-out 4; }

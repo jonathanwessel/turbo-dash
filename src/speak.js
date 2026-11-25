@@ -11,12 +11,15 @@ export function pickVoice(voices) {
   return ok.find(v => /^en[-_]US/i.test(v.lang)) || ok.find(v => /^en[-_]GB/i.test(v.lang)) || ok[0] || null;
 }
 
-/* a card's lines → one thing to say. Coins are words (🪙 300 → 300 coins), other pictures and quote marks are
-   dropped, and every line ends like a sentence so the voice pauses between them. */
+/* a card's lines → one thing to say. Coins are words (🪙 300 → 300 coins), a track kind is a word (⚡ tracks → Fast
+   tracks, v1.21), other pictures and quote marks are dropped, and every line ends like a sentence so the voice
+   pauses between them. */
+const KIND_WORD = { "⚡": "Fast", "🛞": "Grippy", "💪": "Tough" };
 const PIC = /[#*0-9]️?⃣|\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*|️/gu;
 export function sayLine(lines) {
   return lines.map(l => String(l)
     .replace(/🪙\s*(\d[\d,]*)/gu, "$1 coins").replace(/🪙/gu, "coins")
+    .replace(/(⚡|🛞|💪)️?\s*tracks/gu, (m, k) => KIND_WORD[k] + " tracks")
     .replace(PIC, " ").replace(/["“”]/g, "").replace(/\s+/g, " ").trim())
     .filter(l => /[a-z0-9]/i.test(l))
     .map(l => /[.!?]$/.test(l) ? l : l + ".")
