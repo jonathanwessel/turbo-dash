@@ -587,9 +587,10 @@ export class Race {
     }
     if (s.snow != null && p.air < 150 && this.snowHit !== s.index + ":" + Math.floor(p.dist / this.T.length) && Math.abs(p.offset - s.snow) < 0.22 + CAR_W * 0.5) {
       this.snowHit = s.index + ":" + Math.floor(p.dist / this.T.length);
-      // 🧊 Snow Cat (v1.23): it smashes right through a snowbank and keeps its speed
+      if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(Math.min(0.9, 0.62 + (S.plow || 0)), S);
+      // 🧊 Snow Cat (v1.23): it smashes through a snowbank and zooms off with a kick. The bank still slows it first:
+      // skipping the slowdown too was worth 5.6% of a race with no Snowplow research, far over the 3% the Best rule counts
       if (S.smash) { this.kickT = Math.max(this.kickT, S.smash); this.hooks.sfx("boost"); }
-      else if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(Math.min(0.9, 0.62 + (S.plow || 0)), S);
       for (let k = 0; k < 18; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.3, y: 0.9, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.4, life: 0.7, c: "#ffffff", r: 0.008 + Math.random() * 0.012 });
       this.shake = Math.max(this.shake, 0.15); this.hooks.sfx("bonk"); this.popup(S.smash ? "SMASH!" : "POOF!", "#ffffff");
     }

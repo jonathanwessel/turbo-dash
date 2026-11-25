@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.23.0 — Special powers 🦘⚓🧊
+
+- **🌟 The special cars' powers help at home.** Measured in whole races, three of the four powers were worth nothing
+  (the Moon Hopper's high jump even cost 1.1%). Now each one gives a push on top of any boost:
+  - 🦘 the **Moon Hopper** still jumps extra high, and a Moon landing springs it ahead ("BOING!");
+  - ⚓ a water current carries the **Deep Diver** forward instead of pushing it sideways ("SURF!");
+  - 🧊 the **Snow Cat** still does not slide, and it smashes through a snowbank and zooms off ("SMASH!").
+  Each is worth about 3% of a race in its own world, like the Boost Buggy's boosters. The Garage and the New car card
+  say what each one does now.
+- **🏆 The Best card shows the car you are driving.** "Champion X is faster here than" now ends with a small picture
+  of the car being driven and its name, so a child who can't read the name still sees which car is slower.
+- Polish: the BOING!, SURF! and SMASH! pushes are the new thing to see, and the three powers are the new thing to use.
+- Numbers: the powers measured with `scripts/probes/perk.mjs` (8 seeded kid races per track, fully upgraded): Moon
+  Hopper 3.0%, Deep Diver 2.9%, Snow Cat 3.0%, Boost Buggy 3.4%. The Best rule counts 3% for each. `npm run career`
+  reaches Rank 40 on day 549 (Moon 105, Ocean 187, Glacier 281, Toy 411). At the end no car is the best on more than
+  10 of 32 tracks. `npm run bots`: every way of playing is within 13% at Rank 10, 5% at Rank 20, 1% at Rank 30 and 1%
+  at Rank 40, and all 29 cars are the best pick at some point on each seeded kid career. The starter car still does
+  not win the first race.
+- **For the grown-ups:** a fully upgraded kid race is under Turbo or a boost 73 to 82% of the time, so a power that
+  only adds boost time does almost nothing. The push (`KICK` in `src/engine.js`, 15% more top speed for a moment)
+  stacks with boosts. The first Snow Cat design also skipped the snowbank's slowdown, which was worth 5.6% of a race
+  with no Snowplow research and made `npm run sim -- best` fail; the bank now slows it first. The perk probe pins the
+  race counter, so a car with and without its power race the same rivals and luck (before, the same car run twice
+  came out up to 1% apart). Five new physics checks, each seen failing on the v1.22 engine.
+
 ## v1.22.0 — Home tracks & holidays 🏠🎄
 
 - **🏠 Every Earth prize car has a home track.** Green Machine (Desert Dash), Barnstormer (Autumn Forest), Gold Rush

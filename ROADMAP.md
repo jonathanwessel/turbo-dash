@@ -383,6 +383,13 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.23.0 🦘 Special powers (shipped)
+Each special car's power now wins time at home: the Moon Hopper springs ahead after a Moon landing, a current carries
+the Deep Diver forward, and the Snow Cat zooms off after smashing a snowbank, each about 3% of a race. The Best card
+shows a small picture of the car being driven.
+- Lesson: at full upgrades Turbo and boosts run most of a race, so more boost time is worth almost nothing. A power
+  has to push past a boosted car's top speed to matter, and a probe has to pin its random seeds to see a 1% effect.
+
 ### v1.22.0 🏠 Home tracks & holidays (shipped)
 Each of Earth's six prize cars is faster on one Earth track of its own, so all 29 cars are the best pick of the garage
 at some point of the game. Main Street dresses up for fall, winter and summer by the calendar.

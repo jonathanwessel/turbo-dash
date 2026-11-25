@@ -35,7 +35,11 @@ Turbo Dash's own rules on top, and they win where the two disagree.
   the first race. A track opens only after a Normal or Hard win on the one before.
 - **There is always a track the player can almost win.** Tracks stay closely spaced in difficulty.
 - **Measure a number before it ships** (v1.19.0). A new goal, price or power gets its number from the career run's
-  counters or from the same seeded races with and without it, and the notes say how it was measured.
+  counters or from the same seeded races with and without it, and the notes say how it was measured. A with-and-without
+  measurement pins every random source (`Math.random` and the race counter `raceSeq`), shows 0.0% for the same car
+  run twice, and is taken on an early garage (low upgrades, no Lab) as well as a full one, because the Best gate races
+  random early garages (v1.23.0, seen twice: v1.21.0's unseeded career moved by days, and v1.23.0's probe was 1% off
+  for the same car and missed that the first Snow Cat power was worth 5.6% with no Lab).
 - **Every old save loads.** Any change to the save adds a port and a fixture in `scripts/test-saves.mjs`. Only
   `turbodash.*` storage keys.
 - **Never touch a real save.** Browser checks run in a headless browser with a throwaway profile. Never open
@@ -432,41 +436,6 @@ every test green.
   target was set. The check on the commit before it said day 544: the bot's luck moves these a few days. M1 is done.
 
 ### M2. Cars that feel different (v1.13)
-- [ ] **v1.15.1 picture review leftovers** (all on screen before v1.15.1, so that release shipped). Garage: the
-  green "✓ Driving" looks like a button but only shows a state (make it a flat mark like MAX!), at 360x740 the
-  "Garage" title touches the back button, and the world chips' "🚗 13/13" is small. Lab words a young child may not
-  follow: "Robot plug", "Softer bonks", "Brain Chip Socket". The result card's "Upgrade your car and try again,
-  Racer!" leaves "Racer!" alone on a line at 360 px. "More worlds" has a dashed outline and does not read as a
-  button. The track and cup lists show a gray scrollbar in desktop browsers (thin or hidden, the cards still
-  scroll). Main Street at 1280x800 has a hard color seam in the sky. On a 360 px phone a long track name such as
-  "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Done in v1.16.0: "✓ Driving" is a flat
-  green mark. Done in v1.17.0: the track, cup, boss and trial lists have a thin yellow scrollbar instead of the gray one. Decided to leave: the rival chip and the
-  boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
-  (it has one level), and the player's name and the home town stay (owner decision).
-  Added from the v1.18.0 picture review (all on screen before v1.18.0): the world preview card says "Opens with Rank 20
-  and the Moon Tires research" ("research" is a grown-up word) and "Take a peek! One lap of Crater Hop in a mystery
-  car. No coins or prizes in a preview." (three sentences, the last one reads like a manual); its mystery car's roof
-  is cut flat under the words at 1024x600 and 1280x800; the car kinds card leaves "roads." and "much." alone on a line
-  at 1024x600 and 1280x800; the small "Not yet" and "OK" buttons have small words in a narrow box; at 360x740 the
-  rival and preview cards run edge to edge and the preview arrows touch the screen's edge.
-  Added in v1.19.0: the special car's counter ("⭕ 137 / 500") only shows in the Garage. Show it where the child
-  collects (for example a small ⭕ counter with the car's dark shape on the world's track list or the result card).
-  Done in v1.20.0: a chip on each world's track list with the car's mystery shape and its counter (`earnLine`, the
-  same words as the Garage, a test says so), and a tap opens the Garage on that car.
-  From the v1.20.0 picture review (all older than v1.20.0 unless said): the Garage on a mystery car shows the four
-  upgrade cards with padlocks and prices the player could pay, so a tap seems to do nothing (hide them or show one
-  big padlock); "This car is still a mystery!" is pale pink and easy to miss; at 740x360 the button under the bars
-  ("✓ Driving", or the counter on a mystery car) is cut by the screen's bottom edge; Garage labels ("Go faster", the
-  13/13 and 0/4 counts, Speed, Power, Turning, Turbo) are about 10 to 11 px at 740x360 and 1024x600; "137 / 500" is
-  a big number for a young child (a bar that fills toward the car may read better, on the chip too, new in v1.20.0);
-  the rival chip and the counter chip both use circles and look alike side by side (new in v1.20.0); on the boss card
-  the crowns do not show how many rounds are left. Fixed in v1.20.0: the Garage's sideways scroll at 360 px.
-  From the v1.19.0 picture review (older than v1.19.0 unless said): on the All cars grid a price the player can't
-  pay yet is white, not red ("have / need, red when short"); "Deep Blue, Rank 25" under a far world's car reads like
-  a manual; the ⭕ counter picture is red while the Moon's boost rings are blue (new in v1.19.0); the home and power
-  lines under a car's name are about 12 px at 740x360 and 360x740. Decided to leave: the Fast / Grippy / Tough pill
-  looks like a button because it is one (it opens the car kinds card), and the world icon after a car's name is the
-  home mark.
 - [x] **Three traits per car, shown as words and pictures:** Fast, Grippy, Tough. A fast car slides more. A
   grippy car is slower on the straight. A tough car loses less speed on a bump. No bare numbers on the card.
   Notes: v1.16.0. Decision: "three traits" read as three kinds of car, one kind per car (a pill with a picture and
@@ -664,29 +633,36 @@ every test green.
   Polar Bear 1 of 32. Bots 13%, 5%, 1% and 1% apart at Rank 10, 20, 30, 40 (17%, 6%, 2%, 1% before). Best badges pick
   the fastest car 772 of 800 times, at worst 3.0% slower. The starter car still does not win the first race. Not
   checked on a real tablet.
-- [ ] **v1.21.0 picture review leftovers** (all older than v1.21.0, so it shipped; take one or two as a release's
-  polish). On a 360 px upright phone the rival of the week's card runs to both screen edges and its border is cut,
-  and the Garage title sits against the ◀ button. The Garage's world chips wrap Moon Base and Deep Blue onto two lines
-  while Earth stays on one. The Best card says "faster here than Zippy" to a child who may not know the car's name
-  (a picture of the car being driven would say it). The What's new card scrolls when many releases are listed, so a
-  child who cannot read never sees the lower lines.
-  From the v1.22.0 picture review (all older than v1.22.0): on the Toy curve frame "BOOSTED!" and "BAM!" show at the
-  same time, faded and stacked, so neither can be read; cars at the left edge of a race pass under the horn and steer
-  buttons, and the gray steer arrow is faint on Glacier snow; the track list's corner signs and the special car's
-  counter chip have no word, and "Trials" is a grown-up word; the 1280x800 and 1920x1080 sky seam (also in the box at
-  the top of M2).
-- [ ] **Special car powers help at home** (added in v1.21.0, found by `scripts/probes/perk.mjs`). Measured in whole
+- [x] **Special car powers help at home** (added in v1.21.0, found by `scripts/probes/perk.mjs`). Measured in whole
   races at full upgrades, three of the four powers are worth nothing to a race: the Moon Hopper's high jump -1.1% (it
   is a little slower with it), the Deep Diver's steadiness -0.1%, the Snow Cat's studs +0.1%. Only the Boost Buggy's
   boosters count (3%). A child who earns one of these cars should feel it win more at home. Give each power a real
   effect where its world has the thing it changes (for example rings collected in the air count double for the
   Hopper, or a current pushes it forward instead of sideways), measure it with the probe, and keep the end-game
   spread (no car the best on more than a third of the tracks).
-  Stopped at (v1.23.0 run, step commit): the powers are built and measured (Hopper 3.0%, Diver 2.9%, Snow Cat 3.2%,
-  Buggy 3.4% with `scripts/probes/perk.mjs`), with 5 physics checks seen red on the v1.22 engine. `npm test`, the
-  start, rival and boss sims and the end-game probe pass. Left: the career run, the bots, `sim -- best`, the sweep,
-  the picture review and the release.
-- [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
+  Notes: v1.23.0. Measured first: a fully upgraded kid race is under Turbo or a boost 73 to 82% of the time, so the
+  first try (a longer boost after a Moon landing, a faster top speed on a current only on the ground, a snowbank that
+  boosts) stayed under 1%. Decision: **a kick on top of any boost**. `KICK` (src/engine.js) is 15% more top speed for
+  a moment and stacks with Turbo and boosts. 🦘 Moon Hopper: a Moon landing after a jump gives 1 s of kick ("BOING!"),
+  Moon only, and the high jump stays. ⚓ Deep Diver: a current carries it forward, 13% more top speed while on one,
+  floating too, since it is under water ("SURF!" once per current). 🧊 Snow Cat: no slide stays, and a snowbank slows
+  it like any car, then gives 0.45 s of kick ("SMASH!" instead of "POOF!"). The first Snow Cat design also skipped the
+  slowdown: 3.2% fully upgraded but 5.6% with no Snowplow research, and `npm run sim -- best` failed on three Glacier
+  garages (a pick 4.4% slower than the Snow Cat), so the bank slows it first now (2.9% full, 3.9% at +3 with no Lab,
+  the Hopper's 3.9% there too). The Garage and New car lines say it: "Jumps high and springs ahead!", "The water pushes
+  it faster!", "Smashes snow and zooms!". The probe was noisy: the race counter that seeds rival lanes and power-up
+  luck goes up with every race, so the same car run twice came out up to 1% apart. `scripts/probes/perk.mjs` now pins
+  it and runs 8 races a track. Measured with it: Moon Hopper 3.0%, Deep Diver 2.9%, Snow Cat 3.0%, Boost Buggy 3.4%,
+  and the Best rule counts 3% for each (`PERKS.pace`). On an early garage (+3, no Lab, `perk.mjs <car> early`): 3.9%,
+  3.0%, 3.9% and 0.9%. Five physics checks (spring on the Moon and not on Earth,
+  the current ride, the snowbank kick, the kick's size), each seen failing on the v1.22 engine. Check on this build:
+  career Rank 40 on day 549 (Moon 105, Ocean 187, Glacier 281, Toy 411), inside 1% of v1.22.0's 551. At the end Boost
+  Buggy 10, Loop Legend 9, Wind-Up Rocket 9, Snow Cat 2, Blizzard Wolf 1, Polar Bear 1 of 32 (the same spread). Bots
+  13%, 5%, 1%, 1% apart, 29 of 29 cars ever the best on each seeded kid career. The unseeded default career once
+  showed 28 of 29 (Manta Ray 1.1% short on Beach, the Deep Diver there) and once 29; the gate is on the seeded runs.
+  Best badges pick the fastest car 775 of 800 times, at worst 3.0% slower. Not checked on a real tablet: how the kicks
+  feel needs the owner's eyes.
+- [x] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
   Notes (v1.20.0, progress): the bots part passes (+1% at Rank 40, gated in `npm run check`). The car part does not:
   Wind-Up Rocket is best on 32 of 32 tracks at full upgrades. Decision, in the open: "every car" cannot mean every one
@@ -704,6 +680,11 @@ every test green.
   (gated in `npm run career`), and the bots reach Rank 40 within 1% (gated in `npm run check`). Decision: leave this box
   open until the two boxes above it are done (the picture leftovers and the special car powers), because the powers
   box can move the end-game spread. Tick it in the release that closes the last of them, after re-running the gates.
+  Notes (v1.23.0, done): the special car powers box is done and the gates were run again on this build: 29 of 29 cars
+  ever the best pick on each seeded kid career, at most 10 of 32 tracks for any car at the end (the same spread as
+  before the powers), the bots within 13%, 5%, 1% and 1% at Rank 10, 20, 30 and 40. Decision, in the open: the two
+  picture leftovers boxes moved out of M2 into their own section below. They are backlogs that each release takes a
+  piece of, never a part of this target's measure, and keeping the target open for them would hold M2 open forever.
 
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
@@ -756,6 +737,57 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   checks in `scripts/test-holiday.mjs`, seen red on the old drawing. Decided to leave: the scarecrow's arms pass
   behind the School and Bank roofs (it stands behind them on purpose, so their taps win), and the Garage's home line
   and Best row both name the home track (two facts: faster there, and the best of the player's cars there).
+
+### Picture leftovers (take one or two as any release's polish)
+Things the picture reviews found that were already on screen before the release that found them, so that release
+shipped. Work them as the "Polish" piece of a release, oldest first, and write "Done in v..." on each line.
+- [ ] **v1.15.1 picture review leftovers** (all on screen before v1.15.1, so that release shipped). Garage: the
+  green "✓ Driving" looks like a button but only shows a state (make it a flat mark like MAX!), at 360x740 the
+  "Garage" title touches the back button, and the world chips' "🚗 13/13" is small. Lab words a young child may not
+  follow: "Robot plug", "Softer bonks", "Brain Chip Socket". The result card's "Upgrade your car and try again,
+  Racer!" leaves "Racer!" alone on a line at 360 px. "More worlds" has a dashed outline and does not read as a
+  button. The track and cup lists show a gray scrollbar in desktop browsers (thin or hidden, the cards still
+  scroll). Main Street at 1280x800 has a hard color seam in the sky. On a 360 px phone a long track name such as
+  "Beach Boardwalk" shrinks to about 14 px (the shrink rule is sized for landscape cards). Done in v1.16.0: "✓ Driving" is a flat
+  green mark. Done in v1.17.0: the track, cup, boss and trial lists have a thin yellow scrollbar instead of the gray one. Decided to leave: the rival chip and the
+  boss card's prize row are pictures without words (decided in v1.13.0 and v1.15.0), Super Paint has no level bar
+  (it has one level), and the player's name and the home town stay (owner decision).
+  Added from the v1.18.0 picture review (all on screen before v1.18.0): the world preview card says "Opens with Rank 20
+  and the Moon Tires research" ("research" is a grown-up word) and "Take a peek! One lap of Crater Hop in a mystery
+  car. No coins or prizes in a preview." (three sentences, the last one reads like a manual); its mystery car's roof
+  is cut flat under the words at 1024x600 and 1280x800; the car kinds card leaves "roads." and "much." alone on a line
+  at 1024x600 and 1280x800; the small "Not yet" and "OK" buttons have small words in a narrow box; at 360x740 the
+  rival and preview cards run edge to edge and the preview arrows touch the screen's edge.
+  Added in v1.19.0: the special car's counter ("⭕ 137 / 500") only shows in the Garage. Show it where the child
+  collects (for example a small ⭕ counter with the car's dark shape on the world's track list or the result card).
+  Done in v1.20.0: a chip on each world's track list with the car's mystery shape and its counter (`earnLine`, the
+  same words as the Garage, a test says so), and a tap opens the Garage on that car.
+  From the v1.20.0 picture review (all older than v1.20.0 unless said): the Garage on a mystery car shows the four
+  upgrade cards with padlocks and prices the player could pay, so a tap seems to do nothing (hide them or show one
+  big padlock); "This car is still a mystery!" is pale pink and easy to miss; at 740x360 the button under the bars
+  ("✓ Driving", or the counter on a mystery car) is cut by the screen's bottom edge; Garage labels ("Go faster", the
+  13/13 and 0/4 counts, Speed, Power, Turning, Turbo) are about 10 to 11 px at 740x360 and 1024x600; "137 / 500" is
+  a big number for a young child (a bar that fills toward the car may read better, on the chip too, new in v1.20.0);
+  the rival chip and the counter chip both use circles and look alike side by side (new in v1.20.0); on the boss card
+  the crowns do not show how many rounds are left. Fixed in v1.20.0: the Garage's sideways scroll at 360 px.
+  From the v1.19.0 picture review (older than v1.19.0 unless said): on the All cars grid a price the player can't
+  pay yet is white, not red ("have / need, red when short"); "Deep Blue, Rank 25" under a far world's car reads like
+  a manual; the ⭕ counter picture is red while the Moon's boost rings are blue (new in v1.19.0); the home and power
+  lines under a car's name are about 12 px at 740x360 and 360x740. Decided to leave: the Fast / Grippy / Tough pill
+  looks like a button because it is one (it opens the car kinds card), and the world icon after a car's name is the
+  home mark.
+- [ ] **v1.21.0 picture review leftovers** (all older than v1.21.0, so it shipped; take one or two as a release's
+  polish). On a 360 px upright phone the rival of the week's card runs to both screen edges and its border is cut,
+  and the Garage title sits against the ◀ button. The Garage's world chips wrap Moon Base and Deep Blue onto two lines
+  while Earth stays on one. The Best card says "faster here than Zippy" to a child who may not know the car's name
+  (a picture of the car being driven would say it). The What's new card scrolls when many releases are listed, so a
+  child who cannot read never sees the lower lines. Done in v1.23.0: the Best card ends "faster here than" with a small
+  picture of the car being driven and its name, kept together on one line.
+  From the v1.22.0 picture review (all older than v1.22.0): on the Toy curve frame "BOOSTED!" and "BAM!" show at the
+  same time, faded and stacked, so neither can be read; cars at the left edge of a race pass under the horn and steer
+  buttons, and the gray steer arrow is faint on Glacier snow; the track list's corner signs and the special car's
+  counter chip have no word, and "Trials" is a grown-up word; the 1280x800 and 1920x1080 sky seam (also in the box at
+  the top of M2).
 
 
 ## Waiting for the owner (do not act on these)
@@ -946,3 +978,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   powers box can move the end-game spread. The game moved forward for the seventh release in a row. Next: **Special
   car powers help at home** as the main piece (the first leftovers box is a backlog that each release takes a piece
   of), with one or two lines of the v1.21.0 picture leftovers as its polish.
+- 2026-11-25 (v1.23.0): **Special car powers help at home** shipped as the main piece, with one line of the v1.21.0
+  picture leftovers (the Best card's picture of the car being driven) as its polish, as the last note asked. M2 is
+  done: its target passed on this build, and the two picture leftovers boxes moved to their own section under Small
+  delights, because they are backlogs each release takes a piece of and kept the milestone open with nothing left to
+  measure (decided in the open in the target's notes). The game moved forward for the eighth release in a row. What
+  kept coming back: measurements that do not repeat. v1.21.0 found the default career unseeded, and this run found
+  the perk probe 1% off for the same car (the race counter seeds rival lanes and luck), which hid every 1% effect it
+  was meant to measure. It also measured only fully upgraded cars, so the first Snow Cat power (worth 5.6% with no
+  Lab) reached `npm run sim -- best` before anything caught it. Rule, in "Measure a number before it ships": pin every
+  random source, show 0.0% for the same car twice, and measure an early garage as well as a full one. Next: **M3, Moon
+  4 more tracks** as the main piece (a meteor shower and a crater jump), with a line of the picture leftovers as polish.

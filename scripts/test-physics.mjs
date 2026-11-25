@@ -516,12 +516,17 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
     const S = statsFor(car("diver"), UPS, {}), a = ahead(S), b = ahead({ ...S, ride: 0 });
     check("a current carries the Deep Diver forward", k > 0 && a.d > b.d * 1.05 && a.surf && !b.surf, `${Math.round(a.d)} vs ${Math.round(b.d)} in 1.2 s (current at segment ${k})`);
   }
-  // 🧊 Snow Cat: a snowbank does not slow it, it kicks it ahead
+  // 🧊 Snow Cat: a snowbank slows it like any car, then it zooms off with a kick and is ahead a moment later
   {
     const T = buildTrack(track("icecave")), s = T.segs.find((q, i) => i > 30 && q.snow != null);
-    const hit = S => { const r = sceneWith("icecave", S, 0), p = r.player; p.offset = s.snow; const v = p.speed; r.touch(r.T.segs[s.index]); return { keep: p.speed / v, kick: r.kickT }; };
+    const hit = S => {
+      const r = sceneWith("icecave", S, 0), p = r.player; p.offset = s.snow; const v = p.speed, d0 = p.dist;
+      r.touch(r.T.segs[s.index]); const keep = p.speed / v, kick = r.kickT; p.offset = 0; r.snowHit = "done";
+      run(r, 1); return { keep, kick, d: p.dist - d0 };
+    };
     const cat = hit(statsFor(car("snowcat"), UPS, {})), other = hit(statsFor(plainOf(car("snowcat")), UPS, {}));
-    check("the Snow Cat smashes a snowbank and zooms", s && cat.keep === 1 && cat.kick === PERKS.studs.smash && other.keep < 0.95 && other.kick <= 0, `keeps ${cat.keep.toFixed(2)} vs ${other.keep.toFixed(2)} of its speed, kick ${cat.kick} vs ${other.kick}`);
+    check("the Snow Cat smashes a snowbank and zooms", s && cat.keep === other.keep && cat.keep < 0.95 && cat.kick === PERKS.studs.smash && other.kick <= 0 && cat.d > other.d * 1.03,
+      `keeps ${cat.keep.toFixed(2)} vs ${other.keep.toFixed(2)} of its speed, kick ${cat.kick} vs ${other.kick}, ${Math.round(cat.d)} vs ${Math.round(other.d)} in 1 s`);
   }
   check("the kick is a real push", KICK > 0.05 && KICK < 0.3, `KICK ${KICK}`);
 }
