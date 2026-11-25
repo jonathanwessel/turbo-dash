@@ -18,7 +18,7 @@ ok(paceOn(rover, U(5), moon) > paceOn(rover, U(5), track("sunny")), "the Moon ca
 // upgrades count: Zippy fully upgraded against a bare Blue Bolt
 ok(bestCar(track("sunny"), [car("zippy"), car("bolt")], id => id === "zippy" ? U(5) : U(0)) === car("zippy"), "upgrades count");
 // the car being driven keeps the title unless another is at least 1% faster
-{ const a = car("zippy"), b = car("monster"), t = track("desert");   // a Tough track (v1.21 kinds): Zippy is Fast
+{ const a = car("zippy"), b = car("monster"), t = TRACKS.find(x => x.world === "earth" && x.kind === "tough");   // a Tough track (v1.21 kinds): Zippy is Fast
   const pa = paceOn(a, U(5), t), pb = paceOn(b, U(5), t);
   ok(pb >= pa * BEST_MARGIN, "Mega Monster +5 is clearly faster than Zippy +5 (setup)");
   ok(bestCar(t, [a, b], () => U(5), {}, "zippy") === b, "a clearly faster car takes the title from the car being driven");
