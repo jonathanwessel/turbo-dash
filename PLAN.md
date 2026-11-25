@@ -632,6 +632,10 @@ every test green.
   and the badge in view glows after OK. GO shouts the bonus with its pictures. Read aloud says "Fast tracks". The
   career run now reports which cars are ever the Best pick and fails when one car is the best on more than a third
   of the tracks at the end (seen red on v1.20.0's code: Wind-Up Rocket on 32). Not checked on a real tablet.
+  Check on the release commit: career Rank 40 on day 543 (Moon 106, Ocean 181, Glacier 280, Toy 408), 22 of 29 cars
+  ever the best pick, at the end Boost Buggy 10, Loop Legend 10, Wind-Up Rocket 9, Polar Bear 2, Blizzard Wolf 1;
+  bots 17%, 6%, 2%, 1% apart, kid seeds 24, 23, 22 ever best. Sweep clean at 8 sizes after the review fixes. Live
+  install test ok, GitHub release made from the tag.
 - [ ] **Side cars have a place** (added in v1.21.0, the target below found it). Nine cars are never the Best pick of the
   bot's garage on an open track in some careers, and three in every seeded kid career: Green Machine, Fire Dash and
   School Resource Officer. They are side prizes (a cup, the Fire Station, the School) that arrive slower than the
