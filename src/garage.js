@@ -222,5 +222,7 @@ export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview, onTra
   }
 
   const affordable = () => CARS.some(c => c.price != null && !S.owned.includes(c.id) && S.coins >= c.price) || S.owned.some(id => UPGRADES.some(u => upsOf(id)[u.id] < UPGRADE_MAX && S.coins >= upgradeCost(id, upsOf(id)[u.id], S.research.pitCrew || 0)));
-  return { open, render, draw, affordable };
+  // the picture guard (scripts/guard.mjs) holds the car still: one fixed pose, no bounce left over from the clock
+  const pose = at => { t = at; zoom = 0; draw(0); };
+  return { open, render, draw, affordable, pose };
 }

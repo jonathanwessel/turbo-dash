@@ -21,8 +21,52 @@ const ACCEPT = process.argv.includes("--accept");
 const keep = join(root, "scripts", "guard"), out = join(root, ".guard");
 const DEV = 5184, URL0 = `http://127.0.0.1:${DEV}/`;
 const W = 640, H = 400, BLOCK = 8, PIX = 40, MAX_ALL = 0.005, MAX_BLOCK = 0.3;
-const WORLDS = ["earth", "moon", "ocean", "glacier", "toy"];   // v1.18: Toy Track World (3D) too. The screens come next (PLAN.md)
+const WORLDS = ["earth", "moon", "ocean", "glacier", "toy"];   // v1.18: Toy Track World (3D) too
 const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* 📺 v1.20.1: three screens from the career bot's Rank 16 save, at 1280x800 (a tablet), in a second page that holds
+   everything that moves or changes by itself: the clock stops at one moment (Date, so the rival of the week, the Lab
+   timers and the bank read the same every run, in UTC), Math.random is seeded, the one-time tips are marked seen,
+   every CSS animation and transition is off (the town's cars, flags and pulsing buttons sit at their rest place), the
+   race behind the menus is hidden (the race frames above guard it), toasts are hidden, and the frame loop is held
+   before each picture with the Garage car in one fixed pose (no bounce). Each screen opens the way the player opens
+   it, from its Main Street button. */
+const SW = 1280, SH = 800, FIXED_NOW = Date.UTC(2026, 0, 7, 17, 0, 0);
+const tap = go => `document.querySelector('[data-go="${go}"]').dispatchEvent(new MouseEvent("click", { bubbles: true }))`;
+const SCREENS = {
+  garage: `(__td.goHub(), ${tap("garage")}, !document.getElementById("s-garage").hidden)`,
+  tracks: `(__td.goHub(), ${tap("race")}, document.getElementById("s-rival").hidden || document.getElementById("rw-ok").click(), !document.getElementById("s-tracks").hidden)`,
+  street: `(__td.goHub(), !document.getElementById("s-hub").hidden)`,
+};
+const stillInit = `(() => {
+  const FIX = ${FIXED_NOW}, RD = Date;
+  function FD(...a) { if (!new.target) return new RD(FIX).toString(); return a.length ? new RD(...a) : new RD(FIX); }
+  FD.prototype = RD.prototype; FD.now = () => FIX; FD.UTC = RD.UTC; FD.parse = RD.parse; window.Date = FD;
+  let s = 777; Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const raf = window.requestAnimationFrame.bind(window); window.__hold = false;
+  window.requestAnimationFrame = cb => raf(t => window.__hold ? window.requestAnimationFrame(cb) : cb(t));
+  try { localStorage.setItem("turbodash.tips", JSON.stringify({ horn: 1, best: 1, traits: 1 })); } catch (e) {}
+})()`;
+const STILL_CSS = "#toast,#fx,#game,#gl{visibility:hidden!important}*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}";
+/* runs in the page: the same changed-pixel count as the race frames, for two pictures of any (equal) size */
+const diffIn = async ({ a, b, BLOCK, PIX }) => {
+  const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+  const [ia, ib] = [await load(a), await load(b)];
+  const W = ib.width, H = ib.height;
+  if (ia.width !== W || ia.height !== H) return { changed: 1, block: 1, diff: b };
+  const ctx = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c.getContext("2d"); };
+  const ca = ctx(), cb = ctx(), cd = ctx(); ca.drawImage(ia, 0, 0); cb.drawImage(ib, 0, 0);
+  const A = ca.getImageData(0, 0, W, H).data, B = cb.getImageData(0, 0, W, H).data, D = cd.createImageData(W, H);
+  const bx = Math.ceil(W / BLOCK), blocks = new Array(bx * Math.ceil(H / BLOCK)).fill(0);
+  let n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4, ch = Math.max(Math.abs(A[i] - B[i]), Math.abs(A[i + 1] - B[i + 1]), Math.abs(A[i + 2] - B[i + 2]));
+    if (ch > PIX) { n++; blocks[Math.floor(y / BLOCK) * bx + Math.floor(x / BLOCK)]++; D.data[i] = 255; D.data[i + 1] = 0; D.data[i + 2] = 200; D.data[i + 3] = 255; }
+    else { const g = (B[i] + B[i + 1] + B[i + 2]) / 3 * 0.35; D.data[i] = D.data[i + 1] = D.data[i + 2] = g; D.data[i + 3] = 255; }
+  }
+  cd.putImageData(D, 0, 0);
+  return { changed: n / (W * H), block: Math.max(...blocks) / (BLOCK * BLOCK), diff: cd.canvas.toDataURL("image/png") };
+};
 
 /* runs in the page: one seeded frame per world, compared with the accepted picture when there is one */
 const inPage = async ({ worlds, accepted, W, H, BLOCK, PIX }) => {
@@ -166,8 +210,39 @@ async function main() {
     console.log(`  ${big ? "✖" : "✔"} ${w.padEnd(8)} ${line}`);
     if (big) { bad++; mkdirSync(out, { recursive: true }); writeFileSync(join(out, w + ".png"), png(r.png)); writeFileSync(join(out, w + "-diff.png"), png(r.diff)); }
   }
+  await page.close();
+  // 📺 the screens (see SCREENS above)
+  const sp = await browser.newPage();
+  await sp.addInitScript(stillInit);
+  await sp.cdp("Emulation.setTimezoneOverride", { timezoneId: "UTC" });
+  await sp.setViewportSize({ width: SW, height: SH });
+  sp.on("pageerror", e => errors.push(e.message));
+  await sp.goto(URL0);
+  for (let t = Date.now(); !(await sp.evaluate("!!(window.__td && window.__mid && document.readyState === 'complete')").catch(() => false)); await wait(250))
+    if (Date.now() - t > 60000) throw new Error("the game did not load for the screens");
+  await sp.evaluate("document.fonts.ready.then(() => true)");
+  await sp.evaluate(`(Object.assign(__td.S, __mid()), __td.refreshCoins(), document.head.insertAdjacentHTML('beforeend', '<style>${STILL_CSS}</style>'), true)`);
+  await wait(1500);   // the emoji pictures the screens draw load once
+  for (const [name, open] of Object.entries(SCREENS)) {
+    const key = "screen-" + name;
+    await sp.evaluate("(window.__hold = false, true)");
+    const opened = await sp.evaluate(open);
+    await wait(900);   // the coin counter and any card settle
+    await sp.evaluate("(window.__hold = true, true)"); await wait(150);
+    await sp.evaluate("(!document.getElementById('s-garage').hidden && __td.garage.pose(0), true)");
+    const shot = await sp.screenshot(), url = "data:image/png;base64," + shot.toString("base64");
+    if (errors.length) throw new Error("the page threw: " + errors[0]);
+    if (!opened) { bad++; console.log(`  ✖ ${key.padEnd(14)} did not open`); continue; }
+    if (ACCEPT) { mkdirSync(keep, { recursive: true }); writeFileSync(join(keep, key + ".png"), shot); console.log(`  ✔ ${key.padEnd(14)} accepted`); continue; }
+    const f = join(keep, key + ".png");
+    if (!existsSync(f)) { bad++; console.log(`  ✖ ${key.padEnd(14)} has no accepted picture. Look at it, then npm run guard -- --accept`); mkdirSync(out, { recursive: true }); writeFileSync(join(out, key + ".png"), shot); continue; }
+    const r = await sp.evaluate(diffIn, { a: "data:image/png;base64," + readFileSync(f).toString("base64"), b: url, BLOCK, PIX });
+    const big = r.changed > MAX_ALL || r.block > MAX_BLOCK;
+    console.log(`  ${big ? "✖" : "✔"} ${key.padEnd(14)} ${(r.changed * 100).toFixed(2)}% changed, worst block ${(r.block * 100).toFixed(0)}% (${SW}x${SH}, Rank 16 save)`);
+    if (big) { bad++; mkdirSync(out, { recursive: true }); writeFileSync(join(out, key + ".png"), shot); writeFileSync(join(out, key + "-diff.png"), png(r.diff)); }
+  }
   if (ACCEPT) { console.log(`Accepted pictures written to scripts/guard/. Commit them with the change that made them.`); return bad ? 1 : 0; }
-  console.log(bad ? `\n✖ ${bad} race pictures changed a lot. Look at .guard/ (new picture, and -diff in pink). If the change is on purpose: npm run guard -- --accept` : "All race pictures match");
+  console.log(bad ? `\n✖ ${bad} pictures changed a lot. Look at .guard/ (new picture, and -diff in pink). If the change is on purpose: npm run guard -- --accept` : "All race and screen pictures match");
   return bad ? 1 : 0;
 }
 

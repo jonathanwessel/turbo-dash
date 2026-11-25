@@ -188,7 +188,7 @@ every test green.
   boss intro's Race button sat under the card's bottom edge at 740x360 for Major Wind-Up, and after a gift pick
   Next hid under the result card's edge on landscape screens from 360 to 600 px tall (the audit's "needs scrolling"
   check only looked at the screen's edge, now it looks at the card's edge too). All fixed.
-- [ ] **The picture guard for Toy Track World and the screens.** Toy Track World needs a fixed camera time and the
+- [x] **The picture guard for Toy Track World and the screens.** Toy Track World needs a fixed camera time and the
   three.js view on a canvas the guard reads (WebGL in headless Edge uses SwiftShader, so keep the accepted pictures
   from this machine). Screens need their animations held still (the town's cars, the Garage car's bounce, toasts):
   start with the Garage on the Rank 16 save, then the track list, then Main Street.
@@ -202,6 +202,16 @@ every test green.
   is now by what is on screen (the v1.17.0 rule). Proved red: with the coins hidden in `view.js` the guard fails
   (0.53% changed, worst block 100%); put back, two runs give 0.00%. `scripts/guard/toy.png` is this machine's
   SwiftShader picture. Still to do: the screens (Garage on the Rank 16 save first).
+  Notes (v1.21.0, done): the Garage, the track list and Main Street, from the career bot's Rank 16 save at 1280x800,
+  each opened from its Main Street button. They run in a second page that holds still everything that moves or
+  changes by itself: the clock stops at one moment (Date fixed, UTC, so the rival of the week and every timer read the
+  same), Math.random seeded, one-time tips marked seen, every CSS animation and transition off (the town's cars and
+  flags sit at their rest place), the race behind the menus and toasts hidden, and the frame loop held before each
+  picture with the Garage car in one fixed pose (`garage.pose(0)`, a new three-line hook in `src/garage.js`). Three runs
+  in a row gave 0.00% on all three. Seen red: with the Garage car's drawing switched off, the rival chip hidden and
+  Main Street's ! badges hidden, all three failed (track list 2.09% changed, worst block 100%; Main Street 0.30%,
+  100%; the Garage failed too). Put back, all 0.00%. Decision: one size (a tablet) is enough for the guard; the sweep
+  covers the other sizes for layout. The guard takes about 80 seconds now.
 - [x] **Android back button.** Back closes the open screen or card. On Main Street it asks before leaving.
   Notes: v1.20.0. `src/backkey.js` decides what a back press does, so `scripts/test-back.mjs` (in `npm test`) checks
   every one of the screens in index.html without a browser: a card taps its own button (OK, Not yet, Collect, the
