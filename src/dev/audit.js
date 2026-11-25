@@ -167,6 +167,16 @@ window.__sweep = async (only) => {
     await go("s-garage:perk", async () => { td.S.car = "snowcat"; await hub("garage")(); }, "#s-garage");
     td.S.car = was.car; td.S.owned = was.owned;
   }
+  // 🌟 v1.20: the Moon's track list with the Moon Hopper's counter chip, filled in, and its tap into the Garage
+  {
+    const keep = JSON.stringify({ rank: td.S.rank, world: td.S.world, research: td.S.research, stats: td.S.stats });
+    await go("s-tracks:earn", async () => {
+      Object.assign(td.S, { rank: Math.max(td.S.rank, 21), world: "moon" }); td.S.research = { ...td.S.research, moonTires: 1 }; td.S.stats = { ...td.S.stats, rings: 137 };
+      td.openTracks(); await wait(60);
+    }, "#s-tracks");
+    await go("s-garage:earn", async () => { document.getElementById("ec-chip").click(); }, "#s-garage");
+    Object.assign(td.S, JSON.parse(keep)); td.openTracks(); await wait(60);
+  }
   await go("s-tracks:bonus", async () => { const l = document.getElementById("track-list"); l.scrollLeft = l.scrollWidth; l.scrollTop = l.scrollHeight; await wait(150); }, "#s-tracks");
   document.getElementById("track-list").scrollLeft = document.getElementById("track-list").scrollTop = 0;
   for (const t of ["cups", "boss", "trial"]) await go("s-tracks:" + t, () => { const b = document.querySelector(`[data-rtab="${t}"]`); if (!b.hidden) b.click(); }, "#s-tracks");
@@ -204,7 +214,7 @@ window.__sweep = async (only) => {
   await go("s-parent", () => { td.show("s-title"); for (let i = 0; i < 5; i++) document.getElementById("ver").click(); });
   await go("s-preview", () => { td.show("s-tracks"); td.openPreview("moon"); });
   await go("s-preview:toy", () => td.openPreview("toy"), "#s-preview");
-  for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-boss"]) await go(s, () => td.show(s));
+  for (const s of ["s-pvend", "s-name", "s-rankup", "s-cupend", "s-log", "s-grownup", "s-reset", "s-rest", "s-update", "s-pause", "s-leave", "s-boss"]) await go(s, () => td.show(s));
   await go("s-result:pick", async () => { td.showResult({ place: 3, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [2, 1, 0, 3, 4, 5] }); }, "#s-result");
   await go("s-result:done", async () => { document.querySelector('.chest[data-i="1"]').click(); await wait(900); }, "#s-result");
   await go("s-result:rival", async () => { td.showResult({ place: 1, coins: 108, time: 40, stats: { stunts: 1, turbos: 1, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: [0, 1, 2, 3, 4, 5] }); td.rivalRow({ up: true, name: "Snowball", i: 4, bonus: 1250 }); await wait(900); }, "#s-result");

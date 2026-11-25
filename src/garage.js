@@ -1,5 +1,5 @@
 // Garage: browse and buy cars, buy upgrades, buy paint and stickers. All prices are in coins earned by racing.
-import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, TRACKS, upgradeCost, worldOpen, trackOpen, traitOf, perkOf, EARN_ICON, earnHave } from "./data.js";
+import { CARS, CUPS, WORLDS, BOSSES, BUILDINGS, UPGRADES, UPGRADE_MAX, PAINTS, STICKERS, TRACKS, upgradeCost, worldOpen, trackOpen, traitOf, perkOf, earnLine } from "./data.js";
 import { bestTracks } from "./best.js";
 import { drawCar } from "./draw.js";
 import { drawEmojiText } from "./emoji.js";
@@ -45,14 +45,14 @@ export function howToGet(car, grid = false) {
 }
 
 /* 🌟 a special car's counter (v1.19): the picture of what to collect, and have / need ("⭕ 34 / 120") */
-export const earnText = car => `${EARN_ICON[car.earn.stat]} ${earnHave(S, car)} / ${car.earn.goal}`;
+export const earnText = car => earnLine(S, car);
 
 export function createGarage({ $, sfx, spend, celebrate, onCar, onPreview, onTrait }) {
   const cvs = $("g-car"), ctx = cvs.getContext("2d");
   let idx = 0, t = 0, zoom = 0, tab = "up";
 
   let grid = false;
-  function open() { idx = Math.max(0, CARS.findIndex(c => c.id === S.car)); grid = false; showGrid(); render(); }
+  function open(carId = S.car) { idx = Math.max(0, CARS.findIndex(c => c.id === carId)); grid = false; showGrid(); render(); }
 
   /* ▦ All cars: a card per car, by world, with how to get it. Owned cars in full color, cars you can buy now
      dimmed, and the rest as dark shapes still to discover. Tap a card to see that car. */

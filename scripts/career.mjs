@@ -5,6 +5,8 @@
 // missions, the Math/Word Lap Good Student bonus) and races with the real engine. Bank interest is modelled too.
 // The bot plays like a kid: steers late, fires Turbo at random, uses power-ups, and buys as soon as it can.
 import { runRace } from "./racebot.mjs";
+import { rng } from "../src/physics-common.js";
+import { bestCar, paceOn } from "../src/best.js";
 import { writeFileSync } from "node:fs";
 import { trackLen } from "../src/engine.js";
 import { GOOD_STUDENT, lapsDone, REWARDS, bankMax, bankSettle, bankDeposit, bankWithdraw, BANK_DAY } from "../src/data.js";
@@ -23,6 +25,28 @@ import {
 const RACES_PER_DAY = +(process.argv[2] || 12), MAX_DAYS = +(process.argv[3] || 1000);
 const SNAP = process.env.CAREER_SNAP ? { rank: +process.env.CAREER_SNAP.split(":")[0], file: process.env.CAREER_SNAP.split(":").slice(1).join(":") } : null;
 const NO_UPS = () => ({ engine: 0, turbo: 0, tires: 0, magnet: 0 });
+
+/* 🤖 Strategy bots (v1.20). CAREER_BOT picks how the bot spends and which car it drives; CAREER_SEED seeds every
+   random number (races, chests, picks), so a run can be played again exactly. `npm run bots` runs each strategy over
+   several seeds and compares them (scripts/bots.mjs). "kid" (the default) is the bot the release gate has always used.
+   - speed: Engine and Turbo first, speed research first, and it drives the fastest car it owns on each track.
+   - grip:  Tires first, and it drives its best Grippy car unless another car is more than 5% faster there.
+   - coins: Magnet first, coin research first (Coin Boost, Lucky Gifts, Magnet Field, Pit Crew).
+   - auto:  the Robot Brain and Auto Steer before anything else in the Lab; from Auto Steer level 20 it lets the car
+            steer itself and only taps Turbo and power-ups (the idle player). */
+const BOT = process.env.CAREER_BOT || "kid";
+const BOTS = {
+  kid:   { ups: {}, lab: [] },
+  speed: { ups: { engine: 1, turbo: 1.2, tires: 1.6, magnet: 3 }, lab: ["headStart", "turboTanks", "pitCrew"], drive: "fast" },
+  grip:  { ups: { tires: 1, engine: 1.3, turbo: 1.5, magnet: 3 }, lab: ["bumper", "pitCrew", "headStart"], drive: "grippy" },
+  coins: { ups: { magnet: 1, engine: 1.4, turbo: 1.6, tires: 1.6 }, lab: ["coinBoost", "luckyChests", "magnetField", "pitCrew"], drive: "fast" },
+  auto:  { ups: { engine: 1, tires: 1.1, turbo: 1.3, magnet: 3 }, lab: ["rbEyes", "rbEars", "rbMap", "rbReflex", "rbSocket", "autoSteer"], drive: "fast", hands: 20 },
+};
+const STRAT = BOTS[BOT];
+if (!STRAT) { console.error(`Unknown CAREER_BOT "${BOT}". Pick one of: ${Object.keys(BOTS).join(", ")}`); process.exit(2); }
+if (process.env.CAREER_SEED) Math.random = rng(+process.env.CAREER_SEED * 7919 + 1);
+// what the bot bought and what did the work, for the variety report
+const used = {}, boughtUps = { engine: 0, turbo: 0, tires: 0, magnet: 0 }, labSpent = {};
 
 // a save-shaped state, so the game's own FRONTS/GOALS functions work on it
 const S = {
@@ -57,6 +81,25 @@ function reward(track, r, diff, opts = {}) {
 }
 
 const carOf = () => CARS.find(c => c.id === S.car);
+const mine = () => CARS.filter(c => S.owned.includes(c.id));
+const upsOf = id => S.ups[id] || NO_UPS();
+/* the car a strategy bot drives on this track: the fastest it owns (the game's own Best rule), or for "grip" its
+   best Grippy car unless another is more than 5% faster there. The kid bot keeps the car spend() picked. */
+function driveOn(track) {
+  if (!STRAT.drive) return S.car;
+  const fast = bestCar(track, mine(), upsOf, S.research, S.car);
+  if (STRAT.drive === "grippy") {
+    const g = bestCar(track, mine().filter(c => c.trait === "grippy"), upsOf, S.research);
+    if (g && paceOn(g, upsOf(g.id), track, S.research) * 1.05 >= paceOn(fast, upsOf(fast.id), track, S.research)) return g.id;
+  }
+  return fast.id;
+}
+const driver = () => STRAT.hands && lv("autoSteer") >= STRAT.hands ? "none" : "kid";
+function drive(track, run) {
+  const keep = S.car; S.car = driveOn(track);
+  used[S.car] = (used[S.car] || 0) + 1;
+  try { return run(carOf()); } finally { S.car = keep; }
+}
 // weather like the game: about a quarter of Earth races (from Rank 2) have rain or snow
 const weatherFor = t => t.world === "earth" && S.rank >= 2 && Math.random() < 0.25 ? (t.theme === "snow" ? "snow" : ["sunny", "beach", "farm", "river", "autumn", "candy", "pirate", "fair"].includes(t.theme) ? "rain" : null) : null;
 // 🎯 the rival of the week (v1.13) is in every race and cup race, on the career's own calendar
@@ -66,14 +109,14 @@ let weekBonus = 0, weekBeats = 0, rematchWins = 0;
 const carWorld = () => [...TRACKS].reverse().find(t => trackOpen(S, t))?.world;
 const race = (track, diff) => {
   const week = weekRivalRace(S, "race", date());
-  const r = runRace(track, carOf(), S.ups[S.car], diff, "kid", S.research, lv("autoSteer"), null, false, weatherFor(track), week);
+  const r = drive(track, car => runRace(track, car, S.ups[car.id], diff, driver(), S.research, lv("autoSteer"), null, false, weatherFor(track), week));
   if (week && r.standings) { const w = weekRivalResult(S, track, r.standings, diff, date()); weekBonus += w.bonus; weekBeats += w.up; }
   return r;
 };
 
 function playBoss(b) {
-  const car = carOf(), t = TRACKS.find(x => x.id === b.track);
-  const r = runRace(t, car, S.ups[S.car], "normal", "kid", S.research, 0, { ...b, def: CARS.find(c => c.id === b.car), speed: bossSpeed(b, bossLevel(S, b)) });
+  const t = TRACKS.find(x => x.id === b.track);
+  const r = drive(t, car => runRace(t, car, S.ups[car.id], "normal", "kid", S.research, 0, { ...b, def: CARS.find(c => c.id === b.car), speed: bossSpeed(b, bossLevel(S, b)) }));
   reward(t, r, "normal", { boss: true });
   if (r.place === 1) { const w = bossReward(S, b, today()); gate("boss:" + b.id + (w.round > 1 ? ":" + w.round : ""), w.round > 1 ? `Won Round ${w.round} against ${b.name}` : `Beat ${b.name}`); if (w.round > 1 && w.round <= 4) rematchWins++; }
 }
@@ -81,7 +124,7 @@ function playBoss(b) {
 /* one Time Trial a day: the newest open track still missing gold */
 function playTrial() {
   const t = [...TRACKS].reverse().find(x => trackOpen(S, x) && (S.trialMedals[x.id] || 0) < 3); if (!t) return false;
-  const r = runRace(t, carOf(), S.ups[S.car], "normal", "kid", S.research, 0, null, true);
+  const r = drive(t, car => runRace(t, car, S.ups[car.id], "normal", "kid", S.research, 0, null, true));
   raceNo++; clock += 75 + 35;
   const { medal } = trialReward(S, t, r, trackLen(t));
   if (medal === 3) gate("trialgold:" + t.id, `Gold Time Trial on ${t.name}`);
@@ -122,16 +165,19 @@ function collectLab() {
   }
 }
 const LAB_ORDER = ["shrinkRay", "loopGrip", "boosterTune", "wallBumpers", "windUp", "iceStuds", "snowChains", "driftMaster", "snowplow", "warmEngine", "snorkel", "propellers", "fins", "pearlDiver", "moonTires", "thrusters", "ringMagnet", "autoSteer", "rbSocket", "rbReflex", "rbMap", "rbEars", "rbEyes", "coinBoost", "headStart", "turboTanks", "pitCrew", "luckyChests", "magnetField", "bumper", "bigRamps", "superPaint"];
+// a strategy's own projects come first; world kits stay at the front so no strategy walls a world off
+const KITS = ["shrinkRay", "iceStuds", "snorkel", "moonTires"];
+const labOrder = [...LAB_ORDER.filter(id => KITS.includes(id)), ...STRAT.lab, ...LAB_ORDER.filter(id => !KITS.includes(id) && !STRAT.lab.includes(id))];
 function spend() {
   // lab first when it's cheap compared with savings, then the next car, then the cheapest upgrade
   for (const b of benches()) {
     if (b.p) continue;
-    for (const id of LAB_ORDER) {
+    for (const id of labOrder) {
       const r = RESEARCH.find(x => x.id === id), l = lv(id);
       if (l >= r.max || S.rank < researchRank(r, l) || (r.needs || []).some(n => lv(n) < 1) || benches().some(x => x.p === id)) continue;
       const cost = researchCost(r, l), chips = researchChips(r, l);
-      if (S.coins >= cost && S.chips >= chips && (id === "autoSteer" || id.startsWith("rb") || cost <= S.coins * 0.5)) {
-        S.coins -= cost; S.chips -= chips; b.p = id; b.end = clock + researchTime(r, l); break;
+      if (S.coins >= cost && S.chips >= chips && (id === "autoSteer" || id.startsWith("rb") || STRAT.lab.includes(id) || cost <= S.coins * 0.5)) {
+        S.coins -= cost; S.chips -= chips; b.p = id; b.end = clock + researchTime(r, l); labSpent[id] = (labSpent[id] || 0) + cost; break;
       }
     }
   }
@@ -142,11 +188,13 @@ function spend() {
     // drive the fastest car owned (its speed plus its engine upgrades)
     const pace = id => { const c = CARS.find(x => x.id === id); return c.speed + 0.06 * (S.ups[id]?.engine || 0); };
     S.car = [...S.owned].sort((a, b) => pace(b) - pace(a))[0];
+    // strategy bots: the main car (the one that gets upgrades first) is the car they drive on their newest track
+    if (STRAT.drive) { const t = [...TRACKS].reverse().find(x => trackOpen(S, x)); if (t) S.car = driveOn(t); }
     const opts = [];
-    for (const id of S.owned) for (const u of UPGRADES) if (S.ups[id][u.id] < UPGRADE_MAX) opts.push({ id, u: u.id, cost: upgradeCost(id, S.ups[id][u.id], lv("pitCrew")) * (id === S.car ? 1 : 1.6) });
+    for (const id of S.owned) for (const u of UPGRADES) if (S.ups[id][u.id] < UPGRADE_MAX) opts.push({ id, u: u.id, real: upgradeCost(id, S.ups[id][u.id], lv("pitCrew")), cost: upgradeCost(id, S.ups[id][u.id], lv("pitCrew")) * (id === S.car ? 1 : 1.6) * (STRAT.ups[u.id] || 1) });
     opts.sort((a, b) => a.cost - b.cost);
     const o = opts[0];
-    if (o && S.coins >= o.cost && (!next || S.coins - o.cost >= next.price * 0.3 || o.id === S.car)) { S.coins -= Math.round(o.cost / (o.id === S.car ? 1 : 1.6)); S.ups[o.id][o.u]++; bought = true; }
+    if (o && S.coins >= o.real * (o.id === S.car ? 1 : 1.6) && (!next || S.coins - o.real * (o.id === S.car ? 1 : 1.6) >= next.price * 0.3 || o.id === S.car)) { S.coins -= o.real; S.ups[o.id][o.u]++; boughtUps[o.u]++; bought = true; }
   }
 }
 
@@ -213,16 +261,25 @@ console.log(`\nAfter ${Math.min(day, MAX_DAYS)} days: rank ${S.rank}, Auto Steer
 console.log(`Rival of the week: beaten ${weekBeats} times below the cap, bonus coins ${weekBonus}`);
 console.log(`Boss rematches: ${rematchWins} round wins, rounds won per boss ${BOSSES.map(b => b.id + " " + Math.max(0, (S.bosses[b.id] || 0) - 1)).join(", ")}`);
 const need = rankNeeds(S.rank, S); console.log("Fronts for next rank: " + FRONTS.map(f => `${f.name} ${f.have(S)}/${need[f.id]}`).join(", "));
+// 🤖 what did the work (v1.20): races per car, upgrades bought by kind, Lab coins by project
+const share = Object.entries(used).sort((a, b) => b[1] - a[1]), races = share.reduce((a, [, n]) => a + n, 0);
+console.log(`Bot ${BOT}${process.env.CAREER_SEED ? " seed " + process.env.CAREER_SEED : ""}. Races per car: ` + share.slice(0, 8).map(([id, n]) => `${id} ${Math.round(100 * n / races)}%`).join(", "));
+console.log("Upgrades bought: " + Object.entries(boughtUps).map(([k, n]) => `${k} ${n}`).join(", ") + ". Lab coins: " + Object.entries(labSpent).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} ${Math.round(n / 1000)}k`).join(", "));
+
+const at = key => gates.find(g => g.key === key)?.day;
+const worlds = [...new Set(TRACKS.map(t => t.world))].filter(w => w !== "earth");
+const opened = w => Math.min(...gates.filter(g => g.key.startsWith("open:") && TRACKS.find(t => "open:" + t.id === g.key)?.world === w).map(g => g.day));
+// CAREER_JSON=<file> writes the run's numbers for scripts/bots.mjs
+const report = ok => { if (process.env.CAREER_JSON) writeFileSync(process.env.CAREER_JSON, JSON.stringify({ bot: BOT, seed: process.env.CAREER_SEED || null, ok, rank: S.rank, cap: at("cap") || null, worlds: Object.fromEntries(worlds.map(w => [w, opened(w)])), used, boughtUps, labSpent, gates: gates.map(g => [g.key, g.day, g.race]) }) + "\n"); };
 
 // v1.11.2: a gate that never opens fails the run (exit 1), so `npm run check` stops: a STUCK rank, or the rank
 // cap not reached within the days played. A short run (npm run career -- 12 100) fails on purpose: the cap is
 // out of reach in 100 days.
 const stuck = gates.filter(g => g.key.startsWith("stuck"));
 if (stuck.length || S.rank < RANK_CAP) {
+  report(false);
   console.log("\n✖ " + [...stuck.map(g => g.text), ...(S.rank < RANK_CAP ? [`Rank cap ${RANK_CAP} not reached in ${MAX_DAYS} days (rank ${S.rank})`] : [])].join("\n✖ "));
   process.exit(1);
 }
-const at = key => gates.find(g => g.key === key)?.day;
-const worlds = [...new Set(TRACKS.map(t => t.world))].filter(w => w !== "earth");
-const opened = w => Math.min(...gates.filter(g => g.key.startsWith("open:") && TRACKS.find(t => "open:" + t.id === g.key)?.world === w).map(g => g.day));
+report(true);
 console.log(`\n✔ No stuck gate. Rank ${RANK_CAP} on day ${at("cap")}. Worlds open on day: ` + worlds.map(w => `${w} ${opened(w)}`).join(", "));

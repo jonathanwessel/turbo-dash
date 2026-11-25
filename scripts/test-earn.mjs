@@ -52,6 +52,22 @@ for (const c of specials) {
   store.set("turbodash.save", JSON.stringify({ v: 14, coins: 240000, owned: ["zippy", "sub", "frost"], car: "frost", rank: 31, stats: { rings: 30, pearls: 55, drifts: 12 } }));
   saveMod.load(); check(!earnCars(saveMod.S, "").length, "a save below every goal got a car");
 }
+// 🌟 v1.20: the track list's chip names the world's special car still to win, and its words are the Garage's
+{
+  const { earnLine, earnCarIn, WORLDS } = await import("../src/data.js");
+  const S = fresh({ rings: 137, pearls: 0 });
+  check(!earnCarIn(S, "earth"), "Earth has a special car chip");
+  for (const w of WORLDS.filter(x => x.id !== "earth" && !x.soon)) {
+    const c = earnCarIn(S, w.id);
+    check(c && c.world === w.id && c.earn, `${w.id}: no chip for its special car`);
+  }
+  const hop = earnCarIn(S, "moon");
+  check(earnLine(S, hop) === `${EARN_ICON.rings} 137 / ${hop.earn.goal}`, `the chip reads "${earnLine(S, hop)}"`);
+  S.owned.push(hop.id); check(!earnCarIn(S, "moon"), "the chip stays after the car is won");
+  // one state, one source: the Garage's counter is the same function (src/garage.js earnText)
+  const g = (await import("node:fs")).readFileSync(new URL("../src/garage.js", import.meta.url), "utf8");
+  check(/export const earnText = car => earnLine\(S, car\);/.test(g), "the Garage counter does not use earnLine");
+}
 // words: one short line each, no colon or semicolon, no number
 for (const p of Object.values(PERKS)) check(!/[:;]|\d/.test(p.line) && p.line.split(" ").length <= 6, `power line "${p.line}"`);
 // "Own every car" counts the new cars too

@@ -1,4 +1,4 @@
-import { BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS, TRAITS, perkOf } from "./data.js";
+import { earnLine, earnCarIn, BONUS_TRACKS, CARS, TRACKS, THEMES, WORLDS, BOSSES, BOSS_ROUNDS, BUILDINGS, buildingOpen, trackOpen, worldOpen, MASTERY, starsFor, ACTIVITIES, MATH_LAP, MATH_LEVELS, MATH_CAPS, mathQuestion, mathChoices, WORD_LAP, WORD_LEVELS, wordQuestion, BANK_DAY, bankMax, bankPayOn, bankSettle, bankDeposit, bankWithdraw, bankServerTime, playableDiffs, easyCounts, GOOD_STUDENT, lapsDone, GOALS, CUPS, RIVALS, DIFFS, diffOf, FRONTS, RANK_CAP, RANK_UNLOCKS, rankNeeds, rankTitle, winsStep, prizeFor, RESEARCH, TRIAL_MEDALS, trialTimes, trialPay, OPEN_RANK, REWARDS, TRAITS, perkOf } from "./data.js";
 import { Race, trackLen } from "./engine.js";
 import { advance, newClock, resetClock, stepCounter } from "./pace.js";
 import { qualityLadder, QUALITY_CAP } from "./quality.js";
@@ -22,6 +22,7 @@ import { S, load, save, exportSave, importSave, upsOf, resetSave, whenSaved, whe
 import { cloudReady, cloudWhy, cloudLinked, cloudSignIn, cloudSignOut, syncNow, cloudSaved, cloudWake, onCloudStatus, cloudStatus } from "./cloud.js";
 import { confetti, coinBurst } from "./fx.js";
 import { carKnown, drawCarOrMystery, createGarage, lookOf, worldOf } from "./garage.js";
+import { backAction, BACK_FREE } from "./backkey.js";
 
 const VERSION = import.meta.env.DEV ? "dev" : __APP_VERSION__;
 const who = () => S.name || "Racer";   // the player's own name (asked on the first run)
@@ -219,7 +220,7 @@ const SCREENS = [...document.querySelectorAll("section.screen")].map(e => e.id);
 let inRoom = false;   // inside a building: its room picture fills the screen, so the demo race isn't drawn
 /* ◀ goes back to the screen you came from (a stack). Main Street, the title and a race start empty it.
    One-off cards (results, rank-up, gifts, the grown-up check…) are never gone back to. */
-const NO_RETURN = new Set(["s-rival", "s-traits", "s-bestcar", "s-newcar", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
+const NO_RETURN = new Set(["s-leave", "s-rival", "s-traits", "s-bestcar", "s-newcar", "s-result", "s-rankup", "s-cupend", "s-pvend", "s-boss", "s-gift", "s-rest", "s-update", "s-pause", "s-title", "s-grownup", "s-name", "s-reset", "s-preview", "s-math", "s-word"]);
 let nav = [], navBack = false;
 function show(id) {
   if (!navBack) { if (!id || id === "s-hub" || id === "s-title") nav.length = 0; else if (screen && screen !== id && screen !== "s-hub" && !NO_RETURN.has(screen)) nav.push(screen); }
@@ -227,12 +228,38 @@ function show(id) {
   screen = id; inRoom = !!$(id)?.dataset.room; panelUp = !!$(id)?.classList.contains("panel"); panelT = 1;
   document.body.classList.toggle("on-panel", panelUp); refreshChips();
   for (const s of SCREENS) $(s).hidden = s !== id;
-  const bars = id && !["s-title", "s-pause", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits", "s-bestcar", "s-newcar"].includes(id);
+  const bars = id && !["s-title", "s-pause", "s-leave", "s-parent", "s-progress", "s-guide", "s-name", "s-grownup", "s-reset", "s-traits", "s-bestcar", "s-newcar"].includes(id);
   $("coinbar").hidden = !bars; $("topright").hidden = id !== "s-hub";
   if (id === "s-hub") refreshHub();
   if (id === "s-hub" && newCars.length) setTimeout(() => { if (screen === "s-hub" && newCars.length) openNewCar("s-hub"); }, 500);
-  paintUpdate();
+  paintUpdate(); armBack();
 }
+/* ◀ The Android back button (v1.20, the rules in src/backkey.js). One extra history step is kept while a screen
+   catches back, and a back press lands on popstate. The title screen and the "Stop playing?" card leave it free, so
+   the phone's own back leaves the game there. */
+let backSkip = 0;
+const backArmed = () => history.state?.tdBack === 1;
+function armBack() {
+  const want = !BACK_FREE.has(screen);
+  try {
+    if (want && !backArmed()) history.pushState({ tdBack: 1 }, "");
+    else if (!want && backArmed() && !backSkip) { backSkip++; history.back(); }
+  } catch (e) { /* history blocked: back keeps the browser's own meaning */ }
+}
+const onScreen = id => { const el = $(id); return !!el && !el.hidden && el.offsetParent !== null; };
+addEventListener("popstate", () => {
+  if (backSkip) { backSkip--; armBack(); return; }
+  const overlay = ["lab-sheet", "levelup"].find(id => $(id) && !$(id).hidden) || null;
+  const a = backAction({ screen, racing: mode === "race", overlay, shown: onScreen });
+  if (a.pause) pause();
+  else if (a.tap) $(a.tap).click();
+  else if (a.leave) { sfx("click"); show("s-leave"); }
+  else if (a.back) { sfx("click"); back(); }
+  armBack();
+});
+$("lv-stay").onclick = () => { sfx("click"); goHub(); };
+// 👋 Stop: an installed game closes; a browser tab that can't close goes to the title screen, where back leaves
+$("lv-go").onclick = () => { sfx("click"); try { window.close(); } catch (e) { /* not allowed */ } setTimeout(() => show("s-title"), 150); };
 const REOPEN = {
   "s-tracks": () => openTracks(), "s-school": () => { paintSchool(); show("s-school"); }, "s-garage": () => openGarage(),
   "s-settings": () => { paintToggles(); show("s-settings"); }, "s-parent": () => { paintParent(); show("s-parent"); }, "s-rank": () => openRank(),
@@ -679,7 +706,7 @@ function levelUpCard() {
 function openTracks() {
   if (weekCardDue(S)) { weekCardSeen(S); save(); openRivalCard(); return; }   // 🎯 a new rival of the week says hi once
   if (!allowedDiffs().includes(S.diff)) S.diff = allowedDiffs()[0];
-  paintRivalChip();
+  paintRivalChip(); paintEarnChip();
   paintWorlds(); paintDiffBar(); paintRaceTabs();
   const list = $("track-list");
   const nextLocked = TRACKS.findIndex((t, i) => (t.world || "earth") === S.world && !t.season && !unlocked(i));   // only the next locked track shows
@@ -784,6 +811,16 @@ function openRivalCard() {
 }
 $("rw-ok").onclick = () => { sfx("click"); openTracks(); };
 $("rw-chip").onclick = () => { sfx("click"); openRivalCard(); };
+/* 🌟 v1.20: the special car still to win in this world, as its mystery shape and its counter ("⭕ 137 / 500"), on
+   the track list where the child collects. The words come from earnLine, the same as the Garage's. A tap opens the
+   Garage on that car. */
+function paintEarnChip() {
+  const car = earnCarIn(S, S.world), el = $("ec-chip"); el.hidden = !car; el.dataset.car = car?.id || ""; if (!car) return;
+  $("ec-chip-n").textContent = earnLine(S, car);
+  const cv = $("ec-chip-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height);
+  drawCarOrMystery(cx, cv.width / 2, cv.height - 4, cv.width * 0.62, car, { t: 0 });
+}
+$("ec-chip").onclick = () => { const id = $("ec-chip").dataset.car; if (!id) return; sfx("click"); garage.open(id); show("s-garage"); };
 /* ---------- faces and reactions (rules and drawing in src/faces.js) ---------- */
 let lastMoods = null;   // how the last race went for each rival: their faces on the next start grid (this play time only)
 /* the result card's row of faces in finishing order, the player's own car in a gold ring in its place. A tapped

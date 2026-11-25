@@ -40,6 +40,9 @@ const EXTRA = {
   "s-newcar": `(__td.goHub(), __td.newCar("hopper"), true)`,
   "s-garage-perk": `(document.getElementById("nc-drive").click(), __td.goHub(), ${tap("garage")}, true)`,
   "s-garage-earn": `(Object.assign(__td.S, { rank: 21, car: __mid().car, owned: __mid().owned, research: { ...__mid().research, moonTires: 1 }, stats: { ...__mid().stats, rings: 137 } }), __td.goHub(), ${tap("garage")}, document.getElementById("g-gridbtn").click(), [...document.querySelectorAll(".gg-head")].find(h => h.textContent.startsWith("Moon"))?.scrollIntoView(), true)`,
+  // v1.20: the Moon's track list with the Moon Hopper's counter chip (same save as above), and its tap into the Garage
+  "s-tracks-earn": `(__td.S.world = "moon", __td.goHub(), ${tap("race")}, true)`,
+  "s-garage-earntap": `(document.getElementById("ec-chip").click(), true)`,
   "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));

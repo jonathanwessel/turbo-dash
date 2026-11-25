@@ -24,6 +24,7 @@ const STEPS = [
   ["boss rounds", "node scripts/sim.mjs boss"],          // v1.15: every round of every boss can be won
   ["best badges", "node scripts/sim.mjs best"],          // v1.17: each Best badge names a car the sim finds fastest (or within 4%)
   ["career", "node scripts/career.mjs"],
+  ["strategy bots", "node scripts/bots.mjs"],            // v1.20: speed, grip, coins and Auto Steer each reach every rank within 25% of the best
   ["install test", "node scripts/install-test.mjs"],
   ["update test", "node scripts/update-test.mjs"],
 ];

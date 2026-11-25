@@ -61,6 +61,11 @@ export const perkOf = car => PERKS[car?.perk] || null;
 /* what a special car's earn counter shows: the picture of the thing to collect */
 export const EARN_ICON = { rings: "⭕", pearls: "🦪", drifts: "❄️", loops: "🎢" };
 export const earnHave = (S, car) => Math.min(car.earn.goal, S.stats?.[car.earn.stat] || 0);
+/* the counter's words, one source for the Garage and the track list's chip (v1.20): "⭕ 137 / 500" */
+export const earnLine = (S, car) => `${EARN_ICON[car.earn.stat]} ${earnHave(S, car)} / ${car.earn.goal}`;
+/* the special car still to win in a world (null when there is none or it is already the player's): the track list
+   shows its counter there, where the child collects (v1.20) */
+export const earnCarIn = (S, world) => CARS.find(c => c.earn && c.world === world && !S.owned.includes(c.id)) || null;
 
 /* ⚡🛞💪 Car traits (v1.16): every car is Fast, Grippy or Tough, and each one costs something. The rules are in
    statsFor (src/stats.js), so the game, the race sim and the career run all use the same numbers.

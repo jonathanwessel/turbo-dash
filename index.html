@@ -164,6 +164,7 @@
       <div class="race-tabs"><button data-rtab="races" class="on">🏁 Races</button><button data-rtab="cups">🏆 Cups</button><button data-rtab="boss">👑 Boss</button><button data-rtab="trial">⏱️ Trials</button></div>
       <div class="diff-bar" id="diff-bar"></div>
       <button id="rw-chip" class="rw-chip" aria-label="Rival of the week" hidden><span class="rw-t">🎯</span><canvas id="rw-chip-car" width="96" height="54"></canvas><span class="rw-pips" id="rw-chip-pips"></span></button>
+      <button id="ec-chip" class="rw-chip ec-chip" aria-label="Car to win" hidden><canvas id="ec-chip-car" width="96" height="54"></canvas><b id="ec-chip-n"></b></button>
     </div>
     <div class="track-list" id="track-list"></div>
     <div class="track-list cup-list" id="cup-list" hidden></div>
@@ -470,6 +471,18 @@
       <div class="row">
         <button id="btn-resume" class="big-btn go">▶ Go!</button>
         <button id="btn-quit" class="big-btn">🏠 Home</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-leave" class="screen dim" hidden>
+    <div class="card">
+      <div class="trophy">👋</div>
+      <h1 data-say>Stop playing?</h1>
+      <div class="row">
+        <button id="lv-stay" class="big-btn go">🏁 Play</button>
+        <button id="lv-go" class="big-btn">👋 Stop</button>
+        <button class="say" data-say-btn hidden aria-label="Read it to me">🔊</button>
       </div>
     </div>
   </section>

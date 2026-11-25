@@ -1312,3 +1312,9 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 .say.on { animation: sayon 0.9s ease-in-out infinite; }
 @keyframes sayon { 0%, 100% { box-shadow: 0 5px 0 var(--ink), 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 5px 0 var(--ink), 0 0 0 9px rgba(255,255,255,.7); } }
 @media (max-height: 430px) and (orientation: landscape) { .say { width: 44px; height: 44px; font-size: 22px; } }
+
+/* 🌟 v1.20: the special car still to win in this world, with its counter, on the track list */
+.ec-chip { border-color: #3cf2ff; font-size: clamp(15px, 4vmin, 20px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ec-chip[hidden] { display: none; }
+#ec-chip-car { width: 56px; height: 32px; }
+@media (max-height: 430px) and (orientation: landscape) { #ec-chip-car { width: 46px; height: 26px; } }
