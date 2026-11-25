@@ -377,8 +377,22 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   const as = trait => ({ ...zippy, trait }), st = trait => statsFor(as(trait), UPS, {});
   const plain = st(undefined), fast = st("fast"), grippy = st("grippy"), tough = st("tough");
   check("a car with no trait is unchanged", plain.slide === 1 && plain.tough === 1, `slide ${plain.slide}, tough ${plain.tough}`);
-  check("Fast: a higher top speed, slides more", fast.maxSpeed > plain.maxSpeed && fast.slide > 1 && fast.accel === plain.accel, JSON.stringify([fast.maxSpeed, fast.slide]));
-  check("Grippy: slides less, a lower top speed", grippy.slide < 1 && grippy.maxSpeed < plain.maxSpeed, JSON.stringify([grippy.maxSpeed, grippy.slide]));
+  // v1.21: the top speed comes from the track's kind now (kindBonus), not from the trait everywhere
+  check("Fast: slides more, same top speed off its tracks", fast.maxSpeed === plain.maxSpeed && fast.slide > 1 && fast.accel === plain.accel, JSON.stringify([fast.maxSpeed, fast.slide]));
+  check("Grippy: slides less, same top speed off its tracks", grippy.slide < 1 && grippy.maxSpeed === plain.maxSpeed, JSON.stringify([grippy.maxSpeed, grippy.slide]));
+  {
+    // ⚡🛞💪 v1.21 track kinds: a car is KIND_BONUS faster on a track of its own kind, nowhere else
+    const { kindBonus, trackBonus, homeBonus, bonusWord, KIND_BONUS } = await import("../src/physics-common.js");
+    const { WORLDS } = await import("../src/data.js"); const car = id => CARS.find(c => c.id === id);
+    check("every track has a kind", TRACKS.every(t => TRAITS[t.kind]), TRACKS.filter(t => !TRAITS[t.kind]).map(t => t.id).join(" "));
+    const worldsOk = WORLDS.filter(w => !w.soon).every(w => new Set(TRACKS.filter(t => t.world === w.id).map(t => t.kind)).size >= 2);
+    check("every world has at least two kinds of track", worldsOk, "");
+    const fastT = TRACKS.find(t => t.kind === "fast" && t.world === "earth"), gripT = TRACKS.find(t => t.kind === "grippy" && t.world === "earth");
+    check("a Fast car is faster on a Fast track", kindBonus(as("fast"), fastT) === 1 + KIND_BONUS && kindBonus(as("fast"), gripT) === 1 && kindBonus(as(undefined), fastT) === 1, "");
+    const home = TRACKS.find(t => t.world === "glacier" && t.kind === "fast"), wolf = car("blizzard");
+    check("home and kind multiply", Math.abs(trackBonus(wolf, home) - homeBonus(wolf, home) * (1 + KIND_BONUS)) < 1e-12 && homeBonus(wolf, home) > 1, String(trackBonus(wolf, home)));
+    check("GO shouts the bonus with its pictures", bonusWord(wolf, home) === "🏠 ⚡ BONUS!" && bonusWord(as("fast"), fastT) === "⚡ BONUS!" && bonusWord(car("rover"), track("moonbase")) === "🏠 HOME BONUS!" && bonusWord(as("fast"), gripT) === null, [bonusWord(wolf, home), bonusWord(as("fast"), fastT)].join(" | "));
+  }
   check("Tough: bumps cost less, speeds up slower", tough.tough < 1 && tough.accel < plain.accel && tough.maxSpeed === plain.maxSpeed, JSON.stringify([tough.accel, tough.tough]));
   check("bumpKeep: a Tough car keeps more of its speed", bumpKeep(0.88, tough) > bumpKeep(0.88, plain) && bumpKeep(0.88, plain) === 0.88 && Math.abs(bumpKeep(0.88, tough) - 0.94) < 1e-9, `${bumpKeep(0.88, tough)}`);
   // on a long curve with nobody steering, the curve pushes a Fast car out farthest and a Grippy car least
@@ -470,7 +484,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
       const k = [...r.T.flag.keys()].find(i => r.T.flag[i] & 4); r.player.speed = 1; r.touch(k); return [r.player.speed, r.boostT];
     };
     const [sa, ta] = fling(statsFor(car("buggy"), UPS, {})), [sb, tb] = fling(statsFor(plainOf(car("buggy")), UPS, {}));
-    check("a booster flings the Boost Buggy farther", sa > sb * 1.1 && ta > tb * 1.1, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
+    check("a booster flings the Boost Buggy farther", sa > sb * 1.04 && ta > tb * 1.04, `speed ${sa.toFixed(1)} vs ${sb.toFixed(1)}, boost ${ta.toFixed(2)} vs ${tb.toFixed(2)}`);
   }
 }
 

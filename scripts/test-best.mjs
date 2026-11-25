@@ -18,7 +18,7 @@ ok(paceOn(rover, U(5), moon) > paceOn(rover, U(5), track("sunny")), "the Moon ca
 // upgrades count: Zippy fully upgraded against a bare Blue Bolt
 ok(bestCar(track("sunny"), [car("zippy"), car("bolt")], id => id === "zippy" ? U(5) : U(0)) === car("zippy"), "upgrades count");
 // the car being driven keeps the title unless another is at least 1% faster
-{ const a = car("zippy"), b = car("monster"), t = track("sunny");
+{ const a = car("zippy"), b = car("monster"), t = track("desert");   // a Tough track (v1.21 kinds): Zippy is Fast
   const pa = paceOn(a, U(5), t), pb = paceOn(b, U(5), t);
   ok(pb >= pa * BEST_MARGIN, "Mega Monster +5 is clearly faster than Zippy +5 (setup)");
   ok(bestCar(t, [a, b], () => U(5), {}, "zippy") === b, "a clearly faster car takes the title from the car being driven");
@@ -26,6 +26,10 @@ ok(bestCar(track("sunny"), [car("zippy"), car("bolt")], id => id === "zippy" ? U
   const twin = { ...a, id: "twin" };
   ok(bestCar(t, [twin, a], () => U(5), {}, "zippy") === a, "a tie keeps the car being driven");
 }
+// ⚡🛞 v1.21 track kinds: Rocket Rex (Fast) is the best on a Fast track, Galaxy GT (Grippy) on a Grippy one
+{ const fastT = TRACKS.find(t => t.world === "earth" && t.kind === "fast"), gripT = TRACKS.find(t => t.world === "earth" && t.kind === "grippy");
+  ok(bestCar(fastT, [car("rocket"), car("galaxy")], () => U(5)) === car("rocket"), "a Fast car wins a Fast track");
+  ok(bestCar(gripT, [car("rocket"), car("galaxy")], () => U(5)) === car("galaxy"), "a Grippy car wins a Grippy track"); }
 // chips: none with one car, none for the car being driven, the faster car otherwise
 ok(chipFor(save(["zippy"], "zippy"), track("sunny")) === null, "one car, no chip");
 ok(chipFor(save(["zippy", "galaxy"], "galaxy"), track("sunny")) === null, "driving the best car, no chip");
@@ -53,9 +57,11 @@ for (const S of saves) {
   }
 }
 ok(chips > 50, "the random saves do show chips (the agreement check is not empty)");
-// the Rank 16 save drives its fastest car (Champ X), so it shows no chip. Driving Zippy, every open track shows one
-// (the sweep and the audit open the chip and its card this way)
-ok(TRACKS.every(t => !chipFor(mid, t)), "the Rank 16 save, driving its fastest car, shows no chip");
+// the Rank 16 save drives Champion X (Fast). v1.21 track kinds: it keeps the title on Fast tracks, and Thunder King
+// (Tough) and Galaxy GT (Grippy) take their own kinds, so a mid-game garage has three cars with a place. Driving
+// Zippy, every open track shows a chip (the sweep and the audit open the chip and its card this way)
+const chipKind = { fast: undefined, tough: "thunder", grippy: "galaxy" };
+ok(TRACKS.every(t => chipFor(mid, t)?.id === chipKind[t.kind]), "the Rank 16 save: no chip on Fast tracks, Thunder King on Tough, Galaxy GT on Grippy");
 ok(TRACKS.filter(t => t.world === "earth").every(t => chipFor({ ...mid, car: "zippy" }, t)), "the Rank 16 save driving Zippy shows a chip on every Earth track");
 
 // the screens use these two helpers (and only these) to paint the chip and the Garage row

@@ -1,6 +1,6 @@
 // Physics both race engines share (the classic road in src/engine.js and Toy Track World in src/toy/race.js),
 // so a change to how rivals drive happens in one place. Plain math: the race simulators use it too.
-import { PACE, CUPS, WORLDS } from "./data.js";
+import { PACE, CUPS, WORLDS, TRAITS } from "./data.js";
 
 export const BASE_MAX = 10000;   // the classic engine's speed unit: a starter car's top speed (world units / s)
 
@@ -18,11 +18,23 @@ export function rubberBand(gap, diffId, trackDiff = 99) {
 
 /* 🏠 home-world bonus (v1.11): a car built for a world (its shop, cup and boss cars) is a little faster there. It
    replaces the old 4% penalty for other cars on ice and in Toy Track World. Earth cars have no home bonus. */
-export const HOME_BONUS = 0.05;
+export const HOME_BONUS = 0.10;   // v1.21: 5% -> 10%, so each world's own top cars still win at home at the end
 export const worldOf = car => car.world || CUPS.find(c => c.id === car.cup)?.world || "earth";
 /* what the game says about it: "🌙 Faster on Moon Base" (null for Earth cars) */
 export const homeNote = car => { const w = WORLDS.find(x => x.id === worldOf(car)); return w && w.id !== "earth" ? { icon: w.icon, text: `${w.icon} Faster in ${w.name}` } : null; };
 export const homeBonus = (car, track) => track && track.world && track.world !== "earth" && worldOf(car) === track.world ? 1 + HOME_BONUS : 1;
+/* ⚡🛞💪 track kinds (v1.21): every track is a Fast, a Grippy or a Tough track (track.kind in data.js), and a car
+   whose trait matches is this much faster there. It replaced the traits' old top speed change (Fast +3% and Grippy
+   -2.5% everywhere), so the top cars are sidegrades: at the end each kind has its own best car. */
+export const KIND_BONUS = 0.06;
+export const kindBonus = (car, track) => track?.kind && car?.trait === track.kind ? 1 + KIND_BONUS : 1;
+/* everything a track does to a car's top speed: its home bonus and its kind */
+export const trackBonus = (car, track) => homeBonus(car, track) * kindBonus(car, track);
+/* what the race shouts at GO when a bonus is on: "🏠 HOME BONUS!", "⚡ BONUS!", or both pictures, "🏠 ⚡ BONUS!" */
+export const bonusWord = (car, track) => {
+  const home = homeBonus(car, track) > 1, kind = kindBonus(car, track) > 1 ? TRAITS[track.kind]?.icon : null;
+  return home && kind ? `🏠 ${kind} BONUS!` : home ? "🏠 HOME BONUS!" : kind ? `${kind} BONUS!` : null;
+};
 
 /* 💪 a bump keeps this share of the car's speed: keep is the normal share, and a Tough car (stats.tough 0.5) feels
    only half of the loss (v1.16 car traits) */

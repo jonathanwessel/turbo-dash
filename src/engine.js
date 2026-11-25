@@ -8,7 +8,7 @@ import { buildToyTrack } from "./toy/track.js";
 import { drawCar, drawSprite, drawCoin, drawPearl, drawBackground, drawBox, drawRing, SPRITES, shade, drawSpritePic, drawCarPic, COIN_TOP, RING_TOP, PEARL_TOP, BOX_TOP, CAR_TOP } from "./draw.js";
 
 export const SEG = 200;            // segment length (world units)
-import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep, homeBonus, bumpKeep } from "./physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng as seededRng, strSeed, perStep, trackBonus, bonusWord, bumpKeep } from "./physics-common.js";
 export { BASE_MAX };   // starter car top speed (world units / s)
 const RUMBLE = 3, ROAD_W = 2000, CAM_H = 1000, LANES = 3;   // the draw distance is per quality level (past 60% of it: no lane dashes)
 /* picture quality (v1.10, set by the game from how fast this device draws; Settings > Effects can pin it):
@@ -215,7 +215,7 @@ export class Race {
     for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
     this.hooks.onPower?.(null);
-    this.track = track; this.mode = mode; this.stats = stats; this.home = homeBonus(car, track);   // 🏠 v1.11
+    this.track = track; this.mode = mode; this.stats = stats; this.home = trackBonus(car, track); this.bonusWord = bonusWord(car, track);   // 🏠 v1.11, ⚡🛞💪 v1.21: the home bonus and the track's kind
     this.state = mode === "demo" ? "demo" : "countdown";
     this.count = 3.6; this.raceTime = 0;
     this.startZ = START * SEG + SEG * 0.5;
@@ -341,7 +341,7 @@ export class Race {
       this.count -= dt;
       const now = Math.ceil(this.count - 0.6);
       if (now !== before && now > 0) h.sfx("beep");
-      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.home > 1 && this.mode === "race") this.popup("🏠 HOME BONUS!", "#ffd400"); }
+      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.bonusWord && this.mode === "race") this.popup(this.bonusWord, "#ffd400"); }
       h.engine(0.05, false);
       return;
     }

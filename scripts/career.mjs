@@ -58,7 +58,7 @@ const S = {
 };
 const today = () => dayKey(new Date(2027, 0, 1 + day)), yesterday = () => dayKey(new Date(2027, 0, day));
 let day = 0, clock = 0, raceNo = 0, lastRankDay = 0;
-const gates = [];
+const gates = [], bestDay = {};
 const gate = (key, text) => { if (gates.some(g => g.key === key)) return; gates.push({ key, text, day, race: raceNo }); };
 const lv = id => S.research[id] || 0;
 
@@ -244,6 +244,9 @@ for (day = 1; day <= MAX_DAYS; day++) {
   // whatever wasn't spent goes in the bank, up to its limit
   if (BANK) { const n = Math.min(S.coins, Math.max(0, bankMax(S.rank) - S.bank.bal)); bankDeposit(S.bank, n, day * BANK_DAY); S.coins -= n; }
   if (S.rank >= RANK_CAP && !gates.some(g => g.key === "cap")) gate("cap", `Reached the rank cap (${RANK_CAP})`);
+  // 🏆 v1.21 "Every car has a place": the first day each car is the Best pick (src/best.js) of the bot's own garage on
+  // an open track
+  for (const t of TRACKS) if (trackOpen(S, t)) { const b = bestCar(t, mine(), upsOf, S.research); if (!(b.id in bestDay)) bestDay[b.id] = day; }
   // CAREER_SNAP=16:src/dev/mid-save.json writes the bot's save the evening it first reaches Rank 16 (the sweep's
   // pictures use it, so they show a save a real player could have, not made-up numbers)
   if (SNAP && S.rank >= SNAP.rank && !SNAP.done) { SNAP.done = true; writeFileSync(SNAP.file, JSON.stringify({ ...S, v: 24, name: "Racer", rivalWeek: { w: -1, lvl: 0, seen: -1 }, world: "earth", lab: { benches: [] }, savedAt: 0 }, null, 1) + "\n"); console.log(`(saved the Rank ${S.rank} save of day ${day} to ${SNAP.file})`); }
@@ -267,18 +270,28 @@ console.log(`Bot ${BOT}${process.env.CAREER_SEED ? " seed " + process.env.CAREER
 console.log("Upgrades bought: " + Object.entries(boughtUps).map(([k, n]) => `${k} ${n}`).join(", ") + ". Lab coins: " + Object.entries(labSpent).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} ${Math.round(n / 1000)}k`).join(", "));
 
 const at = key => gates.find(g => g.key === key)?.day;
+// 🏆 v1.21 the M2 target, read by the game's own Best rule: every car is the best pick of the bot's garage on an open
+// track at some point, and at the end (every car the bot owns, as upgraded as it got them) no car is the best pick
+// on more than a third of the tracks
+const never = CARS.filter(c => !(c.id in bestDay)), endBest = {};
+for (const t of TRACKS) { const b = bestCar(t, mine(), upsOf, S.research); endBest[b.name] = (endBest[b.name] || 0) + 1; }
+const endTop = Math.max(...Object.values(endBest)), place = [];
+console.log(`Best pick at some point: ${CARS.length - never.length} of ${CARS.length} cars${never.length ? " (never: " + never.map(c => c.name).join(", ") + ")" : ""}. At the end: ` + Object.entries(endBest).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ") + ` of ${TRACKS.length} tracks`);
+// the first half is not met yet (PLAN.md, M2 "Side cars have a place"). Its count changes from run to run (20 to 24
+// of 29 over six seeds), so `npm run bots` holds a floor on its seeded kid runs, where it repeats exactly
+if (endTop * 3 > TRACKS.length) place.push(`at the end one car is the best pick on ${endTop} of ${TRACKS.length} tracks (a third at most)`);
 const worlds = [...new Set(TRACKS.map(t => t.world))].filter(w => w !== "earth");
 const opened = w => Math.min(...gates.filter(g => g.key.startsWith("open:") && TRACKS.find(t => "open:" + t.id === g.key)?.world === w).map(g => g.day));
 // CAREER_JSON=<file> writes the run's numbers for scripts/bots.mjs
-const report = ok => { if (process.env.CAREER_JSON) writeFileSync(process.env.CAREER_JSON, JSON.stringify({ bot: BOT, seed: process.env.CAREER_SEED || null, ok, rank: S.rank, cap: at("cap") || null, worlds: Object.fromEntries(worlds.map(w => [w, opened(w)])), used, boughtUps, labSpent, gates: gates.map(g => [g.key, g.day, g.race]) }) + "\n"); };
+const report = ok => { if (process.env.CAREER_JSON) writeFileSync(process.env.CAREER_JSON, JSON.stringify({ bot: BOT, seed: process.env.CAREER_SEED || null, ok, rank: S.rank, cap: at("cap") || null, worlds: Object.fromEntries(worlds.map(w => [w, opened(w)])), used, boughtUps, labSpent, everBest: CARS.length - never.length, never: never.map(c => c.id), endTop, gates: gates.map(g => [g.key, g.day, g.race]) }) + "\n"); };
 
 // v1.11.2: a gate that never opens fails the run (exit 1), so `npm run check` stops: a STUCK rank, or the rank
 // cap not reached within the days played. A short run (npm run career -- 12 100) fails on purpose: the cap is
 // out of reach in 100 days.
 const stuck = gates.filter(g => g.key.startsWith("stuck"));
-if (stuck.length || S.rank < RANK_CAP) {
+if (stuck.length || S.rank < RANK_CAP || place.length) {
   report(false);
-  console.log("\n✖ " + [...stuck.map(g => g.text), ...(S.rank < RANK_CAP ? [`Rank cap ${RANK_CAP} not reached in ${MAX_DAYS} days (rank ${S.rank})`] : [])].join("\n✖ "));
+  console.log("\n✖ " + [...stuck.map(g => g.text), ...(S.rank < RANK_CAP ? [`Rank cap ${RANK_CAP} not reached in ${MAX_DAYS} days (rank ${S.rank})`] : []), ...place].join("\n✖ "));
   process.exit(1);
 }
 report(true);

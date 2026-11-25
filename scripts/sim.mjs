@@ -7,14 +7,14 @@
 import { CARS, TRACKS, DIFFS, UPGRADES, UPGRADE_MAX, RIVALS, BOSSES, BOSS_ROUNDS, RESEARCH, prizeFor, upgradeCost, trackOpen } from "../src/data.js";
 import { bossSpeed } from "../src/rules.js";
 import { rivalBoost, WEEK_RIVAL } from "../src/rival-week.js";
-import { rng, homeBonus } from "../src/physics-common.js";
+import { rng, trackBonus } from "../src/physics-common.js";
 import { race, runRace } from "./racebot.mjs";
 import { statsFor } from "../src/stats.js";
 
 // a car's real top speed on a track, fully upgraded: its speed with its trait (v1.16 ⚡ Fast cars are a little faster
 // on top, 🛞 Grippy a little slower) and its home-world bonus there, so the car ladders below are sorted by what the
 // car really does on that track
-const topOf = (c, t) => statsFor(c, lvl(UPGRADE_MAX)).maxSpeed * homeBonus(c, t);
+const topOf = (c, t) => statsFor(c, lvl(UPGRADE_MAX)).maxSpeed * trackBonus(c, t);
 const ladderFor = t => [...CARS].sort((a, b) => topOf(a, t) - topOf(b, t));
 
 const lvl = n => ({ engine: n, turbo: n, tires: n, magnet: 0 });

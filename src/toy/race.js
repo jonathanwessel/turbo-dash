@@ -8,7 +8,7 @@
 // going down and slow you going up. A loop needs speed: too slow at the top and you fall off, and a friendly toy
 // hand puts you back. Jumps fly over gaps; too slow and you drop in (the hand again). Booster stations fling you.
 import { RIVALS, PHYSICS, diffOf, MPH } from "../data.js";
-import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, homeBonus, bumpKeep } from "../physics-common.js";
+import { BASE_MAX, rivalBase, rubberBand, rng, strSeed, stepK, trackBonus, bonusWord, bumpKeep } from "../physics-common.js";
 import { buildToyTrack, sampleAt, DS, LIMIT } from "./track.js";
 import { honk, tickHonks } from "../horn.js";
 import { weekBase } from "../rival-week.js";
@@ -26,7 +26,7 @@ export class ToyRace {
 
   setup(track, mode, car, stats, opts = {}) {
     const T = this.T = buildToyTrack(track);
-    this.track = track; this.mode = mode; this.stats = stats; this.home = homeBonus(car, track);   // 🏠 v1.11
+    this.track = track; this.mode = mode; this.stats = stats; this.home = trackBonus(car, track); this.bonusWord = bonusWord(car, track);   // 🏠 v1.11, ⚡🛞💪 v1.21: the home bonus and the track's kind
     this.phys = PHYSICS[track.world] || PHYSICS.toy;
     this.diff = diffOf(opts.diff);
     this.assist = Math.max(this.diff.assist, opts.helper || 0); this.pull = opts.helper || 0;
@@ -111,7 +111,7 @@ export class ToyRace {
     if (this.state === "countdown") {
       const before = Math.ceil(this.count - 0.6); this.count -= dt; const now = Math.ceil(this.count - 0.6);
       if (now !== before && now > 0) h.sfx("beep");
-      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.home > 1 && this.mode === "race") this.popup("🏠 HOME BONUS!", "#ffd400"); }
+      if (this.count <= 0.6) { this.state = "race"; h.sfx("go"); if (this.bonusWord && this.mode === "race") this.popup(this.bonusWord, "#ffd400"); }
       h.engine(0.05, false); return;
     }
     const racing = this.state === "race";

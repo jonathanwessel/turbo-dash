@@ -5,7 +5,7 @@
 // random garages (v1.17): the pick is the fastest car in about 96 races of 100, and never more than about 3%
 // slower than the fastest one.
 import { statsFor } from "./stats.js";
-import { homeBonus } from "./physics-common.js";
+import { trackBonus } from "./physics-common.js";
 import { CARS, PERKS } from "./data.js";
 import { worldOf } from "./physics-common.js";
 
@@ -14,7 +14,7 @@ export const BEST_MARGIN = 1.01;   // another car must be at least 1% faster to 
 export function paceOn(car, ups, track, lab = {}) {
   const s = statsFor(car, ups, lab);
   const perk = track && worldOf(car) === track.world ? PERKS[car.perk]?.pace || 1 : 1;   // 🌟 a special car's power at home (v1.19)
-  return s.maxSpeed * homeBonus(car, track) * perk * (1 + 0.015 * s.nitroTime) * Math.pow(s.accel / s.maxSpeed, 0.1);
+  return s.maxSpeed * trackBonus(car, track) * perk * (1 + 0.015 * s.nitroTime) * Math.pow(s.accel / s.maxSpeed, 0.1);
 }
 
 /* the best of the given cars on this track: the one being driven (`current`) keeps the title unless another car is

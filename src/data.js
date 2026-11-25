@@ -55,7 +55,7 @@ export const PERKS = {
   hop:    { id: "hop",    icon: "🦘", line: "Jumps extra high!", jump: 1.35 },
   steady: { id: "steady", icon: "⚓", line: "The water can't push it!" },
   studs:  { id: "studs",  icon: "🧊", line: "It does not slide on ice!" },
-  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.12, pace: 1.025 },
+  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.05, pace: 1.03 },
 };
 export const perkOf = car => PERKS[car?.perk] || null;
 /* what a special car's earn counter shows: the picture of the thing to collect */
@@ -69,13 +69,15 @@ export const earnCarIn = (S, world) => CARS.find(c => c.earn && c.world === worl
 
 /* ⚡🛞💪 Car traits (v1.16): every car is Fast, Grippy or Tough, and each one costs something. The rules are in
    statsFor (src/stats.js), so the game, the race sim and the career run all use the same numbers.
-   - fast: a higher top speed, and curves push it outward more (it slides).
-   - grippy: curves push it outward less, and its top speed is a little lower.
+   - fast: curves push it outward more (it slides).
+   - grippy: curves push it outward less.
    - tough: bumps (walls, trees, rails, puddles, snowbanks, other cars) take half as much speed, and it speeds up
-     a little slower (it is heavy). */
+     a little slower (it is heavy).
+   v1.21: a car is 6% faster on a track of its own kind (track.kind below, kindBonus in physics-common.js). That
+   replaced the old top speed change (Fast +3%, Grippy -2.5% everywhere). */
 export const TRAITS = {
-  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straight roads. Slides on turns.", top: 1.03, slide: 1.3 },
-  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Turns well. A bit slower.", top: 0.975, slide: 0.7 },
+  fast:   { id: "fast",   icon: "⚡", name: "Fast",   line: "Zooms on straight roads. Slides on turns.", slide: 1.3 },
+  grippy: { id: "grippy", icon: "🛞", name: "Grippy", line: "Turns well. A bit slower.", slide: 0.7 },
   tough:  { id: "tough",  icon: "💪", name: "Tough",  line: "Bumps don't slow it much. Slow to start.", accel: 0.88, bump: 0.5 },
 };
 // one trait per car, mixed along the car ladder so the next car up is often a different kind
@@ -203,6 +205,20 @@ export const TRACKS = [
   { id: "grandprix", name: "Playroom Grand Prix", icon: "🏁", diff: 13.1, laps: 2, seed: 229, theme: "toy", world: "toy", after: "kitchen", pal: ["#a63cff", "#c070ff"] },
   { id: "summit",     name: "Glacier Summit", icon: "🏔️", diff: 11.8, laps: 2, seed: 197, theme: "glacier", world: "glacier", after: "aurora" },
 ];
+/* ⚡🛞💪 track kinds (v1.21): each track is a Fast, a Grippy or a Tough track, and a car of that trait is 6% faster
+   there (kindBonus in physics-common.js). Picked from what each trait does on the track's own road
+   (scripts/probes/kinds.mjs), then shared out so every world has more than one kind and, at the end of the game, no
+   car is the best on more than a third of the tracks (scripts/probes/endgame.mjs). */
+const KIND_OF = {
+  desert: "fast", farm: "fast", candy: "fast", snow: "fast", fair: "fast",
+  beach: "grippy", river: "grippy", night: "grippy", lava: "grippy", space: "grippy",
+  sunny: "tough", pirate: "tough", haunted: "tough", autumn: "tough", factory: "tough", caves: "tough",
+  moonbase: "fast", asteroid: "fast", earthrise: "grippy", crater: "tough",
+  trench: "fast", kelp: "grippy", reef: "grippy", wreck: "tough",
+  frozenlake: "fast", aurora: "grippy", icecave: "tough", summit: "tough",
+  grandprix: "fast", bedroom: "grippy", blocks: "tough", kitchen: "tough",
+};
+for (const t of TRACKS) t.kind = KIND_OF[t.id];
 // A track opens when the one before it is WON (1st place) on Normal or Hard. Easy is for practice and coins,
 // unless Easy is the hardest level the player can pick right now (a grown-up allows only Easy, or allows Easy and
 // Hard while Hard is still rank-locked): then Easy wins count too, or nothing could ever open.
