@@ -383,6 +383,13 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.21.0 ⚡ Track kinds (shipped)
+Every track is a Fast, Grippy or Tough track, shown as a badge on its card, and a car of that kind is 6% faster
+there. The top cars became sidegrades: no car is the best on more than 10 of the 32 tracks at the end (Wind-Up Rocket
+was the best on all of them). The home bonus is 10%, and the Boost Buggy's booster power is smaller.
+- Lesson: a trait that changes how a car handles barely changes race times (about 1%), so it never decides which car
+  is best. A choice only matters when its effect is as big as the gaps between the cars, and the measurement says so.
+
 ### v1.15.1 🧹 Tidy up (shipped)
 The leftovers from four picture reviews: one coin total and the rival's face on the result card, an arrow over the
 player's toy car, upright toy boxes, plainer Lab, Garage and Main Street, and an upright phone size in the sweep.

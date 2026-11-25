@@ -1,5 +1,43 @@
 # Changelog
 
+## v1.21.0 — Track kinds ⚡🛞💪
+
+- **⚡🛞💪 Every track has a kind.** Each track is a Fast, a Grippy or a Tough track, shown as a round badge in the
+  top left corner of its card, in the same color as the trait pill on a car. A car whose trait matches is 6% faster
+  there. This replaces the old trait speeds (Fast cars were 3% faster and Grippy cars 2.5% slower everywhere), so the
+  top cars are now sidegrades: at the end of the game Wind-Up Rocket is the best car on 9 tracks, Loop Legend on 10,
+  Boost Buggy on 10, Snow Cat on 2 and Blizzard Wolf on 1. Before, Wind-Up Rocket was the best on all 32. In the middle
+  of the game it works the same way: at Rank 16, Champion X is the best on Fast tracks, Thunder King on Tough ones and
+  Galaxy GT on Grippy ones. The car kinds card now says what each kind zooms on, and it opens once from the track
+  list for a player with more than one car, then the badge glows. At GO the race shouts the bonus with its pictures
+  (🏠 HOME BONUS!, ⚡ BONUS!, or 🏠 ⚡ BONUS!), and read aloud says Fast tracks for the ⚡ picture.
+- **🏠 A bigger home bonus.** A world's own cars are 10% faster in their world (it was 5%), so Glacier Rink's own top
+  cars still win at home at the end.
+- **🚀 A smaller booster power.** The Boost Buggy's boosters fling it 5% farther (it was 12%). Measured in whole races,
+  the old power was worth 8.4% of a race at full upgrades and won every Toy track. Now it is worth 3%.
+- Polish: the track badges are the new thing to see, and picking the car for a track's sign is the new thing to use.
+- From the picture review: the sign is a white disc with a thick ring in its kind's color (an orange arm on an orange
+  disc could not be made out), and the same round sign now shows in the car kinds card's lines and beside the
+  track's picture on the Best card. On upright screens the sign sits in the card's row, not on the track's picture.
+  On a short landscape phone (740x360 and 915x412) the Garage's car picture is smaller and its rows tighter, because
+  more cars now have a Best row and Drive it! fell under the screen's edge.
+- **Fix in the checks:** the sweep's first pictures of the new card showed the rival of the week's card and a Garage
+  instead (the rival card opens first on a new week), and nothing noticed. Those steps now pass the rival card, and a
+  sweep picture whose screen did not open fails the sweep.
+- Numbers: `npm run career` reaches Rank 40 on day 549 to 555 over several runs (551 on the release check, it was 554),
+  and the worlds open on days 107, 188, 281 and 411.
+  `npm run bots`: every way of playing is within 17% at Rank 10 (it was 21%), 6% at Rank 20, 2% at Rank 30, 1% at
+  Rank 40. The race sims still pass: the starter car does not win the first race (Sunny Hills is a Tough track for
+  that reason), every boss can be beaten, every Best badge is within 4% of the fastest car.
+- **For the grown-ups:** the career run now reports which cars are ever the best pick of the garage (20 to 24 of 29,
+  it was 15) and fails when one car is the best on more than a third of the tracks at the end. `npm run bots` holds
+  the count at 22 or more on its seeded runs. The side prize cars (Green Machine, Fire Dash, School Resource Officer
+  and a few more) are still never the best, which is the next box in the plan.
+- **For the grown-ups:** the picture guard now also guards three screens, the Garage, the track list and Main Street,
+  with the clock stopped and every animation held still. It was seen failing with a car drawing, a chip and the town's
+  badges removed on purpose. The race pictures and the track list picture were accepted again on purpose (the cars'
+  speeds and the new badges).
+
 ## v1.20.0 — Back button and car counters ◀
 
 - **◀ The Android back button works.** The phone's back gesture or button now does what the screen's own way back

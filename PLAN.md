@@ -7,7 +7,8 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
 1. **Pick the next box.** Take the first unticked box in the first unfinished milestone. Work boxes in order for
    as long as the run lasts. A big box may take several runs: commit working steps, and note where you stopped.
    A new check counts as a working step only once it has passed and has been seen red on purpose; before the run
-   stops, stash anything that has not (v1.18.0).
+   stops, stash anything that has not (v1.18.0). A working step is committed only behind a passing test, chained
+   with `&&` (`npm test && git commit ...`), never after a `;` (v1.21.0).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -603,13 +604,55 @@ every test green.
   commit: career Rank 40 on day 554 (Moon 107, Ocean 190, Glacier 286, Toy 416), inside 1% of v1.19.0's 555; bots the
   same numbers as above (the runs are seeded); the voice was NOT heard (no sound output on this machine). Sweep clean
   at 8 sizes after the review fixes. Live install test ok. Not checked on a real tablet.
-- [ ] **Every car has a place at the end** (added in v1.20.0, the target below found it). Fully upgraded with every Lab
+- [x] **Every car has a place at the end** (added in v1.20.0, the target below found it). Fully upgraded with every Lab
   project, Wind-Up Rocket is the best pick on all 32 tracks by the game's own pace rule (6% ahead of the Boost Buggy on
   Earth, Moon and Deep Blue tracks, 3.3% ahead of Blizzard Wolf on the Glacier Rink), so the end-game garage has one
   car. Make the top cars sidegrades, not a ladder: for example a bigger home-world bonus for each world's top cars so
   each wins at home, and tracks with a character the traits answer (Grippy best on twisty tracks, Tough on bumpy ones,
   Fast on long straights). Measure it with `npm run sim -- best` style races, keep "winning is earned" and the early
   ladder as they are, and re-run `npm run sim`, `npm run career` and `npm run bots`.
+  Notes (v1.21.0, done): measured first. `scripts/probes/kinds.mjs` races one car as Fast, Grippy and Tough with the
+  trait top speed switched off: on their own the traits change race times by about 1% (curve slide and bump loss
+  hardly matter to the kid driver), so they could never decide which car is best. Decision: **track kinds**. Every
+  track is a Fast, Grippy or Tough track (`track.kind`, data.js), shown as a round badge on its card in the trait
+  pill's color, and a car of that kind is 6% faster there (`kindBonus`, physics-common.js). It replaced the traits'
+  old top speed (Fast +3%, Grippy -2.5% everywhere). Kinds were picked from what each trait does on the track's road,
+  then shared so each world has more than one kind and each kind has at most 10 or 11 tracks. Sunny Hills became
+  Tough, not Fast: as a Fast track the starter car (Fast) won the first race and `npm run sim -- start` went red. The
+  home bonus went from 5% to 10%, because at 5% the trio of Toy cars took every kind everywhere (32 tracks cannot
+  split three ways into a third each). The Boost Buggy's booster power went from 12% to 5%: measured with
+  `scripts/probes/perk.mjs` (the car with and without its power, whole races) it was worth 8.4% of a race at full
+  upgrades and took all four Toy tracks, while the Best rule counted 2.5%. Now it is worth 3.0% and the rule counts 3%.
+  The same probe shows the other three powers are worth about 0% of a race (hop -1.1%, steady -0.1%, studs +0.1%):
+  they change how the car feels, not its time. `scripts/probes/endgame.mjs` (every car fully upgraded with every Lab
+  project): the Best rule and real races now agree on every track, Wind-Up Rocket 9, Loop Legend 10, Boost Buggy 10,
+  Snow Cat 2, Blizzard Wolf 1 (before: Wind-Up Rocket 32 by the rule, 28 in races). At Rank 16 the save's garage has
+  three cars with a place (Champion X on Fast tracks, Thunder King on Tough, Galaxy GT on Grippy). The car kinds card
+  says "Zooms on ⚡ tracks" and opens once from the first track list of a player with more than one car (tip `kinds`),
+  and the badge in view glows after OK. GO shouts the bonus with its pictures. Read aloud says "Fast tracks". The
+  career run now reports which cars are ever the Best pick and fails when one car is the best on more than a third
+  of the tracks at the end (seen red on v1.20.0's code: Wind-Up Rocket on 32). Not checked on a real tablet.
+- [ ] **Side cars have a place** (added in v1.21.0, the target below found it). Nine cars are never the Best pick of the
+  bot's garage on an open track in some careers, and three in every seeded kid career: Green Machine, Fire Dash and
+  School Resource Officer. They are side prizes (a cup, the Fire Station, the School) that arrive slower than the
+  cars the garage already has, and Rocket Rex, Gold Rush, Barnstormer, Polar Bear, Toy Racer and Manta Ray are often
+  passed by. Give each a place where it is the best for a while: for example a home of its own (the Fire Station's
+  truck on a Tough Earth track it is built for), or a speed that puts it just ahead of the cars a player has when it
+  arrives. Measure with the career's "Best pick at some point" line over several seeds, and raise the floor in
+  `scripts/bots.mjs` (22 now) as it goes up, until it is 29 of 29.
+- [ ] **v1.21.0 picture review leftovers** (all older than v1.21.0, so it shipped; take one or two as a release's
+  polish). On a 360 px upright phone the rival of the week's card runs to both screen edges and its border is cut,
+  and the Garage title sits against the ◀ button. The Garage's world chips wrap Moon Base and Deep Blue onto two lines
+  while Earth stays on one. The Best card says "faster here than Zippy" to a child who may not know the car's name
+  (a picture of the car being driven would say it). The What's new card scrolls when many releases are listed, so a
+  child who cannot read never sees the lower lines.
+- [ ] **Special car powers help at home** (added in v1.21.0, found by `scripts/probes/perk.mjs`). Measured in whole
+  races at full upgrades, three of the four powers are worth nothing to a race: the Moon Hopper's high jump -1.1% (it
+  is a little slower with it), the Deep Diver's steadiness -0.1%, the Snow Cat's studs +0.1%. Only the Boost Buggy's
+  boosters count (3%). A child who earns one of these cars should feel it win more at home. Give each power a real
+  effect where its world has the thing it changes (for example rings collected in the air count double for the
+  Hopper, or a current pushes it forward instead of sideways), measure it with the probe, and keep the end-game
+  spread (no car the best on more than a third of the tracks).
 - [ ] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
   Notes (v1.20.0, progress): the bots part passes (+1% at Rank 40, gated in `npm run check`). The car part does not:
@@ -618,6 +661,11 @@ every test green.
   earned). Read it as two lines, measured by the Best rule in the career run: every car is the Best pick of the bot's
   own garage on at least one open track at some point of the career, and at the end no car is the best pick on more
   than a third of the tracks. The box above works on the second line.
+  Notes (v1.21.0, progress): the second line passes (the most any car has at the end is 10 of 32, gated in
+  `npm run career`), and the bots still pass (17%, 6%, 2% and 1% apart at Rank 10, 20, 30 and 40). The first line does
+  not: 20 to 24 of 29 cars are ever the best pick over six seeds (it was 15 of 29 before the track kinds). The box
+  "Side cars have a place" above works on it, and `npm run bots` holds a floor of 22 on its seeded kid runs, so the
+  count cannot slip back while it does.
 
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
@@ -814,3 +862,21 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   marked the rival card seen, so the boss tab was measured with the rival chip for the first time, and a squeezed
   boss card showed up); that was a real older bug, not noise. Next: **the M0 screens guard** and **Every car has a
   place** as the main piece.
+- 2026-11-25 (v1.21.0): the M0 screens guard and **Every car has a place** (M2) shipped, as the last note asked, so M0
+  is done and the game moved forward for the sixth release in a row. The design came from measuring first (the
+  v1.19.0 rule): a probe showed that traits on their own change race times by about 1%, so no trait could ever decide
+  the best car, and that the Boost Buggy's power was worth 8.4% of a race while the Best rule counted 2.5%. Track
+  kinds (a 6% bonus for the matching trait) and a 10% home bonus spread the end game to five cars, at most 10 of 32
+  tracks each. The target's first line still misses (20 to 24 of 29 cars are ever the best), so a fix box sits above
+  it, and `npm run bots` holds a floor so the count can only go up. A second new box: three of the four special car
+  powers are worth about 0% of a race (the Moon Hopper's is -1.1%). Seen once in this run, and it breaks the
+  commit-early rule (v1.13.0): a step commit went in with `npm test` red, because the commit was chained with `;`
+  after the test, not `&&`. It was fixed in the next commit, before anything was pushed. Rule: **a step commit is
+  always chained to a passing `npm test` with `&&`**, the same idea as `set -o pipefail` for releases. Also learned:
+  the default `npm run career` is not seeded, so its Rank 40 day moves by a few days from run to run (549 to 555
+  here). A gate on one of its counts belongs on the seeded runs in `npm run bots`, where it repeats exactly. The picture
+  helper found that the sweep's two new pictures showed the wrong screens (the rival card opened first), which is the
+  v1.17.0 rule again (a check must see what it guards): a sweep picture step now returns whether its screen opened,
+  and a false fails the sweep. Next:
+  **Side cars have a place** as the main piece, with a Small delight (holiday decorations, the season is near) as its
+  polish.
