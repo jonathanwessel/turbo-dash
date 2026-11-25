@@ -48,6 +48,8 @@ const EXTRA = {
   // v1.21: the car kinds card the first track list opens (track kinds), and the track list after OK with the badge lit
   "s-traits-kinds": `(Object.assign(__td.S, __mid()), (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.kinds; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, document.getElementById("s-rival").hidden || document.getElementById("rw-ok").click(), !document.getElementById("s-traits").hidden)`,
   "s-tracks-kinds": `(document.getElementById("tr-ok").click(), !document.getElementById("s-tracks").hidden && !!document.querySelector("#s-tracks .tc-kind.spot"))`,
+  // v1.22: the Garage on a car with a home track of its own (the longest name and the longest home line)
+  "s-garage-home": `(Object.assign(__td.S, __mid()), __td.S.car = "patrol", __td.goHub(), ${tap("garage")}, !document.getElementById("s-garage").hidden && !document.getElementById("g-home").hidden)`,
   // v1.22: Main Street dressed for each holiday, scrolled to the big decoration (a reload puts today's back)
   ...Object.fromEntries(["fall", "winter", "summer"].map(h => ["s-hub-" + h, `(Object.assign(__td.S, __mid()), __td.holiday("${h}"), __td.goHub(), (() => { const w = document.getElementById("town-wrap"), el = document.getElementById("holiday"); if (!el) return false; const r = el.getBoundingClientRect(); w.scrollLeft += r.left + r.width / 2 - innerWidth / 2; return !document.getElementById("s-hub").hidden; })())`])),
   "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
