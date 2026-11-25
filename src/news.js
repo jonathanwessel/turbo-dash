@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.21.0",
+    pics: [["⚡", "Every track has a ⚡, 🛞 or 💪 sign"], ["🚗", "A car with the same sign zooms there"]],
+    notes: [
+      "Every track now shows a round sign, Fast, Grippy or Tough, and a car of that kind is a little faster there.",
+      "So the top cars each have their own tracks, and the Best badge no longer names one car everywhere.",
+      "A world's own cars get a bigger home bonus. The Boost Buggy's booster power is smaller.",
+      "Not checked on a real tablet yet, so please look at the track signs and the car kinds card that opens once.",
+    ],
+  },
+  {
     v: "1.20.0",
     pics: [["👋", "Press back to go back or to stop"], ["🚗", "See how close the next car is"]],
     notes: [

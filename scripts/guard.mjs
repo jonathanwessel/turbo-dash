@@ -45,7 +45,7 @@ const stillInit = `(() => {
   let s = 777; Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const raf = window.requestAnimationFrame.bind(window); window.__hold = false;
   window.requestAnimationFrame = cb => raf(t => window.__hold ? window.requestAnimationFrame(cb) : cb(t));
-  try { localStorage.setItem("turbodash.tips", JSON.stringify({ horn: 1, best: 1, traits: 1 })); } catch (e) {}
+  try { localStorage.setItem("turbodash.tips", JSON.stringify({ horn: 1, best: 1, traits: 1, kinds: 1 })); } catch (e) {}
 })()`;
 const STILL_CSS = "#toast,#fx,#game,#gl{visibility:hidden!important}*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}";
 /* runs in the page: the same changed-pixel count as the race frames, for two pictures of any (equal) size */

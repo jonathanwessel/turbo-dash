@@ -46,8 +46,8 @@ const EXTRA = {
   // v1.20: the Stop playing? card a back press on Main Street opens
   "s-leave": `(__td.goHub(), __td.show("s-leave"), true)`,
   // v1.21: the car kinds card the first track list opens (track kinds), and the track list after OK with the badge lit
-  "s-traits-kinds": `(Object.assign(__td.S, __mid()), (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.kinds; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, true)`,
-  "s-tracks-kinds": `(document.getElementById("tr-ok").click(), true)`,
+  "s-traits-kinds": `(Object.assign(__td.S, __mid()), (() => { const t = JSON.parse(localStorage.getItem('turbodash.tips') || '{}'); delete t.kinds; localStorage.setItem('turbodash.tips', JSON.stringify(t)); })(), __td.goHub(), ${tap("race")}, document.getElementById("s-rival").hidden || document.getElementById("rw-ok").click(), !document.getElementById("s-traits").hidden)`,
+  "s-tracks-kinds": `(document.getElementById("tr-ok").click(), !document.getElementById("s-tracks").hidden && !!document.querySelector("#s-tracks .tc-kind.spot"))`,
   "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -155,7 +155,12 @@ async function main() {
       await js(s === "s-title" ? "(__td.show('s-title'), true)" : `(__td.goHub(), ${GO[s] ? `document.querySelector('[data-go="${GO[s]}"]').dispatchEvent(new MouseEvent("click", { bubbles: true })), ` : ""}true)`);
       await wait(500); await shot(`${size}-${s}`);
     }
-    for (const [name, expr] of Object.entries(EXTRA)) { await js(expr); await wait(700); await shot(`${size}-${name}`); }
+    // v1.21: a step may return false when its screen did not open (the first kinds pictures showed the rival card
+    // and the Garage instead, and nothing noticed). That fails the sweep.
+    for (const [name, expr] of Object.entries(EXTRA)) {
+      if ((await js(expr)) === false) { (report[size] ||= {})["picture " + name] = ["the screen for this picture did not open"]; console.log(`   ✖ picture ${name}: the screen did not open`); }
+      await wait(700); await shot(`${size}-${name}`);
+    }
     await js("(document.getElementById('ls-close')?.click(), localStorage.clear(), true)");   // the next size starts from a brand-new save again
     const n = Object.keys(issues).length;
     console.log(`${size.padEnd(10)} ${n ? "✖ " + n + " screens with problems" : "✔ every screen fits"}  (${((Date.now() - t) / 1000).toFixed(0)}s)`);

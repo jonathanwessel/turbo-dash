@@ -748,7 +748,7 @@ function openTracks() {
    (the picture review found "Pick it in the Garage" with only an OK button left the child no way to act on it) */
 let bestSpot = null;
 function openBestCard(track, car) {
-  $("bc-track").textContent = track.icon;
+  $("bc-track").innerHTML = track.icon + kindDot(track.kind);   // v1.21: the track's sign beside its picture
   const cv = $("bc-car"), cx = cv.getContext("2d"); cx.clearRect(0, 0, cv.width, cv.height);
   const glow = cx.createRadialGradient(120, 126, 6, 120, 126, 112);   // a light spot, so a dark car shows (as on the car kinds card)
   glow.addColorStop(0, "rgba(255,255,255,0.55)"); glow.addColorStop(1, "rgba(255,255,255,0)"); cx.fillStyle = glow; cx.fillRect(0, 0, cv.width, cv.height);
@@ -1325,13 +1325,15 @@ const garage = createGarage({ $, sfx, spend, celebrate: () => confetti(100), onC
    name. Each row draws a car of that kind: the car on show when it is that kind, else a starter car of it. After
    the first card the pill on the car glows for a moment (the spotlight). */
 const TRAIT_CARS = { fast: "zippy", grippy: "bolt", tough: "monster" };
+/* ⚡🛞💪 v1.21: the round track sign as it looks on a track card, for the lines that name it */
+const kindDot = kind => TRAITS[kind] ? `<i class="kind-dot" data-kind="${kind}">${TRAITS[kind].icon}</i>` : "";
 function openGarage() { garage.open(); show("s-garage"); if (!tipSeen("traits")) openTraits(CARS.find(c => c.id === S.car), $("g-trait")); }
 /* spot: the thing that glows after OK (the Garage's trait pill, or a track card's kind badge, v1.21), back: the
    screen OK goes back to */
 let traitSpot = null, traitBack = "s-garage";
 function openTraits(car, spot = null, back = "s-garage") {
   // each sentence on its own line (a lone word wrapped onto a line by itself in the picture review)
-  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b data-say>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small data-say>${x}</small>`).join("")}</div></div>`).join("");
+  $("tr-rows").innerHTML = Object.values(TRAITS).map(t => `<div class="tr-row" data-trait="${t.id}"><canvas width="160" height="95"></canvas><div><b data-say>${t.icon} ${t.name}</b>${t.line.split(/(?<=\.) /).map(x => `<small data-say>${x.replace(t.icon, kindDot(t.id))}</small>`).join("")}</div></div>`).join("");
   for (const row of $("tr-rows").querySelectorAll(".tr-row")) {
     const id = row.dataset.trait, c = car && car.trait === id && carKnown(car) ? car : CARS.find(x => x.id === TRAIT_CARS[id]);
     const cx = row.querySelector("canvas").getContext("2d"), glow = cx.createRadialGradient(80, 84, 4, 80, 84, 74);

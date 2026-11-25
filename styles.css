@@ -1323,11 +1323,24 @@ body.on-panel .coinbar { left: auto; right: max(12px, env(safe-area-inset-right)
 /* v1.20: on an upright phone three long words ("carrot parrot carpet") were cut off at both sides: they wrap now */
 @media (max-width: 420px) { .math-ans { flex-wrap: wrap; justify-content: center; max-width: 100%; } }
 
-/* ⚡🛞💪 v1.21 track kinds: a round badge in the top left corner of an open track card, in its trait's color (the same
-   colors as the Garage's trait pill), so a child can match it with the pill on the car */
-.track-card .tc-kind { position: absolute; top: 8px; left: 8px; width: clamp(30px, 8vmin, 42px); height: clamp(30px, 8vmin, 42px); border-radius: 50%;
-  display: grid; place-items: center; font-size: clamp(16px, 4.4vmin, 24px); line-height: 1; border: 3px solid var(--ink); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
-.track-card .tc-kind[data-kind="fast"] { background: #ff6b5a; }
-.track-card .tc-kind[data-kind="grippy"] { background: #5be36a; }
-.track-card .tc-kind[data-kind="tough"] { background: #ff9d4d; }
+/* ⚡🛞💪 v1.21 track kinds: a round sign in the top left corner of an open track card, a white disc with a thick ring
+   in its trait's color (the same colors as the Garage's trait pill), so a child can match it with the pill on the car.
+   White inside, because the picture review could not make out the orange arm on an orange disc. The same sign
+   (.kind-dot) sits in the car kinds card's lines and on the Best card */
+.track-card .tc-kind, .kind-dot { border-radius: 50%; display: inline-grid; place-items: center; line-height: 1; background: #fff; border: 4px solid var(--kc, #fff); box-shadow: 0 0 0 2px var(--ink), 0 3px 0 2px rgba(0,0,0,.35); }
+.track-card .tc-kind { position: absolute; top: 8px; left: 8px; width: clamp(34px, 9vmin, 46px); height: clamp(34px, 9vmin, 46px); font-size: clamp(18px, 4.8vmin, 26px); }
+[data-kind="fast"] { --kc: #ff6b5a; } [data-kind="grippy"] { --kc: #5be36a; } [data-kind="tough"] { --kc: #ff9d4d; }
+.kind-dot { width: 1.7em; height: 1.7em; border-width: 3px; font-style: normal; vertical-align: middle; margin: 0 .1em; }
+.kind-dot img.emo, .tc-kind img.emo { width: 1em; height: 1em; }
 .track-card .tc-kind.spot { animation: bspot 0.8s ease-in-out 4; }
+/* v1.21: with track kinds, more cars have a Best row in the Garage, and on a short landscape phone (740x360) it pushed
+   the Drive it! button under the screen's edge. Tighter stat rows, smaller Best pictures and a lower button there */
+@media (max-height: 430px) and (orientation: landscape) {
+  .g-stats { gap: 0 10px; font-size: 13px; }
+  .g-bestrow i { font-size: 18px; }
+  #g-action { padding-top: .25em; padding-bottom: .25em; }
+  #g-car { width: min(100%, 30vmin, 420px); }
+}
+/* upright, the card is one row: the badge sits in the row before the track's picture (both top corners are taken
+   there, by the picture and the trophy) */
+@media (orientation: portrait) { .track-card .tc-kind { position: static; flex: 0 0 auto; align-self: flex-start; margin-right: -8px; } }

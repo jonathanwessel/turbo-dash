@@ -161,7 +161,7 @@ window.__sweep = async (only) => {
   // ⚡🛞💪 v1.21: with more than one car, the first track list opens the car kinds card once, and OK goes back to the
   // track list with the kind badge in view
   if (td.S.owned.length > 1) {
-    await go("s-traits:kinds", async () => { forgetTip("kinds"); await hub("race")(); }, "#s-traits");
+    await go("s-traits:kinds", async () => { forgetTip("kinds"); await hub("race")(); await wait(60); if (!document.getElementById("s-rival").hidden) document.getElementById("rw-ok").click(); if (document.getElementById("s-traits").hidden) throw new Error("the car kinds card did not open from the track list"); }, "#s-traits");
     await go("s-tracks:kinds", async () => { document.getElementById("tr-ok").click(); if (document.getElementById("s-tracks").hidden) throw new Error("OK did not go back to the track list"); }, "#s-tracks");
   }
   // 🏆 v1.17: a save with more than one car, driving Zippy, shows Best chips; the first one opens the picture card once

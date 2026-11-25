@@ -47,7 +47,7 @@ for (const id of ["s-traits", "s-rival", "s-boss", "s-bestcar", "s-preview"]) {
 }
 for (const id of ["bi-says", "bi-info", "rw-name", "rw-says", "rw-info", "bc-says", "pv-says", "pv-info"]) assert.match(html, new RegExp(`id="${id}"[^>]*data-say`), id);
 assert.ok(/<b data-say>\$\{t\.icon\} \$\{t\.name\}<\/b>/.test(main), "the car kinds card reads each kind's name");
-assert.ok(/<small data-say>\$\{x\}<\/small>/.test(main), "and each of its lines");
+assert.ok(/<small data-say>\$\{x(?:\.replace\(t\.icon, kindDot\(t\.id\)\))?\}<\/small>/.test(main), "and each of its lines (v1.21: with the track sign drawn round)");
 // the voice stops when the card goes away or the game is hidden
 assert.ok(/function show\(id\) \{\n(?:.*\n){0,3}\s*stopSay\(\);/.test(main), "show() stops the voice");
 assert.ok(/visibilitychange[^\n]*stopSay\(\)/.test(main), "hiding the game stops the voice");
