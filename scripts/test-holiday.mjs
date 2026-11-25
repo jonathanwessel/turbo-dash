@@ -31,6 +31,11 @@ for (const h of HOLIDAYS) {
 const w = townSVG("winter"), f = townSVG("fall"), su = townSVG("summer");
 check("winter has snow, lights and a star", w.includes("#f6fbff") && (w.match(/class="bulb/g) || []).length > 40, "");
 check("fall has pumpkins and orange trees", (f.match(/#ff8a1e/g) || []).length >= 10 && f.includes("#e8742a"), "");
+// from the v1.22.0 picture review: green hills with one scarecrow did not read as fall, and fireworks high in the sky
+// sat behind the coin counter on a wide phone (the top 220 of the town's 900 can be under the top bar)
+check("fall turns the hills gold", f.includes("#c98a2e") && f.includes("#e0a13a") && !plain.includes("#c98a2e") && !f.includes('fill="#3fa553"'), "");
+const fwTop = Math.min(...[...su.matchAll(/<g class="fw">(.*?)<\/g>/gs)].flatMap(m => [...m[1].matchAll(/<circle cx="[\d.-]+" cy="([\d.-]+)" r="([\d.]+)"/g)].map(c => +c[1] - +c[2])));
+check("fireworks stay below the top bar", fwTop >= 220, `the highest spark reaches ${fwTop}`);
 check("summer has fireworks and flags", (su.match(/class="fw"/g) || []).length >= 4 && su.includes('class="flag" d="M'), "");
 
 console.log(failed ? `${failed} holiday checks failed` : `All ${passed} holiday checks passed`);

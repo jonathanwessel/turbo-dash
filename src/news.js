@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.22.0",
+    pics: [["🏠", "Some cars zoom on a track of their own"], ["🎄", "Main Street dresses up for the holidays"]],
+    notes: [
+      "Six Earth prize cars, such as Fire Dash and Rocket Rex, each have a home track where they are a little faster.",
+      "Now every car in the game is the best car somewhere at some point.",
+      "Main Street dresses up in fall, in winter and in early July. A tap on the big decoration makes it jump.",
+      "Not checked on a real tablet yet, so please look at the decorated Main Street and a home car in the Garage.",
+    ],
+  },
+  {
     v: "1.21.0",
     pics: [["⚡", "Every track has a ⚡, 🛞 or 💪 sign"], ["🚗", "A car with the same sign zooms there"]],
     notes: [

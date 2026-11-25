@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.22.0 — Home tracks & holidays 🏠🎄
+
+- **🏠 Every Earth prize car has a home track.** Green Machine (Desert Dash), Barnstormer (Autumn Forest), Gold Rush
+  (Pirate Port), Fire Dash (Robot Factory), School Resource Officer (the night track) and Rocket Rex (County Fair) are
+  each 10% faster on one Earth track of their own, the same home bonus a world's cars get in their world. The Garage
+  says "🤖 Faster on Robot Factory", the car's name carries the track's picture, the Best badge counts it, and GO
+  shouts "🏠 HOME BONUS!" there. These cars arrive with no upgrades after the player's main car has many, so before this they
+  were never the best car anywhere. Polar Bear is now Grippy and Toy Racer Fast, so each has a track kind its
+  neighbors do not cover.
+- **🎃🎄🎆 Holiday decorations on Main Street**, by the calendar. Fall has pumpkins, orange trees and a scarecrow
+  (October and November), winter has snow, string lights, snowmen and a big tree with a star (1 December to 6
+  January), summer has flags and fireworks (28 June to 7 July). Tap the big decoration and it jumps and plays a tune.
+- Polish: the holiday decorations are the new thing to see, and the home tracks are the new thing to use.
+- From the sweep: on a 1024x600 tablet the home line pushed the Garage's Drive it! button under the screen's edge.
+  That size now gets the smaller car picture and tighter rows that shorter screens already had.
+- From the picture review: fall did not read as fall (green hills and one scarecrow), so in fall the hills and grass
+  turn gold. The summer fireworks sat behind the coin counter on a wide phone, so they are lower in the sky. Both
+  have a node test that was seen failing first.
+- Numbers: every one of the 29 cars is the best pick of the garage at some point of the career (it was 20 to 24).
+  `npm run career` reaches Rank 40 on day 547 (Moon 106, Ocean 187, Glacier 279, Toy 411). At the end no car is the
+  best on more than 10 of 32 tracks. `npm run bots`: every way of playing is within 13% at Rank 10 (it was 17%), 5% at
+  Rank 20, 1% at Rank 30 and 1% at Rank 40. The starter car still does not win the first race.
+- **For the grown-ups:** `npm run bots` now fails unless all 29 cars are the best pick at some point on each seeded
+  kid career (it held 22). The career run's "never" line says how close each such car came, on which track and day.
+  The picture guard's Toy frame, track list and Garage were accepted again on purpose (Toy Racer's new kind and the
+  new home tracks). The sweep shoots the Garage on a home-track car and Main Street for each holiday, and the audit
+  taps each holiday decoration at every size.
+
 ## v1.21.0 — Track kinds ⚡🛞💪
 
 - **⚡🛞💪 Every track has a kind.** Each track is a Fast, a Grippy or a Tough track, shown as a round badge in the

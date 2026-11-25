@@ -614,6 +614,13 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .screen.panel { overflow-y: auto; overscroll-behavior: contain; }
 .track-card > *, .cup-card > * { flex-shrink: 1; min-height: 0; }
 .track-card .tc-best:empty { display: none; }
+/* v1.22: a home-track car's Garage has one more line (its home), and on a 1024x600 tablet it pushed Drive it! under
+   the screen's edge. A smaller car picture and tighter rows there too (shorter screens' rules below still win) */
+@media (max-height: 640px) and (orientation: landscape) {
+  #g-car { width: min(100%, 40vmin, 420px); }
+  .g-left { gap: 3px; }
+  .g-stats { gap: 1px 10px; }
+}
 @media (max-height: 560px) and (orientation: landscape) {
   .screen.panel { gap: 4px; }
   .screen-head { min-height: 44px; }

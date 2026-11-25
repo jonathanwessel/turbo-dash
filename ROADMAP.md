@@ -383,6 +383,12 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.22.0 🏠 Home tracks & holidays (shipped)
+Each of Earth's six prize cars is faster on one Earth track of its own, so all 29 cars are the best pick of the garage
+at some point of the game. Main Street dresses up for fall, winter and summer by the calendar.
+- Lesson: a side prize that arrives with no upgrades can never beat the car the player has spent on, however good its
+  numbers look. A small place of its own (one home track) gives it a job without touching the ladder.
+
 ### v1.21.0 ⚡ Track kinds (shipped)
 Every track is a Fast, Grippy or Tough track, shown as a badge on its card, and a car of that kind is 6% faster
 there. The top cars became sidegrades: no car is the best on more than 10 of the 32 tracks at the end (Wind-Up Rocket

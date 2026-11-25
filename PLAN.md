@@ -8,7 +8,10 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
    as long as the run lasts. A big box may take several runs: commit working steps, and note where you stopped.
    A new check counts as a working step only once it has passed and has been seen red on purpose; before the run
    stops, stash anything that has not (v1.18.0). A working step is committed only behind a passing test, chained
-   with `&&` (`npm test && git commit ...`), never after a `;` (v1.21.0).
+   with `&&` (`npm test && git commit ...`), never after a `;` (v1.21.0). Every step commit also writes a
+   `Stopped at:` line in the box's Notes (what is done, what is left, which checks have run), so a run that ends
+   early leaves the next one a map, not only commit titles (v1.22.0, seen twice: v1.18.0 and v1.22.0 were built by a
+   run that stopped before its release with nothing in the box).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -636,7 +639,7 @@ every test green.
   ever the best pick, at the end Boost Buggy 10, Loop Legend 10, Wind-Up Rocket 9, Polar Bear 2, Blizzard Wolf 1;
   bots 17%, 6%, 2%, 1% apart, kid seeds 24, 23, 22 ever best. Sweep clean at 8 sizes after the review fixes. Live
   install test ok, GitHub release made from the tag.
-- [ ] **Side cars have a place** (added in v1.21.0, the target below found it). Nine cars are never the Best pick of the
+- [x] **Side cars have a place** (added in v1.21.0, the target below found it). Nine cars are never the Best pick of the
   bot's garage on an open track in some careers, and three in every seeded kid career: Green Machine, Fire Dash and
   School Resource Officer. They are side prizes (a cup, the Fire Station, the School) that arrive slower than the
   cars the garage already has, and Rocket Rex, Gold Rush, Barnstormer, Polar Bear, Toy Racer and Manta Ray are often
@@ -644,12 +647,34 @@ every test green.
   truck on a Tough Earth track it is built for), or a speed that puts it just ahead of the cars a player has when it
   arrives. Measure with the career's "Best pick at some point" line over several seeds, and raise the floor in
   `scripts/bots.mjs` (22 now) as it goes up, until it is 29 of 29.
+  Notes: v1.22.0. Built by a run that committed it and stopped before the release, with no note here; the next run
+  checked it and released it. Decision: **home tracks**. Each of Earth's six prize cars has one Earth track of its own
+  (`car.home`, data.js) with the same 10% home bonus a world's cars get in their world (`homeBonus`,
+  physics-common.js): Green Machine on Desert Dash, Barnstormer on Autumn Forest, Gold Rush on Pirate Port, Fire Dash on
+  Robot Factory, School Resource Officer on the night track, Rocket Rex on County Fair. Each home fits the car's story and,
+  where it can, its kind. Polar Bear became Grippy and Toy Racer Fast, so each meets a track kind its neighbors do not
+  cover. The Garage line says "🤖 Faster on Robot Factory", the car's name carries the track's picture, the Best
+  badge and GO's "🏠 BONUS!" use the same rule. Measured: the career's never line now prints how short each car came
+  (the gap to the best car, on which track and day), so a fix aims at the real shortfall. Result: 29 of 29 cars are
+  the best pick at some point on all three seeded kid careers in `npm run bots` (24, 23, 22 before) and on the default
+  career run, so the floor in `scripts/bots.mjs` is now every car. Tests: the home track physics checks (a home is a
+  real Earth track, one car each, the bonus only there, the Garage words, GO's shout) and the Rank 16 save's Best
+  chips. Check on the release commit: career Rank 40 on day 547 (Moon 106, Ocean 187, Glacier 279, Toy 411), inside 1%
+  of v1.21.0's 543 to 555. At the end Boost Buggy 10, Loop Legend 9, Wind-Up Rocket 9, Snow Cat 2, Blizzard Wolf 1,
+  Polar Bear 1 of 32. Bots 13%, 5%, 1% and 1% apart at Rank 10, 20, 30, 40 (17%, 6%, 2%, 1% before). Best badges pick
+  the fastest car 772 of 800 times, at worst 3.0% slower. The starter car still does not win the first race. Not
+  checked on a real tablet.
 - [ ] **v1.21.0 picture review leftovers** (all older than v1.21.0, so it shipped; take one or two as a release's
   polish). On a 360 px upright phone the rival of the week's card runs to both screen edges and its border is cut,
   and the Garage title sits against the ◀ button. The Garage's world chips wrap Moon Base and Deep Blue onto two lines
   while Earth stays on one. The Best card says "faster here than Zippy" to a child who may not know the car's name
   (a picture of the car being driven would say it). The What's new card scrolls when many releases are listed, so a
   child who cannot read never sees the lower lines.
+  From the v1.22.0 picture review (all older than v1.22.0): on the Toy curve frame "BOOSTED!" and "BAM!" show at the
+  same time, faded and stacked, so neither can be read; cars at the left edge of a race pass under the horn and steer
+  buttons, and the gray steer arrow is faint on Glacier snow; the track list's corner signs and the special car's
+  counter chip have no word, and "Trials" is a grown-up word; the 1280x800 and 1920x1080 sky seam (also in the box at
+  the top of M2).
 - [ ] **Special car powers help at home** (added in v1.21.0, found by `scripts/probes/perk.mjs`). Measured in whole
   races at full upgrades, three of the four powers are worth nothing to a race: the Moon Hopper's high jump -1.1% (it
   is a little slower with it), the Deep Diver's steadiness -0.1%, the Snow Cat's studs +0.1%. Only the Boost Buggy's
@@ -670,6 +695,11 @@ every test green.
   not: 20 to 24 of 29 cars are ever the best pick over six seeds (it was 15 of 29 before the track kinds). The box
   "Side cars have a place" above works on it, and `npm run bots` holds a floor of 22 on its seeded kid runs, so the
   count cannot slip back while it does.
+  Notes (v1.22.0, passes): all three lines pass on the release check. 29 of 29 cars are ever the best pick (all three
+  seeded kid careers and the default run, gated at 29 in `npm run bots`), the most any car has at the end is 10 of 32
+  (gated in `npm run career`), and the bots reach Rank 40 within 1% (gated in `npm run check`). Decision: leave this box
+  open until the two boxes above it are done (the picture leftovers and the special car powers), because the powers
+  box can move the end-game spread. Tick it in the release that closes the last of them, after re-running the gates.
 
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
@@ -705,7 +735,24 @@ Each new track adds one new thing to see. Each release re-checks the career run.
 - [ ] A pet that rides along and cheers.
 - [ ] A sticker book that fills as the player sees new things: roadside animals, bosses, weather.
 - [ ] A replay of the last few seconds on the result screen.
-- [ ] Holiday decorations on Main Street by the calendar.
+- [x] Holiday decorations on Main Street by the calendar.
+  Notes: v1.22.0's polish. `src/holiday.js` picks the holiday from the date, any year: fall (pumpkins, orange trees and
+  a scarecrow, 1 October to 30 November), winter (snow, string lights, snowmen and a big tree with a star, 1 December to
+  6 January) and summer (flags and fireworks, 28 June to 7 July). Most of the year has none. The big decoration stands
+  in the widest gap, between the School and the Bank, behind the buildings so a building's tap always wins, and a tap
+  makes it jump with a little tune and confetti. Main Street is drawn again when the calendar moves into another
+  holiday while the game is open. No save change. `scripts/test-holiday.mjs` checks the windows (seen red with winter
+  running to 7 January, the picture guard's day), one holiday a day, every building still there to tap, and each
+  drawing. The audit taps each decoration at every size, and the sweep shoots Main Street for each holiday.
+  Decision: no explainer card. It is a decoration with one tap that only plays, and a card would block the street.
+  The release run's full sweep found the Garage's Drive it! under the edge at 1024x600 on every home-track car (the
+  home line is one more row; the run that built it never ran the sweep): that size now gets the smaller car picture
+  and tighter rows. Picture review (a helper that saw only the pictures): fall did not read as fall (the hills and
+  grass turn gold now), and the summer fireworks reached the coin counter at 1000x448 (lower now). Both are node
+  checks in `scripts/test-holiday.mjs`, seen red on the old drawing. Decided to leave: the scarecrow's arms pass
+  behind the School and Bank roofs (it stands behind them on purpose, so their taps win), and the Garage's home line
+  and Best row both name the home track (two facts: faster there, and the best of the player's cars there).
+
 
 ## Waiting for the owner (do not act on these)
 - **Saves across devices, for every game** (owner, 2026-11-20: wanted at some point, not now). Google Save
@@ -884,3 +931,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   and a false fails the sweep. Next:
   **Side cars have a place** as the main piece, with a Small delight (holiday decorations, the season is near) as its
   polish.
+- 2026-11-25 (v1.22.0): **Side cars have a place** (M2) and the holiday decorations (Small delights) shipped, as the
+  last note asked. A run built both, committed them, and stopped before the release with no note in either box; this
+  run found three commits ahead of origin, ran the whole check and the sweep on them, and released. The check was
+  green, but the sweep was red (Drive it! under the edge at 1024x600 on every home-track car), so the commits had
+  never been swept, and nothing in them said so. That is the second time a run stopped with no note (v1.18.0 too), so
+  step 1 of "How the task works" now asks for a `Stopped at:` line in the box with every step commit, naming the
+  checks that have run. The M2 target's three lines all pass now (29 of 29 cars ever the best, at most 10 of 32 at the end, bots
+  within 1% at Rank 40), but the target stays open until the two boxes above it are done, because the special car
+  powers box can move the end-game spread. The game moved forward for the seventh release in a row. Next: **Special
+  car powers help at home** as the main piece (the first leftovers box is a backlog that each release takes a piece
+  of), with one or two lines of the v1.21.0 picture leftovers as its polish.

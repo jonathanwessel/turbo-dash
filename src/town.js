@@ -277,7 +277,7 @@ const CENTERS = {
 };
 const holidayDeco = h => {
   if (!h) return { back: "", front: "", center: "" };
-  const back = h === "summer" ? [[700, 190, 62, "#ff3fa4"], [1150, 260, 50, "#ffd400"], [2000, 200, 64, "#3cf2ff"], [2480, 270, 48, "#5be36a"], [2780, 170, 56, "#ff8a00"]].map(a => burst(...a)).join("")
+  const back = h === "summer" ? [[700, 300, 56, "#ff3fa4"], [1150, 330, 48, "#ffd400"], [2000, 300, 56, "#3cf2ff"], [2480, 340, 46, "#5be36a"], [2730, 310, 52, "#ff8a00"]].map(a => burst(...a)).join("")
     : h === "winter" ? snowman(48) + snowman(2880) : pumpkin(48, 1.4) + pumpkin(2880, 1.4) + pumpkin(2850, 0.9);
   // winter: string lights along the sidewalk
   const front = h === "winter" ? `<path d="M0 ${BASE + 14} ${Array.from({ length: Math.ceil(TOWN_W / 60) }, (_, k) => `Q${k * 60 + 30} ${BASE + 24} ${k * 60 + 60} ${BASE + 14}`).join(" ")}" fill="none" stroke="#2a3a2a" stroke-width="3"/>${Array.from({ length: Math.ceil(TOWN_W / 60) }, (_, k) => `<circle class="bulb b${k % 2}" cx="${k * 60 + 30}" cy="${BASE + 25}" r="6" fill="${["#e8262b", "#ffd400", "#3cf2ff", "#5be36a", "#ff3fa4"][k % 5]}"/>`).join("")}` : "";
@@ -300,19 +300,22 @@ const welcome = () => {
 const car = (cls, color) => `<g class="tcar ${cls}"><rect x="0" y="-36" width="90" height="28" rx="10" fill="${color}"/><path d="M18 -36 l12 -20 h34 l12 20z" fill="${color}"/><path d="M28 -38 l8 -14 h22 l8 14z" fill="#2b4c80"/><circle cx="22" cy="-8" r="11" fill="#222"/><circle cx="70" cy="-8" r="11" fill="#222"/><circle cx="22" cy="-8" r="4" fill="#bbb"/><circle cx="70" cy="-8" r="4" fill="#bbb"/></g>`;
 
 export function townSVG(holiday = null) {
-  const H = holidayDeco(holiday), snow = holiday === "winter";
+  const H = holidayDeco(holiday), snow = holiday === "winter", fall = holiday === "fall";
+  // the hills and grass take the season's colors: white in winter, gold in fall (the picture review: green hills
+  // with one scarecrow did not read as fall)
+  const land = (green, white, gold) => snow ? white : fall ? gold : green;
   return `<svg id="town" viewBox="0 0 ${TOWN_W} 900" preserveAspectRatio="xMinYMax meet" xmlns="http://www.w3.org/2000/svg">
   <defs><linearGradient id="tsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fb6ff"/><stop offset="1" stop-color="#c9efff"/></linearGradient></defs>
   <rect width="${TOWN_W}" height="900" fill="url(#tsky)"/>
   <circle cx="1480" cy="110" r="95" fill="#fff59a" opacity=".35"/><circle cx="1480" cy="110" r="62" fill="#fff59a"/>
   <g class="clouds">${[[220, 110, 1], [720, 70, 0.8], [1150, 150, 1.1]].map(([x, y, s]) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="90" ry="30" fill="#fff"/><ellipse cx="-40" cy="8" rx="55" ry="26" fill="#fff"/><ellipse cx="35" cy="-12" rx="50" ry="30" fill="#fff"/></g>`).join("")}</g>
   <g class="birds" fill="none" stroke="#2a3a5a" stroke-width="4" stroke-linecap="round">${[[400, 200], [440, 225], [470, 195]].map(([x, y]) => `<path d="M${x - 12} ${y} q6 -8 12 0 q6 -8 12 0"/>`).join("")}</g>
-  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T2930 430 V900 H0Z" fill="${snow ? "#dcebf7" : "#3fa553"}"/>
+  <path d="M0 470 Q220 360 460 450 T900 420 T1320 400 T1760 450 T2200 420 T2450 440 T2930 430 V900 H0Z" fill="${land("#3fa553", "#dcebf7", "#c98a2e")}"/>
   <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#4fb6ff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
   <path d="M0 520 Q260 470 520 505 T1060 490 T1600 510 T2140 495 T2450 505 T2930 500" fill="none" stroke="#bfe9ff" stroke-width="6" stroke-dasharray="40 60" opacity=".8"/>
-  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T2930 535 V900 H0Z" fill="${snow ? "#eaf3fb" : "#5cc46a"}"/>
+  <path d="M0 560 Q300 480 620 550 T1200 530 T1800 550 T2450 540 T2930 535 V900 H0Z" fill="${land("#5cc46a", "#eaf3fb", "#e0a13a")}"/>
   ${welcome()}
-  <rect y="600" width="${TOWN_W}" height="300" fill="${snow ? "#f6fbff" : "#5fd068"}"/>
+  <rect y="600" width="${TOWN_W}" height="300" fill="${land("#5fd068", "#f6fbff", "#b9c94a")}"/>
   ${H.back}${gaps(holiday)}${H.center}
   ${garage()}${gifts()}${missions()}${race()}${rank()}${lab()}${trophy()}${school()}${bank()}${carwash()}${museum()}${icecream()}${fire()}${park()}
   <rect y="${BASE + 10}" width="${TOWN_W}" height="16" fill="#e9e9ef"/>
