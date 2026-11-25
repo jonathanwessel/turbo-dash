@@ -589,7 +589,10 @@ every test green.
   slowest is behind the best by 21% at Rank 10, 4% at Rank 20, 1% at Rank 30 and 1% at Rank 40. What it shows: by
   Rank 40 every bot has bought every upgrade on every car (145 of each), so the order of spending only matters early,
   and the late game is paced by the rank gauges and Lab timers, not by coins. Blizzard Wolf, Champion X and Wind-Up
-  Rocket do the most racing (about 15 to 20% of races each); no car carries more than 21%.
+  Rocket do the most racing (about 15 to 20% of races each); no car carries more than 21%. Check on the release
+  commit: career Rank 40 on day 554 (Moon 107, Ocean 190, Glacier 286, Toy 416), inside 1% of v1.19.0's 555; bots the
+  same numbers as above (the runs are seeded); the voice was NOT heard (no sound output on this machine). Sweep clean
+  at 8 sizes after the review fixes. Live install test ok. Not checked on a real tablet.
 - [ ] **Every car has a place at the end** (added in v1.20.0, the target below found it). Fully upgraded with every Lab
   project, Wind-Up Rocket is the best pick on all 32 tracks by the game's own pace rule (6% ahead of the Boost Buggy on
   Earth, Moon and Deep Blue tracks, 3.3% ahead of Blizzard Wolf on the Glacier Rink), so the end-game garage has one
