@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.23.0",
+    pics: [["🦘", "Special cars get a push in their own world"], ["🏆", "The Best card shows the car you drive"]],
+    notes: [
+      "The Moon Hopper springs ahead after a Moon landing. A water current pushes the Deep Diver forward.",
+      "The Snow Cat smashes through snowbanks and zooms off. Each special power now wins time at home.",
+      "The Best card shows a small picture of the car being driven next to its name.",
+      "Not checked on a real tablet yet, so please try a special car in its own world and see how the push feels.",
+    ],
+  },
+  {
     v: "1.22.0",
     pics: [["🏠", "Some cars zoom on a track of their own"], ["🎄", "Main Street dresses up for the holidays"]],
     notes: [

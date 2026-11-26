@@ -10,6 +10,10 @@ const bad = [];
 const ok = (cond, msg) => { if (!cond) bad.push(msg); };
 
 ok(NEWS[0]?.v === version, `the newest What's new entry is ${NEWS[0]?.v}, but package.json says ${version}. Add the entry to src/news.js.`);
+// v1.23.0: a run wrote the CHANGELOG entry and stopped with package.json and src/news.js still on the old version,
+// so the half-done release looked finished. The changelog, the version and the What's new entry land together.
+const top = readFileSync(join(root, "CHANGELOG.md"), "utf8").match(/^## v(\d+\.\d+\.\d+)/m)?.[1];
+ok(top === version, `the newest CHANGELOG.md entry is v${top}, but package.json says ${version}. Bump the version and add the What's new entry in the same commit as the changelog.`);
 NEWS.forEach((n, i) => {
   ok(/^\d+\.\d+\.\d+$/.test(n.v), `${n.v}: not a version like 1.2.3`);
   if (i) ok(cmpVersion(NEWS[i - 1].v, n.v) > 0, `${n.v}: entries must be newest first`);

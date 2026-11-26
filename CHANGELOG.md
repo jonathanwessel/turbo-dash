@@ -23,7 +23,8 @@
   stacks with boosts. The first Snow Cat design also skipped the snowbank's slowdown, which was worth 5.6% of a race
   with no Snowplow research and made `npm run sim -- best` fail; the bank now slows it first. The perk probe pins the
   race counter, so a car with and without its power race the same rivals and luck (before, the same car run twice
-  came out up to 1% apart). Five new physics checks, each seen failing on the v1.22 engine.
+  came out up to 1% apart). Five new physics checks, each seen failing on the v1.22 engine. `npm test` now fails when
+  the newest changelog entry names another version than `package.json`, so a release can't be left half written.
 
 ## v1.22.0 — Home tracks & holidays 🏠🎄
 

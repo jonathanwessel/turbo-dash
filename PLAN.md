@@ -12,6 +12,9 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
    `Stopped at:` line in the box's Notes (what is done, what is left, which checks have run), so a run that ends
    early leaves the next one a map, not only commit titles (v1.22.0, seen twice: v1.18.0 and v1.22.0 were built by a
    run that stopped before its release with nothing in the box).
+   A release's changelog entry, version bump and What's new entry go in one commit, and `npm test` fails when the
+   newest `CHANGELOG.md` entry names another version than `package.json` (2026-11-26, seen three times: v1.18.0,
+   v1.22.0 and v1.23.0 were each left built but unreleased, and v1.23.0's changelog said "shipped" with no bump).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -661,7 +664,10 @@ every test green.
   13%, 5%, 1%, 1% apart, 29 of 29 cars ever the best on each seeded kid career. The unseeded default career once
   showed 28 of 29 (Manta Ray 1.1% short on Beach, the Deep Diver there) and once 29; the gate is on the seeded runs.
   Best badges pick the fastest car 775 of 800 times, at worst 3.0% slower. Not checked on a real tablet: how the kicks
-  feel needs the owner's eyes.
+  feel needs the owner's eyes. Released by the next run: the building run wrote the changelog and roadmap lines and
+  stopped before the version bump, the What's new entry, the sweep and the release. Check on the release commit:
+  career Rank 40 on day 549 (Moon 106, Ocean 186, Glacier 281, Toy 411), bots 13%, 5%, 1%, 1% apart, 29 of 29 cars on
+  each kid seed, Best badges 775 of 800. Sweep clean at 8 sizes.
 - [x] **Target:** every car is the best pick on at least one track, no car is the best pick on more than a
   third of them, and the four bots reach Rank 40 within 25% of the best one.
   Notes (v1.20.0, progress): the bots part passes (+1% at Rank 40, gated in `npm run check`). The car part does not:
@@ -788,6 +794,14 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   buttons, and the gray steer arrow is faint on Glacier snow; the track list's corner signs and the special car's
   counter chip have no word, and "Trials" is a grown-up word; the 1280x800 and 1920x1080 sky seam (also in the box at
   the top of M2).
+  From the v1.23.0 picture review (older than v1.23.0 unless said): the What's new card has no 🔊 speaker, and it is
+  the card with the most words. It is also missing from the sweep (it never shows on the dev server, `VERSION` is
+  "dev"), so only the update test's one picture at one size ever checks it: open it from `__td` in the sweep at every
+  size; its ⚡ 🛞 💪 line shows the tire small and gray. On the Best card the tree and the
+  kind badge mean nothing without a word. The small car picture inside "faster here than 🚗 Zippy" leaves a wide gap
+  at 740x360 (new in v1.23.0). The Garage's world chips' "13/13" and "1/4" are tiny and don't say they count cars. In
+  race frames the yellow spoiler bar floats a little above the player's car. Fixed in v1.23.0: the What's new lines
+  for v1.23.0 said the same thing as v1.22.0's and "slower" pointed the wrong way.
 
 
 ## Waiting for the owner (do not act on these)
