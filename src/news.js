@@ -223,3 +223,12 @@ export function unseen(seen, now, hasPlayed, list = NEWS) {
   if (!seen) return hasPlayed ? shown.slice(0, 1) : [];
   return shown.filter(n => cmpVersion(n.v, seen) > 0).slice(0, MAX_VERSIONS);
 }
+
+/* the fullest card a device can get: the run of MAX_VERSIONS entries with pictures that has the most lines (the
+   sweep opens it at every size, and a test checks no card from `unseen` has more lines) */
+export function fullest(list = NEWS) {
+  const shown = list.filter(n => n.pics.length), lines = a => a.reduce((s, n) => s + n.pics.length, 0);
+  let best = shown.slice(0, MAX_VERSIONS);
+  for (let i = 1; i + MAX_VERSIONS <= shown.length; i++) { const w = shown.slice(i, i + MAX_VERSIONS); if (lines(w) > lines(best)) best = w; }
+  return best;
+}

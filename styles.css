@@ -711,6 +711,12 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .news-list { display: grid; gap: 8px; text-align: left; margin: 4px 0 14px; max-height: 46vh; overflow-y: auto; scrollbar-gutter: stable; padding-right: 6px; }
 .news-row { display: flex; align-items: center; gap: 12px; font-size: clamp(16px, 4vmin, 24px); font-weight: 800; line-height: 1.25; }
 .news-pic { flex: none; font-size: 1.5em; }
+/* 2026-11-26: more than four lines go in two columns on a wide screen, so the card shows every line without a scroll */
+@media (orientation: landscape) {
+  .news-list.two { grid-template-columns: 1fr 1fr; column-gap: 22px; max-height: none; overflow: visible; }
+  .install-help .card.news-card:has(.news-list.two) { max-width: min(940px, 96vw); }
+}
+@media (orientation: portrait) { .news-list { max-height: 62vh; } }
 
 .set-tile[hidden] { display: none; }
 /* 🏁 launch splash */

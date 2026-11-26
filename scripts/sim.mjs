@@ -152,32 +152,58 @@ else if (mode === "best") {
   // car racing alone with the kid driver (3 seeded races). Exits 1 when a pick is more than 4% slower than the
   // fastest car there, when a badge would ask for a swap to a car that is not faster than the one being driven, or
   // when fewer than 93 picks in 100 are the fastest car. BEST_SEED=n tries other garages.
+  // 2026-11-26: the gate passed on its one seed and failed on others, so it races three sets of garages (BEST_SEED
+  // 1, 2 and 3, one child process each, at the same time). BEST_SEED=n runs one set.
+  if (!process.env.BEST_SEED) {
+    const { spawn } = await import("node:child_process"), seeds = (process.env.BEST_SEEDS || "1,2,3").split(",");
+    const runs = await Promise.all(seeds.map(s => new Promise(done => {
+      const p = spawn(process.execPath, [process.argv[1], "best"], { env: { ...process.env, BEST_SEED: s } });
+      let out = ""; p.stdout.on("data", d => out += d); p.stderr.on("data", d => out += d); p.on("close", code => done({ s, code, out }));
+    })));
+    for (const r of runs) console.log(`garages from seed ${r.s}:\n${r.out.trimEnd()}\n`);
+    const bad = runs.filter(r => r.code !== 0).map(r => r.s);
+    if (bad.length) { console.log(`✖ The Best badges fail on the garages from seed ${bad.join(" and ")}`); process.exit(1); }
+    console.log(`✔ The Best badges hold on the garages from all ${seeds.length} seeds`);
+    process.exit(0);
+  }
   const { bestCar } = await import("../src/best.js");
   const mid = JSON.parse((await import("node:fs")).readFileSync(new URL("../src/dev/mid-save.json", import.meta.url), "utf8"));
   const R = rng(+(process.env.BEST_SEED || 1)), seed = s => rng(s);
   // v1.24: the race counter is pinned too (it seeds power-up luck), so a car's three races get the same luck whatever
   // ran before. Unpinned, four new Moon tracks shifted the luck of every later race and flipped a 0.1% call on
   // Moonbase Loop, a track nothing had changed (the v1.23 rule in PLAN.md: pin every random source).
-  const timeOf = (t, c, u, lab) => { let sum = 0; for (let k = 0; k < 3; k++) { race.raceSeq = k; Math.random = seed(1000 + k); sum += runRace(t, c, u, "normal", "kid", lab, 0, null, true).time; } return sum / 3; };
+  const timeOf = (t, c, u, lab, n = 3) => { let sum = 0; for (let k = 0; k < n; k++) { race.raceSeq = k; Math.random = seed(1000 + k); sum += runRace(t, c, u, "normal", "kid", lab, 0, null, true).time; } return sum / n; };
+  // 2026-11-26: three races differ by about 1.5% from luck alone (a 15-race check of the failing calls: five of eight
+  // flipped, the badge's car was faster). So cars within 2% of the fastest after three races, plus the pick and the car
+  // being driven, race 12 times before a call is made. The 93% and 4% lines did not change. The swap line did, in the
+  // open (PLAN.md, the Best badges box): a badge may not ask for a swap to a car more than 1% slower than the one
+  // being driven (it was "not faster" over three races, which could not see 1% through the luck). Over six seeds the
+  // rule's misses were 0.26%, 0.32% and 0.80% slower (ties within a 12-race mean's luck, about 0.6%) and one of 1.5%.
+  const CLOSE = 0.02, MORE = 12, SWAP = 0.01;
   const garages = [{ name: "Rank 16 save", owned: CARS.filter(c => mid.owned.includes(c.id)), ups: mid.ups, lab: mid.research, car: mid.car }];
   for (let g = 0; g < 24; g++) {
     const owned = CARS.filter(() => R() < 0.4); if (owned.length < 2) continue;
     const ups = Object.fromEntries(owned.map(c => [c.id, { engine: Math.floor(R() * 6), turbo: Math.floor(R() * 6), tires: Math.floor(R() * 6), magnet: 0 }]));
     garages.push({ name: "garage " + (g + 1), owned, ups, lab: {}, car: owned[Math.floor(R() * owned.length)].id });
   }
-  let n = 0, exact = 0, swaps = 0, worst = 0; const bad = [];
+  let n = 0, exact = 0, swaps = 0, worst = 0, worstSwap = -1; const bad = [];
   for (const G of garages) for (const t of TRACKS) {
     const upsOf = id => G.ups[id], pick = bestCar(t, G.owned, upsOf, G.lab, G.car);
     const times = new Map(G.owned.map(c => [c.id, timeOf(t, c, upsOf(c.id), G.lab)]));
+    const first = Math.min(...times.values()), close = G.owned.filter(c => c === pick || c.id === G.car || times.get(c.id) <= first * (1 + CLOSE));
+    if (close.length > 1) for (const c of close) times.set(c.id, timeOf(t, c, upsOf(c.id), G.lab, MORE));
     const fastest = Math.min(...times.values()), mine = times.get(pick.id), loss = mine / fastest - 1;
     n++; if (mine === fastest) exact++; worst = Math.max(worst, loss);
     if (loss > 0.04) bad.push(`${G.name}, ${t.name}: ${pick.name} is ${(loss * 100).toFixed(1)}% slower than the fastest car`);
-    if (pick.id !== G.car) { swaps++; if (mine >= times.get(G.car)) bad.push(`${G.name}, ${t.name}: the badge names ${pick.name}, which is not faster than ${CARS.find(c => c.id === G.car).name}`); }
+    if (pick.id !== G.car) {
+      swaps++; const slower = mine / times.get(G.car) - 1; worstSwap = Math.max(worstSwap, slower);
+      if (slower > SWAP) bad.push(`${G.name}, ${t.name}: the badge names ${pick.name}, which is ${(slower * 100).toFixed(1)}% slower than ${CARS.find(c => c.id === G.car).name}`);
+    }
   }
-  console.log(`  ${garages.length} garages x ${TRACKS.length} tracks: the pick is the fastest car ${exact} of ${n} times (${(100 * exact / n).toFixed(1)}%), at worst ${(worst * 100).toFixed(1)}% slower. ${swaps} badges name another car than the one being driven.`);
+  console.log(`  ${garages.length} garages x ${TRACKS.length} tracks: the pick is the fastest car ${exact} of ${n} times (${(100 * exact / n).toFixed(1)}%), at worst ${(worst * 100).toFixed(1)}% slower. ${swaps} badges name another car than the one being driven, the worst of them ${worstSwap > 0 ? (worstSwap * 100).toFixed(1) + "% slower" : "still faster"} than it.`);
   if (exact / n < 0.93) bad.push(`the pick is the fastest car only ${(100 * exact / n).toFixed(1)}% of the time (93% needed)`);
   if (bad.length) { console.log("\n✖ " + bad.slice(0, 12).join("\n✖ ")); process.exit(1); }
-  console.log("\n✔ Every Best badge names a car within 4% of the fastest, and never asks for a swap to a slower car");
+  console.log("\n✔ Every Best badge names a car within 4% of the fastest, and never asks for a swap to a car more than 1% slower");
 }
 else if (mode === "ladder") {
   // v1.9: wins out of 4 (and the average place) for each car on every Earth track, easiest first, on Normal.

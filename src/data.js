@@ -52,12 +52,15 @@ export const CARS = [
    a fully upgraded race, so in v1.21 the first three powers were worth about 0% and the high jump -1.1%.
    pace: how much faster the power makes a whole race at home, measured with scripts/probes/perk.mjs (8 seeded kid
    races per track, fully upgraded). v1.23: Moon Hopper 3.0%, Deep Diver 2.9%, Snow Cat 3.2%, Boost Buggy 3.4%. The
-   Best rule (src/best.js) counts it, so a Best pill stays honest. */
+   Best rule (src/best.js) counts it, so a Best pill stays honest.
+   early: the same probe on an early garage (+3, no Lab: `node scripts/probes/perk.mjs <car> early`). A power is worth
+   another amount there (2026-11-26, eight Moon tracks: Moon Hopper 4.4%, Deep Diver 3.0%, Snow Cat 3.9%, Boost Buggy
+   0.9%, against 2.4%, 2.9%, 3.0% and 3.4% full), so the Best rule moves from `early` to `pace` as the Lab fills. */
 export const PERKS = {
-  hop:    { id: "hop",    icon: "🦘", line: "Jumps high and springs ahead!", jump: 1.35, spring: 1, pace: 1.03 },
-  steady: { id: "steady", icon: "⚓", line: "The water pushes it faster!", ride: 0.13, pace: 1.03 },
-  studs:  { id: "studs",  icon: "🧊", line: "Smashes snow and zooms!", smash: 0.45, pace: 1.03 },
-  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.05, pace: 1.03 },
+  hop:    { id: "hop",    icon: "🦘", line: "Jumps high and springs ahead!", jump: 1.35, spring: 1, pace: 1.024, early: 1.044 },
+  steady: { id: "steady", icon: "⚓", line: "The water pushes it faster!", ride: 0.13, pace: 1.029, early: 1.03 },
+  studs:  { id: "studs",  icon: "🧊", line: "Smashes snow and zooms!", smash: 0.45, pace: 1.03, early: 1.039 },
+  boost:  { id: "boost",  icon: "🚀", line: "Boosters fling it extra far!", booster: 1.05, pace: 1.034, early: 1.009 },
 };
 export const perkOf = car => PERKS[car?.perk] || null;
 /* what a special car's earn counter shows: the picture of the thing to collect */

@@ -2,7 +2,7 @@
 // text players see, and the card picks the right entries. Part of `npm test`.
 import { readFileSync } from "node:fs";
 import { resolve, join } from "node:path";
-import { NEWS, cmpVersion, unseen } from "../src/news.js";
+import { NEWS, cmpVersion, unseen, fullest } from "../src/news.js";
 
 const root = resolve(import.meta.dirname, "..");
 const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -39,6 +39,10 @@ ok(vs("1.3.0", "1.3.0", true) === "", "nothing new, no card");
 ok(vs("1.2.0", "1.2.10", true) === "1.2.9", "never an entry newer than the running version");
 ok(vs("0.9.0", "1.3.0", true) === "1.3.0,1.2.9,1.2.0", "a long gap shows the newest three");
 ok(vs("1.2.9", "1.2.10", true) === "", "a release with no pictures shows no card");
+// the sweep opens the fullest card a device can get (2026-11-26): no card `unseen` can build has more lines
+{ const lines = a => a.reduce((s, n) => s + n.pics.length, 0), most = lines(fullest());
+  ok(lines(fullest(L)) === 3 && fullest(L).map(n => n.v).join(",") === "1.3.0,1.2.9,1.2.0", "fullest picks the run of three with the most lines");
+  ok(NEWS.every(n => lines(unseen(n.v, NEWS[0].v, true)) <= most), `no card has more lines than the fullest one (${most})`); }
 
 if (bad.length) { console.log("✖ What's new:\n  " + bad.join("\n  ")); process.exit(1); }
 console.log(`What's new: ${NEWS.length} entries, newest v${NEWS[0].v}, card rules hold`);

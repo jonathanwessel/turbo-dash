@@ -30,6 +30,24 @@ ok(bestCar(track("sunny"), [car("zippy"), car("bolt")], id => id === "zippy" ? U
 { const fastT = TRACKS.find(t => t.world === "earth" && t.kind === "fast"), gripT = TRACKS.find(t => t.world === "earth" && t.kind === "grippy");
   ok(bestCar(fastT, [car("rocket"), car("galaxy")], () => U(5)) === car("rocket"), "a Fast car wins a Fast track");
   ok(bestCar(gripT, [car("rocket"), car("galaxy")], () => U(5)) === car("galaxy"), "a Grippy car wins a Grippy track"); }
+// 🌟💪 the measured table (2026-11-26, scripts/probes/best-table.mjs): every track of a special car's world has its
+// power's numbers and every Glacier track its Tough number, so a new track cannot ship on the world average
+{ const { PERK_PACE, TOUGH_ICE } = await import("../src/best-table.js"), { PERKS } = await import("../src/data.js"), { worldOf } = await import("../src/physics-common.js");
+  const { perkPace, labShare } = await import("../src/best.js");
+  for (const c of CARS.filter(x => PERKS[x.perk])) for (const t of TRACKS.filter(x => x.world === worldOf(c))) {
+    const v = PERK_PACE[c.perk]?.[t.id];
+    ok(Array.isArray(v) && v.length === 2 && v.every(x => x > 0.95 && x < 1.15), `${c.name} on ${t.name}: no measured power number (run node scripts/probes/best-table.mjs)`);
+  }
+  for (const t of TRACKS.filter(x => x.world === "glacier")) ok(TOUGH_ICE[t.id] > 0.97 && TOUGH_ICE[t.id] < 1.08, `${t.name}: no measured Tough number (run node scripts/probes/best-table.mjs)`);
+  ok(Object.keys(TOUGH_ICE).every(id => TRACKS.find(t => t.id === id)?.world === "glacier"), "Tough numbers only for Glacier tracks");
+  // the power moves from the early number to the full one as the Lab fills, and never counts away from home
+  const hop = car("hopper"), big = track("bigcrater"), [e, f] = PERK_PACE.hop.bigcrater, full = Object.fromEntries((await import("../src/data.js")).RESEARCH.map(r => [r.id, r.max]));
+  ok(labShare({}) === 0 && labShare(full) === 1, "no Lab is 0, every Lab project is 1");
+  ok(perkPace(hop, big, {}) === e && Math.abs(perkPace(hop, big, full) - f) < 1e-9, "the early number with no Lab, the full number with every Lab project");
+  ok(perkPace(hop, track("sunny"), {}) === 1, "a power counts only at home");
+  const { basePace } = await import("../src/best.js"), cat = car("snowcat"), ratio = (c, t) => paceOn(c, U(3), t) / basePace(c, U(3), t);
+  ok(cat.trait === "tough" && Math.abs(ratio(cat, track("aurora")) - TOUGH_ICE.aurora) < 1e-9, "a Tough car on Aurora Pass gets its measured Tough number");
+  ok(ratio({ ...cat, trait: "grippy" }, track("aurora")) === 1 && ratio(cat, track("sunny")) === 1, "nobody else gets it: not a Grippy car, not a Tough car away from Glacier"); }
 // chips: none with one car, none for the car being driven, the faster car otherwise
 ok(chipFor(save(["zippy"], "zippy"), track("sunny")) === null, "one car, no chip");
 ok(chipFor(save(["zippy", "galaxy"], "galaxy"), track("sunny")) === null, "driving the best car, no chip");

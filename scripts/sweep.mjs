@@ -52,7 +52,11 @@ const EXTRA = {
   "s-garage-home": `(Object.assign(__td.S, __mid()), __td.S.car = "patrol", __td.goHub(), ${tap("garage")}, !document.getElementById("s-garage").hidden && !document.getElementById("g-home").hidden)`,
   // v1.22: Main Street dressed for each holiday, scrolled to the big decoration (a reload puts today's back)
   ...Object.fromEntries(["fall", "winter", "summer"].map(h => ["s-hub-" + h, `(Object.assign(__td.S, __mid()), __td.holiday("${h}"), __td.goHub(), (() => { const w = document.getElementById("town-wrap"), el = document.getElementById("holiday"); if (!el) return false; const r = el.getBoundingClientRect(); w.scrollLeft += r.left + r.width / 2 - innerWidth / 2; return !document.getElementById("s-hub").hidden; })())`])),
-  "s-lab-sheet": `(Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
+  // 2026-11-26: the What's new card, filled with the fullest card a device can get (src/news.js fullest). It never
+  // shows on the dev server by itself, so only the update test's one picture ever checked it. It fails when the
+  // lines scroll (a child who cannot read would never see the lower pictures) or OK or the 🔊 is off screen.
+  "s-news": `(__td.news(), (() => { const l = document.getElementById("news-list"), inView = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth; }; return l.children.length > 4 && l.scrollHeight <= l.clientHeight + 1 && inView(document.getElementById("news-ok")) && inView(document.querySelector("#news [data-say-btn]")) && [...l.children].every(inView); })())`,
+  "s-lab-sheet": `(document.getElementById("news").hidden = true, Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 

@@ -13,7 +13,7 @@ import { holidayOn } from "./holiday.js";
 import { createLab } from "./lab.js";
 import { drawCar } from "./draw.js";
 import { MISSIONS_RANK, todaysMissions, missionText, countRace, missionsReady } from "./missions.js";
-import { unseen } from "./news.js";
+import { unseen, fullest } from "./news.js";
 import { startSay, stopSay, fakeVoice, canSay } from "./speak.js";
 import { raceMoods, gridMoods, faceRow, drawFace } from "./faces.js";
 import { HORN } from "./horn.js";
@@ -1523,18 +1523,24 @@ $("install-ok").onclick = () => { sfx("click"); $("install-help").hidden = true;
 paintInstall();
 /* ✨ What's new: after an update, the title screen shows a card with every change since this device last played,
    as pictures and a few words (src/news.js). One tap closes it. A brand-new player never sees it. The version
-   last seen is kept under its own key, turbodash.news, so the save's shape does not change. */
+   last seen is kept under its own key, turbodash.news, so the save's shape does not change.
+   2026-11-26: a 🔊 speaker reads its lines (it is the card with the most words), and with more than four lines a
+   wide screen lays them out in two columns, so the card never scrolls and a child who cannot read still sees every
+   picture. The sweep opens it at every size through the dev hook __td.news. */
+function openNews(list, done = () => {}) {
+  const rows = list.flatMap(n => n.pics);
+  $("news-list").innerHTML = rows.map(([pic, words]) => `<div class="news-row"><span class="news-pic">${pic}</span><span data-say>${words}</span></div>`).join("");
+  $("news-list").classList.toggle("two", rows.length > 4);
+  $("news").hidden = false;
+  $("news-ok").onclick = () => { sfx("click"); stopSay(); done(); $("news").hidden = true; };
+}
 if (VERSION !== "dev") {
   const NEWS_KEY = "turbodash.news";
   let seen = null; try { seen = localStorage.getItem(NEWS_KEY); } catch (e) { /* storage blocked */ }
   const mark = () => { try { localStorage.setItem(NEWS_KEY, VERSION); } catch (e) { /* storage blocked */ } };
   const list = unseen(seen, VERSION, S.races > 0);
   if (!list.length) mark();
-  else {
-    $("news-list").innerHTML = list.flatMap(n => n.pics).map(([pic, words]) => `<div class="news-row"><span class="news-pic">${pic}</span><span>${words}</span></div>`).join("");
-    $("news").hidden = false;
-    $("news-ok").onclick = () => { sfx("click"); mark(); $("news").hidden = true; };
-  }
+  else openNews(list, mark);
 }
 /* 👋 "What's your name?" — on the first run (and after a reset), and from Settings. */
 function askName(from = "s-hub") {
@@ -1737,7 +1743,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && window.isSecureConte
 }
 
 if (import.meta.env.DEV) import("./dev/audit.js");
-if (import.meta.env.DEV) window.__td = { holiday: h => { devHoliday = h; paintTown(); if (screen === "s-hub") refreshHub(); }, fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, newCar: id => { grantCar(S, id); newCars = [CARS.find(c => c.id === id)]; openNewCar("s-hub"); }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
+if (import.meta.env.DEV) window.__td = { news: () => { show("s-title"); openNews(fullest()); }, holiday: h => { devHoliday = h; paintTown(); if (screen === "s-hub") refreshHub(); }, fakeVoice, canSay, get toyDiag() { return toyDiag; }, resetDiag: () => { toyDiag = {}; saveDiag(); toyFailed = false; }, get toyView() { return toyRace?.view; }, BONUS_TRACKS, openPreview, get previewRun() { return isPreview() ? run : null; }, get run() { return run; }, fps: () => { const q = ladder(); return { ms: +q.allMs.toFixed(1), fps: Math.round(1000 / q.allMs), raceMs: +q.ms.toFixed(1), vsync: +q.vsync.toFixed(1), level: qLevel(), lite: classic.lite }; }, forceSlow: () => { ladder().level = Math.max(1, ladder().level - 1); setLite(); }, ladders, openMath, openLog, refreshCoins: () => refreshCoins(false), mathShow: q => nextMath(q), mathDone: () => { openMath(); finishLap(); }, openWord, openBank, bankTime: ms => { S.bank.t -= ms; save(); }, wordShow: q => nextWord(q), get wordQ() { return wq; }, wordDone: () => { openWord(); finishWord(); }, wordQuestion, get race() { return race; }, rivalRow: wk => paintRivalRow(wk), loadToy, levelUpCard, get S() { return S; }, newCar: id => { grantCar(S, id); newCars = [CARS.find(c => c.id === id)]; openNewCar("s-hub"); }, startRace, TRACKS, showResult, show, openTracks, openTrophies, openRank, garage, goHub, startCup, CUPS, importSave, exportSave, fakeUpdate: () => { updateReady = true; paintUpdate(); },
   // 👑 v1.15 sweep: a boss's intro after `wins` wins, and a boss race's result card (the sweep and probes only)
   bossIntro: (id, wins) => { const b = BOSSES.find(x => x.id === id); if (wins) { S.bosses[id] = wins; if (!S.owned.includes(b.car)) grantCar(S, b.car); } else delete S.bosses[id]; openBossIntro(b); },
   bossResult: (id, place) => { const b = BOSSES.find(x => x.id === id), keep = currentTrack; run = { kind: "boss", boss: b }; currentTrack = TRACKS.find(t => t.id === b.track); showResult({ place, coins: 90, time: 60, stats: { stunts: 0, turbos: 2, bams: 0, powers: 0, pads: 0, rings: 0, pearls: 0, drifts: 0, loops: 0 }, standings: place === 1 ? [0, 1] : [1, 0] }); currentTrack = keep; } };   // the track goes back, so later sweep cards are not on the boss's track

@@ -727,6 +727,28 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   garages in general. Find what the rule misses on those picks (likely low-upgrade garages, the kid driver's luck
   with the Toy Racer and Polar Bear, or a perk's pace), fix the rule, and make the gate race three seeds so it can
   no longer pass on one lucky draw. The race counter is pinned in the gate since 2026-11-26.
+  Notes: what the rule missed, found with `scripts/probes/best-fit.mjs` (it caches every car's race times for six
+  garage seeds, so a rule change is scored in a second). (1) Most failures were luck in the gate itself: three races
+  differ by about 1.5% from luck alone, and raced 15 times, five of the eight failing calls flipped (the badge's car was
+  faster). So cars within 2% of the fastest after three races, plus the pick and the car being driven, now race 12
+  times before a call. (2) A special car's power is worth a different amount on each track and on an early garage
+  than on a full one (the Moon Hopper's jump: 1% on Big Crater Jump, whose ramps already throw cars high, 8% on Dark
+  Side Dash early; the Boost Buggy's: 0.9% early, 3.4% full), and the rule counted 3% everywhere. (3) A Tough car is
+  1% to 3% faster on Glacier tracks than the rule said (half of each snowbank). Seen by racing Snow Cat and Frost
+  Runner as Tough and as Grippy, so it is the kind, not the car. Without it Snow Cat lost its badge on Aurora Pass to
+  cars 4% slower. Both are a measured table now, `src/best-table.js`, written by `node scripts/probes/best-table.mjs`
+  (16 races a number, about two seconds), and `scripts/test-best.mjs` fails when a track of a special car's world or a
+  Glacier track has no number (seen red with Dark Side Dash and Glacier Summit removed), so the next M3 tracks must be
+  measured. Tried and dropped, each worse on six seeds: a wider swap margin (1.5% to 3%), fitted corrections for
+  Toy World cars, Turbo level, grip and speed, and a per-track table of all three kinds measured with one car (fixed
+  Aurora, broke seed 2, so one car's kind numbers do not carry to every car). The gate races garages from seeds 1, 2
+  and 3 at once (one process each, about 1 minute 40 seconds). Changed in the open: a badge may not ask for a swap to
+  a car more than 1% slower than the one being driven (it was "not faster" over three races, which could not see 1%
+  through the luck, and the misses left were ties of 0.3% to 0.8%, within a 12-race mean's luck of about 0.6%). The
+  93% and 4% lines stay. Result, seeds 1 to 6: the pick is the fastest 98.1%, 95.0%, 97.8%, 97.0%, 96.0%, 95.4% (was
+  96.4%, 92.8%, 97.1%, 95.4%, 94.6%, 93.0% with three races), at worst 2.2% to 3.0% slower (was up to 4.4%). Seeds 1 to
+  5 pass. Seed 6 (not in the gate) has one call at the line: Boost Buggy named on Glacier Summit, 1.0% slower than
+  Blizzard Wolf. The gate was seen red on the old rule (seeds 1, 3, 4 and 6 failed once the calls had 12 races).
 - [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
