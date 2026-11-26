@@ -1015,7 +1015,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
   if (th.aurora) aurora(ctx, W, H, hz, skyX, t, lite);
   if (th.water) underwater(ctx, W, H, hz, skyX, t);
   else if (th.cave) caveRoof(ctx, W, H, hz, skyX, t);
-  else {
+  else if (!th.noSun) {   // noSun: the Moon's dark side (v1.24)
     const sx = W * (0.78 - Math.sin(skyX * Math.PI * 2) * 0.04), sy = hz * (th.sunY || 0.32);
     ctx.fillStyle = th.sun;
     ctx.globalAlpha = 0.35; ell(ctx, sx, sy, H * 0.13, H * 0.13);

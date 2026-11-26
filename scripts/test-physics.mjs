@@ -574,12 +574,12 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   // 🚀 Rocket Launch: rockets beside the road that lift off as the car comes near
   {
     const T = buildTrack(track("launch")), rockets = T.segs.filter(s => s.rocket);
-    check("Rocket Launch has rockets beside the road", rockets.length >= 6 && rockets.every(s => Math.abs(s.rocket) > 1.8), `${rockets.length} rockets`);
+    check("Rocket Launch has rockets beside the road", rockets.length >= 6 && rockets.every(s => Math.abs(s.rocket) > 1.5 && Math.abs(s.rocket) < 2.2), `${rockets.length} rockets`);
     check("no other track has rockets", TRACKS.filter(t => t.id !== "launch" && t.world !== "toy").every(t => !buildTrack(t).segs.some(s => s.rocket)), "");
-    check("a rocket waits, then lifts off faster and faster", rocketLift(90) === 0 && rocketLift(60) === 0 && rocketLift(30) > 0 && rocketLift(30) < 0.5 && rocketLift(0) === 1, "");
+    check("a rocket waits, then lifts off faster and faster", rocketLift(90) === 0 && rocketLift(36) === 0 && rocketLift(20) > 0 && rocketLift(20) < 0.5 && rocketLift(0) === 1, "");
   }
   // 🔦 Dark Side Dash: headlights on, no sun and no Earth
-  check("Dark Side Dash is dark with headlights", THEMES[track("darkside").theme].lights === true && !THEMES[track("darkside").theme].earth && track("darkside").world === "moon", "");
+  check("Dark Side Dash is dark with headlights", THEMES[track("darkside").theme].lights === true && THEMES[track("darkside").theme].noSun === true && !THEMES[track("darkside").theme].earth && track("darkside").world === "moon", "");
 }
 
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);

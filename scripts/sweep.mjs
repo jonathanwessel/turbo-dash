@@ -199,8 +199,8 @@ async function main() {
     // a star landing ahead, a rocket lifting off, the car in the air over a big crater, the dark side's headlights
     const near = (test, back, fast = false) => `(() => { const r = __td.race, i = r.T.segs.findIndex((s, k) => k > 60 && (${test})); if (i < 0) return false; r.player.dist = (i - ${back}) * 200 - 3100; r.prevIdx = r.segAt(r.player.dist).index; ${fast ? "r.player.speed = r.stats.maxSpeed;" : ""} return true; })()`;
     const FRAMES = [["earth-new", "earth", ""], ...["earth", "moon", "ocean", "glacier", "toy"].map(w => [w, w, played]), ["toy-curve", "toy", played],
-      ["moon-stars", "moon", played, "meteor", near("s.star != null", 30)], ["moon-rocket", "moon", played, "launch", near("s.rocket", 28)],
-      ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 20)], ["moon-dark", "moon", played, "darkside"]];
+      ["moon-stars", "moon", played, "meteor", near("s.star != null", 30)], ["moon-rocket", "moon", played, "launch", near("s.rocket", 18)],
+      ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 10)], ["moon-dark", "moon", played, "darkside"]];
     for (const [name, world, prep, trackId, post, after = 250] of FRAMES) {
       await js("(localStorage.clear(), true)"); await load();
       if (name === "toy-curve") { await js(`(() => { ${prep} return true; })()`); await js(readFileSync(join(root, "scripts", "probes", "toy-curve.js"), "utf8").split(/\r?\n/).filter(l => !l.startsWith("//")).join("\n"), 30000); }

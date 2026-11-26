@@ -383,6 +383,13 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.24.0 🌠 Moon tracks (shipped)
+Four new Moon tracks between the old four: Meteor Shower (falling stars to drive through for a boost), Rocket Launch
+(rockets lift off beside the road), Big Crater Jump (ramps throw cars high over deep craters) and Dark Side Dash
+(headlights on, no sun or Earth in the sky).
+- Lesson: a gate that races many cars in a row must pin every random source, or adding a track moves its answer on
+  tracks nothing touched. And a gate that passes on one fixed seed may only fit that seed: try others now and then.
+
 ### v1.23.0 🦘 Special powers (shipped)
 Each special car's power now wins time at home: the Moon Hopper springs ahead after a Moon landing, a current carries
 the Deep Diver forward, and the Snow Cat zooms off after smashing a snowbank, each about 3% of a race. The Best card

@@ -694,14 +694,14 @@ every test green.
 
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
-- [ ] **Moon, 4 more tracks.** For example a meteor shower and a crater jump.
-  Notes (2026-11-26, in progress): decision, one new thing per track, each placed between two old Moon tracks in
+- [x] **Moon, 4 more tracks.** For example a meteor shower and a crater jump.
+  Notes: v1.24.0. Decision, one new thing per track, each placed between two old Moon tracks in
   difficulty (steps of 0.15) and opened by a win on the Moon track just below it, so the Moon Cup, Captain Luna and
   the old chain are unchanged. 🌠 Meteor Shower (7.55, after Crater Hop): stars fall onto the road ahead and stay
   glowing in a lane, and driving through one is a STAR BOOST (a pad's 1.2 s, once a lap). 🚀 Rocket Launch (7.85,
   after Moonbase Loop): rockets beside the road lift off as the car comes near (only to see). 🕳️ Big Crater Jump
   (8.15, after Asteroid Alley): the gaps are deep craters and the ramps throw cars 1.25x faster upward (about 1.6x as
-  high, BIG JUMP!). 🔦 Dark Side Dash (8.45, after Earthrise Run): a new `moondark` look with no Earth in the sky and a dim sun, so the
+  high, BIG JUMP!). 🔦 Dark Side Dash (8.45, after Earthrise Run): a new `moondark` look with no sun or Earth in a dark sky, so the
   headlights and lamps come on. Kinds from `scripts/probes/kinds.mjs`: Meteor Shower Grippy, Rocket Launch Fast, Big
   Crater Jump Tough, Dark Side Dash Grippy. The Moon goal counts any Moon track now. End-game Best rule: Boost Buggy 11,
   Loop Legend 11, Wind-Up Rocket 10 of 36 (a third is 12). Physics checks for each thing (seen red with each one
@@ -714,8 +714,11 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   races did not pin the race counter, so four more tracks shifted every later race's luck. Pinned now (the v1.23
   rule), and it passes (869 of 900 picks the fastest, at worst 3.2% slower). Other garage seeds fail on v1.23.0 too,
   so that is a box of its own below, not this box's.
-  Stopped at: engine, data, tests, hint and sweep frames done, `npm test` green. Left: `npm run check`, the full
-  sweep, the picture review, the What's new entry and the release (v1.24.0).
+  Check on this build: career Rank 40 on day 540 (Moon 106, Ocean 179, Glacier 276, Toy 404; 549 on v1.23.0), so the
+  Moon lasts 73 days (the M3 target asks for 7). The unseeded default career once showed 28 of 29 cars ever the best
+  (Comet 1.3% short on Sunny Hills), the seeded kid careers 29 of 29 (the gate). Bots 13%, 5%, 1%, 1% apart. At the end
+  Boost Buggy 11, Loop Legend 11, Wind-Up Rocket 10, Snow Cat 2, Blizzard Wolf 1, Polar Bear 1 of 36. Sweep clean at 8
+  sizes. Not checked on a real tablet: how the stars and the big jump feel needs the owner's eyes.
 - [ ] **Best badges hold on other garages** (added 2026-11-26, found while adding the Moon tracks). `npm run sim --
   best` races 24 random garages from one fixed seed (`BEST_SEED=1`), and it passes there. On seeds 2 and 3 it fails,
   on v1.23.0 as well as now: a pick up to 7.0% slower than the fastest car (Boost Buggy on Asteroid Alley), Polar
@@ -831,6 +834,10 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   at 740x360 (new in v1.23.0). The Garage's world chips' "13/13" and "1/4" are tiny and don't say they count cars. In
   race frames the yellow spoiler bar floats a little above the player's car. Fixed in v1.23.0: the What's new lines
   for v1.23.0 said the same thing as v1.22.0's and "slower" pointed the wrong way.
+  From the v1.24.0 picture review (older than v1.24.0): a locked track's "Win 🌑 first!" leans on a tiny gray track
+  icon; the rival of the week chip and the ⭕ counter chip have no word; the coin marks under Easy, Normal and Hard are
+  tiny on a 360 px phone. Fixed in v1.24.0 after the review: the rocket stood far from the road and was already high
+  in the sky, the crater could not be seen, the stars were small and dim, and the dark side still had a sun.
 
 
 ## Waiting for the owner (do not act on these)
@@ -1032,3 +1039,18 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   Lab) reached `npm run sim -- best` before anything caught it. Rule, in "Measure a number before it ships": pin every
   random source, show 0.0% for the same car twice, and measure an early garage as well as a full one. Next: **M3, Moon
   4 more tracks** as the main piece (a meteor shower and a crater jump), with a line of the picture leftovers as polish.
+- 2026-11-26 (v1.23.0 and v1.24.0): this run found v1.23.0 built but unreleased (changelog and roadmap said "shipped",
+  no version bump, no What's new entry, never swept) and released it, then built and released **Moon, 4 more tracks**
+  (M3's first box). What kept coming back: a run that stops part way leaves a release that looks finished (v1.18.0,
+  v1.22.0, v1.23.0). `npm test` now fails when the newest changelog entry and `package.json` disagree, so the
+  changelog, the bump and the What's new entry land in one commit (rule in step 1 of "How the task works"). The same
+  stopped run also left its sweep and a dev server on 5184 running for nine hours. The next sweep's "is it up?" check
+  was answered by that old server. The sweep now stops a dev server on 5184 and any sweep Edge before it starts
+  (seen red with a stand-in server, which the first version, matching by path, missed). Randomness again (the second
+  time after the perk probe): the Best badge gate did not pin the race counter, so adding tracks flipped a call on
+  an old track. Pinned, and trying other garage seeds showed the Best rule only fits the gate's seed (v1.23.0 too),
+  so **Best badges hold on other garages** is now the next box, ahead of the Ocean. Tooling lesson, written here so it
+  is not repeated: never link `node_modules` into a git worktree with a junction. A forced `git worktree remove`
+  followed the link and emptied the real `node_modules/.bin`, and `npm ci` (after stopping the leftover sweep that
+  held a file open) put it back. The game moved forward in both releases. Next: the Best badges box as the main
+  piece, with the What's new card's 🔊 speaker and its place in the sweep (picture leftovers) as polish.

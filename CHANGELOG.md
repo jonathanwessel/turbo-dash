@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.24.0 — Moon tracks 🌠🚀
+
+- **🌙 Four new Moon tracks,** each with one new thing to see. Each sits between two of the old Moon tracks, so there
+  is always one a little harder than the last, and each opens with a win on the Moon track just below it:
+  - 🌠 **Meteor Shower:** stars fall from the sky onto the road ahead and stay there glowing. Drive through one for a
+    STAR BOOST. The first race there says "🌠 Drive through a ⭐ to zoom!" at GO.
+  - 🚀 **Rocket Launch:** rockets on launch pads beside the road lift off on a flame and a puff of smoke as you come near.
+  - 🕳️ **Big Crater Jump:** the gaps are deep craters and the ramps throw cars much higher (BIG JUMP!).
+  - 🔦 **Dark Side Dash:** a dark sky with no sun and no Earth, raced with the headlights and lamps on.
+  The Cup, Captain Luna and the Moon goal stay as they were, and the goal counts a win on any Moon track.
+- Polish: the falling stars and the rockets are the new things to see, and the stars are the new thing to use.
+- Numbers: `npm run career` reaches Rank 40 on day 540 (Moon 106, Ocean 179, Glacier 276, Toy 404; 549 before), so the
+  Moon now lasts 73 days. Track kinds come from `scripts/probes/kinds.mjs`: Meteor Shower Grippy, Rocket Launch Fast,
+  Big Crater Jump Tough, Dark Side Dash Grippy. At the end no car is the best on more than 11 of 36 tracks.
+  `npm run bots`: every way of playing is within 13%, 5%, 1% and 1% at Rank 10, 20, 30 and 40, and all 29 cars are the
+  best pick at some point on each seeded kid career. The starter car still does not win the first race.
+- **For the grown-ups:** the Best badge check now pins the race counter (it seeds power-up luck), because four more
+  tracks shifted the luck of every later race and flipped a call on a track nothing had changed. On other garage
+  seeds the Best rule misses on v1.23.0 too, so that is the next box in the plan. The sweep now stops a dev server or
+  a headless Edge that an earlier sweep left behind (one had run for nine hours), and it shoots each new Moon track
+  where its new thing is in view.
+
 ## v1.23.0 — Special powers 🦘⚓🧊
 
 - **🌟 The special cars' powers help at home.** Measured in whole races, three of the four powers were worth nothing

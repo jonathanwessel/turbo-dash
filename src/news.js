@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.24.0",
+    pics: [["🌙", "Four new tracks on the Moon"], ["🌠", "Drive through a star to zoom"]],
+    notes: [
+      "The Moon has four new tracks, each with something new to see, such as rockets taking off beside the road.",
+      "On Meteor Shower stars fall onto the road, and driving through one gives a boost.",
+      "Big Crater Jump throws cars high over deep craters. Dark Side Dash is raced with the headlights on.",
+      "Not checked on a real tablet yet, so please try Meteor Shower and Big Crater Jump.",
+    ],
+  },
+  {
     v: "1.23.0",
     pics: [["🦘", "Special cars get a push in their own world"], ["🏆", "The Best card shows the car you drive"]],
     notes: [

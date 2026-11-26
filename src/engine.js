@@ -32,10 +32,10 @@ const jumpFor = speed => 0.8 + 0.2 * Math.min(1.5, speed / BASE_MAX);   // jump 
 export const KICK = 0.15;   // 🌟 a special car's kick (v1.23): this much more top speed for a moment, on top of any boost
 export const BIG_JUMP = 1.25;   // 🕳️ Big Crater Jump (v1.24): its ramps throw a car this much faster upward (about 1.6x as high)
 export const STAR_BOOST = 1.2;  // 🌠 Meteor Shower (v1.24): seconds of boost from driving through a fallen star, like a pad
-const ROCKET_AT = 2.3;          // 🚀 how far beside the road a launch pad stands (road half-widths)
+const ROCKET_AT = 1.75;         // 🚀 how far beside the road a launch pad stands (road half-widths): right by the road
 /* 🚀 how high a rocket has flown (0 on its pad, 1 out of sight) when the car is `ahead` segments before its pad:
-   it waits until the car is 60 segments away, then lifts off and climbs faster and faster */
-export const rocketLift = ahead => { const u = clamp((60 - ahead) / 60, 0, 1); return u * u; };
+   it waits until the car is 35 segments away, then lifts off and climbs faster and faster */
+export const rocketLift = ahead => { const u = clamp((35 - ahead) / 35, 0, 1); return u * u; };
 /* 🌠 how high a falling star still is (world units) when it is `ahead` segments in front of the car: it lands
    STAR_LAND segments ahead, well before the car gets there */
 export const STAR_LAND = 45;
@@ -1030,7 +1030,7 @@ export class Race {
   // landed: a yellow star standing in its lane on a glow, with a little ring of dust where it hit.
   drawStar(ctx, s, F, n) {
     if (s.p1.camera.z <= this.camDepth) return;
-    const sc = s.p1.screen.scale, rw = s.p1.screen.w * 0.22, t = this.t;
+    const sc = s.p1.screen.scale, rw = s.p1.screen.w * 0.3, t = this.t;
     if (rw < 1) return;
     const h = starHeight(n), x = s.p1.screen.x + s.p1.screen.w * s.star + sc * h * F * 0.55, y = s.p1.screen.y - sc * h * F;
     const star = (cx, cy, r, spin) => {
@@ -1046,12 +1046,13 @@ export class Race {
         const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, "rgba(255,240,150,0.95)"); g.addColorStop(1, "rgba(255,140,60,0)");
         ctx.strokeStyle = g; ctx.lineWidth = Math.max(1, sr * 0.7); ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
-        ctx.fillStyle = "rgba(255,240,150,0.3)"; ctx.beginPath(); ctx.arc(x, y, sr * 1.6, 0, 7); ctx.fill();
-        ctx.fillStyle = "#fff6c0"; star(x, y, sr, t * 6);
+        ctx.fillStyle = "rgba(255,240,150,0.5)"; ctx.beginPath(); ctx.arc(x, y, sr * 1.8, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fff6c0"; star(x, y, sr * 1.2, t * 6);
         return;
       }
       const sy = s.p1.screen.y, pulse = 0.85 + 0.15 * Math.sin(t * 6 + s.index);
       ctx.fillStyle = "rgba(255,225,77,0.28)"; ctx.beginPath(); ctx.ellipse(x, sy, rw * 1.5 * pulse, rw * 0.3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,240,150,0.35)"; ctx.beginPath(); ctx.arc(x, sy - rw * 0.62, rw * 1.05 * pulse, 0, 7); ctx.fill();
       ctx.strokeStyle = "rgba(160,166,180,0.9)"; ctx.lineWidth = Math.max(1, rw * 0.08); ctx.beginPath(); ctx.ellipse(x, sy, rw * 1.1, rw * 0.2, 0, 0, 7); ctx.stroke();
       ctx.fillStyle = "#ff9d1a"; star(x, sy - rw * 0.62, rw * 0.72 * pulse, Math.sin(t * 2 + s.index) * 0.2);
       ctx.fillStyle = "#ffe14d"; star(x, sy - rw * 0.62, rw * 0.5 * pulse, Math.sin(t * 2 + s.index) * 0.2);
@@ -1062,9 +1063,9 @@ export class Race {
   // puff of smoke as the car comes near, and is gone up into the stars by the time the car passes.
   drawRocket(ctx, s, F, n) {
     if (s.p1.camera.z <= this.camDepth) return;
-    const sc = s.p1.screen.scale, w = sc * 900 * F, x = s.p1.screen.x + s.p1.screen.w * s.rocket, yb = s.p1.screen.y, t = this.t;
+    const sc = s.p1.screen.scale, w = sc * 1200 * F, x = s.p1.screen.x + s.p1.screen.w * s.rocket, yb = s.p1.screen.y, t = this.t;
     if (w < 2 || x + w < 0 || x - w > this.canvas.width) return;
-    const lift = rocketLift(n), up = lift * w * 9;
+    const lift = rocketLift(n), up = lift * w * 7;
     this.clipped(ctx, s, yb, () => {
       // the pad: a gray deck with a tower
       ctx.fillStyle = "#4a5060"; ctx.fillRect(x - w * 0.6, yb - w * 0.12, w * 1.2, w * 0.12);
@@ -1196,8 +1197,9 @@ export class Race {
           // 🕳️ Big Crater Jump (v1.24): a wide gray bowl with lit rims, deepest in the middle, far below the road
           const u = s.crater, deep = Math.sin(Math.PI * u), cw1 = w1 * (2.2 + 0.6 * deep), cw2 = w2 * (2.2 + 0.6 * deep);
           ctx.fillStyle = s.index % 2 ? "#565c6b" : "#4c5261"; quad(ctx, x1 - cw1, yb, x1 + cw1, yb, x2 + cw2, y2, x2 - cw2, y2);
+          ctx.fillStyle = "#2b2f3a"; quad(ctx, x1 - cw1 * 0.8 * deep, yb, x1 + cw1 * 0.8 * deep, yb, x2 + cw2 * 0.8 * deep, y2, x2 - cw2 * 0.8 * deep, y2);
           ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 * 0.9 * deep, yb, x1 + w1 * 0.9 * deep, yb, x2 + w2 * 0.9 * deep, y2, x2 - w2 * 0.9 * deep, y2);
-          if (u < 0.1 || u > 0.9) { ctx.fillStyle = "#c9ced8"; quad(ctx, x1 - cw1, yb, x1 + cw1, yb, x2 + cw2, y2, x2 - cw2, y2); }
+          if (u < 0.15 || u > 0.85) { ctx.fillStyle = "#e6e9f0"; quad(ctx, x1 - cw1, yb, x1 + cw1, yb, x2 + cw2, y2, x2 - cw2, y2); }
         }
         continue;
       }
