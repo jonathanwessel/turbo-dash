@@ -701,14 +701,29 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   glowing in a lane, and driving through one is a STAR BOOST (a pad's 1.2 s, once a lap). 🚀 Rocket Launch (7.85,
   after Moonbase Loop): rockets beside the road lift off as the car comes near (only to see). 🕳️ Big Crater Jump
   (8.15, after Asteroid Alley): the gaps are deep craters and the ramps throw cars 1.25x faster upward (about 1.6x as
-  high, BIG JUMP!). 🔦 Dark Side Dash (8.45, after Earthrise Run): a new `moondark` look with no sun or Earth, so the
+  high, BIG JUMP!). 🔦 Dark Side Dash (8.45, after Earthrise Run): a new `moondark` look with no Earth in the sky and a dim sun, so the
   headlights and lamps come on. Kinds from `scripts/probes/kinds.mjs`: Meteor Shower Grippy, Rocket Launch Fast, Big
   Crater Jump Tough, Dark Side Dash Grippy. The Moon goal counts any Moon track now. End-game Best rule: Boost Buggy 11,
   Loop Legend 11, Wind-Up Rocket 10 of 36 (a third is 12). Physics checks for each thing (seen red with each one
   removed) and drawing checks (seen red with each drawing removed).
-  Stopped at: engine, data, tests and the three new emoji pictures are committed with `npm test` green. Left: the
-  sim gates and career (`npm run check`), race frames of the new tracks in the sweep, an explainer the first time a
-  star or a rocket shows (if the picture review says it is needed), the full sweep, the picture review, the release.
+  The first Meteor Shower race says "🌠 Drive through a ⭐ to zoom!" at GO, once (tip `stars`), the way the first
+  races teach steering, Turbo and the horn. Decision: no hint for the rockets (only to see), the big jump (it shouts
+  BIG JUMP! by itself) or the dark side (only a look). The sweep has a race frame of each new track where its thing
+  is in view (`race-moon-stars`, `-rocket`, `-crater`, `-dark`), and fails when the thing is not on the track.
+  The first `npm run check` failed on the Best badges, on Moonbase Loop, a track nothing had changed: the gate's
+  races did not pin the race counter, so four more tracks shifted every later race's luck. Pinned now (the v1.23
+  rule), and it passes (869 of 900 picks the fastest, at worst 3.2% slower). Other garage seeds fail on v1.23.0 too,
+  so that is a box of its own below, not this box's.
+  Stopped at: engine, data, tests, hint and sweep frames done, `npm test` green. Left: `npm run check`, the full
+  sweep, the picture review, the What's new entry and the release (v1.24.0).
+- [ ] **Best badges hold on other garages** (added 2026-11-26, found while adding the Moon tracks). `npm run sim --
+  best` races 24 random garages from one fixed seed (`BEST_SEED=1`), and it passes there. On seeds 2 and 3 it fails,
+  on v1.23.0 as well as now: a pick up to 7.0% slower than the fastest car (Boost Buggy on Asteroid Alley), Polar
+  Bear named on Ice Cave and Aurora Pass when it is not faster than the car being driven, and only 92.0% to 92.9% of
+  picks the fastest (93% needed). So the Best rule (src/best.js) fits the garages the gate happens to draw, not
+  garages in general. Find what the rule misses on those picks (likely low-upgrade garages, the kid driver's luck
+  with the Toy Racer and Polar Bear, or a perk's pace), fix the rule, and make the gate race three seeds so it can
+  no longer pass on one lucky draw. The race counter is pinned in the gate since 2026-11-26.
 - [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.

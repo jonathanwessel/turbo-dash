@@ -155,7 +155,10 @@ else if (mode === "best") {
   const { bestCar } = await import("../src/best.js");
   const mid = JSON.parse((await import("node:fs")).readFileSync(new URL("../src/dev/mid-save.json", import.meta.url), "utf8"));
   const R = rng(+(process.env.BEST_SEED || 1)), seed = s => rng(s);
-  const timeOf = (t, c, u, lab) => { let sum = 0; for (let k = 0; k < 3; k++) { Math.random = seed(1000 + k); sum += runRace(t, c, u, "normal", "kid", lab, 0, null, true).time; } return sum / 3; };
+  // v1.24: the race counter is pinned too (it seeds power-up luck), so a car's three races get the same luck whatever
+  // ran before. Unpinned, four new Moon tracks shifted the luck of every later race and flipped a 0.1% call on
+  // Moonbase Loop, a track nothing had changed (the v1.23 rule in PLAN.md: pin every random source).
+  const timeOf = (t, c, u, lab) => { let sum = 0; for (let k = 0; k < 3; k++) { race.raceSeq = k; Math.random = seed(1000 + k); sum += runRace(t, c, u, "normal", "kid", lab, 0, null, true).time; } return sum / 3; };
   const garages = [{ name: "Rank 16 save", owned: CARS.filter(c => mid.owned.includes(c.id)), ups: mid.ups, lab: mid.research, car: mid.car }];
   for (let g = 0; g < 24; g++) {
     const owned = CARS.filter(() => R() < 0.4); if (owned.length < 2) continue;

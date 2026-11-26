@@ -1040,12 +1040,14 @@ export class Race {
     };
     this.clipped(ctx, s, s.p1.screen.y, () => {
       if (h > 0) {
-        // the tail points back up the way it came
-        const len = rw * 4, tx = x + len * 0.48, ty = y - len * 0.88;
+        // the tail points back up the way it came. Far away the star is tiny on the road, so in the sky it keeps a
+        // size a child can spot (at least 1% of the screen's height)
+        const sr = Math.max(rw * 0.9, this.canvas.height * 0.01), len = sr * 7, tx = x + len * 0.48, ty = y - len * 0.88;
         const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, "rgba(255,240,150,0.95)"); g.addColorStop(1, "rgba(255,140,60,0)");
-        ctx.strokeStyle = g; ctx.lineWidth = Math.max(1, rw * 0.5); ctx.lineCap = "round";
+        ctx.strokeStyle = g; ctx.lineWidth = Math.max(1, sr * 0.7); ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
-        ctx.fillStyle = "#fff6c0"; star(x, y, rw * 0.6, t * 6);
+        ctx.fillStyle = "rgba(255,240,150,0.3)"; ctx.beginPath(); ctx.arc(x, y, sr * 1.6, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fff6c0"; star(x, y, sr, t * 6);
         return;
       }
       const sy = s.p1.screen.y, pulse = 0.85 + 0.15 * Math.sin(t * 6 + s.index);

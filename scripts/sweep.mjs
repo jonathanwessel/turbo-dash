@@ -101,8 +101,26 @@ async function waitForQuiet() {
   }
 }
 
+/* v1.24: an earlier sweep that never ended (a run stopped part way, 2026-11-25) kept its dev server on 5184 for nine
+   hours, and the next sweep's own server could not start there while the "is it up?" check was answered by the old
+   one. So a sweep first stops what only an earlier sweep makes: a dev server on 5184 from this checkout and Edge
+   with a turbodash sweep profile (an old sweep left without them fails on its own). Never the play server on 5183,
+   and never another game's processes. */
+function stopLeftovers() {
+  if (process.platform !== "win32") return;
+  // whatever node vite is listening on 5184 (however it was started), and Edge with a sweep profile
+  const r = spawnSync("powershell", ["-NoProfile", "-Command",
+    `$ids = @(Get-NetTCPConnection -LocalPort ${DEV} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ` +
+    `Where-Object { $p = Get-CimInstance Win32_Process -Filter "ProcessId=$_"; $p.Name -eq 'node.exe' -and $p.CommandLine -like '*vite*' }) + ` +
+    `@(Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*turbodash-sweep-*' } | Select-Object -ExpandProperty ProcessId); ` +
+    `$ids | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; $_ }`], { encoding: "utf8" });
+  const n = (r.stdout || "").trim().split(/\s+/).filter(Boolean).length;
+  if (n) console.log(`stopped ${n} leftover process${n > 1 ? "es" : ""} from an earlier sweep`);
+}
+
 async function main() {
   mkdirSync(out, { recursive: true });
+  stopLeftovers();
   if (args.indexOf("--probe") < 0) await waitForQuiet();
   // 1. the dev server, on 127.0.0.1 only
   const vite = spawn(process.execPath, [join(root, "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(DEV), "--strictPort"], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
@@ -177,13 +195,21 @@ async function main() {
   if (RACES) {
     await c.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
     const played = "Object.assign(__td.S, __mid()); localStorage.setItem('turbodash.tips', JSON.stringify({ horn: 1 })); __td.S.rank = 40;";
-    const FRAMES = [["earth-new", "earth", ""], ...["earth", "moon", "ocean", "glacier", "toy"].map(w => [w, w, played]), ["toy-curve", "toy", played]];
-    for (const [name, world, prep] of FRAMES) {
+    // v1.24: a frame of each new Moon track where its new thing is in view (a start-line frame would not show it):
+    // a star landing ahead, a rocket lifting off, the car in the air over a big crater, the dark side's headlights
+    const near = (test, back, fast = false) => `(() => { const r = __td.race, i = r.T.segs.findIndex((s, k) => k > 60 && (${test})); if (i < 0) return false; r.player.dist = (i - ${back}) * 200 - 3100; r.prevIdx = r.segAt(r.player.dist).index; ${fast ? "r.player.speed = r.stats.maxSpeed;" : ""} return true; })()`;
+    const FRAMES = [["earth-new", "earth", ""], ...["earth", "moon", "ocean", "glacier", "toy"].map(w => [w, w, played]), ["toy-curve", "toy", played],
+      ["moon-stars", "moon", played, "meteor", near("s.star != null", 30)], ["moon-rocket", "moon", played, "launch", near("s.rocket", 28)],
+      ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 20)], ["moon-dark", "moon", played, "darkside"]];
+    for (const [name, world, prep, trackId, post, after = 250] of FRAMES) {
       await js("(localStorage.clear(), true)"); await load();
       if (name === "toy-curve") { await js(`(() => { ${prep} return true; })()`); await js(readFileSync(join(root, "scripts", "probes", "toy-curve.js"), "utf8").split(/\r?\n/).filter(l => !l.startsWith("//")).join("\n"), 30000); }
       else {
-        await js(`(() => { ${prep} const t = __td.TRACKS.find(x => x.world === ${JSON.stringify(world)}); if (!${JSON.stringify(prep)}) __td.S.rank = 40; __td.show("s-tracks"); __td.startRace(t); return true; })()`);
+        const find = trackId ? `x.id === ${JSON.stringify(trackId)}` : `x.world === ${JSON.stringify(world)}`;
+        await js(`(() => { ${prep} const t = __td.TRACKS.find(x => ${find}); if (!${JSON.stringify(prep)}) __td.S.rank = 40; __td.show("s-tracks"); __td.startRace(t); return true; })()`);
         await wait(world === "toy" ? 9000 : 6000);   // the countdown, and the 3D engine loading for Toy World
+        if (post && !(await js(post))) { console.log(`race ${name.padEnd(10)} ✖ its new thing is not on the track`); report["race " + name] = { start: ["its new thing is not on the track"] }; continue; }
+        if (post) await wait(after);
       }
       const on = await js("!!__td.race && document.getElementById('hud') && !document.getElementById('hud').hidden");
       const horn = await js("!document.getElementById('btn-horn').hidden");
