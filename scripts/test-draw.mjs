@@ -130,6 +130,12 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   check(has(ice, "rgba(255,255,255,0.24)"), "the ice shine is not drawn on the Glacier");
   check(has(town, "rgba(255,255,255,0.85)"), "crosswalks are not drawn Downtown");
   check([sunny, kelp, ice, town].some(s => has(s, /^rgba\(20,20,24,/)), "skid marks are never drawn");
+  // 🌙 v1.24: each new Moon track's own thing is painted there, and not on Crater Hop
+  const plain = paints("crater"), only = (s, c) => has(s, c) && !has(plain, c);
+  const meteor = paints("meteor"), launch = paints("launch"), big = paints("bigcrater");
+  check(only(meteor, "#fff6c0") && only(meteor, "#ffe14d"), "falling and fallen stars are not drawn on Meteor Shower");
+  check(only(launch, "#f4f6fa") && only(launch, "#ff8a00"), "rockets and their flames are not drawn on Rocket Launch");
+  check(only(big, "#565c6b"), "the crater under the jump is not drawn on Big Crater Jump");
 }
 
 console.log(fails ? `\n✖ ${fails} of ${checks} drawing checks failed` : `All ${checks} drawing checks passed`);

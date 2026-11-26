@@ -30,6 +30,16 @@ const HILL = BASE_MAX * 0.12;                                       // how much 
 const slopeOf = s => (s.p2.world.y - s.p1.world.y) / SEG;            // rise per distance along the road
 const jumpFor = speed => 0.8 + 0.2 * Math.min(1.5, speed / BASE_MAX);   // jump strength: 1.0 at a starter's top speed
 export const KICK = 0.15;   // 🌟 a special car's kick (v1.23): this much more top speed for a moment, on top of any boost
+export const BIG_JUMP = 1.25;   // 🕳️ Big Crater Jump (v1.24): its ramps throw a car this much faster upward (about 1.6x as high)
+export const STAR_BOOST = 1.2;  // 🌠 Meteor Shower (v1.24): seconds of boost from driving through a fallen star, like a pad
+const ROCKET_AT = 2.3;          // 🚀 how far beside the road a launch pad stands (road half-widths)
+/* 🚀 how high a rocket has flown (0 on its pad, 1 out of sight) when the car is `ahead` segments before its pad:
+   it waits until the car is 60 segments away, then lifts off and climbs faster and faster */
+export const rocketLift = ahead => { const u = clamp((60 - ahead) / 60, 0, 1); return u * u; };
+/* 🌠 how high a falling star still is (world units) when it is `ahead` segments in front of the car: it lands
+   STAR_LAND segments ahead, well before the car gets there */
+export const STAR_LAND = 45;
+export const starHeight = ahead => Math.max(0, ahead - STAR_LAND) * 90;
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeIn = (a, b, p) => a + (b - a) * p * p;
 const easeInOut = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
@@ -131,10 +141,13 @@ export function buildTrack(track) {
     for (let j = 0; j < RAMP_LEN; j++) segs[k + j].ramp = true;
     const lane = [-0.5, 0, 0.5][Math.floor(r() * 3)];
     if (ph.gaps) {
-      // low gravity: a gap to jump, a tall arc of coins over it, and two boost rings near the top
-      for (let j = 0; j < GAP; j++) segs[k + RAMP_LEN + 1 + j].gap = true;
-      for (let j = 0; j < 9; j++) segs[k + RAMP_LEN + 2 + j * 5].coins.push({ offset: lane, taken: false, h: RAMP_H + 1100 * Math.sin(Math.PI * (j + 0.5) / 9) });
-      for (const j of [3, 5]) segs[k + RAMP_LEN + 4 + j * 5].coins.push({ offset: -lane || 0.45, taken: false, ring: true, h: RAMP_H + 1000 });
+      // low gravity: a gap to jump, a tall arc of coins over it, and two boost rings near the top.
+      // 🕳️ Big Crater Jump (v1.24): the gap is a deep crater and the ramp throws the car higher (BIG_JUMP), so the
+      // coins and rings sit higher too (a coin in the air is caught anywhere above 120, a ring above 300)
+      const big = track.bigJump ? 1 : 0, up = big ? BIG_JUMP * BIG_JUMP : 1;
+      for (let j = 0; j < GAP; j++) { segs[k + RAMP_LEN + 1 + j].gap = true; if (big) segs[k + RAMP_LEN + 1 + j].crater = j / (GAP - 1); }
+      for (let j = 0; j < 9; j++) segs[k + RAMP_LEN + 2 + j * 5].coins.push({ offset: lane, taken: false, h: RAMP_H + 1100 * up * Math.sin(Math.PI * (j + 0.5) / 9) });
+      for (const j of [3, 5]) segs[k + RAMP_LEN + 4 + j * 5].coins.push({ offset: -lane || 0.45, taken: false, ring: true, h: RAMP_H + 1000 * up });
     } else for (let j = 0; j < 7; j++) segs[k + RAMP_LEN + 2 + j * 3].coins.push({ offset: lane, taken: false, h: RAMP_H * 0.6 + 380 * Math.sin(Math.PI * (j + 0.5) / 7) });
     i = k;
   }
@@ -144,6 +157,25 @@ export function buildTrack(track) {
     while (k < segs.length - 40 && segs.slice(k - 3, k + 3).some(q => q.ramp || q.gap || q.boost !== null || q.coins.length)) k++;
     if (k >= segs.length - 40) break;
     segs[k].boxes = [-0.6, 0, 0.6].map(o => ({ offset: o, until: 0 }));
+    i = k;
+  }
+  // 🌠 Meteor Shower (v1.24): falling stars drop onto the road ahead of the car and stay there glowing in one lane.
+  // Drive through one for a STAR BOOST. They only fall in the picture: in the race a star is a spot on the road.
+  if (track.stars) for (let i = START + 50; i < segs.length - 40; i += 80 + Math.floor(r() * 50)) {
+    let k = i;
+    while (k < segs.length - 40 && segs.slice(k - 4, k + 4).some(q => q.ramp || q.gap || q.boxes || q.boost !== null || q.coins.length || q.star != null)) k++;
+    if (k >= segs.length - 40) break;
+    segs[k].star = [-0.55, 0, 0.55][Math.floor(r() * 3)];
+    i = k;
+  }
+  // 🚀 Rocket Launch (v1.24): rockets on launch pads beside the road lift off as the car comes near. Only to see.
+  if (track.rockets) for (let i = START + 45; i < segs.length - 30; i += 90 + Math.floor(r() * 60)) {
+    let k = i;
+    while (k < segs.length - 30 && (segs[k].rail || segs[k].barrier || Math.abs(segs[k].curve) > 1.2)) k++;
+    if (k >= segs.length - 30) break;
+    const side = r() < 0.5 ? -1 : 1;
+    for (let j = -3; j <= 3; j++) segs[k + j].sprites = segs[k + j].sprites.filter(q => Math.sign(q.offset) !== side || Math.abs(q.offset) < 1.3);
+    segs[k].rocket = side * ROCKET_AT;
     i = k;
   }
   // 🌊 underwater: long stretches where a current pushes you sideways, and bubble vents that float you up past pearls
@@ -213,7 +245,8 @@ export class Race {
     this.assist = Math.max(this.diff.assist, opts.helper || 0);   // softer curves (Easy, or the parent helper)
     this.pull = opts.helper || 0;                                   // steering FOR the kid: only if a grown-up turns it on
     this.autoLvl = mode === "race" ? (opts.autoSteer || 0) : 0; this.autoTarget = null;
-    for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; }
+    for (const s of this.T.segs) { for (const c of s.coins) c.taken = false; if (s.boxes) for (const b of s.boxes) b.until = 0; if (s.star != null) s.starLap = -1; }
+    this.jumpK = track.bigJump ? BIG_JUMP : 1;   // 🕳️ Big Crater Jump (v1.24)
     this.power = null; this.shieldT = 0; this.magnetT = 0; this.parts = [];
     this.hooks.onPower?.(null);
     this.track = track; this.mode = mode; this.stats = stats; this.home = trackBonus(car, track); this.bonusWord = bonusWord(car, track);   // 🏠 v1.11, ⚡🛞💪 v1.21: the home bonus and the track's kind
@@ -529,7 +562,7 @@ export class Race {
       }
       c.dist += c.speed * dt;
       if (c.air > 0) { const g = GRAVITY * this.phys.gravity; c.air += c.vy * dt - 0.5 * g * dt * dt; c.vy -= g * dt; if (c.air <= 0) c.air = c.vy = 0; }
-      else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY * jumpFor(c.speed); }
+      else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY * jumpFor(c.speed) * this.jumpK; }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
       else { const rs = this.segAt(c.dist); if (rs.snow != null && c.snowAt !== rs.index && Math.abs(c.offset - rs.snow) < 0.4) { c.snowAt = rs.index; c.speed *= 0.88; } }
@@ -580,7 +613,16 @@ export class Race {
       this.hooks.sfx("bump"); this.popup("SPLASH!", "#9fe8ff");
     }
     if (s.ramp && p.air <= 0 && p.speed > BASE_MAX * 0.3) {
-      p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1) * jumpFor(p.speed); p.airT = 0; this.hooks.sfx("jump");
+      p.air = 1; p.vy = JUMP_VY * (this.stats.jump || 1) * jumpFor(p.speed) * this.jumpK; p.airT = 0; this.hooks.sfx("jump");
+      if (this.jumpK > 1) this.popup("BIG JUMP!", "#ffd400");
+    }
+    // 🌠 a fallen star: a boost like a pad, once a lap (its picture goes until the next lap)
+    if (s.star != null && p.air < 150 && Math.abs(p.offset - s.star) < 0.36) {
+      const lap = Math.floor(p.dist / this.T.length);
+      if (s.starLap !== lap) {
+        s.starLap = lap; this.boostT = Math.max(this.boostT, STAR_BOOST); this.runStats.stars = (this.runStats.stars || 0) + 1;
+        this.hooks.sfx("boost"); this.popup("STAR BOOST!", "#ffe14d"); this.sparks(0.5, 0.86, 16, "#ffe14d");
+      }
     }
     if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
       p.air = 1; p.vy = JUMP_VY * 0.85; p.airT = 0; this.hooks.sfx("jump"); this.popup("BUBBLES!", "#bff6ff");
@@ -743,6 +785,8 @@ export class Race {
       if (s.tunnel) { const a = ctx.globalAlpha; ctx.globalAlpha = Math.min(1, a * 2.5); this.drawTunnel(ctx, s, F, th); ctx.globalAlpha = a; }   // tunnels turn solid quickly (v1.11: no see-through rock in the distance)
       if (s.ventTop) this.drawVent(ctx, s, F);
       if (s.snow != null) this.drawSnowbank(ctx, s, F);
+      if (s.star != null && s.starLap !== Math.floor(p.dist / L)) this.drawStar(ctx, s, F, n);
+      if (s.rocket) this.drawRocket(ctx, s, F, n);
       // things on this segment. Past a hill crest only the part above the crest shows (one clip for the whole
       // segment), and a thing whose top is still below the crest is skipped: it would paint nothing (v1.10)
       const clip = s.clip, cut = sy > clip;
@@ -982,6 +1026,69 @@ export class Race {
     });
   }
 
+  // 🌠 A falling star (v1.24): far ahead it is still in the sky, streaking down with a glowing tail. Nearer it has
+  // landed: a yellow star standing in its lane on a glow, with a little ring of dust where it hit.
+  drawStar(ctx, s, F, n) {
+    if (s.p1.camera.z <= this.camDepth) return;
+    const sc = s.p1.screen.scale, rw = s.p1.screen.w * 0.22, t = this.t;
+    if (rw < 1) return;
+    const h = starHeight(n), x = s.p1.screen.x + s.p1.screen.w * s.star + sc * h * F * 0.55, y = s.p1.screen.y - sc * h * F;
+    const star = (cx, cy, r, spin) => {
+      ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const a = spin + k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? r * 0.45 : r; ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+      ctx.closePath(); ctx.fill();
+    };
+    this.clipped(ctx, s, s.p1.screen.y, () => {
+      if (h > 0) {
+        // the tail points back up the way it came
+        const len = rw * 4, tx = x + len * 0.48, ty = y - len * 0.88;
+        const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, "rgba(255,240,150,0.95)"); g.addColorStop(1, "rgba(255,140,60,0)");
+        ctx.strokeStyle = g; ctx.lineWidth = Math.max(1, rw * 0.5); ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.fillStyle = "#fff6c0"; star(x, y, rw * 0.6, t * 6);
+        return;
+      }
+      const sy = s.p1.screen.y, pulse = 0.85 + 0.15 * Math.sin(t * 6 + s.index);
+      ctx.fillStyle = "rgba(255,225,77,0.28)"; ctx.beginPath(); ctx.ellipse(x, sy, rw * 1.5 * pulse, rw * 0.3, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(160,166,180,0.9)"; ctx.lineWidth = Math.max(1, rw * 0.08); ctx.beginPath(); ctx.ellipse(x, sy, rw * 1.1, rw * 0.2, 0, 0, 7); ctx.stroke();
+      ctx.fillStyle = "#ff9d1a"; star(x, sy - rw * 0.62, rw * 0.72 * pulse, Math.sin(t * 2 + s.index) * 0.2);
+      ctx.fillStyle = "#ffe14d"; star(x, sy - rw * 0.62, rw * 0.5 * pulse, Math.sin(t * 2 + s.index) * 0.2);
+    });
+  }
+
+  // 🚀 A rocket on its launch pad beside the road (v1.24). It waits on the pad, then lifts off on a flame and a
+  // puff of smoke as the car comes near, and is gone up into the stars by the time the car passes.
+  drawRocket(ctx, s, F, n) {
+    if (s.p1.camera.z <= this.camDepth) return;
+    const sc = s.p1.screen.scale, w = sc * 900 * F, x = s.p1.screen.x + s.p1.screen.w * s.rocket, yb = s.p1.screen.y, t = this.t;
+    if (w < 2 || x + w < 0 || x - w > this.canvas.width) return;
+    const lift = rocketLift(n), up = lift * w * 9;
+    this.clipped(ctx, s, yb, () => {
+      // the pad: a gray deck with a tower
+      ctx.fillStyle = "#4a5060"; ctx.fillRect(x - w * 0.6, yb - w * 0.12, w * 1.2, w * 0.12);
+      ctx.fillStyle = "#ff3d3d"; ctx.fillRect(x - w * 0.6, yb - w * 0.12, w * 1.2, w * 0.03);
+      ctx.fillStyle = "#6a7080"; ctx.fillRect(x + w * 0.42, yb - w * 1.9, w * 0.1, w * 1.8);
+      for (let k = 1; k < 6; k++) ctx.fillRect(x + w * 0.3, yb - w * 0.32 * k, w * 0.14, w * 0.03);
+      if (lift >= 1) return;
+      const ry = yb - w * 0.12 - up;
+      if (lift > 0) {
+        // smoke on the pad and a flame under the rocket
+        ctx.fillStyle = "rgba(230,232,240,0.75)";
+        for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.arc(x + k * w * 0.22, yb - w * 0.12, w * (0.22 + 0.08 * Math.sin(t * 9 + k)) * (1 + lift), 0, 7); ctx.fill(); }
+        const fl = w * (0.5 + 0.2 * Math.sin(t * 30));
+        ctx.fillStyle = "#ff8a00"; ctx.beginPath(); ctx.moveTo(x - w * 0.14, ry); ctx.lineTo(x, ry + fl); ctx.lineTo(x + w * 0.14, ry); ctx.fill();
+        ctx.fillStyle = "#ffe14d"; ctx.beginPath(); ctx.moveTo(x - w * 0.07, ry); ctx.lineTo(x, ry + fl * 0.6); ctx.lineTo(x + w * 0.07, ry); ctx.fill();
+      }
+      // the rocket: white body, red nose and fins, a round window
+      ctx.fillStyle = "#ff3d3d";
+      ctx.beginPath(); ctx.moveTo(x - w * 0.18, ry); ctx.lineTo(x - w * 0.34, ry); ctx.lineTo(x - w * 0.18, ry - w * 0.4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x + w * 0.18, ry); ctx.lineTo(x + w * 0.34, ry); ctx.lineTo(x + w * 0.18, ry - w * 0.4); ctx.fill();
+      ctx.fillStyle = "#f4f6fa"; ctx.fillRect(x - w * 0.18, ry - w * 1.2, w * 0.36, w * 1.2);
+      ctx.fillStyle = "#ff3d3d"; ctx.beginPath(); ctx.moveTo(x - w * 0.18, ry - w * 1.2); ctx.quadraticCurveTo(x, ry - w * 1.75, x + w * 0.18, ry - w * 1.2); ctx.fill();
+      ctx.fillStyle = "#3cf2ff"; ctx.beginPath(); ctx.arc(x, ry - w * 0.8, w * 0.1, 0, 7); ctx.fill();
+    });
+  }
+
   // A bubble vent: a round grate on the road with bubbles streaming up out of it.
   drawVent(ctx, s, F) {
     if (s.p1.camera.z <= this.camDepth) return;
@@ -1083,6 +1190,13 @@ export class Race {
         ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 - r1, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 - w2 - r2, y2);
         ctx.fillStyle = "rgba(60,242,255,0.35)"; quad(ctx, x1 - w1 - r1, yb, x1 - w1 - r1 * 0.5, yb, x2 - w2 - r2 * 0.5, y2, x2 - w2 - r2, y2);
         quad(ctx, x1 + w1 + r1 * 0.5, yb, x1 + w1 + r1, yb, x2 + w2 + r2, y2, x2 + w2 + r2 * 0.5, y2);
+        if (s.crater != null && w1 > 2) {
+          // 🕳️ Big Crater Jump (v1.24): a wide gray bowl with lit rims, deepest in the middle, far below the road
+          const u = s.crater, deep = Math.sin(Math.PI * u), cw1 = w1 * (2.2 + 0.6 * deep), cw2 = w2 * (2.2 + 0.6 * deep);
+          ctx.fillStyle = s.index % 2 ? "#565c6b" : "#4c5261"; quad(ctx, x1 - cw1, yb, x1 + cw1, yb, x2 + cw2, y2, x2 - cw2, y2);
+          ctx.fillStyle = "#07080f"; quad(ctx, x1 - w1 * 0.9 * deep, yb, x1 + w1 * 0.9 * deep, yb, x2 + w2 * 0.9 * deep, y2, x2 - w2 * 0.9 * deep, y2);
+          if (u < 0.1 || u > 0.9) { ctx.fillStyle = "#c9ced8"; quad(ctx, x1 - cw1, yb, x1 + cw1, yb, x2 + cw2, y2, x2 - cw2, y2); }
+        }
         continue;
       }
       if (s.finish) for (let c = 0; c < 10; c++) {

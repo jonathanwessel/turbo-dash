@@ -531,5 +531,56 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   check("the kick is a real push", KICK > 0.05 && KICK < 0.3, `KICK ${KICK}`);
 }
 
+/* ---------- 🌙 four more Moon tracks, one new thing each (v1.24) ---------- */
+{
+  const { STAR_BOOST, BIG_JUMP, rocketLift, starHeight, STAR_LAND } = await import("../src/engine.js");
+  const { THEMES, GOALS, trackOpen } = await import("../src/data.js");
+  const at = i => i * SEG - (15 * SEG + SEG * 0.5) + 1;   // a segment index as a race distance (START = 15)
+  const moon = TRACKS.filter(t => t.world === "moon").sort((a, b) => a.diff - b.diff);
+  check("the Moon has eight tracks, each a small step harder than the one before", moon.length === 8 && moon.every((t, i) => !i || (t.diff > moon[i - 1].diff && t.diff - moon[i - 1].diff <= 0.16)),
+    moon.map(t => t.id + " " + t.diff).join(", "));
+  check("each new Moon track opens with a win on a Moon track", ["meteor", "launch", "bigcrater", "darkside"].every(id => track(track(id).after)?.world === "moon"), "");
+  {
+    const S = { rank: 20, research: { moonTires: 1 }, best: {}, bestD: { "crater:normal": 1 }, opened: {}, parent: {} };
+    check("a win on Crater Hop opens Meteor Shower", trackOpen(S, track("meteor")) && !trackOpen(S, track("launch")), "");
+    S.best.meteor = 1;
+    check("the Moon goal counts a win on a new Moon track", GOALS.find(g => g.id === "moon1").have(S) === 1, "");
+  }
+  // 🌠 Meteor Shower: stars in a lane, a boost once a lap, and only on that track
+  {
+    const T = buildTrack(track("meteor")), stars = T.segs.filter(s => s.star != null);
+    check("Meteor Shower has fallen stars in the lanes", stars.length >= 8 && stars.every(s => [-0.55, 0, 0.55].includes(s.star) && !s.ramp && !s.gap && s.boost === null), `${stars.length} stars`);
+    check("no other track has stars", TRACKS.filter(t => t.id !== "meteor" && t.world !== "toy").every(t => !buildTrack(t).segs.some(s => s.star != null)), "");
+    const r = scene("meteor", { from: at(stars[0].index) - SEG * 3 }), s = r.T.segs[stars[0].index], p = r.player; p.offset = s.star; r.boostT = 0;
+    let boosts = 0, pops = 0;
+    run(r, 0.4, q => { if (q.boostT > STAR_BOOST - 0.05) boosts++; pops = q.popups.filter(u => u.text === "STAR BOOST!").length; });
+    const first = r.runStats.stars;
+    r.touch(r.T.segs[s.index]);
+    check("driving through a star gives a boost, once a lap", first === 1 && boosts > 0 && pops === 1 && r.runStats.stars === 1 && s.starLap === 0, `stars ${first} then ${r.runStats.stars}, popups ${pops}`);
+    check("a star is in the sky far ahead and on the road near", starHeight(STAR_LAND) === 0 && starHeight(STAR_LAND + 40) > 2000 && starHeight(5) === 0, "");
+    const r2 = scene("meteor"); check("a new race puts every star back", r2.T.segs.filter(q => q.star != null).every(q => q.starLap === -1), "");
+  }
+  // 🕳️ Big Crater Jump: its ramps throw a car higher than on Crater Hop, over a crater
+  {
+    const peak = id => {
+      const T = buildTrack(track(id)), k = T.segs.findIndex((s, i) => i > 30 && s.rampStart), r = scene(id, { from: at(k) - SEG * 2 }), p = r.player;
+      let top = 0, pop = false; run(r, 4, () => { top = Math.max(top, p.air); pop = pop || r.popups.some(u => u.text === "BIG JUMP!"); });
+      return { top, crater: r.T.segs.some(s => s.crater != null), pop };
+    };
+    const big = peak("bigcrater"), small = peak("crater");
+    check("Big Crater Jump throws the car much higher", big.top > small.top * 1.4 && big.crater && !small.crater && big.pop && !small.pop, `${Math.round(big.top)} vs ${Math.round(small.top)}`);
+    check("the big jump is a real step up", BIG_JUMP > 1.1 && BIG_JUMP < 1.5, `BIG_JUMP ${BIG_JUMP}`);
+  }
+  // 🚀 Rocket Launch: rockets beside the road that lift off as the car comes near
+  {
+    const T = buildTrack(track("launch")), rockets = T.segs.filter(s => s.rocket);
+    check("Rocket Launch has rockets beside the road", rockets.length >= 6 && rockets.every(s => Math.abs(s.rocket) > 1.8), `${rockets.length} rockets`);
+    check("no other track has rockets", TRACKS.filter(t => t.id !== "launch" && t.world !== "toy").every(t => !buildTrack(t).segs.some(s => s.rocket)), "");
+    check("a rocket waits, then lifts off faster and faster", rocketLift(90) === 0 && rocketLift(60) === 0 && rocketLift(30) > 0 && rocketLift(30) < 0.5 && rocketLift(0) === 1, "");
+  }
+  // 🔦 Dark Side Dash: headlights on, no sun and no Earth
+  check("Dark Side Dash is dark with headlights", THEMES[track("darkside").theme].lights === true && !THEMES[track("darkside").theme].earth && track("darkside").world === "moon", "");
+}
+
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);
 process.exit(failed ? 1 : 0);

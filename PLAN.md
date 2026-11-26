@@ -695,6 +695,20 @@ every test green.
 ### M3. Bigger worlds (one world per release, v1.14 to v1.17)
 Each new track adds one new thing to see. Each release re-checks the career run.
 - [ ] **Moon, 4 more tracks.** For example a meteor shower and a crater jump.
+  Notes (2026-11-26, in progress): decision, one new thing per track, each placed between two old Moon tracks in
+  difficulty (steps of 0.15) and opened by a win on the Moon track just below it, so the Moon Cup, Captain Luna and
+  the old chain are unchanged. 🌠 Meteor Shower (7.55, after Crater Hop): stars fall onto the road ahead and stay
+  glowing in a lane, and driving through one is a STAR BOOST (a pad's 1.2 s, once a lap). 🚀 Rocket Launch (7.85,
+  after Moonbase Loop): rockets beside the road lift off as the car comes near (only to see). 🕳️ Big Crater Jump
+  (8.15, after Asteroid Alley): the gaps are deep craters and the ramps throw cars 1.25x faster upward (about 1.6x as
+  high, BIG JUMP!). 🔦 Dark Side Dash (8.45, after Earthrise Run): a new `moondark` look with no sun or Earth, so the
+  headlights and lamps come on. Kinds from `scripts/probes/kinds.mjs`: Meteor Shower Grippy, Rocket Launch Fast, Big
+  Crater Jump Tough, Dark Side Dash Grippy. The Moon goal counts any Moon track now. End-game Best rule: Boost Buggy 11,
+  Loop Legend 11, Wind-Up Rocket 10 of 36 (a third is 12). Physics checks for each thing (seen red with each one
+  removed) and drawing checks (seen red with each drawing removed).
+  Stopped at: engine, data, tests and the three new emoji pictures are committed with `npm test` green. Left: the
+  sim gates and career (`npm run check`), race frames of the new tracks in the sweep, an explainer the first time a
+  star or a rocket shows (if the picture review says it is needed), the full sweep, the picture review, the release.
 - [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
