@@ -210,9 +210,16 @@ export const TRACKS = [
   { id: "earthrise", name: "Earthrise Run", icon: "🌍", diff: 8.3, laps: 2, seed: 131, theme: "moon", world: "moon", after: "asteroid" },
   { id: "darkside", name: "Dark Side Dash", icon: "🔦", diff: 8.45, laps: 2, seed: 139, theme: "moondark", world: "moon", after: "earthrise" },
   { id: "kelp",   name: "Kelp Forest",    icon: "🌿", diff: 8.6, laps: 2, seed: 149, theme: "ocean", world: "ocean" },
+  // 🌊 v1.25: four more Ocean tracks, each with one new thing to see, between the first four in difficulty (and one
+  // after Deep Trench). Each opens with a win on the Ocean track just below it, so the Cup, Captain Kraken and the old
+  // chain stay as they were.
+  { id: "sunken", name: "Sunken Ship",    icon: "🚢", diff: 8.75, laps: 2, seed: 151, theme: "ocean", world: "ocean", after: "kelp", shipTunnels: true },
   { id: "reef",   name: "Coral Reef",     icon: "🐠", diff: 8.9, laps: 2, seed: 157, theme: "ocean", world: "ocean", after: "kelp" },
+  { id: "whirlpool", name: "Whirlpool Way", icon: "🌀", diff: 9.05, laps: 2, seed: 167, theme: "ocean", world: "ocean", after: "reef", whirls: true },
   { id: "wreck",  name: "Shipwreck Bay",  icon: "⚓", diff: 9.2, laps: 2, seed: 163, theme: "ocean", world: "ocean", after: "reef" },
+  { id: "turtles", name: "Turtle Cove",   icon: "🐢", diff: 9.35, laps: 2, seed: 179, theme: "ocean", world: "ocean", after: "wreck", turtles: true },
   { id: "trench", name: "Deep Trench",    icon: "🐋", diff: 9.5, laps: 2, seed: 173, theme: "ocean", world: "ocean", after: "wreck" },
+  { id: "midnight", name: "Midnight Zone", icon: "🦑", diff: 9.65, laps: 2, seed: 199, theme: "oceandark", world: "ocean", after: "trench" },
   { id: "icecave",    name: "Ice Cave",       icon: "🧊", diff: 10.9, laps: 2, seed: 181, theme: "glacier", world: "glacier" },
   { id: "frozenlake", name: "Frozen Lake",    icon: "⛸️", diff: 11.2, laps: 2, seed: 191, theme: "glacier", world: "glacier", after: "icecave" },
   { id: "aurora",     name: "Aurora Pass",    icon: "🌌", diff: 11.5, laps: 2, seed: 193, theme: "glacier", world: "glacier", after: "frozenlake" },
@@ -233,6 +240,7 @@ const KIND_OF = {
   moonbase: "fast", asteroid: "fast", earthrise: "grippy", crater: "tough",
   meteor: "grippy", launch: "fast", bigcrater: "tough", darkside: "grippy",
   trench: "fast", kelp: "grippy", reef: "grippy", wreck: "tough",
+  sunken: "grippy", whirlpool: "tough", turtles: "fast", midnight: "grippy",
   frozenlake: "fast", aurora: "grippy", icecave: "tough", summit: "tough",
   grandprix: "fast", bedroom: "grippy", blocks: "tough", kitchen: "tough",
 };
@@ -308,6 +316,9 @@ export const THEMES = {
   moon:   { sky: ["#02030f", "#1a2550"], hills: ["#6a7080", "#4f5565"], grass: ["#8f95a3", "#868c9a"], rumble: ["#3cf2ff", "#2a2f3a"], road: ["#3d4250", "#3a3f4c"], lane: "#3cf2ff", sun: "#fff8e0", sprites: ["moonrock", "crater", "dish", "moonrock", "dome", "crater"], clouds: false, stars: true, earth: true, detail: 2 },
   // 🔦 v1.24: the Moon's dark side. No sun and no Earth in the sky, so the headlights and the lamps light the way
   moondark: { sky: ["#000003", "#050816"], hills: ["#1b1e26", "#15171e"], grass: ["#252832", "#21242d"], rumble: ["#3cf2ff", "#111318"], road: ["#1e2129", "#1b1e26"], lane: "#3cf2ff", sun: "#c8d0ff", noSun: true, sprites: ["moonrock", "crater", "dome", "moonrock", "dish", "crater"], clouds: false, stars: true, lights: true, detail: 2 },
+  // 🦑 v1.25: the Midnight Zone, deep under the sea. No light from the surface, so the headlights and the lamps light the
+  // way past glowing jellyfish
+  oceandark: { sky: ["#000610", "#03203a"], hills: ["#06303a", "#04232c"], grass: ["#4a4636", "#433f30"], rumble: ["#bff6ff", "#ff3fa4"], road: ["#1f2f3a", "#1c2b35"], lane: "#bff6ff", sun: "#d9fbff", sprites: ["jelly", "anemone", "jelly", "kelp", "jelly", "shellrock"], clouds: false, water: true, deep: true, lights: true, detail: 3 },
   ocean:  { sky: ["#062a4f", "#1b8fb8"], hills: ["#0f5d6e", "#0b4656"], grass: ["#d8c08a", "#cdb47c"], rumble: ["#ffffff", "#ff7a59"], road: ["#3a5566", "#36505f"], lane: "#bff6ff", sun: "#d9fbff", sprites: ["kelp", "coral", "kelp", "shellrock", "coral", "jelly", "treasure", "anemone"], clouds: false, water: true, detail: 3 },
   glacier: { sky: ["#0a1a4a", "#6aa8e8"], hills: ["#eef8ff", "#a9cdec"], grass: ["#f4faff", "#eaf4fc"], rumble: ["#2fa8ff", "#ffffff"], road: ["#a6d8f2", "#a0d2ec"], lane: "#3b7fc4", sun: "#e8fbff", sprites: ["icepine", "icecrystal", "igloo", "icepine", "penguin", "snowfort", "icecrystal", "icepine"], clouds: false, aurora: true, ice: true, snow: true, detail: 4 },
   toy:    { sky: ["#bfe4ff", "#e8f6ff"], hills: ["#ffffff", "#ffffff"], grass: ["#d9a066", "#cf9459"], rumble: ["#ff7a1a", "#ffffff"], road: ["#ff7a1a", "#ff7a1a"], lane: "#ffffff", sun: "#fffbe6", sprites: ["bush"], clouds: false },
@@ -390,7 +401,7 @@ export const GOALS = [
   { id: "rank10", icon: "⭐", name: "Reach Rank 10", goal: 10, reward: 2000, have: S => S.rank },
   { id: "moon1", icon: "🌙", name: "Win a race on the Moon", goal: 1, reward: 5000, have: S => TRACKS.filter(t => t.world === "moon" && S.best[t.id] === 1).length },
   { id: "rings25", icon: "⭕", name: "Fly through 25 boost rings", goal: 25, reward: 3000, have: S => S.stats.rings || 0 },
-  { id: "ocean1", icon: "🌊", name: "Win a race under the sea", goal: 1, reward: 8000, have: S => ["kelp", "reef", "wreck", "trench"].filter(id => S.best[id] === 1).length },
+  { id: "ocean1", icon: "🌊", name: "Win a race under the sea", goal: 1, reward: 8000, have: S => TRACKS.filter(t => t.world === "ocean" && S.best[t.id] === 1).length },
   { id: "glacier1", icon: "🧊", name: "Win a race on the ice", goal: 1, reward: 12000, have: S => ["icecave", "frozenlake", "aurora", "summit"].filter(id => S.best[id] === 1).length },
   { id: "drift50", icon: "❄️", name: "Do 50 drift boosts", goal: 50, reward: 6000, have: S => S.stats.drifts || 0 },
   { id: "toy1", icon: "🧸", name: "Win a race in Toy Track World", goal: 1, reward: 25000, have: S => ["bedroom", "blocks", "kitchen", "grandprix"].filter(id => S.best[id] === 1).length },

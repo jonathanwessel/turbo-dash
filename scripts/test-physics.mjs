@@ -169,7 +169,7 @@ const run = (r, sec, each) => { for (let t = 0; t < sec; t += STEP) { r.update(S
   const classic = TRACKS.filter(t => t.world !== "toy");
   for (const t of classic) {
     const segs = buildTrack(t).segs, tun = segs.filter(s => s.tunnel);
-    if (THEMES[t.theme].tunnels) check("tunnels on " + t.id, tun.length > 0, "a tunnel theme with no tunnel");
+    if (THEMES[t.theme].tunnels || t.shipTunnels) check("tunnels on " + t.id, tun.length > 0, "a tunnel theme with no tunnel");   // 🚢 v1.25: Sunken Ship
     else check("no tunnels on " + t.id, tun.length === 0, `${tun.length} tunnel pieces`);
     check("tunnels clear on " + t.id, tun.every(s => !s.ramp && !s.gap && !s.finish && s.boost === null && !s.rail && !s.sprites.length), "a tunnel over a ramp, gap, pad, rail, finish or sprite");
   }
@@ -580,6 +580,73 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
   }
   // 🔦 Dark Side Dash: headlights on, no sun and no Earth
   check("Dark Side Dash is dark with headlights", THEMES[track("darkside").theme].lights === true && THEMES[track("darkside").theme].noSun === true && !THEMES[track("darkside").theme].earth && track("darkside").world === "moon", "");
+}
+
+/* ---------- 🌊 four more Ocean tracks, one new thing each (v1.25) ---------- */
+{
+  const { WHIRL_KEEP, WHIRL_REACH, SPIN_T, turtleX } = await import("../src/engine.js");
+  const { THEMES, GOALS, trackOpen } = await import("../src/data.js");
+  const at = i => i * SEG - (15 * SEG + SEG * 0.5) + 1;   // a segment index as a race distance (START = 15)
+  const sea = TRACKS.filter(t => t.world === "ocean").sort((a, b) => a.diff - b.diff), NEW = ["sunken", "whirlpool", "turtles", "midnight"];
+  check("the Ocean has eight tracks, each a small step harder than the one before", sea.length === 8 && sea.every((t, i) => !i || (t.diff > sea[i - 1].diff && t.diff - sea[i - 1].diff <= 0.16)),
+    sea.map(t => t.id + " " + t.diff).join(", "));
+  check("each new Ocean track opens with a win on an Ocean track", NEW.every(id => track(track(id).after)?.world === "ocean"), "");
+  {
+    const S = { rank: 25, research: { moonTires: 1, snorkel: 1 }, best: {}, bestD: { "kelp:normal": 1 }, opened: {}, parent: {} };
+    check("a win on Kelp Forest opens Sunken Ship", trackOpen(S, track("sunken")) && !trackOpen(S, track("whirlpool")), "");
+    S.best.midnight = 1;
+    check("the Ocean goal counts a win on a new Ocean track", GOALS.find(g => g.id === "ocean1").have(S) === 1, "");
+  }
+  // 🚢 Sunken Ship: its tunnels are ships, and no other track has a ship
+  {
+    const T = buildTrack(track("sunken")), tun = T.segs.filter(q => q.tunnel), starts = T.segs.filter(q => q.tunnelStart).length;
+    check("Sunken Ship drives through ships", starts >= 3 && tun.every(q => q.ship), `${starts} ships, ${tun.length} pieces`);
+    check("no other track has a ship tunnel", TRACKS.filter(t => t.id !== "sunken" && t.world !== "toy").every(t => !buildTrack(t).segs.some(q => q.ship)), "");
+  }
+  // 🌀 Whirlpool Way: whirlpools in a lane that pull, spin and slow, once a lap, and only there
+  {
+    const T = buildTrack(track("whirlpool")), tops = T.segs.filter(q => q.whirlTop);
+    check("Whirlpool Way has whirlpools in the lanes, clear of ramps, pads, boxes and coins", tops.length >= 6 && tops.every(q => [-0.55, 0, 0.55].includes(q.whirl)) &&
+      T.segs.filter(q => q.whirl != null).every(q => !q.ramp && !q.gap && !q.boxes && q.boost === null && !q.coins.length && q.vent == null), `${tops.length} whirlpools`);
+    check("no other track has whirlpools", TRACKS.filter(t => t.id !== "whirlpool" && t.world !== "toy").every(t => !buildTrack(t).segs.some(q => q.whirl != null)), "");
+    // the pull: the same drive with and without the whirlpool, not steering, from beside it
+    const w = tops[1], lane = w.whirl, side = lane > 0 ? -1 : 1, start = lane + side * 0.5;
+    const closest = (pull, steer) => {
+      const r = scene("whirlpool", { from: at(w.index - 12) }); r.player.offset = start; r.player.speed = r.stats.maxSpeed * 0.6;
+      const zone = r.T.segs.filter(q => q.whirlC === w.index), keep = zone.map(q => q.whirl);
+      if (!pull) zone.forEach(q => { q.whirl = null; });
+      let best = 9; run(r, 0.9, q => { if (steer) q.input[side < 0 ? "left" : "right"] = true; if (q.segAt(q.player.dist).index <= w.index) best = Math.min(best, Math.abs(q.player.offset - lane)); });
+      zone.forEach((q, k) => { q.whirl = keep[k]; });
+      return best;
+    };
+    const free = closest(false, false), pulled = closest(true, false), away = closest(true, true);
+    check("a whirlpool pulls a car that does not steer toward its middle", pulled < free - 0.15, `${pulled.toFixed(2)} vs ${free.toFixed(2)} without it`);
+    check("steering away gets out of the pull", away > pulled + 0.2 && away > 0.35, `${away.toFixed(2)} steering away`);
+    check("the pull reaches about a lane", WHIRL_REACH > 0.5 && WHIRL_REACH < 1, `WHIRL_REACH ${WHIRL_REACH}`);
+    // the middle: a spin and a slowdown, once a lap; Turbo keeps the speed
+    const r = scene("whirlpool", { from: at(w.index) }), p = r.player; p.offset = lane; const v = p.speed = r.stats.maxSpeed;
+    r.touch(w);
+    const once = p.speed, spun = r.spinT > 0 && r.popups.some(u => u.text === "SPIN!") && r.runStats.whirls === 1;
+    r.touch(r.T.segs[w.index + 1]);
+    check("the middle of a whirlpool spins the car and slows it, once a lap", spun && Math.abs(once / v - WHIRL_KEEP) < 0.01 && p.speed === once && r.runStats.whirls === 1, `kept ${(once / v).toFixed(3)}, whirls ${r.runStats.whirls}`);
+    check("a spin lasts under a second", SPIN_T > 0.3 && SPIN_T <= 1, `SPIN_T ${SPIN_T}`);
+    const r2 = scene("whirlpool", { from: at(w.index) }); r2.player.offset = lane; r2.nitroT = 1; const v2 = r2.player.speed; r2.touch(w);
+    check("with Turbo on, a whirlpool spins the car but keeps its speed", r2.player.speed === v2 && r2.spinT > 0, "");
+    const r3 = scene("whirlpool", { from: at(w.index) }); r3.player.offset = lane + 0.6 * side; r3.touch(w);
+    check("beside the middle there is no spin", !(r3.spinT > 0), "");
+  }
+  // 🐢 Turtle Cove: turtles that swim across high over the road as the car comes near
+  {
+    const T = buildTrack(track("turtles")), turtles = T.segs.filter(q => q.turtle);
+    check("Turtle Cove has sea turtles", turtles.length >= 8 && turtles.every(q => q.turtle === 1 || q.turtle === -1), `${turtles.length} turtles`);
+    check("no other track has turtles", TRACKS.filter(t => t.id !== "turtles" && t.world !== "toy").every(t => !buildTrack(t).segs.some(q => q.turtle)), "");
+    check("a turtle waits beside the road, then swims across it", turtleX(1, 120) === 2.8 && turtleX(1, 15) === -2.8 && Math.abs(turtleX(-1, 52.5)) < 0.01 && turtleX(-1, 120) === -2.8, "");
+  }
+  // 🦑 Midnight Zone: deep and dark, headlights on, still under the sea
+  {
+    const th = THEMES[track("midnight").theme];
+    check("the Midnight Zone is dark and deep with headlights", th.deep === true && th.lights === true && th.water === true && track("midnight").world === "ocean" && th !== THEMES.ocean, "");
+  }
 }
 
 console.log(failed ? `\n${failed} physics check(s) FAILED (${passed} passed)` : `\nAll ${passed} physics checks passed`);

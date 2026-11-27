@@ -415,6 +415,7 @@ function startRace(track) {
   { const gs = isPreview() ? 0 : goodStudentPct(S, raceStartAt); $("h-gs").hidden = !gs; $("h-gs").textContent = "📚 +" + gs + "%"; }
   nitroToldAt = 0; coach = S.races === 0 && !isPreview() ? { t: 0, l: 0, r: 0, stage: "steer" } : !isPreview() && !tipSeen("horn") ? { t: 0, stage: "hwait" } : null; paintCoach();
   starTip = !!track.stars && !tipSeen("stars");   // 🌠 v1.24: the first Meteor Shower race says what a star does, at GO
+  whirlTip = !!track.whirls && !tipSeen("whirl");   // 🌀 v1.25: the first Whirlpool Way race says to steer away, at GO
   show(null); setRaceUi(true); requestAnimationFrame(paintCoach); setRain(!isPreview() && weather === "rain"); setSong("race", track.theme); setEngineVoice(car.type); setWater(!!race.phys.water); $("hud").classList.toggle("trial", trial);
   if (trial || boss || isPreview()) $("btn-auto").hidden = true;
   buildProgress(race.rivals.length + 1); lastCount = null; hudCache = {};
@@ -482,11 +483,12 @@ function tickCoach(dt, h) {
   if (coach.stage === "horn") { coach.ht += dt; if (coach.ht > 10) { coach.stage = "done"; paintCoach(); } }
   if (h.state === "done") { coach.stage = "done"; paintCoach(); }
 }
-let starTip = false;
+let starTip = false, whirlTip = false;
 function updateHud(dt) {
   const h = race.hud();
   tickCoach(dt, h);
   if (starTip && h.state === "race") { starTip = false; markTip("stars"); toast("🌠 Drive through a ⭐ to zoom!"); }
+  if (whirlTip && h.state === "race") { whirlTip = false; markTip("whirl"); toast("🌀 Steer away from whirlpools!"); }
   if (h.trial) { setText("h-pos", h.time.toFixed(1)); setText("h-suffix", "s"); } else { setText("h-pos", h.pos); setText("h-suffix", suffix(h.pos)); } setText("h-lap", h.lap); setText("h-laps", h.laps); setText("h-coins", h.coins);
   // progress dots move with transform (no page layout every frame), and only when they moved a whole pixel
   if (!trackW) trackW = $("h-track").clientWidth;

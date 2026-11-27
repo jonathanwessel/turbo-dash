@@ -765,6 +765,21 @@ Each new track adds one new thing to see. Each release re-checks the career run.
 - [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool. Each world box runs
   `node scripts/probes/best-table.mjs` once its tracks exist (`npm test` fails until the special car's power has a
   number on each new track, and each Glacier track a Tough number), and `npm run sim -- best` after.
+  Notes: decision, the Moon box's pattern: one new thing per track, each 0.15 above an old Ocean track and opened by a
+  win on it (the last one after Deep Trench), so the Ocean Cup, Captain Kraken and the old chain are unchanged. 🚢
+  Sunken Ship (8.75, after Kelp Forest): more and longer tunnels, each through a sunken ship (planks, ribs, glowing round
+  windows, a mast and flag on its front). Only to see. 🌀 Whirlpool Way (9.05, after Coral Reef): whirlpools in one lane
+  pull a car toward the middle (1.1 lane-widths a second from up to 0.8 away, half for Fins and the Deep Diver); the
+  middle spins the car round once and keeps 85% of its speed, once a lap (Turbo or a shield keeps the speed). Rivals slow
+  to 90% there. 🐢 Turtle Cove (9.35, after Shipwreck Bay): sea turtles swim across high over the road as the car comes
+  near. Only to see. 🦑 Midnight Zone (9.65, after Deep Trench): a new `oceandark` look with no surface light, glowing
+  fish and specks, headlights on. Kinds from `scripts/probes/kinds.mjs`: Grippy, Tough, Fast, Grippy. The Ocean goal
+  counts any Ocean track. The Deep Diver's power measured with `node scripts/probes/best-table.mjs` on each new track
+  (2.5% to 4.8%; old numbers unchanged). The first Whirlpool Way race says "🌀 Steer away from whirlpools!" at GO, once
+  (tip `whirl`). Decision: no hint for the ship, the turtles or the dark (only to see). Physics and drawing checks for
+  each new thing, each seen red with the thing removed.
+  Stopped at: step 1 committed (tracks, physics, drawing, tip, sweep frames `race-ocean-ship`, `-whirl`, `-turtle`,
+  `-dark`, `npm test` green). Left: look at the sweep's race frames, `npm run sim` and `npm run career`, the release.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
 - [ ] **Stunt Show in Toy World.** A mode scored on loops, jumps and air time, not on finishing place, with

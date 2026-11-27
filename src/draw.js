@@ -1013,7 +1013,7 @@ export function drawBackground(ctx, W, H, th, skyX, hillX, lift, t, lite = false
     ctx.restore();
   }
   if (th.aurora) aurora(ctx, W, H, hz, skyX, t, lite);
-  if (th.water) underwater(ctx, W, H, hz, skyX, t);
+  if (th.water) underwater(ctx, W, H, hz, skyX, t, th.deep);
   else if (th.cave) caveRoof(ctx, W, H, hz, skyX, t);
   else if (!th.noSun) {   // noSun: the Moon's dark side (v1.24)
     const sx = W * (0.78 - Math.sin(skyX * Math.PI * 2) * 0.04), sy = hz * (th.sunY || 0.32);
@@ -1097,7 +1097,8 @@ function aurora(ctx, W, H, hz, skyX, t, lite = false) {
 }
 
 /* Under the sea (graphics ladder step 3): the bright surface far above, light rays, schools of fish, rising bubbles. */
-function underwater(ctx, W, H, hz, skyX, t) {
+function underwater(ctx, W, H, hz, skyX, t, deep = false) {
+  if (deep) { midnight(ctx, W, H, hz, skyX, t); return; }
   const sg = ctx.createLinearGradient(0, 0, 0, hz * 0.3);
   sg.addColorStop(0, "rgba(210,255,255,0.6)"); sg.addColorStop(1, "rgba(210,255,255,0)");
   ctx.fillStyle = sg; ctx.fillRect(0, 0, W, hz * 0.3);
@@ -1122,6 +1123,31 @@ function underwater(ctx, W, H, hz, skyX, t) {
   }
   ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = Math.max(1, H * 0.002);
   for (let i = 0; i < 24; i++) {
+    const bx = (((i * 0.137 + skyX * 0.4) % 1) + 1) % 1 * W + Math.sin(t * 2 + i) * H * 0.01, by = hz - ((t * 0.05 * (1 + i % 3) + i * 0.071) % 1) * hz, br = H * (0.004 + (i % 4) * 0.002);
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
+  }
+}
+
+/* 🦑 The Midnight Zone (v1.25): so deep that no light comes down from the surface. Little glowing fish and specks
+   drift in the dark, and the bubbles still rise. */
+function midnight(ctx, W, H, hz, skyX, t) {
+  for (let i = 0; i < 40; i++) {
+    const sx = (((i * 0.137 + skyX * 0.3 + t * 0.004 * (1 + i % 3)) % 1) + 1) % 1 * W, sy = (i * 0.618 % 1) * hz * 0.9 + Math.sin(t + i) * H * 0.01;
+    ctx.fillStyle = i % 3 ? "rgba(120,255,230,0.55)" : "rgba(255,150,230,0.55)";
+    ctx.globalAlpha = 0.4 + 0.6 * Math.max(0, Math.sin(t * 1.5 + i * 2.1)); ell(ctx, sx, sy, H * 0.003, H * 0.003);
+  }
+  ctx.globalAlpha = 1;
+  for (let s = 0; s < 2; s++) {
+    const fy = hz * (0.45 + s * 0.2), dir = s % 2 ? -1 : 1, u = (((t * 0.025 * (1 + s * 0.4) + s * 0.37 + skyX * 0.5) % 1.3) + 1.3) % 1.3 - 0.15;
+    const fx0 = (dir > 0 ? u : 1 - u) * W, fs = H * 0.01;
+    for (let k = 0; k < 5; k++) {
+      const fx = fx0 - dir * k * H * 0.035, fyk = fy + Math.sin(t * 2 + k) * H * 0.008 + (k % 3 - 1) * H * 0.014;
+      ctx.fillStyle = "rgba(40,70,90,0.9)"; ell(ctx, fx, fyk, fs * 1.4, fs * 0.8);
+      ctx.fillStyle = "#9ffcff"; ell(ctx, fx + dir * fs * 0.9, fyk - fs * 0.2, fs * 0.3, fs * 0.3);
+    }
+  }
+  ctx.strokeStyle = "rgba(200,255,255,0.35)"; ctx.lineWidth = Math.max(1, H * 0.002);
+  for (let i = 0; i < 18; i++) {
     const bx = (((i * 0.137 + skyX * 0.4) % 1) + 1) % 1 * W + Math.sin(t * 2 + i) * H * 0.01, by = hz - ((t * 0.05 * (1 + i % 3) + i * 0.071) % 1) * hz, br = H * (0.004 + (i % 4) * 0.002);
     ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
   }

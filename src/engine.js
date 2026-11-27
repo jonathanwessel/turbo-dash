@@ -40,6 +40,14 @@ export const rocketLift = ahead => { const u = clamp((35 - ahead) / 35, 0, 1); r
    STAR_LAND segments ahead, well before the car gets there */
 export const STAR_LAND = 45;
 export const starHeight = ahead => Math.max(0, ahead - STAR_LAND) * 90;
+/* 🌀 Whirlpool Way (v1.25): a whirlpool in one lane pulls a car toward its middle (WHIRL_PULL road half-widths a
+   second, from up to WHIRL_REACH away). A car that reaches the middle spins round once (SPIN_T seconds) and slows
+   (WHIRL_KEEP of its speed). Steering away is always enough to get out. */
+export const WHIRL_PULL = 1.1, WHIRL_REACH = 0.8, WHIRL_KEEP = 0.85, SPIN_T = 0.8;
+const WHIRL_LEN = 12;   // segments of pull before and after the middle
+/* 🐢 Turtle Cove (v1.25): where a sea turtle swims (road half-widths across, from the side it starts on) when the car
+   is `ahead` segments before it. It waits far out, then crosses high over the road as the car comes near. */
+export const turtleX = (side, ahead) => { const u = clamp((90 - ahead) / 75, 0, 1); return side * (2.8 - 5.6 * u); };
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeIn = (a, b, p) => a + (b - a) * p * p;
 const easeInOut = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
@@ -201,13 +209,27 @@ export function buildTrack(track) {
     segs[k].snow = [-0.55, 0, 0.55][Math.floor(r() * 3)];
     i = k;
   }
-  if (th.tunnels) for (let i = START + 120; i < segs.length - 80; i += 260 + Math.floor(r() * 160)) {
-    const len = 20 + Math.floor(r() * 21);
+  // 🌀 Whirlpool Way (v1.25): whirlpools in one lane, each pulling over WHIRL_LEN segments before and after its middle
+  if (track.whirls) for (let i = START + 70; i < segs.length - 60; i += 95 + Math.floor(r() * 55)) {
+    let k = i;
+    while (k < segs.length - 60 && segs.slice(k - WHIRL_LEN - 2, k + WHIRL_LEN + 2).some(q => q.ramp || q.gap || q.boxes || q.boost !== null || q.coins.length || q.vent != null || q.whirl != null || q.finish)) k++;
+    if (k >= segs.length - 60) break;
+    const lane = [-0.55, 0, 0.55][Math.floor(r() * 3)];
+    for (let j = -WHIRL_LEN; j <= WHIRL_LEN; j++) { segs[k + j].whirl = lane; segs[k + j].whirlC = k; }
+    segs[k].whirlTop = true;
+    i = k + WHIRL_LEN;
+  }
+  // 🐢 Turtle Cove (v1.25): sea turtles that swim across high over the road as the car comes near. Only to see.
+  if (track.turtles) for (let i = START + 40; i < segs.length - 30; i += 70 + Math.floor(r() * 50)) segs[i].turtle = r() < 0.5 ? -1 : 1;
+  // 🚢 Sunken Ship (v1.25): tunnels through the hulls of sunken ships, more and longer than on other tracks
+  const tun = th.tunnels || (track.shipTunnels ? "ship" : null);
+  if (tun) for (let i = START + 120; i < segs.length - 80; i += (tun === "ship" ? 150 + Math.floor(r() * 90) : 260 + Math.floor(r() * 160))) {
+    const len = tun === "ship" ? 26 + Math.floor(r() * 16) : 20 + Math.floor(r() * 21);
     let k = i;
     const ok = k => segs.slice(k - 6, k + len + 6).every(q => Math.abs(q.curve) < 0.9 && !q.ramp && !q.gap && q.boost === null && !q.finish && !q.rail);
     while (k < segs.length - 80 && !ok(k)) k++;
     if (k >= segs.length - 80) break;
-    for (let j = 0; j < len; j++) { const q = segs[k + j]; q.tunnel = true; q.sprites = []; }
+    for (let j = 0; j < len; j++) { const q = segs[k + j]; q.tunnel = true; q.sprites = []; if (tun === "ship") q.ship = true; }
     segs[k].tunnelStart = true; segs[k + len - 1].tunnelEnd = true;
     i = k + len;
   }
@@ -262,6 +284,7 @@ export class Race {
     this.drafting = false; this.draftShown = false; this.scrapeCD = 0; this.cornerTip = false;
     this.skids = new Map(); this.camDepth = CAM_DEPTH; this.fastT = 0; this.inTunnel = false; this.lite = this.lite || false; this.quality = this.quality || 3;
     this.kickT = 0; this.riding = false;   // 🌟 special car powers (v1.23)
+    this.spinT = 0; this.whirlHit = null;   // 🌀 v1.25
     this.driftT = 0; this.wildT = 0; this.steerIn = 0; this.lastSpeed = 0; this.braking = false; this.camOff = null; this.lastBonkT = -9;   // the camera starts centered on the car
     this.raceSeq = (this.raceSeq || 0) + 1; this.rand = seededRng(strSeed(track.id) * 97 + this.raceSeq);   // rival lanes and puddles: seeded
     this.luck = seededRng(strSeed(track.id) * 131 + this.raceSeq + 7);   // power-up picks, boss Turbo timing, puddle shoves (v1.11)
@@ -462,6 +485,12 @@ export class Race {
     // gentle pull back toward the road (stronger with steering help)
     if (!auto && steer === 0 && this.pull > 0 && Math.abs(p.offset) > 0.8 - 0.15 * this.pull) p.offset -= Math.sign(p.offset) * dt * (0.3 + 0.4 * this.pull);
     if (!flying && seg.current && !p.finished) p.offset += seg.current * dt * 1.0 * (1 - (S.fins || 0));
+    // 🌀 a whirlpool pulls the car toward its middle (Fins research and the Deep Diver feel half of it)
+    if (!flying && seg.whirl != null && !p.finished && this.state !== "demo") {
+      const d = seg.whirl - p.offset;
+      if (Math.abs(d) < WHIRL_REACH) p.offset += Math.sign(d) * Math.min(Math.abs(d), WHIRL_PULL * dt * (1 - 0.5 * (S.fins || 0)));
+    }
+    this.spinT -= dt;
     p.offset = clamp(p.offset, -2.6, 2.6);
     this.scrapeCD -= dt; p.landT -= dt;
     if (seg.barrier && !flying && p.offset * seg.barrier > BARRIER) {
@@ -565,7 +594,8 @@ export class Race {
       else if (this.segAt(c.dist).ramp && c.speed > BASE_MAX * 0.3) { c.air = 1; c.vy = JUMP_VY * jumpFor(c.speed) * this.jumpK; }
       else if (this.segAt(c.dist).gap) { c.air = 1; c.vy = JUMP_VY * 0.55; c.speed *= 0.7; }
       else if (this.segAt(c.dist).vent != null && Math.abs(c.offset - this.segAt(c.dist).vent) < 0.4) { c.air = 1; c.vy = JUMP_VY * 0.85; }
-      else { const rs = this.segAt(c.dist); if (rs.snow != null && c.snowAt !== rs.index && Math.abs(c.offset - rs.snow) < 0.4) { c.snowAt = rs.index; c.speed *= 0.88; } }
+      else { const rs = this.segAt(c.dist); if (rs.snow != null && c.snowAt !== rs.index && Math.abs(c.offset - rs.snow) < 0.4) { c.snowAt = rs.index; c.speed *= 0.88; }
+        if (rs.whirl != null && Math.abs(rs.index - rs.whirlC) <= 2 && c.whirlAt !== rs.whirlC && Math.abs(c.offset - rs.whirl) < 0.3) { c.whirlAt = rs.whirlC; c.speed *= 0.9; } }
       if (this.state !== "demo" && !c.finished && c.dist >= this.finishDist) { c.finished = true; this.order.push(c); }
 
       // bumping into each other
@@ -622,6 +652,16 @@ export class Race {
       if (s.starLap !== lap) {
         s.starLap = lap; this.boostT = Math.max(this.boostT, STAR_BOOST); this.runStats.stars = (this.runStats.stars || 0) + 1;
         this.hooks.sfx("boost"); this.popup("STAR BOOST!", "#ffe14d"); this.sparks(0.5, 0.86, 16, "#ffe14d");
+      }
+    }
+    // 🌀 the middle of a whirlpool: the car spins round once and slows, once a lap (a shield or Turbo keeps its speed)
+    if (s.whirl != null && Math.abs(s.index - s.whirlC) <= 2 && p.air < 150 && Math.abs(p.offset - s.whirl) < 0.18 + CAR_W * 0.3) {
+      const key = s.whirlC + ":" + Math.floor(p.dist / this.T.length);
+      if (this.whirlHit !== key) {
+        this.whirlHit = key; this.spinT = SPIN_T; this.runStats.whirls = (this.runStats.whirls || 0) + 1;
+        if (this.shieldT <= 0 && this.nitroT <= 0) p.speed *= bumpKeep(WHIRL_KEEP, S);
+        this.hooks.sfx("bump"); this.popup("SPIN!", "#bff6ff");
+        for (let k = 0; k < 14; k++) this.parts.push({ x: 0.5 + (Math.random() - 0.5) * 0.25, y: 0.93, vx: (Math.random() - 0.5) * 0.5, vy: -0.2 - Math.random() * 0.3, life: 0.9, c: "bubble", r: 0.006 + Math.random() * 0.01 });
       }
     }
     if (s.vent != null && p.air <= 0 && Math.abs(p.offset - s.vent) < 0.4) {
@@ -787,6 +827,8 @@ export class Race {
       if (s.snow != null) this.drawSnowbank(ctx, s, F);
       if (s.star != null && s.starLap !== Math.floor(p.dist / L)) this.drawStar(ctx, s, F, n);
       if (s.rocket) this.drawRocket(ctx, s, F, n);
+      if (s.whirlTop) this.drawWhirlpool(ctx, s, F);
+      if (s.turtle) this.drawTurtle(ctx, s, F, n);
       // things on this segment. Past a hill crest only the part above the crest shows (one clip for the whole
       // segment), and a thing whose top is still below the crest is skipped: it would paint nothing (v1.10)
       const clip = s.clip, cut = sy > clip;
@@ -846,7 +888,10 @@ export class Race {
     const roll = p.air > 0 ? 0 : clamp(-pseg.curve * Math.min(1, p.speed / BASE_MAX) * 0.08, -0.35, 0.35);
     const lean = this.steerVis * Math.min(1, p.speed / BASE_MAX) * (p.air > 0 ? 0.3 : 1) + roll;
     const squash = p.landT > 0 ? Math.sin((p.landT / 0.35) * Math.PI) * Math.min(1, p.landV / JUMP_VY) : 0;
-    drawCar(ctx, W / 2 + carShift, H - H * 0.02 + bounce - lift, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900, lean, squash, brake: this.braking && this.state === "race", flat: this.lite });
+    const spinA = this.spinT > 0 ? (1 - this.spinT / SPIN_T) * Math.PI * 2 : 0, carY = H - H * 0.02 + bounce - lift;   // 🌀 v1.25
+    if (spinA) { ctx.save(); ctx.translate(W / 2 + carShift, carY - pw * 0.3); ctx.rotate(spinA); ctx.translate(-(W / 2 + carShift), -(carY - pw * 0.3)); }
+    drawCar(ctx, W / 2 + carShift, carY, pw, p.def, { t, steer: this.steerVis, nitro: this.nitroT > 0 || this.boostT > 0, spin: p.dist / 900, lean, squash, brake: this.braking && this.state === "race", flat: this.lite });
+    if (spinA) ctx.restore();
     if (this.autoTarget !== null) {
       const segs2 = this.T.segs, pidx = pseg.index;
       ctx.fillStyle = "rgba(255,255,255,0.8)";
@@ -982,7 +1027,7 @@ export class Race {
     if (s.p1.camera.z <= this.camDepth || s.p2.camera.z <= this.camDepth) return;
     const a = s.p1.screen, b = s.p2.screen, ha = a.scale * 2600 * F, hb = b.scale * 2600 * F;
     if (a.w < 1) return;
-    const col = { rock: ["#8a5232", "#6e3f25"], ice: ["#cfe6f7", "#a9cbe6"], cave: ["#2a1410", "#1d0d0a"], crystal: ["#3a2a6a", "#2a1d50"], brick: ["#6a3a32", "#4f2a24"] }[th.tunnels] || ["#555", "#444"];
+    const col = { rock: ["#8a5232", "#6e3f25"], ice: ["#cfe6f7", "#a9cbe6"], cave: ["#2a1410", "#1d0d0a"], crystal: ["#3a2a6a", "#2a1d50"], brick: ["#6a3a32", "#4f2a24"], ship: ["#7a5230", "#5e3d22"] }[s.ship ? "ship" : th.tunnels] || ["#555", "#444"];
     this.clipped(ctx, s, a.y, () => {
       ctx.fillStyle = col[s.alt];
       quad(ctx, a.x - a.w * 1.3, a.y, b.x - b.w * 1.3, b.y, b.x - b.w * 1.3, b.y - hb, a.x - a.w * 1.3, a.y - ha);
@@ -990,6 +1035,7 @@ export class Race {
       ctx.fillStyle = col[1];
       quad(ctx, a.x - a.w * 1.3, a.y - ha, a.x + a.w * 1.3, a.y - ha, b.x + b.w * 1.3, b.y - hb, b.x - b.w * 1.3, b.y - hb);
       if (s.index % 4 === 0) { ctx.fillStyle = "#ffb347"; ctx.beginPath(); ctx.ellipse(a.x, a.y - ha * 0.97, a.w * 0.12, Math.max(1, ha * 0.02), 0, 0, 7); ctx.fill(); }
+      if (s.ship) this.drawShipHull(ctx, s, a, b, ha, hb);
       if (s.tunnelEnd) {
         // the way out: a rim of rock around the opening, so the exit reads as a hole in the hill (v1.11)
         const rim = Math.max(1, a.w * 0.12);
@@ -1004,6 +1050,19 @@ export class Race {
         ctx.moveTo(a.x - a.w * 1.3, a.y); ctx.lineTo(a.x - a.w * 1.3, a.y - ha); ctx.lineTo(a.x + a.w * 1.3, a.y - ha); ctx.lineTo(a.x + a.w * 1.3, a.y); ctx.closePath();
         ctx.fill("evenodd");
         ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(a.x - a.w * 1.45, a.y - ha * 1.12, a.w * 2.9, ha * 0.12);
+        if (s.ship) {
+          // 🚢 the ship's side: dark plank lines, a row of glowing round windows, a mast and a torn flag
+          ctx.fillStyle = "rgba(40,22,10,0.55)";
+          for (let k = 1; k < 7; k++) ctx.fillRect(a.x - a.w * 4, a.y - ha * 1.7 * k / 7, a.w * 8, Math.max(1, ha * 0.02));
+          for (let k = -3; k <= 3; k++) {
+            if (!k) continue;
+            const px = a.x + k * a.w * 1.05, py = a.y - ha * 1.38, pr = Math.max(1, a.w * 0.16);
+            ctx.fillStyle = "#3a2414"; ctx.beginPath(); ctx.arc(px, py, pr * 1.3, 0, 7); ctx.fill();
+            ctx.fillStyle = "#ffd27a"; ctx.beginPath(); ctx.arc(px, py, pr, 0, 7); ctx.fill();
+          }
+          ctx.fillStyle = "#4a2f1a"; ctx.fillRect(a.x + a.w * 1.8, a.y - ha * 2.9, Math.max(1, a.w * 0.12), ha * 1.25);
+          ctx.fillStyle = "rgba(240,240,230,0.8)"; quad(ctx, a.x + a.w * 1.92, a.y - ha * 2.85, a.x + a.w * 2.9, a.y - ha * 2.6, a.x + a.w * 2.6, a.y - ha * 2.35, a.x + a.w * 1.92, a.y - ha * 2.3);
+        }
       }
     });
   }
@@ -1089,6 +1148,67 @@ export class Race {
       ctx.fillStyle = "#f4f6fa"; ctx.fillRect(x - w * 0.18, ry - w * 1.2, w * 0.36, w * 1.2);
       ctx.fillStyle = "#ff3d3d"; ctx.beginPath(); ctx.moveTo(x - w * 0.18, ry - w * 1.2); ctx.quadraticCurveTo(x, ry - w * 1.75, x + w * 0.18, ry - w * 1.2); ctx.fill();
       ctx.fillStyle = "#3cf2ff"; ctx.beginPath(); ctx.arc(x, ry - w * 0.8, w * 0.1, 0, 7); ctx.fill();
+    });
+  }
+
+  // 🚢 Inside a sunken ship (v1.25): a dark wooden rib every few segments and round windows glowing on both walls.
+  drawShipHull(ctx, s, a, b, ha, hb) {
+    if (s.index % 3 === 0) {
+      ctx.fillStyle = "#3a2414"; const t = Math.max(1, a.w * 0.08);
+      ctx.fillRect(a.x - a.w * 1.3, a.y - ha, t, ha); ctx.fillRect(a.x + a.w * 1.3 - t, a.y - ha, t, ha); ctx.fillRect(a.x - a.w * 1.3, a.y - ha, a.w * 2.6, Math.max(1, ha * 0.04));
+    }
+    if (s.index % 4 === 2 && a.w > 3) {
+      for (const side of [-1, 1]) {
+        const x1 = a.x + side * a.w * 1.3, x2 = b.x + side * b.w * 1.3, cx = (x1 + x2) / 2, cy = (a.y - ha * 0.55 + b.y - hb * 0.55) / 2;
+        const rx = Math.max(1, Math.abs(x1 - x2) * 0.32), ry = Math.max(1, (ha + hb) * 0.07);
+        ctx.fillStyle = "#3a2414"; ctx.beginPath(); ctx.ellipse(cx, cy, rx * 1.35, ry * 1.35, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = "#ffd27a"; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.fill();
+      }
+    }
+  }
+
+  // 🌀 A whirlpool (v1.25): dark water swirling down in the middle of one lane, with white foam arms turning round it.
+  drawWhirlpool(ctx, s, F) {
+    if (s.p1.camera.z <= this.camDepth) return;
+    const x = s.p1.screen.x + s.p1.screen.w * s.whirl, y = s.p1.screen.y, rw = s.p1.screen.w * 0.42, t = this.t;
+    if (rw < 1.5) return;
+    this.clipped(ctx, s, y, () => {
+      ctx.fillStyle = "rgba(10,60,110,0.55)"; ctx.beginPath(); ctx.ellipse(x, y, rw * 1.25, rw * 0.32, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#0a3a66"; ctx.beginPath(); ctx.ellipse(x, y, rw * 0.85, rw * 0.22, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#031a33"; ctx.beginPath(); ctx.ellipse(x, y, rw * 0.32, rw * 0.08, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(230,250,255,0.9)"; ctx.lineWidth = Math.max(1, rw * 0.06); ctx.lineCap = "round";
+      for (let arm = 0; arm < 3; arm++) {
+        ctx.beginPath();
+        for (let k = 0; k <= 16; k++) {
+          const u = k / 16, a = -t * 3 + arm * Math.PI * 2 / 3 + u * Math.PI * 1.6, r = rw * (1.2 - u * 0.95);
+          const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r * 0.26;
+          k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.lineCap = "butt";
+    });
+  }
+
+  // 🐢 A sea turtle (v1.25) swimming across high over the road, flapping its flippers. Only to see.
+  drawTurtle(ctx, s, F, n) {
+    if (s.p1.camera.z <= this.camDepth) return;
+    const sc = s.p1.screen.scale, w = sc * 1300 * F, t = this.t;
+    const xo = turtleX(s.turtle, n), x = s.p1.screen.x + s.p1.screen.w * xo, y = s.p1.screen.y - sc * (1500 + 150 * Math.sin(t * 1.5 + s.index)) * F;
+    if (w < 2 || x + w < 0 || x - w > this.canvas.width) return;
+    const dir = -s.turtle, flap = Math.sin(t * 4 + s.index) * 0.35;
+    this.clipped(ctx, s, y + w * 0.4, () => {
+      ctx.fillStyle = "#7fd07a";
+      for (const [fx, fy, back] of [[0.28, -0.2, 0], [0.28, 0.2, 0], [-0.3, -0.18, 1], [-0.3, 0.18, 1]]) {
+        const a = (fy < 0 ? -1 : 1) * (0.6 + (back ? -flap : flap));
+        ctx.save(); ctx.translate(x + dir * fx * w, y + fy * w * 0.6); ctx.rotate(dir * a);
+        ctx.beginPath(); ctx.ellipse(0, (fy < 0 ? -1 : 1) * w * 0.12, w * (back ? 0.07 : 0.1), w * (back ? 0.12 : 0.2), 0, 0, 7); ctx.fill(); ctx.restore();
+      }
+      ctx.beginPath(); ctx.ellipse(x + dir * w * 0.5, y, w * 0.13, w * 0.1, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#1d2a1a"; ctx.beginPath(); ctx.arc(x + dir * w * 0.56, y - w * 0.03, Math.max(1, w * 0.025), 0, 7); ctx.fill();
+      ctx.fillStyle = "#2f8a3a"; ctx.beginPath(); ctx.ellipse(x, y, w * 0.42, w * 0.3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#58b84a";
+      for (const [hx, hy] of [[0, 0], [-0.2, -0.12], [0.2, -0.12], [-0.2, 0.12], [0.2, 0.12]]) { ctx.beginPath(); ctx.ellipse(x + hx * w, y + hy * w, w * 0.1, w * 0.07, 0, 0, 7); ctx.fill(); }
     });
   }
 

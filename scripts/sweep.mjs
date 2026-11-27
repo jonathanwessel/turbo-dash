@@ -208,7 +208,10 @@ async function main() {
     const near = (test, back, fast = false) => `(() => { const r = __td.race, i = r.T.segs.findIndex((s, k) => k > 60 && (${test})); if (i < 0) return false; r.player.dist = (i - ${back}) * 200 - 3100; r.prevIdx = r.segAt(r.player.dist).index; ${fast ? "r.player.speed = r.stats.maxSpeed;" : ""} return true; })()`;
     const FRAMES = [["earth-new", "earth", ""], ...["earth", "moon", "ocean", "glacier", "toy"].map(w => [w, w, played]), ["toy-curve", "toy", played],
       ["moon-stars", "moon", played, "meteor", near("s.star != null", 30)], ["moon-rocket", "moon", played, "launch", near("s.rocket", 18)],
-      ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 10)], ["moon-dark", "moon", played, "darkside"]];
+      ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 10)], ["moon-dark", "moon", played, "darkside"],
+      // v1.25: the new Ocean tracks, each where its new thing is in view: a ship ahead, a whirlpool, a turtle over the road, the dark deep
+      ["ocean-ship", "ocean", played, "sunken", near("s.tunnelStart", 24)], ["ocean-whirl", "ocean", played, "whirlpool", near("s.whirlTop", 16)],
+      ["ocean-turtle", "ocean", played, "turtles", near("s.turtle", 50)], ["ocean-dark", "ocean", played, "midnight"]];
     for (const [name, world, prep, trackId, post, after = 250] of FRAMES) {
       await js("(localStorage.clear(), true)"); await load();
       if (name === "toy-curve") { await js(`(() => { ${prep} return true; })()`); await js(readFileSync(join(root, "scripts", "probes", "toy-curve.js"), "utf8").split(/\r?\n/).filter(l => !l.startsWith("//")).join("\n"), 30000); }

@@ -136,6 +136,13 @@ for (const [name, want, paint] of [["coin", COIN_TOP, (c, t) => drawCoin(c, 0, 0
   check(only(meteor, "#fff6c0") && only(meteor, "#ffe14d"), "falling and fallen stars are not drawn on Meteor Shower");
   check(only(launch, "#f4f6fa") && only(launch, "#ff8a00"), "rockets and their flames are not drawn on Rocket Launch");
   check(only(big, "#565c6b"), "the crater under the jump is not drawn on Big Crater Jump");
+  // 🌊 v1.25: each new Ocean track's own thing is painted there, and not on Kelp Forest
+  const onlySea = (s, c) => has(s, c) && !has(kelp, c);
+  const ship = paints("sunken"), whirl = paints("whirlpool"), turtle = paints("turtles"), deep = paints("midnight");
+  check(onlySea(ship, "#ffd27a") && onlySea(ship, "#3a2414"), "the ship's glowing round windows and dark ribs are not drawn on Sunken Ship");
+  check(onlySea(whirl, "#0a3a66") && onlySea(whirl, "#031a33"), "the whirlpools are not drawn on Whirlpool Way");
+  check(onlySea(turtle, "#2f8a3a") && onlySea(turtle, "#58b84a"), "the sea turtles are not drawn on Turtle Cove");
+  check(onlySea(deep, "#9ffcff") && !has(deep, "rgba(255,255,255,0.45)") && has(kelp, "rgba(255,255,255,0.45)"), "the Midnight Zone's glowing fish are not drawn, or the bright surface still shows");
 }
 
 console.log(fails ? `\n✖ ${fails} of ${checks} drawing checks failed` : `All ${checks} drawing checks passed`);

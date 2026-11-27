@@ -157,6 +157,7 @@ const SONGS = {
   "race:glacier": { bpm: 138, lead: "triangle", mvol: 0.24, bass: [38, 0, 45, 0, 43, 0, 50, 0, 40, 0, 47, 0, 45, 0, 49, 0], mel: [86, 0, 90, 88, 86, 0, 81, 0, 83, 85, 86, 0, 88, 0, 85, 0] },
   "race:toy":     { bpm: 160, short: true, bass: [48, 0, 52, 0, 55, 0, 52, 0, 53, 0, 57, 0, 55, 0, 59, 0], mel: [72, 76, 79, 79, 81, 79, 76, 0, 77, 76, 74, 77, 76, 74, 72, 0] },
 };
+SONGS["race:oceandark"] = SONGS["race:ocean"];   // 🦑 v1.25: the Midnight Zone plays the sea's song
 export function setSong(name, theme) { const k = theme && SONGS[name + ":" + theme] ? name + ":" + theme : name; if (k !== song) step = 0; song = k; }
 function startMusic() {
   nextT = ac.currentTime + 0.1;
