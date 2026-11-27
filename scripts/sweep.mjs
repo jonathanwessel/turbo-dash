@@ -55,7 +55,11 @@ const EXTRA = {
   // 2026-11-26: the What's new card, filled with the fullest card a device can get (src/news.js fullest). It never
   // shows on the dev server by itself, so only the update test's one picture ever checked it. It fails when the
   // lines scroll (a child who cannot read would never see the lower pictures) or OK or the 🔊 is off screen.
-  "s-news": `(__td.news(), (() => { const l = document.getElementById("news-list"), inView = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth; }; return l.children.length > 4 && l.scrollHeight <= l.clientHeight + 1 && inView(document.getElementById("news-ok")) && inView(document.querySelector("#news [data-say-btn]")) && [...l.children].every(inView); })())`,
+  // v1.24.1: "scrolls" is measured where the lines sit (every line inside the list's own box), not by scrollHeight,
+  // which rounds a list that ends on half a pixel up by one and failed five sizes where every line showed. And "on
+  // screen" means inside every box around it that clips (the card itself scrolled at 740x360 and hid OK under its
+  // bottom edge while the old check, which only knew the screen's edges, passed).
+  "s-news": `(__td.news(), (() => { const l = document.getElementById("news-list"), seen = el => { const r = el.getBoundingClientRect(); if (!(r.width > 0 && r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth)) return false; for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) { const s = getComputedStyle(p); if (s.overflowX === "visible" && s.overflowY === "visible") continue; const q = p.getBoundingClientRect(); if (r.top < q.top - 1 || r.bottom > q.bottom + 1 || r.left < q.left - 1 || r.right > q.right + 1) return false; } return true; }; return l.children.length > 4 && [...l.children].every(seen) && seen(document.getElementById("news-ok")) && seen(document.querySelector("#news [data-say-btn]")); })())`,
   "s-lab-sheet": `(document.getElementById("news").hidden = true, Object.assign(__td.S, __mid()), __td.goHub(), ${tap("lab")}, document.querySelector('#lab-list .proj .pi')?.dispatchEvent(new MouseEvent("click", { bubbles: true })), true)`,
 };
 const wait = ms => new Promise(r => setTimeout(r, ms));

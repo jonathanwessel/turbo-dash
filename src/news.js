@@ -7,6 +7,16 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.24.1",
+    pics: [["🏆", "Best badges pick the fastest car more often"], ["🔊", "Tap the speaker to hear what is new"]],
+    notes: [
+      "The Best badge now knows what each special car's power is worth on each track, early on and later.",
+      "A Tough car counts as faster on Glacier snowbanks, so the Snow Cat keeps its badge on Aurora Pass.",
+      "The What's new card has a speaker button, and long lists show in two columns so nothing is hidden.",
+      "Not checked on a real tablet yet, so please open What's new after the update and tap the speaker.",
+    ],
+  },
+  {
     v: "1.24.0",
     pics: [["🌙", "Four new tracks on the Moon"], ["🌠", "Drive through a star to zoom"]],
     notes: [
@@ -101,7 +111,7 @@ export const NEWS = [
   },
   {
     v: "1.15.1",
-    pics: [["🪙", "One coin total after a race"], ["😠", "See who you beat"], ["🧸", "An arrow shows your toy car"]],
+    pics: [["🪙", "See all your race coins added up"], ["😠", "See who you beat"], ["🧸", "An arrow shows your toy car"]],
     notes: [
       "The result card shows one coin total, and the rival of the week's line shows that rival's face.",
       "In Toy Track World an arrow points at the player's car at the start, and the power-up boxes stay upright.",
@@ -111,7 +121,7 @@ export const NEWS = [
   },
   {
     v: "1.15.0",
-    pics: [["👑", "Beaten bosses come back faster"], ["🎨", "Win Round 2 for a new paint"], ["🪙", "More coins each round"]],
+    pics: [["👑", "Bosses you beat race you again, faster"], ["🎨", "Win Round 2 for a new paint"], ["🪙", "More coins each round"]],
     notes: [
       "Beaten bosses come back for Round 2, 3 and 4, a little faster each time and for more coins.",
       "Winning Round 2 against a boss gives that boss's own shiny paint for the garage.",

@@ -16,8 +16,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
    headset unplugged) can't play any voice, and the browser reports "synthesis-failed". That says nothing about the
    game, so only then the two checks that need sound are reported as not checked, loudly, instead of failing. With
    any sound output present they count as always. */
-const soundOut = () => process.platform !== "win32" || /^[1-9]/.test(spawnSync("powershell", ["-NoProfile", "-Command",
-  "@(Get-CimInstance Win32_PnPEntity -Filter \"PNPClass='AudioEndpoint'\").Count"], { encoding: "utf8" }).stdout.trim());
+/* v1.24.1: an endpoint can be listed and still not play (a webcam's speakerphone that Windows can't open). So the
+   machine also has to speak one silent word through Windows' own voice (System.Speech, volume 0) to the default
+   output. If Windows itself can't, the browser can't either, and it is the machine, not the game. TD_SOUND=1 skips
+   this probe and always counts the two checks (how the check was seen red on a machine with a dead output). */
+const soundOut = () => process.platform !== "win32" || process.env.TD_SOUND === "1" || /^ok$/m.test(spawnSync("powershell", ["-NoProfile", "-Command",
+  "if (@(Get-CimInstance Win32_PnPEntity -Filter \"PNPClass='AudioEndpoint'\").Count -lt 1) { 'none'; exit }; " +
+  "Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.Volume = 0; " +
+  "try { $s.SetOutputToDefaultAudioDevice(); $s.Speak('a'); 'ok' } catch { 'dead' }"], { encoding: "utf8" }).stdout.trim());
 let unheard = false;
 let vite = null, browser = null;
 function stopVite() { if (vite) { try { process.platform === "win32" ? spawnSync("taskkill", ["/pid", String(vite.pid), "/T", "/F"], { stdio: "ignore" }) : vite.kill("SIGKILL"); } catch {} vite = null; } }
@@ -62,7 +68,7 @@ async function main() {
   const started = said[0]?.ev.includes("start") && !said[0]?.ev.some(e => e.startsWith("error"));
   if (!started && said[0]?.ev.includes("error:synthesis-failed") && !soundOut()) {
     unheard = true;
-    console.log("  ⚠ NOT CHECKED: this machine has no sound output right now (no audio endpoint), so no voice can play.");
+    console.log("  ⚠ NOT CHECKED: this machine has no working sound output right now (Windows itself could not speak), so no voice can play.");
     console.log("    The voice start and the pulse were not checked. Plug in a speaker or headset and run it again.");
   } else {
     ok(started, `the voice starts after a real tap (${said[0]?.ev.join(", ")})`);

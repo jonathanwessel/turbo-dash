@@ -383,6 +383,13 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.24.1 🏆 Best badges hold (shipped)
+The Best badge reads measured numbers for each track: what each special power is worth there (early and full) and
+how much a Tough car gains on Glacier snowbanks. Its check races three sets of garages, and close calls race 12 times.
+The What's new card has a speaker and never scrolls.
+- Lesson: before fixing a rule a gate calls wrong, check the gate's own luck. Five of eight "wrong" calls were right
+  once raced 15 times. And a measured table with a test for every track beats a world average that hides an 8% swing.
+
 ### v1.24.0 🌠 Moon tracks (shipped)
 Four new Moon tracks between the old four: Meteor Shower (falling stars to drive through for a boost), Rocket Launch
 (rockets lift off beside the road), Big Crater Jump (ramps throw cars high over deep craters) and Dark Side Dash

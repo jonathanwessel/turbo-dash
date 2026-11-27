@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.24.1 — Best badges hold 🏆
+
+- **🏆 The Best badge picks the fastest car more often,** on every kind of garage, not only on the one its check
+  happened to race. It now knows what each special car's power is worth on each track of its world, early in the game
+  and with a full Lab (the Moon Hopper's high jump adds about 1% on Big Crater Jump, whose ramps already throw cars
+  high, and about 8% on Dark Side Dash early on), and that a Tough car is 1% to 3% faster on Glacier tracks because it
+  feels half of each snowbank. The Snow Cat keeps its badge on Aurora Pass now.
+- Polish: **🔊 the What's new card has a speaker** that reads it aloud (it is the card with the most words), and with
+  more than four lines a wide screen shows them in two columns, so the card never scrolls and every picture is seen.
+  On a short phone turned sideways the lines sit closer, so OK is no longer hidden under the card's edge. Two older
+  lines say it plainer: "See all your race coins added up" and "Bosses you beat race you again, faster".
+- Numbers: on garages from six seeds the badge's car is the fastest 95.0% to 98.1% of the time (it was 92.8% to
+  97.1%), and at worst 2.2% to 3.0% slower than the fastest (it was up to 4.4%).
+- **For the grown-ups:** most of the old check's failures were luck in the check itself (three races differ by about
+  1.5%). Close calls now race 12 times, and the check races three sets of garages at once. Its swap line changed in the
+  open: a badge may not ask for a swap to a car more than 1% slower than the one being driven (it was "not faster"
+  over three races, which could not see 1%). The measured numbers live in `src/best-table.js`, written by
+  `node scripts/probes/best-table.mjs`, and a test fails when a new track has none. The sweep now shoots the fullest
+  What's new card at every size and fails when a line or button sits outside the screen or any box around it that
+  clips (measured where things sit, since a list's scroll height rounds up by a pixel). The read-aloud check now
+  tries one silent word through Windows' own voice first: when a listed sound output can't play (Windows itself
+  fails), the two checks that need sound say NOT CHECKED instead of failing on the machine.
+
 ## v1.24.0 — Moon tracks 🌠🚀
 
 - **🌙 Four new Moon tracks,** each with one new thing to see. Each sits between two of the old Moon tracks, so there

@@ -717,6 +717,12 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
   .install-help .card.news-card:has(.news-list.two) { max-width: min(940px, 96vw); }
 }
 @media (orientation: portrait) { .news-list { max-height: 62vh; } }
+/* v1.24.1: on a short phone turned sideways the nine-line card scrolled and hid OK under its bottom edge */
+@media (orientation: landscape) and (max-height: 430px) {
+  .news-card h1 { margin: 2px 0 4px; }
+  .news-list { gap: 3px; margin: 2px 0 8px; }
+  .news-row { line-height: 1.15; }
+}
 
 .set-tile[hidden] { display: none; }
 /* 🏁 launch splash */

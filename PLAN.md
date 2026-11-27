@@ -15,6 +15,9 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
    A release's changelog entry, version bump and What's new entry go in one commit, and `npm test` fails when the
    newest `CHANGELOG.md` entry names another version than `package.json` (2026-11-26, seen three times: v1.18.0,
    v1.22.0 and v1.23.0 were each left built but unreleased, and v1.23.0's changelog said "shipped" with no bump).
+   A new sweep check runs at all 7 sizes, green, before the commit that adds it, not only at the one size it was
+   built on (v1.24.1: the What's new check, tried at one size, failed five sizes on a pixel of rounding, and the
+   run that built it stopped there with the release half made).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -719,7 +722,7 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   (Comet 1.3% short on Sunny Hills), the seeded kid careers 29 of 29 (the gate). Bots 13%, 5%, 1%, 1% apart. At the end
   Boost Buggy 11, Loop Legend 11, Wind-Up Rocket 10, Snow Cat 2, Blizzard Wolf 1, Polar Bear 1 of 36. Sweep clean at 8
   sizes. Not checked on a real tablet: how the stars and the big jump feel needs the owner's eyes.
-- [ ] **Best badges hold on other garages** (added 2026-11-26, found while adding the Moon tracks). `npm run sim --
+- [x] **Best badges hold on other garages** (added 2026-11-26, found while adding the Moon tracks). `npm run sim --
   best` races 24 random garages from one fixed seed (`BEST_SEED=1`), and it passes there. On seeds 2 and 3 it fails,
   on v1.23.0 as well as now: a pick up to 7.0% slower than the fastest car (Boost Buggy on Asteroid Alley), Polar
   Bear named on Ice Cave and Aurora Pass when it is not faster than the car being driven, and only 92.0% to 92.9% of
@@ -727,7 +730,7 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   garages in general. Find what the rule misses on those picks (likely low-upgrade garages, the kid driver's luck
   with the Toy Racer and Polar Bear, or a perk's pace), fix the rule, and make the gate race three seeds so it can
   no longer pass on one lucky draw. The race counter is pinned in the gate since 2026-11-26.
-  Notes: what the rule missed, found with `scripts/probes/best-fit.mjs` (it caches every car's race times for six
+  Notes: v1.24.1. What the rule missed, found with `scripts/probes/best-fit.mjs` (it caches every car's race times for six
   garage seeds, so a rule change is scored in a second). (1) Most failures were luck in the gate itself: three races
   differ by about 1.5% from luck alone, and raced 15 times, five of the eight failing calls flipped (the badge's car was
   faster). So cars within 2% of the fastest after three races, plus the pick and the car being driven, now race 12
@@ -749,7 +752,19 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   96.4%, 92.8%, 97.1%, 95.4%, 94.6%, 93.0% with three races), at worst 2.2% to 3.0% slower (was up to 4.4%). Seeds 1 to
   5 pass. Seed 6 (not in the gate) has one call at the line: Boost Buggy named on Glacier Summit, 1.0% slower than
   Blizzard Wolf. The gate was seen red on the old rule (seeds 1, 3, 4 and 6 failed once the calls had 12 races).
-- [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool.
+  Release check on this tree: Rank 40 on day 541, worlds open on day 107 (Moon), 184 (Ocean), 276 (Glacier), 406
+  (Toy). Strategy bots 13%, 5%, 2%, 1% apart at Rank 10, 20, 30, 40. The sweep's new What's new picture failed at
+  five sizes on the first try while every line showed: `scrollHeight` rounds a list that ends on half a pixel up by
+  one. It now checks that every line sits inside the list's own box (green at every size, seen red with the list
+  forced to 120 px). Then the 740x360 picture showed the card itself scrolling, with OK under its bottom edge, while
+  the check passed: it only knew the screen's edges. Now a line or button counts as seen only inside every box around
+  it that clips (seen red on the old layout at 740x360), and a short landscape screen packs the lines closer so OK
+  shows. The picture review also found two old What's new lines unclear ("One coin total after a race" read as one
+  coin, "Beaten bosses come back faster"), reworded. Read aloud: the voice start and pulse were NOT CHECKED on this
+  machine (Windows itself could not speak through its sound output), the other read-aloud checks passed.
+- [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool. Each world box runs
+  `node scripts/probes/best-table.mjs` once its tracks exist (`npm test` fails until the special car's power has a
+  number on each new track, and each Glacier track a Tough number), and `npm run sim -- best` after.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
 - [ ] **Stunt Show in Toy World.** A mode scored on loops, jumps and air time, not on finishing place, with
@@ -851,11 +866,18 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   From the v1.23.0 picture review (older than v1.23.0 unless said): the What's new card has no 🔊 speaker, and it is
   the card with the most words. It is also missing from the sweep (it never shows on the dev server, `VERSION` is
   "dev"), so only the update test's one picture at one size ever checks it: open it from `__td` in the sweep at every
-  size; its ⚡ 🛞 💪 line shows the tire small and gray. On the Best card the tree and the
+  size; its ⚡ 🛞 💪 line shows the tire small and gray. Done in v1.24.1: the card has a 🔊 speaker, more than four
+  lines go in two columns on a wide screen, and the sweep opens the fullest card a device can get (`fullest` in
+  src/news.js, nine lines) at every size and fails when it scrolls or OK or the 🔊 is off screen. Also from the v1.21.0
+  box above: the What's new card no longer scrolls. On the Best card the tree and the
   kind badge mean nothing without a word. The small car picture inside "faster here than 🚗 Zippy" leaves a wide gap
   at 740x360 (new in v1.23.0). The Garage's world chips' "13/13" and "1/4" are tiny and don't say they count cars. In
   race frames the yellow spoiler bar floats a little above the player's car. Fixed in v1.23.0: the What's new lines
   for v1.23.0 said the same thing as v1.22.0's and "slower" pointed the wrong way.
+  From the v1.24.1 picture review (older than v1.24.1): the Best card's "OK" beside "Drive it!" does not say it keeps
+  the car being driven, and at 1280x800 it is a tall narrow box with small text; "LAP 1/2" may read as a half to a
+  young child; the 😠 beside "See who you beat" doesn't fit the line; at 360x740 the Garage's back button almost
+  touches its title. The yellow spoiler bar (above) also peeks out under the Best card at 1280x800.
   From the v1.24.0 picture review (older than v1.24.0): a locked track's "Win 🌑 first!" leans on a tiny gray track
   icon; the rival of the week chip and the ⭕ counter chip have no word; the coin marks under Easy, Normal and Hard are
   tiny on a 360 px phone. Fixed in v1.24.0 after the review: the rocket stood far from the road and was already high
@@ -1076,3 +1098,27 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   followed the link and emptied the real `node_modules/.bin`, and `npm ci` (after stopping the leftover sweep that
   held a file open) put it back. The game moved forward in both releases. Next: the Best badges box as the main
   piece, with the What's new card's 🔊 speaker and its place in the sweep (picture leftovers) as polish.
+- 2026-11-26 (v1.24.1): **Best badges hold on other garages** done as the main piece, with the What's new card's 🔊
+  speaker, two columns and its place in the sweep (picture leftovers) as polish, as the last note asked. A fix and
+  tools release after eight that moved the game forward, so the next one is new game. What kept coming back, now the
+  fourth time: a measurement whose own luck is as big as what it judges (v1.21.0's unseeded career, v1.23.0's perk
+  probe, v1.24.0's unpinned race counter, and now the Best gate's three races, where five of eight failures were
+  luck). Rule in games/CLAUDE.md ("A check's luck stays smaller than its line"): measure the luck of two runs of the
+  same thing, race close calls again until it is well under the line, race a failing call many more times before
+  blaming the game, and pass on more than one seed. Also learned: a world average can hide a big swing (the Moon
+  Hopper's power is worth 1% to 8% by track), so per-track numbers live in a measured table with a test for every
+  track, and the next M3 tracks must run `node scripts/probes/best-table.mjs`. Written into the Ocean, Glacier and Toy
+  boxes' first step. Tooling slip, written so it is not repeated: `git checkout <file>` to drop one experiment threw
+  away the rest of the uncommitted work in that file. Commit a working step before trying an experiment on top of it.
+  Next: **Ocean, 4 more tracks** (a shipwreck tunnel and a whirlpool), with a line of the picture leftovers as polish.
+- 2026-11-26 (v1.24.1, second run): the run before stopped with v1.24.1 made but not committed (bump, notes and What's
+  new written, lock left 7 hours old) because its sweep was red: the new What's new picture check failed at five sizes
+  on one pixel of `scrollHeight` rounding while every line showed. This run fixed the check (it measures where the
+  lines sit), saw it red on purpose, and shipped. Seen before: v1.18.0, v1.22.0 and v1.23.0 were also left built and
+  unreleased. New rule in "How the task works" step 1: a new sweep check runs green at all 7 sizes before the commit
+  that adds it. Also seen again: the read-aloud voice start can't be checked on this machine (Windows itself cannot
+  speak through its sound output), so it has said NOT CHECKED for two releases. A real tablet check of the 🔊 is in
+  the release notes. And the new check only knew the screen's edges, so OK hidden under the scrolling card's edge at
+  740x360 passed it, though games/CLAUDE.md already says a button under a card's edge counts as off screen. Only the
+  picture review caught it. The check now walks every clipping box around each line and button. Next is still
+  **Ocean, 4 more tracks**, and it must move the game forward.
