@@ -780,6 +780,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   each new thing, each seen red with the thing removed.
   Stopped at: step 1 committed (tracks, physics, drawing, tip, sweep frames `race-ocean-ship`, `-whirl`, `-turtle`,
   `-dark`, `npm test` green). Left: look at the sweep's race frames, `npm run sim` and `npm run career`, the release.
+  Step 2 (2026-11-27): the sweep's Turtle Cove frame showed no turtle. It crossed the road's middle 52 segments ahead,
+  a speck, the same mistake the Moon rockets made. Now it waits 2.4 road half-widths out and is over the middle about
+  32 segments ahead (`TURTLE_FROM` 55 to `TURTLE_TO` 10), drawn 1.5x bigger, and a physics check fails when a turtle is
+  over the road farther than 45 segments ahead (seen red on the old crossing, 40 to 65). The sweep frame moved to 32.
+  Polish (picture leftovers, v1.24.0): a locked track's "Win 🌑 first!" shows the track to win on a white badge in its
+  own colors (the card's gray filter moved to a backdrop under the lock, so the badge keeps its colors).
+  Stopped at: step 2 committed, `npm test` green, first `npm run check` running. Left: the sweep, the picture review,
+  the release.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
 - [ ] **Stunt Show in Toy World.** A mode scored on loops, jumps and air time, not on finishing place, with
