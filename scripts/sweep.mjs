@@ -211,7 +211,7 @@ async function main() {
       ["moon-crater", "moon", played, "bigcrater", near("s.rampStart", 10)], ["moon-dark", "moon", played, "darkside"],
       // v1.25: the new Ocean tracks, each where its new thing is in view: a ship ahead, a whirlpool, a turtle over the road, the dark deep
       ["ocean-ship", "ocean", played, "sunken", near("s.tunnelStart", 24)], ["ocean-whirl", "ocean", played, "whirlpool", near("s.whirlTop", 16)],
-      ["ocean-turtle", "ocean", played, "turtles", near("s.turtle", 50)], ["ocean-dark", "ocean", played, "midnight"]];
+      ["ocean-turtle", "ocean", played, "turtles", near("s.turtle", 32)], ["ocean-dark", "ocean", played, "midnight"]];
     for (const [name, world, prep, trackId, post, after = 250] of FRAMES) {
       await js("(localStorage.clear(), true)"); await load();
       if (name === "toy-curve") { await js(`(() => { ${prep} return true; })()`); await js(readFileSync(join(root, "scripts", "probes", "toy-curve.js"), "utf8").split(/\r?\n/).filter(l => !l.startsWith("//")).join("\n"), 30000); }

@@ -46,8 +46,10 @@ export const starHeight = ahead => Math.max(0, ahead - STAR_LAND) * 90;
 export const WHIRL_PULL = 1.1, WHIRL_REACH = 0.8, WHIRL_KEEP = 0.85, SPIN_T = 0.8;
 const WHIRL_LEN = 12;   // segments of pull before and after the middle
 /* 🐢 Turtle Cove (v1.25): where a sea turtle swims (road half-widths across, from the side it starts on) when the car
-   is `ahead` segments before it. It waits far out, then crosses high over the road as the car comes near. */
-export const turtleX = (side, ahead) => { const u = clamp((90 - ahead) / 75, 0, 1); return side * (2.8 - 5.6 * u); };
+   is `ahead` segments before it. It waits beside the road, then crosses high over it as the car comes near: over the
+   middle about 32 segments ahead, where it is big enough to see (it crossed 52 ahead at first, a speck in the sweep). */
+export const TURTLE_FROM = 55, TURTLE_TO = 10;
+export const turtleX = (side, ahead) => { const u = clamp((TURTLE_FROM - ahead) / (TURTLE_FROM - TURTLE_TO), 0, 1); return side * (2.4 - 4.8 * u); };
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeIn = (a, b, p) => a + (b - a) * p * p;
 const easeInOut = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
@@ -1193,8 +1195,8 @@ export class Race {
   // 🐢 A sea turtle (v1.25) swimming across high over the road, flapping its flippers. Only to see.
   drawTurtle(ctx, s, F, n) {
     if (s.p1.camera.z <= this.camDepth) return;
-    const sc = s.p1.screen.scale, w = sc * 1300 * F, t = this.t;
-    const xo = turtleX(s.turtle, n), x = s.p1.screen.x + s.p1.screen.w * xo, y = s.p1.screen.y - sc * (1500 + 150 * Math.sin(t * 1.5 + s.index)) * F;
+    const sc = s.p1.screen.scale, w = sc * 1900 * F, t = this.t;
+    const xo = turtleX(s.turtle, n), x = s.p1.screen.x + s.p1.screen.w * xo, y = s.p1.screen.y - sc * (1400 + 150 * Math.sin(t * 1.5 + s.index)) * F;
     if (w < 2 || x + w < 0 || x - w > this.canvas.width) return;
     const dir = -s.turtle, flap = Math.sin(t * 4 + s.index) * 0.35;
     this.clipped(ctx, s, y + w * 0.4, () => {

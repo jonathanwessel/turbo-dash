@@ -733,7 +733,7 @@ function openTracks() {
         return `<div class="tc-stars" title="Win here to earn stars">${MASTERY.map((n, k) => `<i class="${k < s ? "on" : ""}">★</i>`).join("")}</div>`
           + (open ? `<div class="tc-next">${hi ? `<div class="tc-bar" title="${w} of ${hi} wins"><i style="width:${Math.round(100 * (w - lo) / (hi - lo))}%"></i></div><b class="tc-goal">⭐</b>` : "<small>⭐ All stars!</small>"}</div>` : ""); })()}
       <div class="tc-prize">🪙 ${prizeFor(t, 1, S.diff)}</div>
-      ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win ${TRACKS.find(x => x.id === t.after).icon} first!` : "Reach this world first"}</small></div>`}</button>`;
+      ${open ? "" : `<div class="tc-lock">🔒<small>${t.season ? `${t.season.icon} Opens in ${t.season.when}` : t.after ? `Win <b class="tc-need">${TRACKS.find(x => x.id === t.after).icon}</b> first!` : "Reach this world first"}</small></div>`}</button>`;
   }).join("") + (S.world === "earth" ? BONUS_TRACKS.map(t => { const th = THEMES[t.theme], best = S.bestD[t.id + ":" + S.diff];
     return `<button class="track-card bonus" data-bonus="${t.id}" style="background:linear-gradient(${th.sky[0]},${th.sky[1]} 55%,${th.grass[0]} 56%)">
       <div class="tc-ribbon">Tricky bonus!</div><div class="tc-icon">${t.icon}</div>${tcName(t.name)}

@@ -584,7 +584,7 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
 
 /* ---------- 🌊 four more Ocean tracks, one new thing each (v1.25) ---------- */
 {
-  const { WHIRL_KEEP, WHIRL_REACH, SPIN_T, turtleX } = await import("../src/engine.js");
+  const { WHIRL_KEEP, WHIRL_REACH, SPIN_T, turtleX, TURTLE_FROM } = await import("../src/engine.js");
   const { THEMES, GOALS, trackOpen } = await import("../src/data.js");
   const at = i => i * SEG - (15 * SEG + SEG * 0.5) + 1;   // a segment index as a race distance (START = 15)
   const sea = TRACKS.filter(t => t.world === "ocean").sort((a, b) => a.diff - b.diff), NEW = ["sunken", "whirlpool", "turtles", "midnight"];
@@ -640,7 +640,11 @@ function clamp01(v) { return Math.max(-1, Math.min(1, v)); }
     const T = buildTrack(track("turtles")), turtles = T.segs.filter(q => q.turtle);
     check("Turtle Cove has sea turtles", turtles.length >= 8 && turtles.every(q => q.turtle === 1 || q.turtle === -1), `${turtles.length} turtles`);
     check("no other track has turtles", TRACKS.filter(t => t.id !== "turtles" && t.world !== "toy").every(t => !buildTrack(t).segs.some(q => q.turtle)), "");
-    check("a turtle waits beside the road, then swims across it", turtleX(1, 120) === 2.8 && turtleX(1, 15) === -2.8 && Math.abs(turtleX(-1, 52.5)) < 0.01 && turtleX(-1, 120) === -2.8, "");
+    check("a turtle waits beside the road, then swims across it", turtleX(1, 120) === 2.4 && turtleX(1, 5) === -2.4 && turtleX(-1, 120) === -2.4 && turtleX(1, TURTLE_FROM) === 2.4, "");
+    // over the road only when it is near enough to be big: the first version crossed the middle 52 segments ahead,
+    // too small to see in the sweep's frame
+    const over = []; for (let a = 0; a <= 120; a++) if (Math.abs(turtleX(1, a)) < 1) over.push(a);
+    check("a turtle is over the road only while it is near", over.length > 5 && Math.max(...over) <= 45 && Math.min(...over) >= 15, `over the road ${over[0]} to ${over.at(-1)} segments ahead`);
   }
   // 🦑 Midnight Zone: deep and dark, headlights on, still under the sea
   {
