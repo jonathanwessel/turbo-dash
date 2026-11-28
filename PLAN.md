@@ -17,7 +17,9 @@ lessons learned and how the game fits together. `CHANGELOG.md` lists every relea
    v1.22.0 and v1.23.0 were each left built but unreleased, and v1.23.0's changelog said "shipped" with no bump).
    A new sweep check runs at all 7 sizes, green, before the commit that adds it, not only at the one size it was
    built on (v1.24.1: the What's new check, tried at one size, failed five sizes on a pixel of rounding, and the
-   run that built it stopped there with the release half made).
+   run that built it stopped there with the release half made). A step that changes `styles.css` or a screen's
+   markup runs `npm run sweep` at every size before its commit, or its `Stopped at:` line says "not swept" (seen twice:
+   v1.22.0's Garage at 1024x600, and v1.25.0's locked-card badge pushed the lock onto the track's picture).
 2. **Release.** Run the release checklist below.
    - Green: publish, tick the boxes you finished, and add a one-line `Notes:` under each.
    - Red: fix it, or stash the broken part and publish what is green. Never push red.
@@ -790,8 +792,8 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   white badge made "Win 🌑 first!" wrap onto two lines, which pushed the lock up onto the locked track's own picture
   (a probe showed no overlap with the step 1 styles). The line now stays on one line (`small.need`, a 1.7em badge, 4 px
   padding), clean at all 8 sizes. The audit's OVERLAP check is the guard, seen red on the step 2 layout.
-  Released as v1.25.0. Check on step 2's commit passed. Career Rank 40 on day 530 (Moon 106, Ocean 182, Glacier 270,
-  Toy 399; 541 on v1.24.1), so the Ocean lasts 88 days. 29 of 29 cars ever the best (kid careers), at the end Loop
+  Released as v1.25.0. Career Rank 40 on day 530 (Moon 106, Ocean 182, Glacier 270, Toy 399; 541 on v1.24.1), so the
+  Ocean lasts 88 days. The release check's own career run on the same commit: day 534 (107, 184, 275, 402, so 91 days). 29 of 29 cars ever the best (kid careers), at the end Loop
   Legend 13, Boost Buggy 12, Wind-Up Rocket 11 of 40. Bots 13%, 5%, 1%, 1% apart. Sweep clean at 8 sizes after the fix.
   Not checked on a real tablet: how the whirlpool's pull and spin feel needs the owner's eyes.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
@@ -1156,3 +1158,10 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   740x360 passed it, though games/CLAUDE.md already says a button under a card's edge counts as off screen. Only the
   picture review caught it. The check now walks every clipping box around each line and button. Next is still
   **Ocean, 4 more tracks**, and it must move the game forward.
+- 2026-11-28: Ocean released as v1.25.0. Seen twice now, a step that changed a screen's layout was committed without
+  the sweep, and only the release sweep found the break (v1.22.0's Garage at 1024x600, and this box's white badge,
+  which wrapped "Win 🌑 first!" and pushed the lock onto the track's picture). New rule in "How the task works": a
+  step that changes `styles.css` or a screen's markup runs the sweep at every size before its commit, or its
+  `Stopped at:` line says "not swept". Also seen: two career runs of the same commit gave Rank 40 on day 530 and 534
+  (the default career is unseeded), so a note quotes the release check's run. Next is **Glacier, 4 more tracks**.
+  The v1.25.0 review's Midnight Zone headlight point is in the picture leftovers.
