@@ -383,6 +383,13 @@ the release check.
   upgrade. Strategy only matters early, so the gate compares Rank 10, 20 and 30 too, and the real gap it found is the
   end-game garage (one car is best everywhere).
 
+### v1.25.0 🌀 Ocean tracks (shipped)
+Four new Ocean tracks between the old four: Sunken Ship (tunnels through sunken ships), Whirlpool Way (whirlpools pull
+a car in and spin it), Turtle Cove (sea turtles swim over the road) and Midnight Zone (deep and dark, headlights on).
+A locked track shows the track to win first on a white badge in its own colors.
+- Lesson: a thing that crosses the road must cross near the car, or the picture shows a speck (the Moon rockets and
+  the Ocean turtles both). And a bigger badge in a line of text can wrap the line and move what sits above it.
+
 ### v1.24.1 🏆 Best badges hold (shipped)
 The Best badge reads measured numbers for each track: what each special power is worth there (early and full) and
 how much a Tough car gains on Glacier snowbanks. Its check races three sets of garages, and close calls race 12 times.

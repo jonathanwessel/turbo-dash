@@ -7,6 +7,17 @@
 // The card shows every entry since the version this device last opened (kept under turbodash.news).
 export const NEWS = [
   {
+    v: "1.25.0",
+    pics: [["🌊", "Four new tracks under the sea"], ["🌀", "Steer away from whirlpools"]],
+    notes: [
+      "The Ocean has four new tracks, each with something new to see, such as sea turtles swimming over the road.",
+      "On Whirlpool Way a whirlpool pulls the car in and spins it round, so steer away from it.",
+      "Sunken Ship drives right through old ships. Midnight Zone is so deep that the headlights come on.",
+      "A locked track shows the track to win first in its own colors on a white badge.",
+      "Not checked on a real tablet yet, so please try Whirlpool Way and see how the pull feels.",
+    ],
+  },
+  {
     v: "1.24.1",
     pics: [["🏆", "Best badges pick the fastest car more often"], ["🔊", "Tap the speaker to hear what is new"]],
     notes: [

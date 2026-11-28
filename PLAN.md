@@ -762,7 +762,7 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   shows. The picture review also found two old What's new lines unclear ("One coin total after a race" read as one
   coin, "Beaten bosses come back faster"), reworded. Read aloud: the voice start and pulse were NOT CHECKED on this
   machine (Windows itself could not speak through its sound output), the other read-aloud checks passed.
-- [ ] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool. Each world box runs
+- [x] **Ocean, 4 more tracks.** For example a shipwreck tunnel and a whirlpool. Each world box runs
   `node scripts/probes/best-table.mjs` once its tracks exist (`npm test` fails until the special car's power has a
   number on each new track, and each Glacier track a Tough number), and `npm run sim -- best` after.
   Notes: decision, the Moon box's pattern: one new thing per track, each 0.15 above an old Ocean track and opened by a
@@ -786,8 +786,14 @@ Each new track adds one new thing to see. Each release re-checks the career run.
   over the road farther than 45 segments ahead (seen red on the old crossing, 40 to 65). The sweep frame moved to 32.
   Polish (picture leftovers, v1.24.0): a locked track's "Win 🌑 first!" shows the track to win on a white badge in its
   own colors (the card's gray filter moved to a backdrop under the lock, so the badge keeps its colors).
-  Stopped at: step 2 committed, `npm test` green, first `npm run check` running. Left: the sweep, the picture review,
-  the release.
+  Step 3 (2026-11-28): the release sweep failed with OVERLAP on the Moon track list at 740x360 and 1024x600: the new
+  white badge made "Win 🌑 first!" wrap onto two lines, which pushed the lock up onto the locked track's own picture
+  (a probe showed no overlap with the step 1 styles). The line now stays on one line (`small.need`, a 1.7em badge, 4 px
+  padding), clean at all 8 sizes. The audit's OVERLAP check is the guard, seen red on the step 2 layout.
+  Released as v1.25.0. Check on step 2's commit passed. Career Rank 40 on day 530 (Moon 106, Ocean 182, Glacier 270,
+  Toy 399; 541 on v1.24.1), so the Ocean lasts 88 days. 29 of 29 cars ever the best (kid careers), at the end Loop
+  Legend 13, Boost Buggy 12, Wind-Up Rocket 11 of 40. Bots 13%, 5%, 1%, 1% apart. Sweep clean at 8 sizes after the fix.
+  Not checked on a real tablet: how the whirlpool's pull and spin feel needs the owner's eyes.
 - [ ] **Glacier, 4 more tracks.** For example an ice bridge and a snowball roll.
 - [ ] **Toy World, 4 more tracks,** with a double loop.
 - [ ] **Stunt Show in Toy World.** A mode scored on loops, jumps and air time, not on finishing place, with
@@ -902,9 +908,14 @@ shipped. Work them as the "Polish" piece of a release, oldest first, and write "
   young child; the 😠 beside "See who you beat" doesn't fit the line; at 360x740 the Garage's back button almost
   touches its title. The yellow spoiler bar (above) also peeks out under the Best card at 1280x800.
   From the v1.24.0 picture review (older than v1.24.0): a locked track's "Win 🌑 first!" leans on a tiny gray track
-  icon; the rival of the week chip and the ⭕ counter chip have no word; the coin marks under Easy, Normal and Hard are
+  icon (done in v1.25.0: the track to win sits on a white badge in its own colors); the rival of the week chip and the ⭕ counter chip have no word; the coin marks under Easy, Normal and Hard are
   tiny on a 360 px phone. Fixed in v1.24.0 after the review: the rocket stood far from the road and was already high
   in the sky, the crater could not be seen, the stars were small and dim, and the dark side still had a sun.
+  From the v1.25.0 picture review: the Midnight Zone reads as dim night more than deep water, and the player's own
+  headlights throw no beam a child would notice (the Moon's Dark Side Dash shares the headlight drawing, so check
+  both); at 740x360 the track picture on the "Win 🌑 first!" badge is about 25 px; a Turtle Cove turtle can pass over
+  the yellow arrow signs and blur into them; at 360x740 a locked card's "Win 🌑 first!" sits below the screen's edge
+  until the list is scrolled.
 
 
 ## Waiting for the owner (do not act on these)

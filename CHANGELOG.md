@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.25.0 — Ocean tracks 🌀🐢
+
+- **🌊 Four new Ocean tracks,** each with one new thing. Each sits between two of the old Ocean tracks, so there is
+  always one a little harder than the last, and each opens with a win on the Ocean track just below it:
+  - 🚢 **Sunken Ship:** more and longer tunnels, each one through a sunken ship with planks, ribs, glowing round
+    windows and a mast with a flag.
+  - 🌀 **Whirlpool Way:** whirlpools in one lane pull a car toward the middle. The middle spins the car round once
+    and slows it a little (once a lap, and Turbo or a shield keeps the speed). The first race there says
+    "🌀 Steer away from whirlpools!" at GO.
+  - 🐢 **Turtle Cove:** sea turtles swim across high over the road as the car comes near.
+  - 🦑 **Midnight Zone:** so deep that no light comes from the surface. Glowing fish and specks, headlights on.
+  The Cup, Captain Kraken and the Ocean goal stay as they were, and the goal counts a win on any Ocean track.
+- Polish: a locked track's "Win 🌑 first!" shows the track to win in its own colors on a white badge (it was a tiny
+  gray icon on a gray card), kept on one line so the lock never sits on the track's picture. The turtles and the
+  whirlpools are the new things to see, and steering round a whirlpool is the new thing to use.
+- Numbers: `npm run career` reaches Rank 40 on day 530 (Moon 106, Ocean 182, Glacier 270, Toy 399; 541 before), so the
+  Ocean now lasts 88 days. Track kinds from `scripts/probes/kinds.mjs`: Sunken Ship Grippy, Whirlpool Way Tough,
+  Turtle Cove Fast, Midnight Zone Grippy. The Deep Diver's power measured on each new track (2.5% to 4.8%). At the end
+  no car is the best on more than 13 of 40 tracks (Loop Legend 13, Boost Buggy 12, Wind-Up Rocket 11). `npm run bots`:
+  every way of playing is within 13%, 5%, 1% and 1% at Rank 10, 20, 30 and 40, and all 29 cars are the best pick
+  somewhere on every kid seed.
+- **For the grown-ups:** the first sweep frame of Turtle Cove showed no turtle (it crossed 52 road pieces ahead, a
+  speck), so turtles now cross about 32 pieces ahead, bigger, with a check that a turtle is over the road only while
+  near. The sweep caught the new white badge pushing "Win 🌑 first!" onto two lines and the lock onto the track's
+  picture at 740x360 and 1024x600. Not checked on a real tablet: how the whirlpool's pull feels needs the owner's eyes.
+
 ## v1.24.1 — Best badges hold 🏆
 
 - **🏆 The Best badge picks the fastest car more often,** on every kind of garage, not only on the one its check
